@@ -1,9 +1,14 @@
-# 10 – Erstimport
+# 10 – Import und Abgleich mit der alten Software
 
 Quelle: `docs/fachlichkeit.md` §8. Grundsatz: **nichts zaubern**. Die
 Anwendung kennt genau ein eigenes Importformat. Die Altdaten der
-bisherigen Software werden einmalig **lokal** mit einem Skript in dieses
-Format gebracht.
+bisherigen Software werden **lokal** mit einem Skript in dieses Format
+gebracht.
+
+Weil der Übergang länger dauern kann, gibt es zwei Arten:
+- **Erstimport** (§1) in einen leeren Bestand,
+- **Abgleich** (§4) mit einer späteren Datei aus der alten Software:
+  Merge-Ansicht, Mirko wählt aus, was übernommen wird.
 
 ## 1. Ablauf
 
@@ -20,9 +25,13 @@ Format gebracht.
 6. Danach Prüflisten: Auffälligkeiten (09) – darunter Elternteile in
    Familien (könnten volljährige Kinder sein), aktiv/passiv bei Familien.
 
-- Import nur in einen **leeren Mitgliederbestand**. Für Probeläufe gibt
-  es „Bestand leeren" – nur solange noch kein Jahresbeitrag erzeugt
-  wurde, mit Rückfrage.
+- Erstimport nur in einen **leeren Mitgliederbestand**. Für Probeläufe
+  gibt es „Bestand leeren" – nur solange noch kein Jahresbeitrag erzeugt
+  wurde, mit Rückfrage. Ist der Bestand nicht leer, bietet die Seite
+  stattdessen den Abgleich an (§4).
+- Importierte Mitglieder tragen die Herkunft `import`, Familien ihren
+  Schlüssel aus der alten Software (`FamID`) – beides braucht der
+  Abgleich.
 - Es werden **keine Jahresbeiträge** importiert; die wenigen offenen
   Posten der alten Software werden von Hand nachgetragen.
 - Abteilungen, Beitragsarten und Funktionen kommen aus den Seeds
@@ -85,13 +94,48 @@ docker compose run --rm app php tools/altdaten-umwandeln.php import-daten/mitgli
 - Schreibt zusätzlich eine kurze Zusammenfassung nach STDERR (Anzahl je
   Beitragsart, Familien, nicht zuordenbare Zeilen) – ohne Namen.
 
+## 4. Abgleich mit einer späteren Datei
+
+Gleiche Datei wie beim Erstimport (`import.csv` aus dem
+Umwandlungsskript), hochgeladen unter Einstellungen → Import, wenn der
+Bestand nicht leer ist. Zugeordnet wird über die **Mitgliedsnummer**.
+
+**Merge-Ansicht** – eine Seite, drei Abschnitte, je Zeile ein Häkchen:
+
+| Abschnitt | Wer | Häkchen bedeutet | Vorauswahl |
+|---|---|---|---|
+| **Neu** | in der Datei, nicht in der Anwendung | Mitglied anlegen | an |
+| **Fehlt in der Datei** | in der Anwendung (Herkunft `import`), nicht in der Datei | austreten lassen: Austrittsdatum setzen (Datum oben auf der Seite, Default heute); wahlweise „ganz löschen" je Zeile | aus |
+| **Geändert** | in beiden, Werte unterscheiden sich | Werte aus der Datei übernehmen | aus |
+
+- „Geändert" zeigt je Mitglied die abweichenden Felder als
+  „in der Anwendung → in der Datei". Übernommen wird je Mitglied ganz
+  oder gar nicht – einzelne Felder danach von Hand ändern.
+- Mitglieder, die in der Anwendung angelegt wurden (Herkunft `manuell`),
+  erscheinen nie unter „Fehlt in der Datei".
+- Bereits Ausgetretene, die in der Datei fehlen, werden nicht angezeigt.
+- „Ganz löschen" ist nur möglich, wenn das Mitglied keine Jahresbeiträge
+  hat; sonst nur austreten lassen.
+- Familien: neue `FamID` ⇒ neue Familie; Wechsel der Familie oder Rolle
+  erscheint als Änderung unter „Geändert".
+- **Übernehmen** als Schrittkette; jede Änderung erzeugt eine Version
+  mit Anlass `abgleich` (07 §7), sodass jeder Abgleich nachvollziehbar
+  und je Mitglied zurückholbar ist. Danach eine Zusammenfassung (x neu,
+  y ausgetreten, z geändert) und ein Audit-Eintrag.
+- Alle Häkchen-Abschnitte haben „alle an/aus".
+
 ## Pflicht-Tests
 
 Importformat: gültige Datei, jede Fehlerart (fehlende Nummer, doppelte
 Nummer, unbekannte Abteilung/Beitragsart, kaputtes Datum) wird in der
 Vorschau gemeldet und nichts importiert; Import nur bei leerem Bestand;
 Schrittkette idempotent bei Wiederholung eines Schritts; Familien und
-Rollen korrekt verknüpft; Version 1 je Mitglied. Umwandlungsskript gegen
+Rollen korrekt verknüpft; Version 1 je Mitglied. Abgleich: richtige
+Einteilung in Neu/Fehlt/Geändert/unverändert, manuell angelegte und
+ausgetretene Mitglieder nie unter „Fehlt", nur angehakte Zeilen werden
+umgesetzt, „ganz löschen" bei vorhandenen Jahresbeiträgen abgelehnt,
+Version mit Anlass `abgleich`, ein zweiter Abgleich mit derselben Datei
+findet nichts mehr. Umwandlungsskript gegen
 eine **erfundene** Beispiel-Altdatei unter `tests/fixtures/altdaten/`
 (gleiche Spalten wie die echte, Fantasiedaten): alle 12
 Beitragskombinationen, Familie, abweichender Zahler, Übungsleiter,

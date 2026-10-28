@@ -34,7 +34,7 @@ aktuelle Issue verlinkt**, nicht alle.
 | `docs/spec/07-mitglieder.md` | Mitglied, Abteilungen, Familien, Funktionen, Nachweise, Hinweise, Versionen, Datenmodell |
 | `docs/spec/08-beitraege.md` | Beitragsarten, Jahresbeiträge, Einzug, Lastschriftdatei pain.008 (nur Admin) |
 | `docs/spec/09-listen-und-exporte.md` | Geburtstage, Ehrungen, Funktionen, Selbst kassieren, Auffälligkeiten, BLSV, Gesamtexport, xlsx/csv |
-| `docs/spec/10-import.md` | Erstimport: Importformat, Umwandlungsskript für die Altdaten |
+| `docs/spec/10-import.md` | Erstimport und späterer Abgleich (Merge-Ansicht), Importformat, Umwandlungsskript |
 | `docs/spec/11-vereinsdaten.md` | Vereinsdaten, Bankverbindung, Gläubiger-ID, Verbandsnummern, Logo |
 
 Schwesterprojekte (gleicher Hoster, gleiche Bauweise):
@@ -116,12 +116,13 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
 
 - **Kein Tresor** (E-11): Mitgliederdaten liegen im Klartext in der
   Datenbank. Schutz durch Zugangskontrolle: Anmeldung mit E-Mail +
-  Passwort + **zweitem Faktor** (TOTP, E-Mail-Code, Backup-Codes),
+  Passwort + **zweitem Faktor** (Standard: Code per E-Mail; optional
+  Authenticator-App; Backup-Codes),
   Rate-Limits, keine User-Enumeration.
 - **Server-Schlüssel** (`shared/config.php`, nie in DB oder Backup)
-  verschlüsselt: Dateien (Nachweis-Scans), Backups, TOTP-Geheimnisse,
-  SMTP-Passwort. Lastschriftdateien und Exporte werden nie auf dem
-  Webspace gespeichert, nur beim Download erzeugt.
+  verschlüsselt: Dateien (Nachweis-Scans, archivierte
+  Lastschriftdateien), Backups, TOTP-Geheimnisse, SMTP-Passwort. Exporte
+  werden nie auf dem Webspace gespeichert, nur beim Download erzeugt.
 - Keine Mitgliederdaten in Logs, Mails, Fehlermeldungen, Dateinamen oder
   URLs (Mitgliedsnummer/ID genügt). Passwörter nie loggen;
   `zend.exception_ignore_args=On`.

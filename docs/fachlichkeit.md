@@ -250,6 +250,10 @@ Offen:
      das Importformat bringt.
   5. Import in die Anwendung, mit Vorschau und Hinweisliste.
 - **nicht** Ein Import, der beliebige Formate erkennt.
+- **muss** Späterer **Abgleich** mit einer neuen Datei aus der alten
+  Software (der Übergang kann dauern): Merge-Ansicht mit „neu", „fehlt in
+  der Datei", „geändert"; Mirko wählt je Person aus, was übernommen bzw.
+  entfernt wird (Spec 10 §4).
 
 - **muss** Alle Exporte wahlweise als **xlsx oder csv** (X1 ✅).
 

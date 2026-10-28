@@ -57,7 +57,8 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
       Der **Server-Schlüssel wird einmal zum Ausdrucken angezeigt**
       („Sicherungsschlüssel" – ohne ihn lassen sich Backups und Dateien
       nicht wiederherstellen, 02 §2).
-   5. Mail-Einstellungen + Testmail (überspringbar).
+   5. Mail-Einstellungen + Testmail (überspringbar – aber ohne Mail gibt es
+      keinen E-Mail-Code als zweiten Faktor, dann nur die App, 02 §3).
    6. `config.php` schreiben → Installer gesperrt; `setup.php` und Token
       löschen (sonst Hinweis).
    Jeder Schritt ist ein eigener Request; ein abgebrochener Durchlauf

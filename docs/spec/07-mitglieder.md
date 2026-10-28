@@ -95,7 +95,7 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 - Jedes Speichern eines Mitglieds, bei dem sich etwas ändert, erzeugt eine
   **Version**: vollständiger Stand aller Felder aus §1 (einschließlich
   Abteilungen, Funktionen, Beitragsart, Familie und Rolle), dazu wer, wann
-  und ein Anlass (`angelegt`, `geaendert`, `importiert`,
+  und ein Anlass (`angelegt`, `geaendert`, `importiert`, `abgleich`,
   `wiederhergestellt aus Version n`).
 - Reiter **Verlauf**: Versionen absteigend; je Version die geänderten
   Felder als „alt → neu".
@@ -112,11 +112,11 @@ SQL.
 
 | Tabelle | Spalten |
 |---|---|
-| `mitglied` | id, mitgliedsnummer UNIQUE, anrede, titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, version, created_at, updated_at |
+| `mitglied` | id, mitgliedsnummer UNIQUE, anrede, titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, herkunft (`import`/`manuell`), version, created_at, updated_at |
 | `mitglied_abteilung` | mitglied_id, abteilung_id |
 | `mitglied_funktion` | mitglied_id, funktion_id |
 | `mitglied_version` | id, mitglied_id, nr, anlass, geaendert_von (user_id), geaendert_am, daten (JSON: vollständiger Stand inkl. Abteilungen, Funktionen, Familie) |
-| `familie` | id, name, created_at |
+| `familie` | id, name, import_schluessel NULL (FamID der alten Software, 10 §4), created_at |
 | `nachweis` | id, mitglied_id, art, gueltig_bis NULL, bemerkung, blob_id NULL (verschlüsselte Datei, 03 §3), vermerkt_von, vermerkt_am |
 | `abteilung` | id, name, blsv_nummer, sortierung, aktiv |
 | `funktion` | id, name, mit_lizenz, sortierung, aktiv |

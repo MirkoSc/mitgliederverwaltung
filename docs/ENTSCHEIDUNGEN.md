@@ -57,8 +57,9 @@ Binaries des Hosters, kleinere Angriffsfläche.
 ### E-11 ✅ Datenbank im Klartext, nur Dateien verschlüsselt
 Mitgliederdaten stehen im Klartext in der Datenbank. Mit dem
 Server-Schlüssel aus `config.php` verschlüsselt werden nur Dateien
-(Nachweis-Scans), Backups und Geheimnisse (TOTP, SMTP-Passwort).
-Lastschriftdateien und Exporte werden nie auf dem Webspace gespeichert.
+(Nachweis-Scans, Lastschriftdateien als Archiv jedes Einzugs), Backups
+und Geheimnisse (TOTP, SMTP-Passwort). Exporte werden nie auf dem
+Webspace gespeichert.
 Schutz der Daten durch Zugangskontrolle (zweiter Faktor, HTTPS).
 
 **Bewusst in Kauf genommen:** Wer Zugang zur Datenbank (DB-Dump,

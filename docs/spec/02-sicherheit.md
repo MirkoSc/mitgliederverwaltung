@@ -27,14 +27,13 @@ Verschlüsselung einzelner Datenbankfelder.
 - **Server-Schlüssel**: 32 Byte, bei der Installation erzeugt, liegt nur
   in `shared/config.php` (nie in der DB, nie im DB-Dump).
 - Verschlüsselt werden damit:
-  - **Dateien** (Blobs): Nachweis-Scans; je Datei ein zufälliger
+  - **Dateien** (Blobs): Nachweis-Scans und **Lastschriftdateien** (als
+    Archiv jedes Einzugs, 08 §3); je Datei ein zufälliger
     Dateischlüssel, `secretstream_xchacha20poly1305` in Blöcken à 64 KiB,
     der Dateischlüssel mit `secretbox` unter dem Server-Schlüssel.
     Speicherformat wie Vereinsbelege (Versionsbyte, `TAG_FINAL`).
   - **Backups**: das Backup-ZIP wird als Ganzes so verschlüsselt (04 §6).
   - **Geheimnisse**: TOTP-Geheimnisse und das SMTP-Passwort (`secretbox`).
-- **Lastschriftdateien** werden nie als Datei auf dem Webspace abgelegt;
-  sie entstehen beim Download aus dem gespeicherten Einzug (08 §3).
 - **Exporte** (xlsx/csv) entstehen beim Download und werden nicht
   gespeichert.
 - Folge: Ohne `config.php` lassen sich Backups und Dateien nicht mehr
@@ -49,10 +48,16 @@ Verschlüsselung einzelner Datenbankfelder.
 - Login mit **E-Mail + Passwort**; `password_hash()` mit
   `PASSWORD_ARGON2ID`. Passwortregel: min. 12 Zeichen, Abgleich gegen die
   mitgelieferte Liste häufiger Passwörter, keine Zusammensetzungsregeln.
-- **Zweiter Faktor**, Pflicht für alle Konten: TOTP (jeder Zeitschritt nur
-  einmal), E-Mail-Code (6 Ziffern, 10 min, max. 5 Versuche), 10
-  Backup-Codes, „Dieses Gerät 30 Tage merken"; erzwungene Einrichtung
-  beim ersten Login; Ändern des Faktors nur nach erneuter Bestätigung.
+- **Zweiter Faktor**, Pflicht für alle Konten. Bei der Einrichtung
+  wählt jeder Benutzer:
+  - **E-Mail-Code** (Standard, Vorauswahl): bei jeder Anmeldung kommt
+    eine Mail mit einer 6-stelligen Nummer (10 min gültig, max. 5
+    Versuche). Keine App nötig.
+  - **Authenticator-App** (TOTP, optional): jeder Zeitschritt nur einmal.
+  Dazu 10 Backup-Codes zum Ausdrucken und „Dieses Gerät 30 Tage merken".
+  Erzwungene Einrichtung beim ersten Login; Ändern nur nach erneuter
+  Bestätigung. Ist die Mail noch nicht eingerichtet (Installer-Schritt
+  übersprungen), bietet die Einrichtung nur die App an und sagt warum.
 - **Brute-Force-Schutz**: Rate-Limit je IP und je Konto (15-min-Fenster),
   atomar vor der Prüfung gezählt; wortgleiche Fehlermeldungen,
   Schein-`password_verify()` bei unbekanntem Konto.

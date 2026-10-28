@@ -62,11 +62,12 @@ Ablauf auf **einer** Seite (06 §2), von oben nach unten:
    Zahlart `selbst` (Verweis auf Liste „Selbst kassieren", 09).
    Fälligkeitsdatum wählen (Vorschlag: nächster Bankarbeitstag + 1).
 2. **Erzeugen**: legt den Einzug an, alle gewählten Beiträge gehen auf
-   `im_einzug`. Der Einzug speichert eine **eigene Kopie** aller Angaben
-   (Name, IBAN, Betrag, Mandat, Verwendungszweck), damit die Datei
-   später unverändert erneut heruntergeladen werden kann.
-3. **Datei herunterladen** (beliebig oft) und im Online-Banking der
-   Sparkasse hochladen.
+   `im_einzug`. Die Lastschriftdatei wird **in diesem Moment einmal
+   erzeugt und verschlüsselt gespeichert** (Blob, 03 §3) – sie ist das
+   Archiv dessen, was wirklich an die Bank ging, und wird nie neu
+   erzeugt oder verändert.
+3. **Datei herunterladen** (beliebig oft, immer dieselbe Datei) und im
+   Online-Banking der Sparkasse hochladen.
 4. **Bestätigen**, wenn die Bank eingezogen hat ⇒ alle Beiträge des
    Einzugs `bezahlt` (Datum = Fälligkeitsdatum).
    Oder **Verwerfen** (Datei wurde nicht eingereicht) ⇒ alle zurück auf
@@ -74,7 +75,13 @@ Ablauf auf **einer** Seite (06 §2), von oben nach unten:
 
 Ein Einzug hat den Status `erzeugt`, `bestaetigt` oder `verworfen`; ein
 bestätigter Einzug ist abgeschlossen (Rücklastschriften laufen je Beitrag,
-§2). Liste der bisherigen Einzüge unten auf der Seite.
+§2).
+
+**Archiv der Einzüge** unten auf der Seite: alle bisherigen Einzüge –
+auch verworfene – mit Datum, Fälligkeit, Status, Anzahl, Summe, wer
+erzeugt/bestätigt hat; je Einzug die gespeicherte Datei zum Herunterladen
+und die Liste der enthaltenen Beiträge. Einzüge und ihre Dateien werden
+nie gelöscht, auch nicht beim Löschen eines Mitglieds.
 
 ## 4. Lastschriftdatei
 
@@ -112,7 +119,7 @@ Verwendungszweck-Vorlage stehen in den Vereinsdaten (11).
 |---|---|
 | `beitragsart` | id, name, betrag_cent, regel, aktiv_art, sortierung, aktiv |
 | `jahresbeitrag` | id, mitglied_id, jahr, betrag_cent, status, einzug_id NULL, zahlweise NULL, bezahlt_am NULL, vermerke (JSON-Liste) – UNIQUE(mitglied_id, jahr) |
-| `einzug` | id, status, faellig_am, erstellt_von, erstellt_am, bestaetigt_am NULL, anzahl, summe_cent, msg_id, daten (JSON: Kopie aller Transaktionsangaben) |
+| `einzug` | id, status, faellig_am, erstellt_von, erstellt_am, bestaetigt_am NULL, bestaetigt_von NULL, anzahl, summe_cent, msg_id, datei_blob_id (verschlüsselte XML-Datei), daten (JSON: Transaktionsangaben für die Anzeige im Archiv) |
 
 ## Pflicht-Tests
 
@@ -122,5 +129,7 @@ beitragsfreie Mitglieder bekommen keinen Beitrag; Statusübergänge inkl.
 Verwerfen und Rücklastschrift; Betrag nur im Status `offen` änderbar;
 Lastschriftdatei gegen das XSD `pain.008.001.08` (als Fixture
 eingecheckt) mit und ohne BIC, mit abweichendem Kontoinhaber, mit
-Umlauten; Kontrollsumme und Anzahl stimmen; erneuter Download liefert
-identische Datei; Vorstand bekommt auf jeder Route dieser Datei 403.
+Umlauten; Kontrollsumme und Anzahl stimmen; die Datei wird beim Erzeugen
+verschlüsselt gespeichert, jeder Download liefert byte-gleich dieselbe
+Datei, auch nachdem sich Mitgliedsdaten geändert haben; Archiv zeigt
+verworfene Einzüge; Vorstand bekommt auf jeder Route dieser Datei 403.
