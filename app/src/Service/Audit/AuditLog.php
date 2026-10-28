@@ -20,6 +20,11 @@ use App\Domain\AuditAktion;
  * inserted row in the middle and a removed first row; removing rows at the
  * very end leaves a valid shorter chain (the database cannot tell) - that
  * needs a copy of the head hash outside the database, which is not done.
+ *
+ * Call protokollieren() outside an open transaction: the writer lock is
+ * released when the method returns, before a caller's commit. A second writer
+ * could then still read the old head hash, the chain would fork and the check
+ * would report a break.
  */
 final class AuditLog
 {

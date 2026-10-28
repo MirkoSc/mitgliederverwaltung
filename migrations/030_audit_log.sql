@@ -5,6 +5,9 @@
 -- `id` is the order of the chain, hence AUTO_INCREMENT without gaps being
 -- relied on. `user_id` has no foreign key: the entry outlives the account.
 -- `ip_hash` is an HMAC under the server key, never the address itself.
+-- The hash covers `details` byte for byte, so the JSON column must keep its
+-- text as written. MariaDB (JSON is LONGTEXT there) does; MySQL 8 would
+-- normalise it and break the chain. The hoster runs MariaDB 10.6.
 -- `details` holds ids and counters only - no member data (CLAUDE.md section 4).
 CREATE TABLE audit_log (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
