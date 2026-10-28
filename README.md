@@ -11,8 +11,8 @@ Composer auf dem Server, ohne `exec()`. Installation und Updates wie bei
 `setup.php` hochladen, Rest per Browser; Updates über die Kanäle `stable`
 und `beta`.
 
-**Status:** Nur der technische Rahmen ist festgelegt. Es gibt noch keinen
-Code und noch keine fachliche Spezifikation.
+**Status:** Technischer Rahmen und Fachlichkeit sind spezifiziert, es gibt
+noch keinen Code.
 
 ## Dokumente
 
@@ -29,6 +29,7 @@ Code und noch keine fachliche Spezifikation.
 | [docs/spec/04-installation-und-update.md](docs/spec/04-installation-und-update.md) | setup.php, Installer, Updater, Release, Backup, Systemcheck |
 | [docs/spec/05-entwicklung.md](docs/spec/05-entwicklung.md) | Docker, Tests, CI, Übernahme aus den Schwesterprojekten |
 | [docs/spec/06-oberflaeche.md](docs/spec/06-oberflaeche.md) | Oberfläche: wenige Seiten, Handy + PC, Barrierefrei-Modus |
+| [docs/spec/07-mitglieder.md](docs/spec/07-mitglieder.md) … [10-import.md](docs/spec/10-import.md) | Fachliche Specs: Mitglieder, Beiträge, Listen/Exporte, Import |
 | [.claude/skills/frontend-design/](.claude/skills/frontend-design/SKILL.md) | UI-Gestaltungs-Skill von Anthropic (Apache-2.0), gilt für jede UI-Arbeit |
 
 ## Lizenz

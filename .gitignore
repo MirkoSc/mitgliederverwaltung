@@ -18,3 +18,7 @@ composer.phar
 
 .env
 *.local.php
+
+# Real member data for the one-off legacy import (docs/spec/10-import.md) -
+# never commit anything from here.
+/import-daten/

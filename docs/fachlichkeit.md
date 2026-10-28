@@ -1,8 +1,9 @@
 # Fachlichkeit – Sammlung (Brainstorm)
 
-Arbeitsstand der fachlichen Anforderungen. Hier wird gesammelt, sortiert
-und geklärt; erst wenn ein Bereich geklärt ist, wird daraus eine Spec unter
-`docs/spec/`. Einstufung: **muss** · **soll** · **später** · **nicht**.
+Protokoll der fachlichen Klärung. **Verbindlich sind die Specs 07–10**
+unter `docs/spec/`, die daraus entstanden sind; bei Widerspruch gelten
+die Specs. Offene Punkte (E6, L3) werden hier geklärt und dann in die
+Specs übernommen. Einstufung: **muss** · **soll** · **später** · **nicht**.
 Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 
 ## 0. Leitlinien
@@ -353,10 +354,8 @@ Offen zum Import ist nur noch E6.
   **Nicht** versioniert, weil sie selbst schon Verlauf sind: Jahresbeiträge
   und Einzüge, Nachweis-Vermerke, Ehrungs-Vermerke.
 
-Offen:
-- V1: Was passiert beim Zurückholen einer Version, deren Familie es nicht
-  mehr gibt? *Vorschlag:* die übrigen Werte werden übernommen, die Familie
-  bleibt leer, mit Hinweis.
+- **muss** Gibt es die Familie einer zurückgeholten Version nicht mehr,
+  bleibt die Familie leer, mit Hinweis (V1 ✅).
 
 ## 10. Bewusst nicht (vorerst)
 

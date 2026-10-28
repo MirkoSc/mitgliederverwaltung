@@ -121,8 +121,7 @@ Blind Index: HMAC-SHA256(BIK, zweck | 0x00 | normalisierter Wert), BIK = KDF(VK_
 - Notfall: Entsperren per Wiederherstellungsschlüssel (Admin-Seite), danach
   Freigaben neu erteilen.
 - **Benutzer ≠ Mitglied.** Benutzer sind die Personen, die die Anwendung
-  bedienen. Ob Mitglieder selbst ein Konto bekommen, ist fachlich offen
-  (E-F2) – das Tresor-Modell setzt dafür enge Grenzen.
+  bedienen. Mitglieder bekommen kein Konto (E-F2).
 
 ## 6. Rollen und Rechte (Mechanik)
 
@@ -168,7 +167,8 @@ Blind Index: HMAC-SHA256(BIK, zweck | 0x00 | normalisierter Wert), BIK = KDF(VK_
 Append-only `audit_log` mit Hash-Kette (`prev_hash`, `hash`),
 `id` vom Schreiber gesetzt, Details verschlüsselt (Tresor), IP nur als
 HMAC. Protokolliert: Anmeldungen, Rechte- und Freigabeänderungen, Backup,
-Update, Restore, Export – fachliche Aktionen ergänzt die fachliche Spec.
+Update, Restore, Export, Import, Einzug erzeugt/bestätigt/verworfen,
+Version zurückgeholt, Mitglied gelöscht.
 Prüfung der Kette im Admin (`audit.view`).
 
 ## 9. Integritätscheck Code

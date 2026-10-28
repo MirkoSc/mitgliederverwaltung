@@ -77,11 +77,12 @@ Updates wird er unverändert neu übernommen.
 
 Die Sammlung und Klärung läuft in `docs/fachlichkeit.md`.
 
-### E-F1 ❓ Funktionsumfang – in Klärung
+### E-F1 ✅ Funktionsumfang – in Specs 07–10
 Steht fest: Stammdaten mit Versionen, Abteilungen, Familien, Funktionen,
 Beiträge mit SEPA-Lastschriftdatei, Geburtstagskalender, Ehrungen,
 BLSV-Meldung, Exporte (xlsx/csv), Erstimport. Details:
-`docs/fachlichkeit.md`. Offen nur noch Kleinigkeiten (E6, L3, V1).
+`docs/fachlichkeit.md`, umgesetzt in den Specs 07–10. Offen nur noch E6
+(Mandatsreferenz) und L3 (BLSV-Formate).
 
 ### E-F2 ✅ Wer meldet sich an? – nur der Vorstand
 Nur ein kleiner Verwaltungskreis (Vorstand). Kein Zugang für Mitglieder.
@@ -101,9 +102,13 @@ verschlüsselt in einen Posteingang schreibt.
 ### E-F4 ✅ Kopplung an Vereinsbelege/Vereinskalender – keine
 Die Mitgliederverwaltung bleibt eigenständig.
 
-### E-F5 ❓ Klartext-Strukturfelder
-Welche fachlichen Felder (z. B. Eintrittsdatum, Abteilungs-ID, Status)
-dürfen für SQL-Filter Klartext bleiben (03 §2)?
+### E-F5 ✅ Klartext-Strukturfelder – so wenig wie möglich
+Klartext: Mitgliedsnummer, Verknüpfungen (Beitragsart, Familie, Rolle,
+Abteilungen, Funktionen), Beträge und Status der Jahresbeiträge,
+Ehrungsstufen. Alles Personenbezogene (Namen, Anschrift, Geburtsdatum,
+IBAN, Kontakt, Ein-/Austritt, aktiv/passiv, Bemerkungen) liegt im Tresor.
+Bei ~700 Mitgliedern rechnet PHP Listen und Filter nach dem Entschlüsseln
+(07 §8, 08 §6, 09 §6). Ein Datenschlüssel je Mitglied statt je Zeile.
 
 ### E-F6 ✅ Datenübernahme – festes Importformat + einmalige Umwandlung
 Aus der bisherigen Mitgliederverwaltung (Excel/CSV). Festes Importformat

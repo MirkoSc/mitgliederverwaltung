@@ -5,9 +5,10 @@ Mitgliederverwaltung für einen Sportverein. Dieses Dokument ist die
 Dokument gilt das Dokument – oder es wird im selben PR bewusst geändert.
 Änderungswünsche laufen als GitHub Issues, nicht in dieser Datei.
 
-**Stand:** Der technische Rahmen steht fest. Die Fachlichkeit wird in
-`docs/fachlichkeit.md` gesammelt und geklärt; erst geklärte Bereiche
-werden zu Specs unter `docs/spec/`. Es wird **nichts Fachliches erfunden**.
+**Stand:** Technischer Rahmen (Specs 01–06) und Fachlichkeit (Specs
+07–10) stehen; noch kein Code. `docs/fachlichkeit.md` ist das Protokoll
+der Klärung und enthält die wenigen offenen Punkte. Es wird **nichts
+Fachliches erfunden** – Unklares wird gefragt.
 
 **Leitlinien (gelten für jede Session):**
 - **Einfach statt perfekt.** Die Anwendung wird nicht verkauft. Sie soll
@@ -30,6 +31,10 @@ aktuelle Issue verlinkt**, nicht alle.
 | `docs/spec/04-installation-und-update.md` | setup.php, Installer, Self-Updater (Kanäle stable/beta), Release, Wartungsmodus, Backup/Restore, Systemcheck |
 | `docs/spec/05-entwicklung.md` | Docker, Tests, CI, Übernahme aus den Schwesterprojekten, Fremdbibliotheken |
 | `docs/spec/06-oberflaeche.md` | UI-Technik, Seitenaufbau (wenige Seiten), Muster, Barrierefrei-Modus |
+| `docs/spec/07-mitglieder.md` | Mitglied, Abteilungen, Familien, Funktionen, Nachweise, Hinweise, Versionen, Datenmodell |
+| `docs/spec/08-beitraege.md` | Beitragsarten, Jahresbeiträge, Einzug, Lastschriftdatei pain.008 (nur Admin) |
+| `docs/spec/09-listen-und-exporte.md` | Geburtstage, Ehrungen, Funktionen, Selbst kassieren, Auffälligkeiten, BLSV, Gesamtexport, xlsx/csv |
+| `docs/spec/10-import.md` | Erstimport: Importformat, Umwandlungsskript für die Altdaten |
 
 Schwesterprojekte (gleicher Hoster, gleiche Bauweise):
 `MirkoSc/vereinsbelege` (Hauptvorlage: Login, 2FA, Tresor, Installer,

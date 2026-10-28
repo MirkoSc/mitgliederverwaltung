@@ -18,7 +18,7 @@
 
 ## 2. Regel für fachliche Tabellen
 
-Jede fachliche Tabelle (kommt mit der fachlichen Spec) folgt diesem Muster:
+Jede fachliche Tabelle (Specs 07–09) folgt diesem Muster:
 
 | Spalte | Klasse | Zweck |
 |---|---|---|
@@ -28,6 +28,9 @@ Jede fachliche Tabelle (kommt mit der fachlichen Spec) folgt diesem Muster:
 | `<feld>_enc` | T | jeder personenbezogene oder fachliche Wert |
 | `<feld>_bi` | – (HMAC) | Suche/Duplikaterkennung auf `<feld>` |
 
+- Abweichung für Mitglieder: **ein Datenschlüssel je Mitglied**, den
+  auch Versionen, Nachweise und Jahresbeiträge dieses Mitglieds nutzen
+  (jeweils eigene AAD) – 07 §8.
 - **Default ist verschlüsselt.** Ein fachliches Feld bleibt nur Klartext,
   wenn die Spec begründet, warum SQL es braucht und warum der Klartext für
   einen DB-Leser unkritisch ist. Beispiele für die Abwägung: Datum des
