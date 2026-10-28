@@ -56,7 +56,7 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 
   | Gruppe | Felder |
   |---|---|
-  | Person | Mitgliedsnummer, Anrede, Vorname, Nachname, Geschlecht, Geburtsdatum |
+  | Person | Mitgliedsnummer, Anrede, Titel, Vorname, Nachname, Namenszusatz, Geschlecht, Geburtsdatum |
   | Anschrift | Straße, PLZ, Ort, Land |
   | Kontakt | Telefon, Handy, E-Mail |
   | Mitgliedschaft | Eintrittsdatum, Austrittsdatum + Grund, aktiv/passiv, Abteilungen (0..n) |
@@ -64,6 +64,7 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
   | Familie | Familie, Rolle (Zahler / Elternteil / Kind) |
   | Nachweise | Art, gültig bis, Vermerk von wem/wann, Datei optional |
   | Ehrungen | erhaltene Ehrungen (Stufe, Jahr) |
+  | Funktionen | Häkchen je Funktion (z. B. Übungsleiter, Wirtschaftshelfer, Bahndienst, Jugendtrainer); Übungsleiter mit Lizenznummer |
   | Sonstiges | Bemerkung (Freitext) |
 
   Dazu je Jahr der Jahresbeitrag (Betrag, Status offen / im Einzug /
@@ -165,7 +166,8 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
   (Überweisungen); pain.008 folgt demselben Muster.
 
 Offen:
-- E6 (Mirko prüft): Der Export der alten Software enthält **keine
+- E6 (Mirko prüft; wird erst vor der ersten echten Lastschriftdatei
+  gebraucht, blockiert den Start nicht): Der Export der alten Software enthält **keine
   Mandatsreferenz**. Welche Referenz stand in den bisherigen
   Lastschriften? Im Online-Banking bei einer Lastschrift nachsehen, wie
   die Mandatsreferenz aussieht (nur das Muster, z. B. „Mitgliedsnummer"
@@ -191,23 +193,35 @@ Offen:
 - Gezählt wird ab dem Eintrittsdatum, ohne Unterbrechungen
   (Austritt/Wiedereintritt) zu berücksichtigen.
 
-Offen:
-- H1: Soll vermerkt werden, dass eine Ehrung erfolgt ist (Stufe + Datum),
-  damit die Liste „noch offen" zeigen kann? *Vorschlag:* ja, ein Klick
-  „geehrt" je Mitglied und Stufe.
-- H2: Mitglieder mit unbekanntem bzw. Platzhalter-Eintrittsdatum (die
-  alte Software nutzt teils „01.01.1901") – *Vorschlag:* beim Import als
-  „unbekannt" übernehmen; sie fehlen in der Ehrungsliste und erscheinen
-  als Hinweis.
+- **muss** Ein Klick „geehrt" je Mitglied und Stufe vermerkt die Ehrung
+  (Datum); die Liste zeigt „noch offen" (H1 ✅).
+- **muss** Unbekanntes bzw. Platzhalter-Eintrittsdatum (alte Software
+  teils „01.01.1901") wird als „unbekannt" übernommen; solche Mitglieder
+  fehlen in der Ehrungsliste und erscheinen als Hinweis (H2 ✅).
+
+## 6b. Funktionen im Verein
+
+- **muss** Funktionen als **Häkchen** am Mitglied; die Liste der
+  Funktionen ist einstellbar (Start: Übungsleiter, Wirtschaftshelfer,
+  Bahndienst, Jugendtrainer – wie heute in den Notizen).
+- **muss** Übungsleiter zusätzlich mit Lizenznummer.
+- **muss** Filter/Liste je Funktion, exportierbar.
+- Import: Übungsleiter samt Lizenznummer aus den `Uel*`-Spalten
+  (15 Personen); die übrigen Funktionen stehen heute nur in den Notizen
+  und werden nach dem Import von Hand angehakt.
 
 ## 7. BLSV-Meldung
 
 - **muss** Jährliche Meldung aller Mitglieder an den BLSV als Export im
   Format der BLSV-Excel-Vorlage; Abteilungen mit ihrer BLSV-Nummer.
+- Vorlage „BE2025 Mitgliederimport" (L1 ✅): ein Blatt, Spalten
+  **Titel, Name, Vorname, Namenszusatz, Geschlecht, Geburtsdatum,
+  Spartenkennzeichen**. Spartenkennzeichen = Nummer der Abteilung.
 
 Offen:
-- L1: Vorlage – Mirko stellt die BLSV-Excel-Datei bereit (ohne echte
-  Mitgliederdaten).
+- L3 (Mirko liefert, BLSV-Portal gerade in Wartung): genaue Formate der
+  Felder (Geschlecht als m/w/d?, Datumsformat), eine Zeile je Mitglied
+  oder je Mitglied und Sparte, Umgang mit Mitgliedern ohne Abteilung.
 - L2: Stichtag und wer mitzählt, ergibt sich aus der BLSV-Vorlage
   (wird mit der Vorlage geklärt).
 - Die alte Software führt die Abteilungen bereits mit zweistelligen
@@ -232,8 +246,7 @@ Offen:
 - **nicht** Ein Import, der beliebige Formate erkennt.
 
 Offen:
-- X1: Echtes `.xlsx` oder reicht CSV? Mirko prüft das (u. a. was der
-  BLSV annimmt). *Vorschlag bis dahin:* `.xlsx` für beide Exporte.
+- **muss** Alle Exporte wahlweise als **xlsx oder csv** (X1 ✅).
 
 ### Altdatei: Export der bisherigen Software
 
@@ -325,15 +338,12 @@ Zuordnung (Vorschlag):
 | `Multifeld 1`, `Multifeld 1_` (Kürzel/Zahlen, selten befüllt) | – | Bedeutung unbekannt, wird nicht übernommen (X4 ✅) |
 | `Post*`, `Zahler*`-Anschrift, `Konto2/3*`, `Fax*`, `*Dienst`, `Homepage`, `Nation`, `GeburtsOrt`, `Sortierfeld`, `Wahlfeld*`, `Zeitung`, `Helfer`, `Mahnstufe`, `offenerPosten*`, `UnbedenkBesch*`, `Uel*` (Übungsleiter) | – | nicht übernommen (in der Beispieldatei leer, 0 oder doppelt) |
 
-Offen zum Import sind nur noch E6, X1 und die BLSV-Vorlage.
+Offen zum Import ist nur noch E6.
 
 ## 9. Noch nicht besprochen
 
 Bewusst gesammelt, damit nichts verloren geht – jeweils nur, wenn ihr es
 braucht:
 - Kommunikation (Rundmail an Abteilung, Serienbrief, Mitgliedsausweis)
-- Funktionen im Verein (Übungsleiter mit Lizenznummer – 15 in der
-  alten Software –, Wirtschaftshelfer, Bahndienst, Jugendtrainer …;
-  stehen heute in den Notizen)
 - Änderungsprotokoll je Mitglied („wer hat wann die IBAN geändert")
 - Kopplung an Vereinsbelege oder Vereinskalender (E-F4)
