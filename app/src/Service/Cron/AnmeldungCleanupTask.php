@@ -6,7 +6,6 @@ namespace App\Service\Cron;
 
 use App\Dienste;
 use App\Repository\AuthTokenRepository;
-use App\Repository\RateLimitRepository;
 use App\Service\RateLimiter;
 
 /**
@@ -24,7 +23,7 @@ final readonly class AnmeldungCleanupTask implements CronTask
 
     public static function erzeugen(Dienste $dienste): self
     {
-        return new self(new RateLimiter(new RateLimitRepository($dienste->pdo())), new AuthTokenRepository($dienste->pdo()));
+        return new self(RateLimiter::aus($dienste), new AuthTokenRepository($dienste->pdo()));
     }
 
     public function name(): string

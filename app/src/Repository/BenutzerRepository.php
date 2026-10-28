@@ -82,13 +82,19 @@ final readonly class BenutzerRepository
         return $stmt !== false && $stmt->fetchColumn() !== false;
     }
 
-    /** Active admins other than $ausser - the "last admin" guard. */
-    public function anzahlAktiveAdmins(int $ausser = 0): int
+    /**
+     * The ids of the active admins, their rows locked until the running
+     * transaction ends - the "last admin" guard
+     * (App\Service\Account\BenutzerVerwaltung).
+     *
+     * @return list<int>
+     */
+    public function sperreAktiveAdmins(): array
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM `user` WHERE rolle = ? AND status = ? AND id <> ?');
-        $stmt->execute([Rolle::Admin->value, BenutzerStatus::Aktiv->value, $ausser]);
+        $stmt = $this->pdo->prepare('SELECT id FROM `user` WHERE rolle = ? AND status = ? ORDER BY id FOR UPDATE');
+        $stmt->execute([Rolle::Admin->value, BenutzerStatus::Aktiv->value]);
 
-        return (int) $stmt->fetchColumn();
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
     }
 
     public function updatePasswordHash(int $id, string $hash): void

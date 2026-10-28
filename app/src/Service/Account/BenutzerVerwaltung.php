@@ -51,9 +51,7 @@ final readonly class BenutzerVerwaltung
         if ($userId === $adminId) {
             throw new BenutzerRegelVerstoss('Die eigene Rolle können Sie nicht ändern. Das muss ein anderer Admin tun.');
         }
-        $this->letzterAdminBleibt($benutzer);
-
-        $this->repo()->updateRolle($userId, $rolle);
+        $this->imSchutz($benutzer, fn() => $this->repo()->updateRolle($userId, $rolle));
 
         return $benutzer;
     }
@@ -70,20 +68,11 @@ final readonly class BenutzerVerwaltung
         if ($benutzer->status !== BenutzerStatus::Aktiv) {
             throw new BenutzerRegelVerstoss('Nur ein aktives Konto lässt sich sperren. Eine offene Einladung löschen Sie stattdessen.');
         }
-        $this->letzterAdminBleibt($benutzer);
-
-        $this->pdo->beginTransaction();
-        try {
+        $this->imSchutz($benutzer, function () use ($userId): void {
             $this->repo()->updateStatus($userId, BenutzerStatus::Gesperrt);
             $this->repo()->bumpSessionEpoch($userId);
             new AuthTokenRepository($this->pdo)->deleteForUser($userId);
-            $this->pdo->commit();
-        } catch (\Throwable $e) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $e;
-        }
+        });
 
         return $benutzer;
     }
@@ -111,10 +100,8 @@ final readonly class BenutzerVerwaltung
         if ($userId === $adminId) {
             throw new BenutzerRegelVerstoss('Das eigene Konto können Sie nicht löschen.');
         }
-        $this->letzterAdminBleibt($benutzer);
-
         // auth_token goes with it (ON DELETE CASCADE).
-        $this->repo()->delete($userId);
+        $this->imSchutz($benutzer, fn() => $this->repo()->delete($userId));
 
         return $benutzer;
     }
@@ -164,19 +151,31 @@ final readonly class BenutzerVerwaltung
     }
 
     /**
-     * Refuses a step that would leave no active admin: the account is one
-     * now, and no other active admin exists.
+     * Runs a step that may take an active admin away, in one transaction
+     * with the "last active admin" check: the rows of the active admins are
+     * locked first (FOR UPDATE), so two admins demoting each other at the
+     * same moment cannot both pass the check - the second waits and then
+     * counts again.
      *
+     * @param \Closure(): void $schritt
      * @throws BenutzerRegelVerstoss
      */
-    private function letzterAdminBleibt(Benutzer $benutzer): void
+    private function imSchutz(Benutzer $benutzer, \Closure $schritt): void
     {
-        if (
-            $benutzer->rolle === Rolle::Admin
-            && $benutzer->status === BenutzerStatus::Aktiv
-            && $this->repo()->anzahlAktiveAdmins(ausser: $benutzer->id) === 0
-        ) {
-            throw new BenutzerRegelVerstoss('Das ist der letzte aktive Admin. Ernennen Sie zuerst einen anderen Benutzer zum Admin.');
+        $this->pdo->beginTransaction();
+        try {
+            $aktiveAdmins = $this->repo()->sperreAktiveAdmins();
+            $istAktiverAdmin = in_array($benutzer->id, $aktiveAdmins, true);
+            if ($istAktiverAdmin && count($aktiveAdmins) === 1) {
+                throw new BenutzerRegelVerstoss('Das ist der letzte aktive Admin. Ernennen Sie zuerst einen anderen Benutzer zum Admin.');
+            }
+            $schritt();
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
         }
     }
 

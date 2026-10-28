@@ -2,11 +2,10 @@
 
 /**
  * The page behind the reset link (docs/spec/02-sicherheit.md section 3).
- * The token travels on as a hidden field; the response carries
- * `Referrer-Policy: no-referrer` (App\PublicPages\AnmeldungController).
+ * The token of the link waits in the session (App\PublicPages\
+ * AnmeldungController::tokenAusLink()), not in this page's URL.
  *
  * @var string $csrf
- * @var string $token
  * @var int $minLaenge
  * @var list<string> $fehler
  */
@@ -17,7 +16,6 @@
     <?php require __DIR__ . '/../partials/fehlerliste.php'; ?>
     <form method="post" action="/anmelden/passwort-neu" class="formular">
         <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
-        <input type="hidden" name="token" value="<?= e($token) ?>">
         <?php $idPraefix = 'neu'; require __DIR__ . '/../partials/passwort-felder.php'; ?>
         <p class="knopfreihe">
             <button type="submit" class="knopf knopf-haupt">Passwort speichern</button>

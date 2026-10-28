@@ -120,17 +120,38 @@ final class AnmeldungTest extends DatabaseTestCase
         self::assertSame(AnmeldeFehler::ZuVieleVersuche, $ergebnis->fehler);
     }
 
-    /** A success clears both counters: only failures stay counted. */
-    public function testASuccessClearsTheCounters(): void
+    /** A success clears the account's counter: only its failures stay counted. */
+    public function testASuccessClearsTheAccountCounter(): void
     {
         Benutzerdaten::anlegen($this->pdo());
         $jetzt = new \DateTimeImmutable('2026-03-02 10:00:00');
         for ($i = 0; $i < RateLimiter::LOGIN_JE_KONTO - 1; $i++) {
-            $this->anmeldung->versuch('erika@example.org', 'falsch-falsch-falsch', '198.51.100.7', $jetzt);
+            $this->anmeldung->versuch('erika@example.org', 'falsch-falsch-falsch', '203.0.113.' . $i, $jetzt);
         }
 
         self::assertTrue($this->anmeldung->versuch('erika@example.org', Benutzerdaten::PASSWORT, '198.51.100.7', $jetzt)->istErfolg());
-        self::assertSame(0, (int) $this->pdo()->query('SELECT COUNT(*) FROM rate_limit')->fetchColumn());
+        for ($i = 0; $i < RateLimiter::LOGIN_JE_KONTO - 1; $i++) {
+            $this->anmeldung->versuch('erika@example.org', 'falsch-falsch-falsch', '203.0.113.' . (50 + $i), $jetzt);
+        }
+        self::assertTrue($this->anmeldung->versuch('erika@example.org', Benutzerdaten::PASSWORT, '198.51.100.8', $jetzt)->istErfolg());
+    }
+
+    /**
+     * ... but not the IP's: whoever has one working account must not be
+     * able to wipe the limit of their address between rounds of guessing.
+     */
+    public function testASuccessDoesNotClearTheIpCounter(): void
+    {
+        Benutzerdaten::anlegen($this->pdo());
+        $jetzt = new \DateTimeImmutable('2026-03-02 10:00:00');
+        for ($i = 0; $i < RateLimiter::LOGIN_JE_IP - 2; $i++) {
+            $this->anmeldung->versuch('person' . $i . '@example.org', 'egal-egal-egal', '198.51.100.7', $jetzt);
+        }
+        self::assertTrue($this->anmeldung->versuch('erika@example.org', Benutzerdaten::PASSWORT, '198.51.100.7', $jetzt)->istErfolg());
+
+        $this->anmeldung->versuch('noch-wer@example.org', 'egal-egal-egal', '198.51.100.7', $jetzt);
+
+        self::assertSame(AnmeldeFehler::ZuVieleVersuche, $this->anmeldung->versuch('erika@example.org', Benutzerdaten::PASSWORT, '198.51.100.7', $jetzt)->fehler);
     }
 
     public function testAWeakerOldHashIsLiftedAtLogin(): void

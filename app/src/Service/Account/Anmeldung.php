@@ -25,8 +25,9 @@ use App\Service\RateLimiter;
  *     so it takes the same time as a real one.
  *   - **Brute force.** Every attempt counts against the IP *and* the
  *     account BEFORE the password is checked, in one atomic step each
- *     (App\Service\RateLimiter); a success clears both, so in the end only
- *     failures stay counted.
+ *     (App\Service\RateLimiter); a success clears the account's counter,
+ *     so for an account only failures stay counted. The IP counter runs
+ *     its window out.
  */
 final readonly class Anmeldung
 {
@@ -79,7 +80,9 @@ final readonly class Anmeldung
             return AnmeldeErgebnis::fehler(AnmeldeFehler::Zugangsdaten);
         }
 
-        $this->limits->reset(self::LIMIT_IP, $ip);
+        // Only the account's counter: clearing the IP's as well would let
+        // anybody with one working account wipe the limit of their address
+        // between rounds of guessing at other accounts.
         $this->limits->reset(self::LIMIT_KONTO, $email);
 
         if ($this->passwoerter->needsRehash($benutzer->passwordHash)) {

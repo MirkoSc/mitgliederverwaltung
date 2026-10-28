@@ -79,7 +79,7 @@ final readonly class RateLimiter
 
     /**
      * Drops rows whose window is long gone (App\Service\Cron\
-     * RateLimitCleanupTask): a counter nobody reads is a hashed address kept
+     * AnmeldungCleanupTask): a counter nobody reads is a hashed address kept
      * for nothing.
      */
     public function cleanup(\DateTimeImmutable $now): int

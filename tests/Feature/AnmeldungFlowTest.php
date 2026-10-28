@@ -8,6 +8,7 @@ use App\Anwendung;
 use App\Dienste;
 use App\Domain\BenutzerStatus;
 use App\Domain\Rolle;
+use App\Http\Session;
 use App\Repository\BenutzerRepository;
 use App\Service\Mail\MailSettingsRepository;
 use App\Service\Mail\MailTransport;
@@ -15,7 +16,6 @@ use App\Service\Mail\SmtpSecurity;
 use App\Tests\Support\AppTestCase;
 use App\Tests\Support\Benutzerdaten;
 use App\Tests\Support\FakeMailTransport;
-use App\Http\Session;
 
 /**
  * Login, logout, reset, invitation, own password and the settings section
@@ -77,12 +77,20 @@ final class AnmeldungFlowTest extends AppTestCase
         return $m[1] . '?token=' . $m[2];
     }
 
+    /**
+     * Follows a link from a mail: the token moves into the session and the
+     * browser lands on the bare path (no token in the URL of the page).
+     */
     private function holen(string $link): \App\Http\Response
     {
         [$pfad, $query] = explode('?', $link, 2);
         parse_str($query, $parameter);
 
-        return $this->get($pfad, array_map('strval', $parameter));
+        $umleitung = $this->get($pfad, array_map('strval', $parameter));
+        self::assertSame(303, $umleitung->status);
+        self::assertSame($pfad, $umleitung->headers['Location'] ?? null);
+
+        return $this->get($pfad);
     }
 
     public function testTheLoginPageHasTheFormAndNoDevelopmentAccounts(): void
@@ -204,11 +212,13 @@ final class AnmeldungFlowTest extends AppTestCase
 
         $formular = $this->holen($link);
         self::assertSame(200, $formular->status);
-        self::assertSame('no-referrer', $formular->headers['Referrer-Policy'] ?? null);
+        self::assertStringNotContainsString(explode('=', $link)[1], $formular->body, 'the token is not in the page');
 
-        parse_str(explode('?', $link, 2)[1], $q);
         $neu = 'ein-ganz-neues-langes-passwort';
-        self::assertWeiterleitungNach('/anmelden', $this->post('/anmelden/passwort-neu', ['token' => (string) $q['token'], 'passwort' => $neu, 'passwort_wiederholung' => $neu]));
+        $kurz = $this->post('/anmelden/passwort-neu', ['passwort' => 'kurz', 'passwort_wiederholung' => 'kurz']);
+        self::assertSame(422, $kurz->status);
+        self::assertStringContainsString('mindestens 12 Zeichen', $kurz->body);
+        self::assertWeiterleitungNach('/anmelden', $this->post('/anmelden/passwort-neu', ['passwort' => $neu, 'passwort_wiederholung' => $neu]));
         self::assertStringContainsString('Ihr neues Passwort ist gespeichert.', $this->get('/anmelden')->body);
         self::assertStringContainsString('über „Passwort vergessen“ neu festgelegt', end($this->transport->gesendet)->body, 'security notice');
 
@@ -234,7 +244,7 @@ final class AnmeldungFlowTest extends AppTestCase
 
     public function testAnInvalidLinkSaysSoAndOffersANewOne(): void
     {
-        $antwort = $this->get('/anmelden/passwort-neu', ['token' => str_repeat('a', 64)]);
+        $antwort = $this->holen('/anmelden/passwort-neu?token=' . str_repeat('a', 64));
 
         self::assertSame(410, $antwort->status);
         self::assertStringContainsString('ungültig oder abgelaufen', $antwort->body);
@@ -258,9 +268,9 @@ final class AnmeldungFlowTest extends AppTestCase
         $this->post('/abmelden');
 
         self::assertStringContainsString('Einladung annehmen', $this->holen($link)->body);
-        parse_str(explode('?', $link, 2)[1], $q);
         $passwort = 'volkers-eigene-lange-parole';
-        self::assertWeiterleitungNach('/anmelden', $this->post('/anmelden/einladung', ['token' => (string) $q['token'], 'passwort' => $passwort, 'passwort_wiederholung' => $passwort]));
+        self::assertWeiterleitungNach('/anmelden', $this->post('/anmelden/einladung', ['passwort' => $passwort, 'passwort_wiederholung' => $passwort]));
+        self::assertSame(410, $this->holen($link)->status, 'the invitation is spent');
 
         self::assertWeiterleitungNach('/app/mitglieder', $this->anmelden('volker@example.org', $passwort));
     }

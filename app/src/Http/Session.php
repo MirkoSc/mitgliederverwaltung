@@ -163,6 +163,29 @@ final class Session
         $_SESSION['rolle'] = $rolle;
     }
 
+    /**
+     * The token of a one-time link (reset, invitation) while its form is
+     * open: the link's GET moves it from the URL into the session and
+     * redirects to the bare path, so the page and its assets never carry it
+     * in the address bar, the history or a Referer. null forgets it.
+     */
+    public function merkeEinmalLink(string $typ, #[\SensitiveParameter] ?string $token): void
+    {
+        if ($token === null) {
+            unset($_SESSION['einmal_link'][$typ]);
+
+            return;
+        }
+        $_SESSION['einmal_link'][$typ] = $token;
+    }
+
+    public function einmalLink(string $typ): string
+    {
+        $token = $_SESSION['einmal_link'][$typ] ?? '';
+
+        return is_string($token) ? $token : '';
+    }
+
     /** The logged-in user's id, or null. */
     public function userId(): ?int
     {

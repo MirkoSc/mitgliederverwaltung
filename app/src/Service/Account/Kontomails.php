@@ -6,6 +6,7 @@ namespace App\Service\Account;
 
 use App\Dienste;
 use App\Http\Request;
+use App\PublicPages\AnmeldungController;
 use App\Service\Mail\MailAttemptResult;
 use App\Service\Mail\Mailer;
 use App\Service\Mail\MailSettingsRepository;
@@ -69,7 +70,7 @@ final readonly class Kontomails
         }
 
         return $this->mailer->sendeSofort($email, 'Einladung zur Mitgliederverwaltung', $this->mailer->vorlage('einladung', [
-            'link' => $basis . '/anmelden/einladung?token=' . $token,
+            'link' => $basis . AnmeldungController::EINLADUNG . '?token=' . $token,
             'gueltigStunden' => intdiv(Einladung::GUELTIG_SEKUNDEN, 3600),
         ]));
     }
@@ -87,7 +88,7 @@ final readonly class Kontomails
         }
 
         return $this->mailer->sendeSofort($email, 'Neues Passwort für die Mitgliederverwaltung', $this->mailer->vorlage('passwort-reset', [
-            'link' => $basis . '/anmelden/passwort-neu?token=' . $token,
+            'link' => $basis . AnmeldungController::PASSWORT_NEU . '?token=' . $token,
             'gueltigMinuten' => intdiv(PasswortReset::GUELTIG_SEKUNDEN, 60),
         ]));
     }

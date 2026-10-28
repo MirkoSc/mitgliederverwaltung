@@ -36,12 +36,6 @@ final readonly class AnmeldungController
     public const string PASSWORT_NEU = '/anmelden/passwort-neu';
     public const string EINLADUNG = '/anmelden/einladung';
 
-    /**
-     * Pages whose URL carries a token: no Referer may take it along, not
-     * even to the own origin's assets.
-     */
-    private const array OHNE_REFERER = ['Referrer-Policy' => 'no-referrer'];
-
     public function __construct(private Dienste $dienste)
     {
     }
@@ -119,7 +113,13 @@ final readonly class AnmeldungController
             ], 429);
         }
         if ($anfrage->email !== null && $anfrage->token !== null) {
-            Kontomails::aus($this->dienste)->resetLink($request, $anfrage->email, $anfrage->token);
+            try {
+                Kontomails::aus($this->dienste)->resetLink($request, $anfrage->email, $anfrage->token);
+            } catch (\Throwable $e) {
+                // An error page here would tell that the address has an
+                // account. The log names the class only.
+                $this->dienste->logger->append(sprintf('password reset mail not queued: %s', $e::class));
+            }
         }
 
         return $this->seite('anmelden/passwort-vergessen', 'Passwort vergessen', ['gesendet' => true]);
@@ -127,24 +127,32 @@ final readonly class AnmeldungController
 
     public function neuForm(Request $request): Response
     {
-        $token = $request->feld('token');
-        if (!PasswortReset::aus($this->dienste)->nutzbar($token)) {
+        $reset = PasswortReset::aus($this->dienste);
+        $token = $this->tokenAusLink($request, PasswortReset::TYP, self::PASSWORT_NEU);
+        if ($token instanceof Response) {
+            return $token;
+        }
+        if (!$reset->nutzbar($token)) {
             return $this->linkUngueltig('Link abgelaufen', PasswortReset::linkUngueltig(), self::VERGESSEN, 'Neuen Link anfordern');
         }
 
-        return $this->passwortSeite('anmelden/passwort-neu', 'Neues Passwort festlegen', $token);
+        return $this->passwortSeite('anmelden/passwort-neu', 'Neues Passwort festlegen');
     }
 
     public function neu(Request $request): Response
     {
-        $token = $request->feld('token');
-        $ergebnis = PasswortReset::aus($this->dienste)->abschliessen($token, self::roh($request, 'passwort'), self::roh($request, 'passwort_wiederholung'));
+        $session = $this->dienste->session;
+        $ergebnis = PasswortReset::aus($this->dienste)->abschliessen(
+            $session->einmalLink(PasswortReset::TYP),
+            self::roh($request, 'passwort'),
+            self::roh($request, 'passwort_wiederholung'),
+        );
         if (!$ergebnis->istErfolg()) {
             if ($ergebnis->fehler === [PasswortReset::linkUngueltig()]) {
                 return $this->linkUngueltig('Link abgelaufen', PasswortReset::linkUngueltig(), self::VERGESSEN, 'Neuen Link anfordern');
             }
 
-            return $this->passwortSeite('anmelden/passwort-neu', 'Neues Passwort festlegen', $token, $ergebnis->fehler);
+            return $this->passwortSeite('anmelden/passwort-neu', 'Neues Passwort festlegen', $ergebnis->fehler);
         }
 
         $benutzer = new BenutzerRepository($this->dienste->pdo())->findById($ergebnis->userId);
@@ -154,40 +162,68 @@ final readonly class AnmeldungController
 
         // Every session of the account just ended - this browser's too, if
         // it had one.
-        $this->dienste->session->destroy();
-        $this->dienste->session->start();
-        $this->dienste->session->flash('Ihr neues Passwort ist gespeichert. Bitte melden Sie sich damit an.');
+        $session->destroy();
+        $session->start();
+        $session->flash('Ihr neues Passwort ist gespeichert. Bitte melden Sie sich damit an.');
 
         return Response::redirect(LoginGuard::ANMELDUNG);
     }
 
     public function einladungForm(Request $request): Response
     {
-        $token = $request->feld('token');
+        $token = $this->tokenAusLink($request, Einladung::TYP, self::EINLADUNG);
+        if ($token instanceof Response) {
+            return $token;
+        }
         if (!Einladung::aus($this->dienste)->nutzbar($token)) {
             return $this->linkUngueltig('Einladung abgelaufen', Einladung::linkUngueltig());
         }
 
-        return $this->passwortSeite('anmelden/einladung', 'Einladung annehmen', $token);
+        return $this->passwortSeite('anmelden/einladung', 'Einladung annehmen');
     }
 
     public function einladung(Request $request): Response
     {
-        $token = $request->feld('token');
-        $ergebnis = Einladung::aus($this->dienste)->annehmen($token, self::roh($request, 'passwort'), self::roh($request, 'passwort_wiederholung'));
+        $session = $this->dienste->session;
+        $ergebnis = Einladung::aus($this->dienste)->annehmen(
+            $session->einmalLink(Einladung::TYP),
+            self::roh($request, 'passwort'),
+            self::roh($request, 'passwort_wiederholung'),
+        );
         if (!$ergebnis->istErfolg()) {
             if ($ergebnis->fehler === [Einladung::linkUngueltig()]) {
                 return $this->linkUngueltig('Einladung abgelaufen', Einladung::linkUngueltig());
             }
 
-            return $this->passwortSeite('anmelden/einladung', 'Einladung annehmen', $token, $ergebnis->fehler);
+            return $this->passwortSeite('anmelden/einladung', 'Einladung annehmen', $ergebnis->fehler);
         }
 
-        $this->dienste->session->destroy();
-        $this->dienste->session->start();
-        $this->dienste->session->flash('Ihr Passwort ist gespeichert. Melden Sie sich jetzt damit an.');
+        $session->destroy();
+        $session->start();
+        $session->flash('Ihr Passwort ist gespeichert. Melden Sie sich jetzt damit an.');
 
         return Response::redirect(LoginGuard::ANMELDUNG);
+    }
+
+    /**
+     * The link from the mail arrives as `?token=…`: the token moves into
+     * the session and the browser is sent on to the bare path (Session::
+     * merkeEinmalLink()), so the form page - and every asset it loads -
+     * has no token in its URL or Referer. Without a token in the query the
+     * one in the session counts.
+     */
+    private function tokenAusLink(Request $request, string $typ, string $pfad): string|Response
+    {
+        $session = $this->dienste->session;
+        $session->start();
+        $token = $request->feld('token');
+        if ($token !== '') {
+            $session->merkeEinmalLink($typ, $token);
+
+            return Response::redirect($pfad, 303);
+        }
+
+        return $session->einmalLink($typ);
     }
 
     /**
@@ -226,26 +262,21 @@ final readonly class AnmeldungController
     /**
      * @param list<string> $fehler
      */
-    private function passwortSeite(string $template, string $titel, string $token, array $fehler = []): Response
+    private function passwortSeite(string $template, string $titel, array $fehler = []): Response
     {
-        $antwort = $this->seite($template, $titel, [
-            'token' => $token,
+        return $this->seite($template, $titel, [
             'fehler' => $fehler,
             'minLaenge' => PasswordPolicy::MIN_LAENGE,
         ], $fehler === [] ? 200 : 422);
-
-        return new Response($antwort->status, [...$antwort->headers, ...self::OHNE_REFERER], $antwort->body);
     }
 
     private function linkUngueltig(string $titel, string $meldung, ?string $ziel = null, ?string $zielText = null): Response
     {
-        $antwort = $this->seite('anmelden/link-ungueltig', $titel, [
+        return $this->seite('anmelden/link-ungueltig', $titel, [
             'meldung' => $meldung,
             'ziel' => $ziel,
             'zielText' => $zielText,
         ], 410);
-
-        return new Response($antwort->status, [...$antwort->headers, ...self::OHNE_REFERER], $antwort->body);
     }
 
     /**
