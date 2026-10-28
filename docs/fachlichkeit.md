@@ -245,7 +245,6 @@ Offen:
   5. Import in die Anwendung, mit Vorschau und Hinweisliste.
 - **nicht** Ein Import, der beliebige Formate erkennt.
 
-Offen:
 - **muss** Alle Exporte wahlweise als **xlsx oder csv** (X1 ✅).
 
 ### Altdatei: Export der bisherigen Software
