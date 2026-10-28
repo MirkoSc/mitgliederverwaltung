@@ -12,6 +12,8 @@ namespace App\Domain;
  */
 final readonly class Einzug
 {
+    use Kopierbar;
+
     /**
      * @param array<mixed> $daten transactions as shown in the archive
      */

@@ -83,7 +83,7 @@ final readonly class NachweisRepository
             $zeit,
         ]);
 
-        return clone($nachweis, ['id' => (int) $this->pdo->lastInsertId(), 'vermerktAm' => Zeilen::zeitpunkt($zeit)]);
+        return $nachweis->mit(['id' => (int) $this->pdo->lastInsertId(), 'vermerktAm' => Zeilen::zeitpunkt($zeit)]);
     }
 
     /**

@@ -15,11 +15,13 @@ use App\Support\Iban;
  * missing, which gives a hint and never blocks (CLAUDE.md). Missing text is
  * '', a missing date or choice is null.
  *
- * Immutable: a change is a copy, `clone($mitglied, ['ort' => 'Neustadt'])`
- * (PHP 8.5), which the repository then saves as a new version.
+ * Immutable: a change is a copy, `$mitglied->mit(['ort' => 'Neustadt'])`,
+ * which the repository then saves as a new version.
  */
 final readonly class Mitglied
 {
+    use Kopierbar;
+
     /** The country a new member gets (07 section 1). */
     public const string LAND_DEFAULT = 'D';
 
@@ -77,6 +79,7 @@ final readonly class Mitglied
         public ?\DateTimeImmutable $updatedAt = null,
     ) {
     }
+
 
     /** "Ehemalig" (07 section 1): Austrittsdatum set and reached - computed, never stored. */
     public function istEhemalig(\DateTimeInterface $stichtag): bool

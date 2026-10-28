@@ -132,7 +132,7 @@ final readonly class MitgliedRepository
         ?int $userId,
         ?\DateTimeImmutable $jetzt = null,
     ): SpeicherErgebnis {
-        $mitglied = clone($mitglied, [
+        $mitglied = $mitglied->mit([
             'iban' => Iban::normalisieren($mitglied->iban),
             'bic' => strtoupper((string) preg_replace('/\s+/u', '', $mitglied->bic)),
         ]);
@@ -181,27 +181,27 @@ final readonly class MitgliedRepository
             $hinweise = [];
 
             if ($alt->familieId !== null && !$this->gibtEs('familie', $alt->familieId)) {
-                $alt = clone($alt, ['familieId' => null, 'familieRolle' => null]);
+                $alt = $alt->mit(['familieId' => null, 'familieRolle' => null]);
                 $hinweise[] = 'Die Familie gibt es nicht mehr; das Mitglied ist jetzt ohne Familie.';
             }
             if ($alt->beitragsartId !== null && !$this->gibtEs('beitragsart', $alt->beitragsartId)) {
-                $alt = clone($alt, ['beitragsartId' => null]);
+                $alt = $alt->mit(['beitragsartId' => null]);
                 $hinweise[] = 'Die Beitragsart gibt es nicht mehr; das Mitglied ist jetzt ohne Beitragsart.';
             }
             $abteilungen = $this->vorhandene('abteilung', $alt->abteilungIds);
             if ($abteilungen !== $alt->abteilungIds) {
-                $alt = clone($alt, ['abteilungIds' => $abteilungen]);
+                $alt = $alt->mit(['abteilungIds' => $abteilungen]);
                 $hinweise[] = 'Nicht mehr vorhandene Abteilungen wurden weggelassen.';
             }
             $funktionen = $this->vorhandene('funktion', $alt->funktionIds);
             if ($funktionen !== $alt->funktionIds) {
-                $alt = clone($alt, ['funktionIds' => $funktionen]);
+                $alt = $alt->mit(['funktionIds' => $funktionen]);
                 $hinweise[] = 'Nicht mehr vorhandene Funktionen wurden weggelassen.';
             }
             if ($alt->mitgliedsnummer !== $aktuell->mitgliedsnummer) {
                 $andere = $this->findeNachNummer($alt->mitgliedsnummer);
                 if ($andere !== null && $andere->id !== $mitgliedId) {
-                    $alt = clone($alt, ['mitgliedsnummer' => $aktuell->mitgliedsnummer]);
+                    $alt = $alt->mit(['mitgliedsnummer' => $aktuell->mitgliedsnummer]);
                     $hinweise[] = sprintf(
                         'Die Mitgliedsnummer %d hat inzwischen ein anderes Mitglied; die aktuelle Nummer bleibt.',
                         $version->daten['mitgliedsnummer'] ?? 0,
@@ -282,7 +282,7 @@ final readonly class MitgliedRepository
         $id = (int) $this->pdo->lastInsertId();
 
         $this->zuordnungenSchreiben($id, $mitglied);
-        $gespeichert = clone($mitglied, [
+        $gespeichert = $mitglied->mit([
             'id' => $id,
             'version' => 1,
             'createdAt' => Zeilen::zeitpunkt($zeit),
@@ -331,7 +331,7 @@ final readonly class MitgliedRepository
         ))->execute([...self::werte($mitglied), $nr, $zeit, $id]);
 
         $this->zuordnungenSchreiben($id, $mitglied);
-        $gespeichert = clone($mitglied, [
+        $gespeichert = $mitglied->mit([
             'version' => $nr,
             'createdAt' => $vorher->createdAt,
             'updatedAt' => Zeilen::zeitpunkt($zeit),

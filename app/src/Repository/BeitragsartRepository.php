@@ -48,7 +48,7 @@ final readonly class BeitragsartRepository
                 'INSERT INTO beitragsart (name, betrag_cent, regel, aktiv_art, sortierung, aktiv) VALUES (?, ?, ?, ?, ?, ?)',
             )->execute($werte);
 
-            return clone($art, ['id' => (int) $this->pdo->lastInsertId()]);
+            return $art->mit(['id' => (int) $this->pdo->lastInsertId()]);
         }
 
         $this->pdo->prepare(

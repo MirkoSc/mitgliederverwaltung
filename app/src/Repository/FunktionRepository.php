@@ -45,7 +45,7 @@ final readonly class FunktionRepository
             $this->pdo->prepare('INSERT INTO funktion (name, mit_lizenz, sortierung, aktiv) VALUES (?, ?, ?, ?)')
                 ->execute($werte);
 
-            return clone($funktion, ['id' => (int) $this->pdo->lastInsertId()]);
+            return $funktion->mit(['id' => (int) $this->pdo->lastInsertId()]);
         }
 
         $this->pdo->prepare('UPDATE funktion SET name = ?, mit_lizenz = ?, sortierung = ?, aktiv = ? WHERE id = ?')

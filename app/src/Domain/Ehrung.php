@@ -11,6 +11,8 @@ namespace App\Domain;
  */
 final readonly class Ehrung
 {
+    use Kopierbar;
+
     public function __construct(
         public int $mitgliedId,
         public int $stufeJahre,

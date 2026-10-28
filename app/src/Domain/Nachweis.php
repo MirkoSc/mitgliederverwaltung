@@ -11,6 +11,8 @@ namespace App\Domain;
  */
 final readonly class Nachweis
 {
+    use Kopierbar;
+
     public function __construct(
         public int $mitgliedId,
         public NachweisArt $art,

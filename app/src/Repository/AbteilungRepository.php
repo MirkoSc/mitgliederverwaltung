@@ -45,7 +45,7 @@ final readonly class AbteilungRepository
             $this->pdo->prepare('INSERT INTO abteilung (name, blsv_nummer, sortierung, aktiv) VALUES (?, ?, ?, ?)')
                 ->execute($werte);
 
-            return clone($abteilung, ['id' => (int) $this->pdo->lastInsertId()]);
+            return $abteilung->mit(['id' => (int) $this->pdo->lastInsertId()]);
         }
 
         $this->pdo->prepare('UPDATE abteilung SET name = ?, blsv_nummer = ?, sortierung = ?, aktiv = ? WHERE id = ?')

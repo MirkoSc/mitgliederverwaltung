@@ -11,6 +11,8 @@ namespace App\Domain;
  */
 final readonly class Funktion
 {
+    use Kopierbar;
+
     public function __construct(
         public string $name,
         /** Whether the member form asks for the licence number (Übungsleiter). */

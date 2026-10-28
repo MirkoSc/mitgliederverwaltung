@@ -11,6 +11,8 @@ namespace App\Domain;
  */
 final readonly class Beitragsart
 {
+    use Kopierbar;
+
     public function __construct(
         public string $name,
         /** Integer cent, never float. */

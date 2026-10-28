@@ -38,7 +38,7 @@ final readonly class EinzugRepository
             Zeilen::json($einzug->daten),
         ]);
 
-        return clone($einzug, ['id' => (int) $this->pdo->lastInsertId()]);
+        return $einzug->mit(['id' => (int) $this->pdo->lastInsertId()]);
     }
 
     /**

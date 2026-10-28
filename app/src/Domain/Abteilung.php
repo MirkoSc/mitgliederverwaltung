@@ -11,6 +11,8 @@ namespace App\Domain;
  */
 final readonly class Abteilung
 {
+    use Kopierbar;
+
     public function __construct(
         public string $name,
         /** BLSV "Spartenkennzeichen", text - the leading zero matters ("09"). */

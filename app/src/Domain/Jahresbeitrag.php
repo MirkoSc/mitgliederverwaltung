@@ -11,6 +11,8 @@ namespace App\Domain;
  */
 final readonly class Jahresbeitrag
 {
+    use Kopierbar;
+
     /**
      * @param list<Vermerk> $vermerke oldest first
      */
@@ -38,4 +40,5 @@ final readonly class Jahresbeitrag
     {
         return clone($this, ['vermerke' => [...$this->vermerke, $vermerk]]);
     }
+
 }

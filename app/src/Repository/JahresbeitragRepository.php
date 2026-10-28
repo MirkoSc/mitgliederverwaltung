@@ -42,7 +42,7 @@ final readonly class JahresbeitragRepository
             self::vermerkeJson($beitrag->vermerke),
         ]);
 
-        return $stmt->rowCount() === 1 ? clone($beitrag, ['id' => (int) $this->pdo->lastInsertId()]) : null;
+        return $stmt->rowCount() === 1 ? $beitrag->mit(['id' => (int) $this->pdo->lastInsertId()]) : null;
     }
 
     public function finde(int $id): ?Jahresbeitrag
