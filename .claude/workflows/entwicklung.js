@@ -53,6 +53,9 @@ const PLAN = [
 const REPO = (args && args.repo) || '/home/user/mitgliederverwaltung'
 const WT = (args && args.worktrees) || '/home/user/wt'
 const MAX_RUNDEN = (args && args.maxRunden) || 3
+// Each agent runs its own Docker stack (PHP + MariaDB); more than ~4 at once
+// exhausted the session container and made it restart.
+const MAX_PARALLEL = (args && args.maxParallel) || 4
 
 const BASIS = `Projekt Mitgliederverwaltung: lokales Repository ${REPO}, GitHub MirkoSc/mitgliederverwaltung.
 Für dieses Projekt gilt ${REPO}/CLAUDE.md – nicht die CLAUDE.md der Schwesterprojekte.
@@ -66,7 +69,8 @@ und prüfe in einer Schleife erneut. Images von mirror.gcr.io (Docker Hub drosse
 Schwesterprojekte zum Übernehmen von Code (nur lesen): /home/user/vereinsbelege, /home/user/vereinskalender.
 Regeln für parallele Arbeit: ${REPO}/docs/spec/05-entwicklung.md §6. Skills nutzen, wo sie helfen
 (bei UI immer frontend-design). Commits auf Englisch.
-Der Container kann jederzeit neu starten: committe und pushe Zwischenstände regelmäßig
+Räume nach den Tests deine Docker-Container ab ("docker compose -p issue-<nr> down -v"), damit der
+Speicher reicht. Der Container kann jederzeit neu starten: committe und pushe Zwischenstände regelmäßig
 (auch unfertig als "WIP: …" auf issue-<nr>), damit nichts verloren geht.`
 
 const wt = n => `${WT}/issue-${n}`
@@ -215,7 +219,7 @@ while (pending.length || running.size) {
       pending.splice(pending.indexOf(i), 1)
       failed.add(i.n)
       log(`#${i.n} übersprungen – Abhängigkeit hängt`)
-    } else if (i.d.every(x => done.has(x))) {
+    } else if (running.size < MAX_PARALLEL && i.d.every(x => done.has(x))) {
       pending.splice(pending.indexOf(i), 1)
       running.set(i.n, bearbeite(i).catch(e => ({ merged: false, err: String(e) })).then(r => ({ i, r })))
       log(`#${i.n} gestartet (${i.m}, ${i.e})`)
