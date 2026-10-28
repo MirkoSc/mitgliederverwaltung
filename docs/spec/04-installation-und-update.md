@@ -134,6 +134,33 @@ signierten `checksums.txt` des Releases. Abweichung = Warnung im Admin
   Sicherungsschlüssel ab (oder `config.php` hochladen) und schreibt ihn
   in die neue `config.php`; ohne ihn ist das Backup nicht lesbar.
 
+**Umsetzung** (`App\Service\Backup`, übernommen aus Vereinsbelege):
+
+- Dateiformat `backup_JJJJMMTT_HHMMSS[_n].zip.enc` (`BackupCipher`):
+  `MVBK` | Dateischlüssel als `secretbox` unter dem Server-Schlüssel
+  (73 Byte) | Blob-Kopf (Versionsbyte + secretstream-Header) | Blöcke
+  à 64 KiB wie ein Blob, der letzte mit `TAG_FINAL`. Ein falscher
+  Schlüssel scheitert am Kopf, bevor etwas geschrieben wird; ein
+  abgeschnittenes, verändertes oder verlängertes Backup ist ein Fehler.
+- ZIP-Inhalt: `dump.sql` (`MysqlDumper`), `blobs/<2>/<id>` (Backend `fs`),
+  `logo/<name>`, `manifest.json` (App- und Schemaversion, Zeitpunkt,
+  Anzahlen). Das Update-Backup (#4) lässt `blobs/` weg.
+- `BackupErstellung`: Phasen `dump` → `dateien` → `abschluss` →
+  `verschluesseln` → `fertig`. Das Klartext-ZIP liegt nur während der Kette
+  als Arbeitsdatei `erstellung_<id>.zip.part` (0600) in `var/backups/` und
+  wird gelöscht, sobald das verschlüsselte Backup abgelegt ist. Stand in
+  `var/backups/erstellung.json` (nicht in `job`: die Tabelle steckt im
+  Dump), Sperre per `flock`. Der Cron verwirft eine Kette, die eine Stunde
+  nicht weiterlief (`BackupAufraeumenTask`), samt Klartext.
+- `Wiederherstellung` (für den Installer, #3): Phasen `entschluesseln` →
+  `auspacken` → `dump` → `dateien` → `migrationen` → `fertig`, Stand in
+  `var/backups/wiederherstellung/wiederherstellung.json`. Der Schlüssel wird
+  nie gespeichert: der Aufrufer übergibt ihn jedem Schritt, der
+  secretstream-Zustand im Stand ist unter ihm verschlüsselt.
+  `RestoreService::schluesselAusEingabe()` (Base64, Leerzeichen und
+  Zeilenumbrüche des Ausdrucks egal) und `schluesselAusConfig()` (Regex,
+  nie `include`) lesen den Schlüssel.
+
 ## 7. Systemcheck
 
 `/admin/systemcheck` prüft im laufenden Betrieb, was sich beim Hoster
