@@ -8,8 +8,8 @@ Setze GitHub-Issue #$ARGUMENTS um. Halte dich strikt an diesen Ablauf:
    danach NUR die im Issue verlinkten Abschnitte aus `docs/spec/`
    (CLAUDE.md kennst du bereits) sowie `docs/spec/05-entwicklung.md` §6
    (parallele Arbeit). Andere Specs nur, wenn zwingend nötig.
-   Code zum Übernehmen: Schwesterprojekte unter `.vorlagen/` (Automatik)
-   bzw. daneben geklont (`../vereinsbelege`, `../vereinskalender`).
+   Code zum Übernehmen: die Schwesterprojekte daneben
+   (`../vereinsbelege`, `../vereinskalender`).
 2. Prüfe, dass alle Issues unter „Abhängig von" geschlossen sind. Wenn
    nicht: abbrechen und das sagen.
 3. Kurzer Plan (betroffene Dateien, Migrationen im zugewiesenen Bereich,
@@ -29,7 +29,6 @@ Setze GitHub-Issue #$ARGUMENTS um. Halte dich strikt an diesen Ablauf:
 8. Commits auf Englisch. PR mit: Zusammenfassung, `Closes #$ARGUMENTS`,
    „Entscheidungen" (was du ohne Rückfrage festgelegt hast), Prüfliste für
    manuelle Tests (360 px, PC, PC im Barrierefrei-Modus), geprüfte
-   Fremdbibliotheken. In der Automatik pusht und öffnet der Workflow den
-   PR – dort nur committen und den PR-Text in die genannte Datei schreiben.
+   Fremdbibliotheken.
 9. Kurze Liste am Ende: was gemacht, was manuell zu testen ist, offene
    Punkte.

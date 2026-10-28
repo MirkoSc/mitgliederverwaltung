@@ -1,6 +1,5 @@
 # Tests on every push to main and every pull request
-# (docs/spec/05-entwicklung.md section 4). Keep the workflow name "CI": the
-# automation (pruefen.yml) listens for completed runs of exactly this name.
+# (docs/spec/05-entwicklung.md section 4).
 name: CI
 
 on:

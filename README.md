@@ -16,7 +16,8 @@ und `beta`.
 **Status:** Technischer Rahmen und Fachlichkeit sind spezifiziert, das
 Projektgerüst steht (Layout, Navigation, Platzhalterseiten,
 Erweiterungspunkte); die Fachlichkeit folgt Issue für Issue
-(`docs/ARBEITSPLAN.md`, `docs/VORGEHEN.md`).
+(`docs/ARBEITSPLAN.md`). Die Umsetzung läuft vollautomatisch aus einer
+Claude-Code-Sitzung (`docs/VORGEHEN.md`).
 
 ## Entwicklung
 

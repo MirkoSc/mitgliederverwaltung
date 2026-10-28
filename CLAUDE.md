@@ -167,13 +167,13 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
 
 ## 7. Arbeitsweise mit Claude Code
 
-- **Ein Issue pro Sitzung bzw. Automatik-Job.** Branch `issue-<nr>`, PR mit
+- **Ein Issue pro Agent bzw. Sitzung.** Branch `issue-<nr>`, PR mit
   `Closes #<nr>`. Nie direkt auf `main`. Ablauf: `.claude/commands/issue.md`.
 - Plan, Reihenfolge, Modelle: `docs/ARBEITSPLAN.md`. Viele Agenten
   arbeiten **parallel** – Regeln dafür in 05 §6 (Erweiterungspunkte,
   Migrationsbereiche, isolierte Tests). Daran halten, sonst blockieren sich
   die Jobs gegenseitig.
-- **Vollautomatik** (GitHub Actions, `docs/VORGEHEN.md`): niemand
+- **Vollautomatik** (Workflow `entwicklung`, `docs/VORGEHEN.md`): niemand
   antwortet auf Rückfragen. Bei Unklarheit die einfachste Lösung wählen,
   die zu Spec und Leitlinien passt, und sie im PR unter „Entscheidungen"
   begründen. Nur wenn es wirklich nicht weitergeht: abbrechen mit Grund
