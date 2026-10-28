@@ -198,9 +198,23 @@ final readonly class BackupService
         return is_file($pfad) ? $pfad : null;
     }
 
+    /**
+     * Deletes the backups beyond the newest KEEP - and an empty name a chain
+     * reserved an hour ago and never filled (its request died between
+     * reserving and saving the name).
+     *
+     * @return int files deleted
+     */
     public function rotate(): int
     {
         $geloescht = 0;
+        $grenze = $this->jetzt()->getTimestamp() - 3600;
+        foreach (glob($this->backupDir . '/backup_*' . self::ENDUNG) ?: [] as $pfad) {
+            clearstatcache(true, $pfad);
+            if (filesize($pfad) === 0 && (int) filemtime($pfad) < $grenze && @unlink($pfad)) {
+                $geloescht++;
+            }
+        }
         foreach (array_slice($this->list(), self::KEEP) as $alt) {
             if (@unlink($this->backupDir . '/' . $alt['name'])) {
                 $geloescht++;

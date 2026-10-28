@@ -253,23 +253,30 @@ final readonly class BackupErstellung
      */
     public function verwaistAufraeumen(): bool
     {
-        $stand = $this->stand();
-        $hatArbeitsdateien = (glob($this->dir() . '/erstellung_*.part') ?: []) !== [];
-        if (($stand === null || $stand['phase'] === self::PHASE_FERTIG) && !$hatArbeitsdateien) {
+        if (!is_dir($this->dir())) {
             return false;
         }
-        if ($stand !== null && $stand['phase'] !== self::PHASE_FERTIG && !$this->istVerwaist($stand)) {
-            return false;
-        }
-
         try {
-            $this->abbrechen();
+            // Decided under the lock: a chain resumed a moment ago stays.
+            return $this->gesperrt(function (): bool {
+                $stand = $this->stand();
+                $unfertig = $stand !== null && $stand['phase'] !== self::PHASE_FERTIG;
+                $hatArbeitsdateien = (glob($this->dir() . '/erstellung_*.part') ?: []) !== [];
+                if ((!$unfertig && !$hatArbeitsdateien) || ($unfertig && !$this->istVerwaist($stand))) {
+                    return false;
+                }
+                $this->arbeitsdateienLoeschen();
+                $status = $this->dir() . '/' . self::STATUS;
+                if (is_file($status)) {
+                    unlink($status);
+                }
+
+                return true;
+            });
         } catch (BackupLaeuftBereits) {
             // A step is running right now after all - next run.
             return false;
         }
-
-        return true;
     }
 
     /**

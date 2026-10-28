@@ -186,6 +186,43 @@ final class BackupRestoreRoundtripTest extends DatabaseTestCase
         self::assertNotTrue($zip->open($this->backupDir . '/' . $name, \ZipArchive::RDONLY));
     }
 
+    public function testAStatementThatFailsIsNotTakenForOneThatRanAlready(): void
+    {
+        $name = $this->erstellung()->komplett();
+        $kette = $this->restoreKette();
+        $stand = $kette->starten($this->backupDir . '/' . $name, $this->schluessel);
+        while ($stand['phase'] !== Wiederherstellung::PHASE_DUMP) {
+            $stand = $kette->schritt($this->pdo(), $this->schluessel);
+        }
+        // A statement the database refuses, right at the start.
+        $dump = $this->root . '/arbeit/wiederherstellung_' . $stand['id'] . '.sql';
+        file_put_contents($dump, "INSERT INTO gibt_es_nicht VALUES (1);\n" . file_get_contents($dump));
+
+        for ($versuch = 0; $versuch < 2; $versuch++) {
+            try {
+                $kette->schritt($this->pdo(), $this->schluessel);
+                self::fail('The failing statement must stop the step, also when retried.');
+            } catch (\PDOException) {
+            }
+            self::assertFalse($kette->stand()['dump_laeuft'] ?? null);
+            self::assertSame(0, $kette->stand()['dump_offset'] ?? null);
+        }
+    }
+
+    public function testTheCronDiscardsAnAbandonedRestoreWithItsPlaintext(): void
+    {
+        $name = $this->erstellung()->komplett();
+        $kette = $this->restoreKette();
+        $kette->starten($this->backupDir . '/' . $name, $this->schluessel);
+        $kette->schritt($this->pdo(), $this->schluessel);
+        self::assertNotSame([], glob($this->root . '/arbeit/wiederherstellung_*'));
+
+        self::assertFalse($kette->verwaistAufraeumen(new \DateTimeImmutable()), 'a restore just advanced stays');
+        self::assertTrue($kette->verwaistAufraeumen(new \DateTimeImmutable('+2 hours')));
+        self::assertSame([], glob($this->root . '/arbeit/wiederherstellung_*'));
+        self::assertNull($kette->stand());
+    }
+
     public function testTheKeyIsTakenFromTheInputOrAnUploadedConfig(): void
     {
         $base64 = base64_encode($this->schluessel);

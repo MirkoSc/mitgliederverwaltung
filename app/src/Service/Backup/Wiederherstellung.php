@@ -171,6 +171,40 @@ final readonly class Wiederherstellung
     }
 
     /**
+     * For the cron: discards a restore nobody has advanced for an hour - its
+     * work files hold the decrypted backup in the clear.
+     *
+     * @return bool whether something was discarded
+     */
+    public function verwaistAufraeumen(\DateTimeImmutable $jetzt): bool
+    {
+        if (!is_dir($this->arbeitsDir)) {
+            return false;
+        }
+        try {
+            return $this->gesperrt(function () use ($jetzt): bool {
+                $status = $this->arbeitsDir . '/' . self::STATUS;
+                $arbeitsdateien = glob($this->arbeitsDir . '/wiederherstellung_*') ?: [];
+                $zuletzt = is_file($status) ? (int) filemtime($status) : 0;
+                foreach ($arbeitsdateien as $datei) {
+                    $zuletzt = max($zuletzt, (int) filemtime($datei));
+                }
+                if ($arbeitsdateien === [] || $jetzt->getTimestamp() - $zuletzt < BackupErstellung::VERWAIST_NACH_SEKUNDEN) {
+                    return false;
+                }
+                $this->arbeitsdateienLoeschen();
+                if (is_file($status)) {
+                    unlink($status);
+                }
+
+                return true;
+            });
+        } catch (BackupLaeuftBereits) {
+            return false;
+        }
+    }
+
+    /**
      * How far the chain is, 0 to 100 - for a progress bar.
      *
      * @param array<string, mixed> $stand
@@ -245,18 +279,27 @@ final readonly class Wiederherstellung
         $vielleicht = $stand['dump_laeuft'] === true;
         $this->speichern([...$stand, 'dump_laeuft' => true]);
 
-        $ergebnis = $this->restore->anwenden(
-            $pdo,
-            $dump,
-            (int) $stand['dump_offset'],
-            function (int $offset) use (&$stand): void {
-                // Kept after every statement: a request that dies midway
-                // resumes behind the last confirmed one.
-                $stand['dump_offset'] = $offset;
-                $this->speichern([...$stand, 'dump_laeuft' => true]);
-            },
-            $vielleicht,
-        );
+        try {
+            $ergebnis = $this->restore->anwenden(
+                $pdo,
+                $dump,
+                (int) $stand['dump_offset'],
+                function (int $offset) use (&$stand): void {
+                    // Kept after every statement: a request that dies midway
+                    // resumes behind the last confirmed one.
+                    $stand['dump_offset'] = $offset;
+                    $this->speichern([...$stand, 'dump_laeuft' => true]);
+                },
+                $vielleicht,
+            );
+        } catch (\Throwable $e) {
+            // A statement that failed did not run (each one is atomic): the
+            // retry must not take its error for "ran already". Only a request
+            // killed outright leaves `dump_laeuft` set.
+            $this->speichern([...$stand, 'dump_laeuft' => false]);
+
+            throw $e;
+        }
         $fertig = $ergebnis['offset'] >= $ergebnis['gesamt'];
 
         return [

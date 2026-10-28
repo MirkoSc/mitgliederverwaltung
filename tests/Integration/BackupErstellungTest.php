@@ -166,6 +166,19 @@ final class BackupErstellungTest extends DatabaseTestCase
         $erstellung->schritt();
     }
 
+    public function testRotationRemovesAnEmptyNameLeftByADeadRequest(): void
+    {
+        [, $leer] = $this->backups()->reserveName($this->jetzt->modify('-3 hours'));
+        touch($leer, $this->jetzt->modify('-3 hours')->getTimestamp());
+        [, $frisch] = $this->backups()->reserveName($this->jetzt);
+        touch($frisch, $this->jetzt->getTimestamp());
+
+        self::assertSame(1, $this->backups()->rotate());
+        self::assertFileDoesNotExist($leer);
+        self::assertFileExists($frisch, 'a name reserved a moment ago belongs to a running hand-over');
+        self::assertSame([], $this->backups()->list());
+    }
+
     public function testPathRefusesAnythingButABackupName(): void
     {
         $name = $this->erstellung()->komplett();

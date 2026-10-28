@@ -100,7 +100,8 @@ final readonly class BackupController
     {
         $name = $params['name'] ?? '';
         $pfad = $this->backups->path($name);
-        if ($pfad === null) {
+        // An empty file is a name a chain has only reserved - no backup.
+        if ($pfad === null || filesize($pfad) === 0) {
             return Response::html($this->dienste->view->render('fehler', [
                 'title' => 'Backup nicht gefunden',
                 'meldung' => 'Dieses Backup gibt es nicht mehr. Es werden nur die letzten ' . BackupService::KEEP . ' aufbewahrt.',

@@ -157,7 +157,7 @@ final class ZipAnhang
         if ($offen['methode'] === self::DEFLATE) {
             $deflate = deflate_init(ZLIB_ENCODING_RAW, ['level' => max(1, min(9, $stufe))]);
             if ($deflate === false) {
-                throw new \RuntimeException('deflate_init failed.');
+                throw new \RuntimeException('Das Backup konnte nicht gepackt werden (deflate_init).');
             }
         }
         $roh = (int) $offen['roh'];
@@ -168,7 +168,7 @@ final class ZipAnhang
         while (!feof($quelle)) {
             $block = fread($quelle, self::BLOCK);
             if ($block === false) {
-                throw new \RuntimeException('Backup source could not be read.');
+                throw new \RuntimeException('Eine Datei für das Backup ist nicht lesbar.');
             }
             if ($block === '') {
                 continue;
@@ -214,7 +214,7 @@ final class ZipAnhang
             $deflate = deflate_init(ZLIB_ENCODING_RAW, ['level' => 1]);
             $schluss = $deflate === false ? false : deflate_add($deflate, '', ZLIB_FINISH);
             if ($schluss === false) {
-                throw new \RuntimeException('deflate_add failed.');
+                throw new \RuntimeException('Das Backup konnte nicht gepackt werden (deflate_add).');
             }
             $gepackt += strlen($schluss);
             $this->schreibe($this->archiv, $schluss);
@@ -258,7 +258,7 @@ final class ZipAnhang
     {
         $gepackt = deflate_add($deflate, $daten, $flush);
         if ($gepackt === false) {
-            throw new \RuntimeException('deflate_add failed.');
+            throw new \RuntimeException('Das Backup konnte nicht gepackt werden (deflate_add).');
         }
         $this->schreibe($this->archiv, $gepackt);
 
@@ -288,7 +288,7 @@ final class ZipAnhang
     {
         $quelle = fopen('php://memory', 'w+b');
         if ($quelle === false) {
-            throw new \RuntimeException('php://memory could not be opened.');
+            throw new \RuntimeException('Das Backup konnte nicht gepackt werden (php://memory).');
         }
         try {
             fwrite($quelle, $inhalt);
@@ -309,13 +309,13 @@ final class ZipAnhang
     {
         $zentralOffset = $this->position();
         if (!rewind($this->zentral)) {
-            throw new \RuntimeException('Central directory work file could not be read.');
+            throw new \RuntimeException('Die Arbeitsdatei des Backups ist nicht lesbar.');
         }
         $zentralGroesse = 0;
         while (!feof($this->zentral)) {
             $block = fread($this->zentral, self::BLOCK);
             if ($block === false) {
-                throw new \RuntimeException('Central directory work file could not be read.');
+                throw new \RuntimeException('Die Arbeitsdatei des Backups ist nicht lesbar.');
             }
             $zentralGroesse += strlen($block);
             $this->schreibe($this->archiv, $block);
@@ -348,7 +348,7 @@ final class ZipAnhang
             0,
         ));
         if (!fflush($this->archiv)) {
-            throw new \RuntimeException('Backup work file could not be written.');
+            throw new \RuntimeException('Die Arbeitsdatei des Backups konnte nicht geschrieben werden.');
         }
     }
 
@@ -356,7 +356,7 @@ final class ZipAnhang
     {
         $position = ftell($this->archiv);
         if ($position === false) {
-            throw new \RuntimeException('Backup work file position unknown.');
+            throw new \RuntimeException('Die Arbeitsdatei des Backups ist beschädigt.');
         }
 
         return $position;
@@ -365,7 +365,7 @@ final class ZipAnhang
     private function springe(int $position): void
     {
         if (fseek($this->archiv, $position) !== 0) {
-            throw new \RuntimeException('Backup work file could not be positioned.');
+            throw new \RuntimeException('Die Arbeitsdatei des Backups ist beschädigt.');
         }
     }
 
@@ -379,7 +379,7 @@ final class ZipAnhang
         while ($geschrieben < $laenge) {
             $n = fwrite($ziel, $geschrieben === 0 ? $daten : substr($daten, $geschrieben));
             if ($n === false || $n === 0) {
-                throw new \RuntimeException('Backup work file could not be written (disk full?).');
+                throw new \RuntimeException('Die Arbeitsdatei des Backups konnte nicht geschrieben werden (Speicher voll?).');
             }
             $geschrieben += $n;
         }
