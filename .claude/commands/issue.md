@@ -8,6 +8,8 @@ Setze GitHub-Issue #$ARGUMENTS um. Halte dich strikt an diesen Ablauf:
    danach NUR die im Issue verlinkten Abschnitte aus `docs/spec/`
    (CLAUDE.md kennst du bereits) sowie `docs/spec/05-entwicklung.md` §6
    (parallele Arbeit). Andere Specs nur, wenn zwingend nötig.
+   Code zum Übernehmen: Schwesterprojekte unter `.vorlagen/` (Automatik)
+   bzw. daneben geklont (`../vereinsbelege`, `../vereinskalender`).
 2. Prüfe, dass alle Issues unter „Abhängig von" geschlossen sind. Wenn
    nicht: abbrechen und das sagen.
 3. Kurzer Plan (betroffene Dateien, Migrationen im zugewiesenen Bereich,

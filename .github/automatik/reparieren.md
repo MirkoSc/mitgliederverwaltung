@@ -11,6 +11,10 @@ nicht** – das macht der Workflow.
 
 ## Regeln
 
+Die Schwesterprojekte liegen schreibgeschützt unter `.vorlagen/vereinsbelege`
+und `.vorlagen/vereinskalender` – von dort übernimmst du Code (CLAUDE.md,
+05 §3). Der Ordner wird nie committet.
+
 - Behebe genau das oben Genannte, ohne den Umfang des Issues zu verlassen.
 - Bei einem Merge-Konflikt: Konfliktmarker in allen betroffenen Dateien
   auflösen, sodass **beide** Seiten (dieses Issue und das, was inzwischen

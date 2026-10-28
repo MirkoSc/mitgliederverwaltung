@@ -43,6 +43,11 @@ Alles läuft nur, solange die Variable `AUTOMATIK` = `an` ist. Nach
    *Issues*, *Actions* und *Workflows* jeweils Read and write. Er wird für
    Push, PR und Merge gebraucht, weil Aktionen mit dem eingebauten
    `GITHUB_TOKEN` keine weiteren Workflows (z. B. die CI) auslösen.
+   **Lesezugriff auf `vereinsbelege` und `vereinskalender`:** die Agenten
+   übernehmen Code von dort. Entweder beide Repositories mit in diesen
+   Token aufnehmen, oder (sauberer) ein zweites Secret `VORLAGEN_TOKEN`
+   anlegen – Fine-grained Token nur für diese zwei Repositories, nur
+   *Contents: Read*.
 4. **Variablen** (Settings → Secrets and variables → Actions → Variables):
    - `MAX_PARALLEL` – wie viele Issues gleichzeitig (Vorschlag `8`; der
      Plan erlaubt bis zu 9).

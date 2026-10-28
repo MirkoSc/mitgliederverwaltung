@@ -49,6 +49,24 @@ jobs:
           ref: ${{ github.event.workflow_run.head_branch || inputs.branch }}
           fetch-depth: 0
 
+      - name: Sister projects as read-only templates
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: MirkoSc/vereinsbelege
+          path: .vorlagen/vereinsbelege
+          token: ${{ secrets.VORLAGEN_TOKEN || secrets.AUTOMATIK_TOKEN }}
+          persist-credentials: false
+
+      - name: Sister project vereinskalender
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: MirkoSc/vereinskalender
+          path: .vorlagen/vereinskalender
+          token: ${{ secrets.VORLAGEN_TOKEN || secrets.AUTOMATIK_TOKEN }}
+          persist-credentials: false
+
       - name: Assess situation
         id: lage
         uses: actions/github-script@v7

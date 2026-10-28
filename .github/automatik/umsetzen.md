@@ -9,6 +9,10 @@ Setze Issue #{{ISSUE}} um: „{{TITEL}}"
 
 ## So gehst du vor
 
+Die Schwesterprojekte liegen schreibgeschützt unter `.vorlagen/vereinsbelege`
+und `.vorlagen/vereinskalender` – von dort übernimmst du Code (CLAUDE.md,
+05 §3). Der Ordner wird nie committet.
+
 Folge `.claude/commands/issue.md` (Schritte 1–8) mit diesen Abweichungen:
 
 - Du bist bereits auf dem Branch `{{BRANCH}}` (von aktuellem `main` bzw.
