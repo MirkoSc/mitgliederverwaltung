@@ -85,8 +85,9 @@ pain.001 in Vereinsbelege (`App\Service\Bank\Sepa`).
 - Eine Datei = ein Einzug = eine `PmtInf` (Lokalinstrument `CORE`,
   Sequenz `RCUR` für alle – seit 2016 ist `FRST` nicht mehr nötig;
   Sammelbuchung `BtchBookg=true`), je Beitrag eine Transaktion.
-- Gläubiger: Vereinsname, Vereins-IBAN, BIC optional (sonst
-  `NOTPROVIDED`), **Gläubiger-ID** – alles aus den Einstellungen.
+- Gläubiger: Kontoinhaber bzw. Vereinsname, Vereins-IBAN, BIC optional
+  (sonst `NOTPROVIDED`), **Gläubiger-ID** – alles aus den Vereinsdaten
+  (11).
 - Je Transaktion: `EndToEndId` (Einzug + Mitgliedsnummer + Jahr),
   Betrag, Mandatsreferenz, Mandatsdatum, Name des Kontoinhabers (falls
   abweichend, sonst des Mitglieds), IBAN, BIC optional, Verwendungszweck
@@ -100,10 +101,10 @@ pain.001 in Vereinsbelege (`App\Service\Bank\Sepa`).
   sagt, wo es einzutragen ist.
 - Dateiname: `lastschrift-<jahr>-<einzug-id>.xml` (keine Namen).
 
-## 5. Einstellungen (Abschnitt „Verein")
+## 5. Einstellungen
 
-Vereinsname, Vereins-IBAN, Vereins-BIC (optional), Gläubiger-ID,
-Default-Mandatsdatum, Verwendungszweck-Vorlage.
+Vereinsname, Bankverbindung, Gläubiger-ID, Default-Mandatsdatum und
+Verwendungszweck-Vorlage stehen in den Vereinsdaten (11).
 
 ## 6. Datenmodell
 

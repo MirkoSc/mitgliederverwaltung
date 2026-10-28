@@ -156,7 +156,10 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 - **muss** Mitglieder ohne IBAN bzw. „Rechnungszahler" erscheinen in einer
   eigenen Liste „selbst kassieren" (E4 ✅).
 - **muss** Der Verein hat eine Gläubiger-ID, die alte Software hat
-  bereits Lastschriften erzeugt (E1 ✅).
+  bereits Lastschriften erzeugt (E1 ✅). Gläubiger-ID, Bankverbindung und
+  weitere Vereinsdaten (Anschrift, Kontakt, Register, Steuer,
+  Verbandsnummern BLSV/BFV/Kegeln/…, Logo) pflegt der Admin in den
+  Einstellungen – Spec 11.
 - **nicht** SEPA-Mandate einholen und verwalten. Rücklastschriften klärt
   der Vorstand persönlich.
 - Technisch verlangt die Datei je Mitglied eine Mandatsreferenz und ein

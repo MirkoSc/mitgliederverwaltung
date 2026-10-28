@@ -58,7 +58,7 @@ liegt auf **einer** Seite und wird dort umgeschaltet statt verlinkt.
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
    „bezahlt setzen".
 4. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
-   (Name, Gläubiger-ID), Abteilungen, Beitragsarten, Funktionen, runde
+   (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
    Systemcheck – übernommen).
 5. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
