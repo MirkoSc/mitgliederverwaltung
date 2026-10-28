@@ -104,7 +104,7 @@ final class BackupRestoreRoundtripTest extends DatabaseTestCase
         self::assertSame([], glob($this->backupDir . '/erstellung_*.part'), 'no plaintext work file may survive');
 
         // Gone: database, blob files, logo.
-        self::dropAllTables($this->pdo());
+        \App\Tests\Support\TestDatenbank::alleTabellenLoeschen($this->pdo());
         self::entfernen($this->blobDir);
         self::entfernen($this->logoDir);
 
@@ -131,7 +131,7 @@ final class BackupRestoreRoundtripTest extends DatabaseTestCase
     public function testRestoreAppliesTheMigrationsTheBackupDoesNotHave(): void
     {
         $name = $this->erstellung()->komplett();
-        self::dropAllTables($this->pdo());
+        \App\Tests\Support\TestDatenbank::alleTabellenLoeschen($this->pdo());
 
         // The release restoring the backup is newer: one migration more.
         $neuer = $this->root . '/migrations';
@@ -261,7 +261,7 @@ final class BackupRestoreRoundtripTest extends DatabaseTestCase
             $stand = $erstellung->schritt();
         }
 
-        self::dropAllTables($this->pdo());
+        \App\Tests\Support\TestDatenbank::alleTabellenLoeschen($this->pdo());
         self::entfernen($this->blobDir);
 
         $kette = $this->restoreKette();
