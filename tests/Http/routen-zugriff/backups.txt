@@ -1,0 +1,6 @@
+# app/routes/backups.php - settings section Backups (04 section 6): make,
+# cancel and download backups. admin.system only; the chain is JSON.
+POST /admin/backups -> admin.system (api)
+POST /admin/backups/schritt -> admin.system (api)
+POST /admin/backups/abbrechen -> admin.system
+GET /admin/backups/{name} -> admin.system
