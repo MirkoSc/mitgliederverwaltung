@@ -1,0 +1,123 @@
+# Release build (docs/spec/04-installation-und-update.md section 1, taken
+# over from Vereinsbelege): a tag vX.Y.Z builds the release ZIP, the
+# checksums list and - once it exists - setup.php, signs the list and
+# publishes everything as a pre-release.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+# Read-only by default: only the publish job may write, and only the publish
+# job sees the signing secret. The build job runs composer and the ZIP
+# tooling without either.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql, zip, gd, sodium, curl, mbstring, fileinfo, dom
+          coverage: none
+
+      - name: Install production dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+      - name: Write VERSION from tag
+        run: echo "${GITHUB_REF_NAME#v}" > VERSION
+
+      # docker/web/ carries the three docroot files - shim, .htaccess,
+      # .user.ini (04 section 3). setup.php copies them from the unpacked
+      # release and the updater keeps them up to date, so they have to travel
+      # with it. The rest of docker/ stays out: it is the development
+      # environment and holds the dev database password.
+      # The root .htaccess denies all access to the release directory, i.e.
+      # to current/ once it is switched in (01 section 2); DenyHtaccessTest
+      # keeps it identical to DenyHtaccess::CONTENT.
+      # Not in the ZIP: tests/, tools/, docs/.
+      - name: Build release ZIP
+        run: |
+          mkdir -p dist
+          zip -r "dist/mitgliederverwaltung-${GITHUB_REF_NAME}.zip" \
+            app public vendor bin migrations VERSION docker/web .htaccess
+
+      - name: Stage setup.php (exists once the installer is built)
+        run: if [ -f setup.php ]; then cp setup.php dist/; fi
+
+      # First the release assets (what the updater and setup.php check the
+      # download against), then one line per file inside the ZIP, its path
+      # prefixed with "release/": the per-file checksums of the integrity
+      # check (04 section 5). Hashed from the unpacked ZIP, so they describe
+      # exactly what lands in current/. `sha256sum -c --ignore-missing
+      # checksums.txt` in a download folder still checks the assets.
+      - name: Generate checksums
+        run: |
+          cd dist && sha256sum * > checksums.txt
+          mkdir ../release-dateien && cd ../release-dateien
+          unzip -q "../dist/mitgliederverwaltung-${GITHUB_REF_NAME}.zip"
+          find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum \
+            | sed 's#^\([0-9a-f]\{64\}\)  \./#\1  release/#' >> ../dist/checksums.txt
+          grep -q '^[0-9a-f]\{64\}  release/VERSION$' ../dist/checksums.txt
+
+      - name: Hand the release files to the publish job
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # Only for tools/release-signatur.php and the public key in
+      # app/src/Service/Update/ReleaseSignatur.php of the tagged commit; no
+      # token left behind in .git/config.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: sodium
+          coverage: none
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+
+      # Ed25519 signature over checksums.txt -> checksums.txt.sig. The list
+      # names the hash of the ZIP and of every file in it, so this one
+      # signature covers both. The signature is optional: without the secret
+      # the tool only warns - as long as no public key is fixed in
+      # ReleaseSignatur. Once one is, a missing or non-matching secret fails
+      # the release instead of publishing one that every installation would
+      # refuse.
+      - name: Sign checksums.txt
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: php tools/release-signatur.php signieren dist/checksums.txt
+
+      # Every tag starts as a pre-release for the beta test instance;
+      # promoting it to "latest" for the stable channel is a manual step
+      # in the GitHub UI.
+      - name: Publish pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          files: dist/*
