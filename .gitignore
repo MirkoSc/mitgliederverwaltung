@@ -1,0 +1,20 @@
+composer.phar
+/vendor/
+/node_modules/
+
+/.phpunit.cache/
+/dist/
+
+# shared/ survives updates and holds runtime state - nothing in it belongs
+# in the repository, except the dev config (docker/shared/config.php, no
+# secret: it points at the MariaDB inside the local compose network).
+/docker/shared/var/
+/docker/shared/*.key
+/docker/shared/maintenance.flag
+/docker/shared/update_state.json
+/docker/shared/setup_kanal.txt
+/docker/shared/install_token.txt
+/docker/shared/.htaccess
+
+.env
+*.local.php
