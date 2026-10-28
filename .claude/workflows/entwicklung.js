@@ -65,7 +65,9 @@ Docker: prüfe mit "docker info"; läuft es nicht, starte "sudo nohup dockerd > 
 und prüfe in einer Schleife erneut. Images von mirror.gcr.io (Docker Hub drosselt).
 Schwesterprojekte zum Übernehmen von Code (nur lesen): /home/user/vereinsbelege, /home/user/vereinskalender.
 Regeln für parallele Arbeit: ${REPO}/docs/spec/05-entwicklung.md §6. Skills nutzen, wo sie helfen
-(bei UI immer frontend-design). Commits auf Englisch.`
+(bei UI immer frontend-design). Commits auf Englisch.
+Der Container kann jederzeit neu starten: committe und pushe Zwischenstände regelmäßig
+(auch unfertig als "WIP: …" auf issue-<nr>), damit nichts verloren geht.`
 
 const wt = n => `${WT}/issue-${n}`
 
@@ -100,7 +102,8 @@ Setze Issue #${i.n} um (Effort: ${i.e}).
 1. Worktree anlegen: im Repository ${REPO} "git fetch origin". Existiert origin/issue-${i.n}, dann
    "git worktree add -B issue-${i.n} ${wt(i.n)} origin/issue-${i.n}", sonst
    "git worktree add -B issue-${i.n} ${wt(i.n)} origin/main". Existiert der Worktree schon, weiterverwenden.
-   Arbeite ausschließlich in ${wt(i.n)}.
+   Arbeite ausschließlich in ${wt(i.n)}. Gibt es dort bereits Arbeit (Commits, auch "WIP"),
+   mach damit weiter statt neu anzufangen.
 2. Folge ${REPO}/.claude/commands/issue.md in der Automatik-Variante: Issue #${i.n} per MCP lesen,
    nur die verlinkten Specs, Abhängigkeiten sind bereits gemergt. Implementieren inkl. Pflicht-Tests.
    Testen mit "docker compose -p issue-${i.n} run --rm …" (sobald #1 die Docker-Umgebung gebaut hat).
@@ -162,7 +165,8 @@ async function markiere(i, grund) {
 }
 
 async function bearbeite(i) {
-  const impl = await agent(umsetzenPrompt(i), { label: `umsetzen #${i.n}`, phase: 'Umsetzen', model: i.m, effort: i.e, schema: IMPL })
+  const offen = offenePrs.get(i.n)
+  const impl = offen ? { ok: true, pr: offen, zusammenfassung: 'PR existierte schon' } : await agent(umsetzenPrompt(i), { label: `umsetzen #${i.n}`, phase: 'Umsetzen', model: i.m, effort: i.e, schema: IMPL })
   if (!impl || !impl.ok || !impl.pr) return markiere(i, (impl && impl.grund) || 'Umsetzung ohne PR beendet')
   log(`#${i.n}: PR #${impl.pr} offen`)
 
@@ -186,19 +190,24 @@ phase('Stand')
 const stand = await agent(`${BASIS}
 
 Ermittle per mcp__github__list_issues (state CLOSED, alle Seiten) die Nummern aller geschlossenen
-Issues in MirkoSc/mitgliederverwaltung. Stelle außerdem sicher, dass Docker läuft (siehe oben), und
-lege den Ordner ${WT} an. Ändere sonst nichts.`, {
+Issues in MirkoSc/mitgliederverwaltung, und per mcp__github__list_pull_requests (state open) alle
+offenen PRs, deren head-Branch "issue-<nr>" heißt (Issue-Nummer und PR-Nummer). Stelle außerdem
+sicher, dass Docker läuft (siehe oben), und lege den Ordner ${WT} an. Ändere sonst nichts.`, {
   model: 'haiku', effort: 'low',
-  schema: { type: 'object', properties: { geschlossen: { type: 'array', items: { type: 'number' } }, docker_ok: { type: 'boolean' } }, required: ['geschlossen', 'docker_ok'] },
+  schema: { type: 'object', properties: {
+    geschlossen: { type: 'array', items: { type: 'number' } },
+    offene_prs: { type: 'array', items: { type: 'object', properties: { issue: { type: 'number' }, pr: { type: 'number' } }, required: ['issue', 'pr'] } },
+    docker_ok: { type: 'boolean' } }, required: ['geschlossen', 'offene_prs', 'docker_ok'] },
 })
 if (!stand) throw new Error('Stand konnte nicht ermittelt werden')
 if (!stand.docker_ok) log('Warnung: Docker läuft nicht – die Agenten versuchen es selbst zu starten')
 
 const done = new Set(stand.geschlossen)
+const offenePrs = new Map(stand.offene_prs.map(x => [x.issue, x.pr]))
 const failed = new Set()
 const pending = PLAN.filter(i => !done.has(i.n))
 const running = new Map()
-log(`${done.size} Issues bereits geschlossen, ${pending.length} offen`)
+log(`${done.size} Issues bereits geschlossen, ${pending.length} offen, ${offenePrs.size} davon mit offenem PR`)
 
 while (pending.length || running.size) {
   for (const i of [...pending]) {
