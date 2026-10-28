@@ -68,7 +68,7 @@ $unfertig = $stand !== null && $stand->zielVersion !== null && !$stand->fertig;
             </button>
         </p>
         <p id="update-fertig" hidden>
-            <a class="knopf knopf-haupt" href="/admin#update">Seite neu laden</a>
+            <button type="button" id="update-neuladen" class="knopf knopf-haupt">Seite neu laden</button>
         </p>
     </div>
 </div>

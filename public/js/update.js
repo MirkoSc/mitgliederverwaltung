@@ -96,6 +96,7 @@ function initUpdate() {
     const wiederholen = wurzel.querySelector('#update-wiederholen');
     const rollbackFehler = wurzel.querySelector('#update-rollback-fehler');
     const fertigZeile = wurzel.querySelector('#update-fertig');
+    const neuladen = wurzel.querySelector('#update-neuladen');
     // Outside #update: it belongs to the section, not to the running chain.
     const rollback = document.querySelector('#update-rollback');
 
@@ -238,6 +239,10 @@ function initUpdate() {
 
         return laufe(abSchritt(alleSchritte, fehlgeschlagenerSchritt));
     });
+
+    // A button and not a link to /admin#update: the same address with only a
+    // fragment would not reload the page, and the new version should show.
+    neuladen.addEventListener('click', () => window.location.reload());
 
     rollbackFehler.addEventListener('click', zurueckgehen);
     if (rollback) {

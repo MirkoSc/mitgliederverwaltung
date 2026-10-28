@@ -67,9 +67,13 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
 
 ## 3. Self-Updater
 
-Admin-Seite `/admin/update` (Recht `admin.system`), Schrittkette per AJAX,
-Stand in `shared/update_state.json`, jeder Schritt < 30 s und
-wiederholbar:
+Abschnitt **Update** der Einstellungen (`/admin#update`, Recht
+`admin.system`, Teil von „System“), Schrittkette per AJAX
+(`public/js/update.js`, eine Anfrage je Schritt:
+`POST /admin/update/schritt/<schritt>`), Stand in
+`shared/update_state.json`, jeder Schritt < 30 s und wiederholbar. Die
+Schrittnamen sind ein Vertrag zwischen den Releases: nach `switch` laufen
+die nächsten Anfragen schon auf dem neuen Code.
 
 | Schritt | Inhalt |
 |---|---|
@@ -77,9 +81,32 @@ wiederholbar:
 | `download` | ZIP + `checksums.txt` + `.sig` nach `shared/var/update/`, Signatur prüfen |
 | `extract` | ZIP/Signatur erneut prüfen, nach `releases/vX.Y.Z/` entpacken, Liste ins Release legen |
 | `backup` | Backup unmittelbar vor dem Umschalten (§6); Fehler bricht ab |
-| `switch` | `maintenance.flag` → `rename(current, releases/_prev)` → `rename(neu, current)` → `opcache_reset()` |
+| `switch` | `maintenance.flag` → `rename(current, releases/_prev)` → `rename(neu, current)` → `opcache_reset()`; das Flag **bleibt** gesetzt |
 | `migrate` | alle noch nicht in `schema_version` eingetragenen Migrationen (03 §4); bei Fehler bleibt Wartungsmodus, Admin wählt Wiederholen oder Rollback |
-| `finish` | Docroot-Dateien auffrischen, Selbsttest (Startseite → 200), Flag weg, Download aufräumen, letzte 2 Releases behalten |
+| `finish` | Docroot-Dateien auffrischen, Flag weg, Selbsttest (Startseite → 200), Download aufräumen, letzte 2 Releases behalten |
+
+- **Wartungsmodus über die Kette:** das Flag wird von `switch` gesetzt und
+  erst von `finish` entfernt – solange läuft nichts auf einem halb
+  migrierten Schema. `finish` nimmt es *vor* dem Selbsttest ab (der Test
+  geht durch den Shim und bekäme sonst 503); besteht der Test nicht,
+  kommt der alte Shim zurück **und** das Flag wird mit dem Grund
+  „Selbsttest fehlgeschlagen“ wieder gesetzt: ein Release, das nicht
+  antwortet, bleibt nicht öffentlich. Der Ausweg ist der Rollback, der das
+  Flag selbst beendet.
+- **Weitermachen nach Neuladen:** ist eine Kette angefangen und nicht
+  abgeschlossen, bietet die Seite „Update auf Version X fortsetzen“ ab
+  dem Schritt nach dem letzten abgeschlossenen. „Schritt wiederholen“
+  startet beim fehlgeschlagenen Schritt.
+- **Rollback-Knopf:** nach einem Fehler nur in `migrate` und `finish`
+  (erst dann ist das neue Release das laufende; davor wäre `_prev` das
+  Release eines älteren Updates, also ein Downgrade). Daneben steht der
+  Knopf mit Rückfrage dauerhaft im Abschnitt, solange `releases/_prev`
+  existiert.
+- **Fehlertexte** der Schritte enthalten keine Datenbankmeldungen (sie
+  können Werte zitieren): von einer fehlgeschlagenen Migration erscheinen
+  nur Nummer, Name und Anweisung.
+- **Audit-Log:** `update.durchgefuehrt` (nach `finish`),
+  `update.zurueckgerollt`, `wartung.aufgehoben`.
 
 - **Download-Härtung**: nur `https` zu den GitHub-Hosts, erste Adresse muss
   zu `MirkoSc/mitgliederverwaltung` gehören, jeder Weiterleitungssprung
@@ -183,4 +210,6 @@ Bestätigung, Kanal-Übernahme, Sicherungsschlüssel einmal angezeigt),
 Backup+Restore-Roundtrip (Backup verschlüsselt, Restore mit Schlüssel,
 falscher Schlüssel abgelehnt), `SystemCheckTest`,
 Test der Client-Logik der Update-Schrittkette (Reihenfolge, Wiederholung
-ab dem fehlgeschlagenen Schritt).
+ab dem fehlgeschlagenen Schritt, Rollback-Knopf erst ab `migrate`),
+`UpdateSeiteTest` (Abschnitt, Schritt-Route, Banner, Freigeben mit Token
+und Recht).
