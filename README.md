@@ -35,6 +35,22 @@ Entwicklungsumgebung zwei Beispielzugänge (Admin, Vorstand). Details,
 parallele Projekte und die Arbeit ohne Internet im Container:
 [docs/spec/05-entwicklung.md](docs/spec/05-entwicklung.md) §1.
 
+## Release
+
+Ein Tag `vX.Y.Z` auf `main` startet `.github/workflows/release.yml`: ZIP
+`mitgliederverwaltung-vX.Y.Z.zip`, `checksums.txt` (ZIP und jede Datei
+darin), ggf. `setup.php`, veröffentlicht als **Pre-Release** (Kanal
+`beta`). Nach der Prüfung auf der Testinstanz auf GitHub als „latest"
+markieren – dann zieht der Kanal `stable` nach.
+
+Signatur (optional, einmalig einrichten):
+`php tools/release-signatur.php schluessel <datei>` erzeugt ein
+Schlüsselpaar. Inhalt der Datei als GitHub-Secret `RELEASE_SIGNING_KEY`
+anlegen (Datei nie committen), den ausgegebenen öffentlichen Schlüssel in
+`ReleaseSignatur::PUBLIC_KEY` eintragen. Solange der leer ist, gibt es nur
+einen Hinweis statt einer Sperre
+([04 §1](docs/spec/04-installation-und-update.md)).
+
 ## Dokumente
 
 | Datei | Inhalt |
