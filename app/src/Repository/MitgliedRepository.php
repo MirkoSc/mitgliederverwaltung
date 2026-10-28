@@ -282,12 +282,7 @@ final readonly class MitgliedRepository
         $id = (int) $this->pdo->lastInsertId();
 
         $this->zuordnungenSchreiben($id, $mitglied);
-        $gespeichert = $mitglied->mit([
-            'id' => $id,
-            'version' => 1,
-            'createdAt' => Zeilen::zeitpunkt($zeit),
-            'updatedAt' => Zeilen::zeitpunkt($zeit),
-        ]);
+        $gespeichert = $this->gespeichert($id);
         $this->versionSchreiben($gespeichert, $anlass, $userId, $zeit);
 
         return new SpeicherErgebnis($gespeichert, true);
@@ -331,11 +326,7 @@ final readonly class MitgliedRepository
         ))->execute([...self::werte($mitglied), $nr, $zeit, $id]);
 
         $this->zuordnungenSchreiben($id, $mitglied);
-        $gespeichert = $mitglied->mit([
-            'version' => $nr,
-            'createdAt' => $vorher->createdAt,
-            'updatedAt' => Zeilen::zeitpunkt($zeit),
-        ]);
+        $gespeichert = $this->gespeichert($id);
         if ($neueVersion) {
             $this->versionSchreiben($gespeichert, $anlass, $userId, $zeit);
         }
@@ -345,6 +336,19 @@ final readonly class MitgliedRepository
         }
 
         return new SpeicherErgebnis($gespeichert, $neueVersion);
+    }
+
+    /**
+     * The member as it is stored now - read back rather than assembled, so
+     * the caller gets exactly what the next finde() returns (sorted ids,
+     * calendar days without a time).
+     */
+    private function gespeichert(int $id): Mitglied
+    {
+        $mitglied = $this->finde($id);
+        assert($mitglied !== null);
+
+        return $mitglied;
     }
 
     /** Replaces the department and function links of a member. */

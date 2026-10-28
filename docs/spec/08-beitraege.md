@@ -121,6 +121,15 @@ Verwendungszweck-Vorlage stehen in den Vereinsdaten (11).
 | `jahresbeitrag` | id, mitglied_id, jahr, betrag_cent, status, einzug_id NULL, zahlweise NULL, bezahlt_am NULL, vermerke (JSON-Liste) – UNIQUE(mitglied_id, jahr) |
 | `einzug` | id, status, faellig_am, erstellt_von, erstellt_am, bestaetigt_am NULL, bestaetigt_von NULL, anzahl, summe_cent, msg_id, datei_blob_id (verschlüsselte XML-Datei), daten (JSON: Transaktionsangaben für die Anzeige im Archiv) |
 
+- `jahresbeitrag.vermerke`: JSON-Liste `{von: user_id|null, am, text}`
+  (`App\Domain\Vermerk`), älteste zuerst.
+- `einzug.bestaetigt_am`/`bestaetigt_von` halten auch, wer wann
+  **verworfen** hat (Abschluss des Einzugs, einmalig).
+- `einzug.datei_blob_id` ist nur zwischen Anlegen (die ID steht in der
+  `EndToEndId`) und Ablegen der Datei leer; einmal gesetzt, wird sie nie
+  ersetzt. Benutzer-IDs und Blob-IDs tragen keinen Fremdschlüssel (andere
+  Migrationsbereiche; die Historie überlebt gelöschte Konten).
+
 ## Pflicht-Tests
 
 Anteilsberechnung (Januar = voll, Mai = 8/12, Dezember = 1/12, Rundung);

@@ -123,7 +123,39 @@ SQL.
 
 - „Ehemalig" ist berechnet: `austrittsdatum <= heute`.
 - **Suche**: ein Suchfeld über Nachname, Vorname, Mitgliedsnummer, Ort,
-  E-Mail per SQL `LIKE`, live über htmx.
+  E-Mail per SQL `LIKE`, live über htmx. Jedes Wort der Eingabe muss in
+  einem der Felder vorkommen („max muster" findet Max Mustermann).
+
+Umsetzung (#15, gemeinsame API für alle späteren Issues):
+
+- Domain-Typen in `App\Domain` (`Mitglied`, `Familie`, `Abteilung`,
+  `Funktion`, `Beitragsart`, `Nachweis`, `MitgliedVersion`,
+  `VersionsAnlass` …), unveränderlich; geänderte Kopie mit
+  `$wert->mit([...])`. Repositories in `App\Repository`.
+- Leere Texte sind `''` (Spalte `NOT NULL DEFAULT ''`), fehlende Daten und
+  Auswahlen `NULL`.
+- `MitgliedRepository::speichern()` schreibt Zeile, Zuordnungen und
+  Version in **einer** Transaktion. Verglichen wird
+  `Mitglied::daten()` (alle Felder aus §1); gleich ⇒ keine Version, kein
+  `updated_at`. `mitglied.version` = Nummer der letzten Version und
+  zugleich Sperre gegen gleichzeitiges Bearbeiten: ein Speichern auf Basis
+  einer älteren Version wird abgelehnt (`VersionKonfliktException`), statt
+  fremde Änderungen still zu überschreiben.
+- `mitglied_version.daten` = `Mitglied::daten()` plus `bezeichnungen`
+  (Namen von Familie, Beitragsart, Abteilungen, Funktionen zum Zeitpunkt
+  der Version), damit der Verlauf nach Umbenennen/Löschen lesbar bleibt.
+  Verglichen und zurückgeholt werden nur die IDs.
+- `herkunft` ist kein Feld aus §1 und wird nicht versioniert.
+- Zurückholen (`wiederherstellen()`): nicht mehr vorhandene Familie,
+  Beitragsart, Abteilungen, Funktionen bleiben leer; ist die alte
+  Mitgliedsnummer inzwischen vergeben, bleibt die aktuelle. Jeder Fall
+  kommt als Hinweistext zurück. Entspricht die Version dem aktuellen Stand,
+  entsteht wie bei jedem Speichern ohne Änderung keine neue Version.
+- Mandatsreferenz/-datum werden gespeichert wie eingegeben; der Default
+  (§1) wird bei Bedarf berechnet (`effektiveMandatsreferenz()`,
+  `effektivesMandatsdatum()`), nicht eingetragen.
+- IBAN-Prüfung `App\Support\Iban`, Alter `App\Support\Alter`
+  (29.02. zählt in Nicht-Schaltjahren am 28.02., wie in 09 §2).
 
 ## 9. Rechte
 
