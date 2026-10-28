@@ -1,0 +1,123 @@
+# Implements one issue with Claude, then pushes the branch and opens the PR.
+# Started by planer.yml (workflow_dispatch). Git and PR steps are plain
+# shell so they do not depend on the model.
+name: Umsetzen
+run-name: "Umsetzen #${{ inputs.issue }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number
+        required: true
+
+concurrency:
+  group: issue-${{ inputs.issue }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+  id-token: write
+
+jobs:
+  umsetzen:
+    if: vars.AUTOMATIK == 'an'
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      ISSUE: ${{ inputs.issue }}
+      BRANCH: issue-${{ inputs.issue }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read issue and build prompt
+        id: info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const n = Number(process.env.ISSUE);
+            const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number: n });
+            const names = issue.labels.map(l => typeof l === 'string' ? l : l.name);
+            const models = { opus: 'claude-opus-5-5', sonnet: 'claude-sonnet-5-5', haiku: 'claude-haiku-5-5' };
+            const m = (names.find(x => x.startsWith('modell:')) || 'modell:sonnet').split(':')[1];
+            const tmp = process.env.RUNNER_TEMP;
+            const prompt = fs.readFileSync('.github/automatik/umsetzen.md', 'utf8')
+              .replaceAll('{{ISSUE}}', String(n))
+              .replaceAll('{{TITEL}}', issue.title)
+              .replaceAll('{{BODY}}', issue.body || '')
+              .replaceAll('{{BRANCH}}', process.env.BRANCH)
+              .replaceAll('{{PR_BODY}}', `${tmp}/pr-body.md`)
+              .replaceAll('{{ABBRUCH}}', `${tmp}/abbruch.md`);
+            core.setOutput('model', models[m] || models.sonnet);
+            core.setOutput('title', issue.title);
+            core.setOutput('prompt', prompt);
+
+      - name: Prepare branch
+        run: |
+          git config user.name "Automatik"
+          git config user.email "automatik@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git fetch origin "$BRANCH"
+            git switch -c "$BRANCH" "origin/$BRANCH"
+          else
+            git switch -c "$BRANCH"
+          fi
+
+      - name: Claude implements
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.AUTOMATIK_TOKEN }}
+          prompt: ${{ steps.info.outputs.prompt }}
+          claude_args: |
+            --model ${{ steps.info.outputs.model }}
+            --max-turns 400
+            --allowedTools "Bash,Read,Write,Edit,MultiEdit,Glob,Grep,WebFetch,WebSearch,Skill,Task,TodoWrite"
+
+      - name: Push and open PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATIK_TOKEN }}
+          TITLE: ${{ steps.info.outputs.title }}
+        run: |
+          if [ -f "$RUNNER_TEMP/abbruch.md" ]; then echo "abbruch=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "Commit remaining changes of the automated run for #$ISSUE"
+          fi
+          if [ -z "$(git log origin/main..HEAD --oneline)" ]; then
+            echo "No commits on $BRANCH." > "$RUNNER_TEMP/abbruch.md"
+            echo "abbruch=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$BRANCH"
+          PR=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$PR" ]; then
+            BODY="$RUNNER_TEMP/pr-body.md"
+            [ -f "$BODY" ] || echo "Automated implementation of #$ISSUE." > "$BODY"
+            printf '\n\nCloses #%s\n' "$ISSUE" >> "$BODY"
+            gh pr create --base main --head "$BRANCH" --title "$TITLE" --body-file "$BODY"
+          fi
+
+      - name: Mark issue as stuck
+        if: failure() || steps.pr.outputs.abbruch == '1'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const n = Number(process.env.ISSUE);
+            const f = `${process.env.RUNNER_TEMP}/abbruch.md`;
+            const reason = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : 'The run failed - see the workflow log.';
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({ ...context.repo, issue_number: n,
+              body: `Automatik ist hängen geblieben ([Lauf](${run})).\n\n${reason}\n\nNach der Klärung das Label \`braucht-hilfe\` entfernen, dann startet der Planer das Issue erneut.` });
+            await github.rest.issues.addLabels({ ...context.repo, issue_number: n, labels: ['braucht-hilfe'] });
+            await github.rest.issues.removeLabel({ ...context.repo, issue_number: n, name: 'in-arbeit' }).catch(() => {});

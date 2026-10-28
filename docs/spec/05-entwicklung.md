@@ -83,3 +83,36 @@ geschützt (PR + grüne CI Pflicht).
 - JS-Bibliotheken vendored unter `public/js/vendor/` mit `README.md`
   (Version, Lizenz, SHA-256), nie per CDN.
 - Lizenz GPLv3.
+
+## 6. Parallele Entwicklung
+
+Bis zu neun Issues werden gleichzeitig von getrennten Agenten bearbeitet
+(`docs/ARBEITSPLAN.md`). Damit sie sich nicht gegenseitig blockieren:
+
+- **Erweiterungspunkte statt zentraler Dateien** (angelegt in #1):
+
+  | Was | Wo ein Issue etwas hinzufügt |
+  |---|---|
+  | Routen | eigene Datei `app/routes/<bereich>.php` (alle Dateien werden geladen) |
+  | Zugriffsmatrix-Test | eigene Datei `tests/Http/routen-zugriff/<bereich>.txt` |
+  | Rechte | `Permission`-Enum ist in #1 **vollständig** angelegt – nicht erweitern, nur nutzen; fehlt wirklich eins, im PR begründen |
+  | Navigation | in #1 vollständig (Mitglieder, Listen, Beiträge, Einstellungen, Benutzermenü) |
+  | Einstellungs-Abschnitte | eigene Klasse `app/src/Admin/Einstellungen/<Name>Abschnitt.php` + Template, automatisch gefunden |
+  | Listen | eigene Klasse `app/src/Listen/<Name>Liste.php`, automatisch gefunden |
+  | Reiter/Abschnitte am Mitglied | eigene Klasse `app/src/App/Mitglied/<Name>Reiter.php` bzw. `…Abschnitt.php`, automatisch gefunden |
+  | CSS | Designsystem `public/css/app.css` gehört #9; Ergänzungen als eigene Datei `public/css/teile/<name>.css` (automatisch eingebunden) |
+  | JS | eigene Datei `public/js/<name>.js` |
+  | Migrationen | nur im zugewiesenen Nummernbereich des Issues (`docs/ARBEITSPLAN.md`); ohne Bereich `1NN` mit NN = Issue-Nummer. Der Runner sortiert numerisch und erlaubt Lücken. |
+
+- Gemeinsame Domain-Klassen und Repositories (#15) werden von späteren
+  Issues **ergänzt**, nicht umgebaut. Größere Änderungen an fremdem Code
+  sind ein eigenes Issue.
+- **Tests isoliert**: jeder Agent nutzt ein eigenes Docker-Projekt
+  (`docker compose -p issue-<nr> run --rm …`), keine festen Host-Ports
+  außer beim bewussten `docker compose up`.
+- **Merge-Konflikte** löst der Job, der zuletzt mergen will: `main`
+  einmergen, Konflikte so lösen, dass beide Features erhalten bleiben,
+  Tests erneut laufen lassen.
+- Docker-Images aus `mirror.gcr.io` (z. B. `mirror.gcr.io/library/php:8.5-cli`),
+  weil Docker Hub häufig drosselt.
+

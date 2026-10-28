@@ -167,10 +167,26 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
 
 ## 7. Arbeitsweise mit Claude Code
 
-- **Ein Issue pro Session** (`/issue <nr>`). Branch `issue-<nr>-<kurz>`,
-  PR mit `Closes #<nr>`. Nie direkt auf `main`.
-- Zu Beginn: Issue lesen, nur die verlinkten Spec-Abschnitte lesen, kurzen
-  Plan nennen. Bei fachlicher Unklarheit **fragen statt annehmen**.
-- Vor dem PR: Tests grün, `docker compose up` läuft, betroffene Seiten im
-  Browser geprüft (bzw. Prüfliste im PR).
+- **Ein Issue pro Sitzung bzw. Automatik-Job.** Branch `issue-<nr>`, PR mit
+  `Closes #<nr>`. Nie direkt auf `main`. Ablauf: `.claude/commands/issue.md`.
+- Plan, Reihenfolge, Modelle: `docs/ARBEITSPLAN.md`. Viele Agenten
+  arbeiten **parallel** – Regeln dafür in 05 §6 (Erweiterungspunkte,
+  Migrationsbereiche, isolierte Tests). Daran halten, sonst blockieren sich
+  die Jobs gegenseitig.
+- **Vollautomatik** (GitHub Actions, `docs/VORGEHEN.md`): niemand
+  antwortet auf Rückfragen. Bei Unklarheit die einfachste Lösung wählen,
+  die zu Spec und Leitlinien passt, und sie im PR unter „Entscheidungen"
+  begründen. Nur wenn es wirklich nicht weitergeht: abbrechen mit Grund
+  (die Automatik setzt dann `braucht-hilfe`).
+- In einer interaktiven Sitzung mit Mirko gilt dagegen: bei fachlicher
+  Unklarheit **fragen statt annehmen**.
+- **Skills** dürfen und sollen automatisch genutzt werden, wo sie helfen –
+  insbesondere `frontend-design` bei jeder UI-Arbeit, `code-review` /
+  `simplify` vor dem PR.
+- **Entwicklungsphase:** Das Repository ist privat und die Software
+  nirgends installiert. Sicherheitshärtung über die Invarianten aus §4
+  hinaus ist nachrangig; Lücken werden vor der ersten Installation in #37
+  geschlossen. Die Architektur-Invarianten (kein `exec`, CSP ohne Inline-JS,
+  Rechte serverseitig) gelten trotzdem, weil spätere Korrektur teuer wäre.
+- Vor dem PR: Tests grün, betroffene Seiten geprüft (bzw. Prüfliste im PR).
 - Keine „Nebenbei-Refactorings" außerhalb des Issues – dafür neues Issue.

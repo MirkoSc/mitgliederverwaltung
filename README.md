@@ -13,15 +13,17 @@ Composer auf dem Server, ohne `exec()`. Installation und Updates wie bei
 `setup.php` hochladen, Rest per Browser; Updates über die Kanäle `stable`
 und `beta`.
 
-**Status:** Technischer Rahmen und Fachlichkeit sind spezifiziert, es gibt
-noch keinen Code.
+**Status:** Technischer Rahmen und Fachlichkeit sind spezifiziert, der
+Arbeitsplan steht als Issues bereit; es gibt noch keinen Code. Die
+Umsetzung läuft vollautomatisch über GitHub Actions (`docs/VORGEHEN.md`).
 
 ## Dokumente
 
 | Datei | Inhalt |
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | Verbindliche Architektur-Referenz (Claude Code liest sie in jeder Session) |
-| [docs/VORGEHEN.md](docs/VORGEHEN.md) | Wie mit Claude Code gearbeitet wird |
+| [docs/VORGEHEN.md](docs/VORGEHEN.md) | Vollautomatische Entwicklung: Einrichtung, Start, Anhalten |
+| [docs/ARBEITSPLAN.md](docs/ARBEITSPLAN.md) | 37 Issues, Reihenfolge, Parallelität, Modelle |
 | [docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md) | Getroffene technische und offene fachliche Entscheidungen |
 | [docs/fachlichkeit.md](docs/fachlichkeit.md) | Fachliche Sammlung (Brainstorm) mit offenen Fragen |
 | [docs/hosting-befunde.md](docs/hosting-befunde.md) | Gemessene Eigenschaften des Webspace (aus Vereinsbelege übernommen) |

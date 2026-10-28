@@ -1,44 +1,92 @@
-# Vorgehen mit Claude Code
+# Vorgehen: vollautomatische Entwicklung
 
-## Stand
+Die 37 Issues aus `docs/ARBEITSPLAN.md` werden von Claude-Agenten in
+**GitHub Actions** umgesetzt – jedes Issue auf einer eigenen Maschine,
+viele gleichzeitig. Ein Mensch muss nur starten und bei `braucht-hilfe`
+nachsehen.
 
-Das Repository enthält nur den **technischen Rahmen** (CLAUDE.md,
-`docs/spec/01–05`, Entscheidungen, Hosting-Befunde). Es gibt noch keinen
-Code und keine fachliche Spezifikation.
+## Wie es läuft
 
-## Einmalig vorbereiten
+```
+Planer ──► Umsetzen #n ──► PR ──► CI ──► Pruefen ─┬─► Freigabe: Squash-Merge, Issue zu ──► Planer startet die nächsten
+  ▲          (Claude,                              ├─► CI rot: Claude repariert ──► CI ...
+  │           Modell aus                           ├─► main weiter: einmergen/Konflikt lösen ──► CI ...
+  │           dem Label)                           └─► Review-Befunde: Claude behebt ──► CI ...
+  └────────────────── push auf main / Issue geschlossen / alle 30 min
+```
 
-1. Branch-Schutz für `main` aktivieren (PR + grüne CI Pflicht), sobald die
-   CI existiert.
-2. Vereinsbelege und Vereinskalender daneben klonen, damit Claude Code
-   Infrastruktur übernehmen kann (05 §3):
-   ```
-   dev/vereinskalender/
-   dev/vereinsbelege/
-   dev/mitgliederverwaltung/   ← hier Claude Code starten
-   ```
-3. Beim Hoster eine Test-Subdomain (Kanal `beta`) und später die
-   Produktiv-Subdomain (Kanal `stable`) anlegen, je mit DocumentRoot auf
-   `<bereich>/web/`.
-4. Release-Signaturschlüssel erzeugen (`tools/release-signatur.php`, kommt
-   mit dem Projektgerüst) und als Secret `RELEASE_SIGNING_KEY` hinterlegen.
+| Workflow | Aufgabe |
+|---|---|
+| `planer.yml` | startet jedes offene `auto`-Issue, dessen „Abhängig von" geschlossen ist – höchstens `MAX_PARALLEL` gleichzeitig |
+| `umsetzen.yml` | Claude implementiert auf Branch `issue-<nr>` (Modell aus dem Label `modell:*`), der Workflow pusht und öffnet den PR |
+| `ci.yml` | Tests (ab Issue #1 echt) |
+| `pruefen.yml` | nach jeder CI: reparieren, `main` einmergen, Review durch Opus 5.5, bei Freigabe mergen |
 
-## Nächste Schritte
+Alles läuft nur, solange die Variable `AUTOMATIK` = `an` ist. Nach
+`MAX_RUNDEN` Reparatur-Runden ohne Freigabe bekommt das Issue
+`braucht-hilfe` und wird nicht weiter angefasst.
 
-1. **Fachlichen Umfang klären** (E-F1 bis E-F6 in `ENTSCHEIDUNGEN.md`) und
-   daraus fachliche Specs ab `docs/spec/06-…` schreiben.
-2. **Issues anlegen**: je Issue ein in einer Session umsetzbarer Schnitt
-   mit Spec-Verweis (Datei + Abschnitt) und Abnahmekriterien.
-3. **Ein Issue pro Session**: `/issue <nr>` (`.claude/commands/issue.md`)
-   – Issue lesen → nur verlinkte Specs lesen → Plan → Branch → Code +
-   Tests → PR. Review, ggf. lokal testen (`docker compose up`), mergen.
+## Einmalig einrichten (Checkliste)
 
-Tipps:
-- Neue Session je Issue, keine langen Sessions über mehrere Issues.
-- Specs sind bewusst geteilt – im Issue nur die nötigen Abschnitte
-  verlinken.
-- Große Issues zuerst im Plan Mode planen lassen, prüfen, dann umsetzen.
-- Fehler aus CI/Browser konkret einfügen (Meldung + Schritte).
+1. **Standard-Branch auf `main` stellen** (Settings → General → Default
+   branch). Nötig, weil GitHub `workflow_run`, Zeitpläne und „Closes #n"
+   nur auf dem Standard-Branch auswertet.
+2. **Claude-Zugang als Secret** (Settings → Secrets and variables →
+   Actions → New repository secret), eins von beiden:
+   - `CLAUDE_CODE_OAUTH_TOKEN` – mit einem Claude-Abo: lokal
+     `claude setup-token` ausführen und den Token eintragen; die Läufe
+     zählen dann auf das Abo-Kontingent.
+   - `ANTHROPIC_API_KEY` – API-Schlüssel, Abrechnung nach Verbrauch.
+3. **`AUTOMATIK_TOKEN`** als Secret: ein Fine-grained Personal Access Token
+   (GitHub → Settings → Developer settings → Fine-grained tokens), nur für
+   dieses Repository, Berechtigungen *Contents*, *Pull requests*,
+   *Issues*, *Actions* und *Workflows* jeweils Read and write. Er wird für
+   Push, PR und Merge gebraucht, weil Aktionen mit dem eingebauten
+   `GITHUB_TOKEN` keine weiteren Workflows (z. B. die CI) auslösen.
+4. **Variablen** (Settings → Secrets and variables → Actions → Variables):
+   - `MAX_PARALLEL` – wie viele Issues gleichzeitig (Vorschlag `8`; der
+     Plan erlaubt bis zu 9).
+   - `MAX_RUNDEN` – Reparatur-Runden je PR bis `braucht-hilfe`
+     (Vorschlag `5`).
+   - `AUTOMATIK` – erst beim Start auf `an` setzen.
+5. Prüfen: Settings → Actions → General → „Allow all actions" (die
+   Workflows nutzen `actions/*` und `anthropics/claude-code-action`).
+
+## Start
+
+1. Variable `AUTOMATIK` auf `an` setzen.
+2. Actions → **Planer** → „Run workflow". Er startet #1; alles Weitere
+   folgt von selbst.
+
+**Anhalten:** `AUTOMATIK` auf `aus` setzen. Laufende Jobs laufen zu Ende,
+nichts Neues startet. Danach mit `an` + „Run workflow" fortsetzen.
+
+## Wenn etwas hängt
+
+- Issues mit **`braucht-hilfe`**: der Kommentar am Issue nennt den Grund
+  und den Lauf. Nach der Klärung (z. B. Spec präzisieren) das Label
+  entfernen – der Planer startet das Issue neu bzw. „Pruefen" für den
+  Branch von Hand starten (Actions → Pruefen → Run workflow, Branch
+  `issue-<nr>`).
+- Ein Issue steht auf `in-arbeit`, aber nichts läuft (z. B. Lauf
+  abgebrochen): Label `in-arbeit` entfernen, Planer erneut starten.
+- **#37 (Security-Review)** startet nie automatisch – vor der ersten
+  echten Installation von Hand.
+
+## Kosten und Grenzen
+
+- **Claude:** jedes Issue ein Lauf zum Umsetzen plus mindestens ein Review
+  (Opus) – bei 36 Issues grob 80–150 Läufe.
+- **GitHub Actions:** private Repositories haben ein Freikontingent an
+  Minuten (beim Free-Plan 2.000 min/Monat). Ein Umsetzen-Lauf dauert
+  typisch 20–90 min; das Kontingent kann für den ganzen Plan knapp werden
+  – unter Settings → Billing sichtbar.
+- Gleichzeitige Jobs: beim Free-Plan bis 20.
+
+## Von Hand arbeiten
+
+Weiterhin möglich, z. B. für `braucht-hilfe`: Claude Code im Repo starten
+und `/issue <nr>` (`.claude/commands/issue.md`).
 
 ## Releases
 
@@ -46,7 +94,6 @@ Tipps:
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-GitHub Action baut ein Pre-Release → Testinstanz (beta) aktualisiert sich
-über Admin → Update → testen → auf GitHub als „latest" markieren →
-Produktivinstanz (stable) zieht nach. Identisch zu Vereinsbelege und
-Vereinskalender.
+Der Release-Workflow (ab #2) baut ein Pre-Release → Testinstanz (Kanal
+beta) → im Admin „Update" → testen → auf GitHub als „latest" markieren →
+Produktivinstanz (Kanal stable) zieht nach.

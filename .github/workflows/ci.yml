@@ -1,0 +1,21 @@
+# Placeholder until issue #1 builds the real pipeline (PHPUnit against
+# MariaDB, node --test, syntax check). Keep the workflow name "CI": the
+# automation (pruefen.yml) listens for completed runs of exactly this name.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder
+        run: echo "No code yet - issue #1 replaces this job with the real test pipeline."
