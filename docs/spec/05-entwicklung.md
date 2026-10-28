@@ -10,6 +10,7 @@ docker compose up --build                       # http://localhost:8080
 docker compose run --rm app vendor/bin/phpunit
 node --test 'tests/js/**/*.test.js'
 docker compose exec app php bin/migrate.php
+docker compose exec app php tools/benutzer-anlegen.php admin@example.org "Erika Beispiel"
 ```
 
 Parallel arbeitende Agenten nehmen je ein eigenes Projekt (§6), z. B.
@@ -37,10 +38,12 @@ veröffentlicht keine Ports, die Datenbank nie.
   MariaDB, kein Geheimnis, `debug` an); alles andere unter
   `docker/shared/` ist ignoriert. Ohne `config.php` meldet jede Seite
   „Noch nicht eingerichtet" (ab #3: Installer).
-- Bis zur echten Anmeldung (#6) bietet `/anmelden` zwei Beispielzugänge
-  (Admin, Vorstand) – nur mit `debug` in `config.php` **und** einer
-  Entwicklungsversion (`…-dev`), also nie auf einer echten Installation
-  (`App\Http\Entwicklungskonten`). #6 entfernt sie.
+- Ersten Admin in der lokalen Datenbank anlegen (bis der Installer, #3,
+  das übernimmt): `docker compose exec app php tools/benutzer-anlegen.php
+  admin@example.org "Erika Beispiel"` – das Passwort wird zweimal abgefragt
+  (nicht als Argument, sonst steht es in der Shell-History). Weitere
+  Benutzer per Einladung unter Einstellungen → Benutzer; ohne
+  Mail-Einstellungen geht dabei keine Mail raus.
 
 ## 2. Tests
 

@@ -58,12 +58,20 @@ Verschlüsselung einzelner Datenbankfelder.
   Erzwungene Einrichtung beim ersten Login; Ändern nur nach erneuter
   Bestätigung. Ist die Mail noch nicht eingerichtet (Installer-Schritt
   übersprungen), bietet die Einrichtung nur die App an und sagt warum.
-- **Brute-Force-Schutz**: Rate-Limit je IP und je Konto (15-min-Fenster),
-  atomar vor der Prüfung gezählt; wortgleiche Fehlermeldungen,
-  Schein-`password_verify()` bei unbekanntem Konto.
-- **Passwort-Reset**: Token 32 Byte, nur Hash gespeichert, 30 min,
-  einmalig; beendet alle Sessions. Ohne Tresor verliert das Konto dabei
+- **Brute-Force-Schutz**: Rate-Limit je IP (20) und je Konto (10) im
+  15-min-Fenster, atomar vor der Prüfung gezählt, ein Erfolg setzt beide
+  Zähler zurück (`App\Service\RateLimiter`); wortgleiche Fehlermeldungen
+  für unbekannte Adresse, falsches Passwort, gesperrtes Konto und offene
+  Einladung, Schein-`password_verify()` bei unbekanntem Konto. Adressen
+  werden getrimmt und klein geschrieben gespeichert und gesucht.
+- **Passwort-Reset**: Token 32 Byte, nur SHA-256 gespeichert, 30 min,
+  einmalig, ein neuer Link ersetzt den alten; beendet alle Sessions.
+  Anfragen zählen je IP (10) und je Adresse (3) im Fenster; die Antwort
+  ist für jede Adresse dieselbe. Ohne Tresor verliert das Konto dabei
   nichts.
+- **Eigenes Passwort ändern** (Benutzermenü): nur mit dem aktuellen
+  Passwort (Fehlversuche zählen wie bei der Anmeldung); beendet alle
+  anderen Sessions, die eigene lebt mit neuer ID weiter.
 - **Sicherheitsmails**: neues Gerät, Passwort geändert/zurückgesetzt, 2FA
   geändert.
 
@@ -75,14 +83,23 @@ Verschlüsselung einzelner Datenbankfelder.
   `cache_limiter=nocache`.
 - Leerlauf 30 min (Barrierefrei-Modus 60 min mit Warnung, 06 §4), absolut
   12 h. Hintergrund-Anfragen (`X-Hintergrund: 1`) verlängern nicht.
-- Jeder Request prüft das Konto erneut (`LoginGuard`): Sperre und
-  `session_epoch` wirken sofort.
+- Jeder Request prüft das Konto erneut (`LoginGuard`, Konten aus
+  `App\Service\Account\Benutzerkonten`): Sperre, Löschen, Rollenwechsel
+  und `session_epoch` wirken sofort; ein Rollenwechsel erneuert die
+  Session-ID beim nächsten Request.
 
 ## 5. Benutzer
 
-- Der Installer legt den ersten Admin an.
-- Weitere Benutzer per **Einladung** (Mail-Link); das Konto setzt
-  Passwort und zweiten Faktor selbst. Sperren, Löschen, Rolle ändern.
+- Der Installer legt den ersten Admin an
+  (`BenutzerVerwaltung::ersterAdmin()`).
+- Weitere Benutzer per **Einladung** (Mail-Link, 72 h, einmalig, nur Hash
+  gespeichert, erneut sendbar); das Konto setzt Passwort und zweiten
+  Faktor selbst. Sperren (beendet alle Sessions, verwirft offene Links),
+  Sperre aufheben, Löschen, Rolle ändern – im Einstellungs-Abschnitt
+  „Benutzer“ (`admin.benutzer`).
+- Zwei Regeln halten die Installation erreichbar: das eigene Konto sperrt,
+  löscht oder degradiert man nicht selbst, und der letzte aktive Admin
+  bleibt aktiver Admin.
 - Benutzer ≠ Mitglied; Mitglieder bekommen kein Konto (E-F2).
 
 ## 6. Rollen und Rechte
