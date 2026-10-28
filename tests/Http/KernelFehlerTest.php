@@ -116,6 +116,29 @@ final class KernelFehlerTest extends TestCase
         }
     }
 
+    /**
+     * A database error quotes the row - and member data is plaintext in this
+     * database (E-11). Its message never reaches a log.
+     */
+    public function testADatabaseErrorIsLoggedWithoutItsMessage(): void
+    {
+        $router = new Router();
+        $router->post('/app/mitglieder', Zugriff::oeffentlich(), static function (): never {
+            $fehler = new \PDOException("SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'erika@example.org' for key 'email'");
+            $fehler->errorInfo = ['23000', 1062, "Duplicate entry 'erika@example.org' for key 'email'"];
+
+            throw $fehler;
+        });
+
+        $this->antwort(new Request(HttpMethod::Post, '/app/mitglieder'), $router);
+
+        foreach ([$this->errorLog, $this->appLog] as $log) {
+            $inhalt = (string) file_get_contents($log);
+            self::assertStringNotContainsString('erika@example.org', $inhalt, $log);
+            self::assertStringContainsString('PDOException: SQLSTATE 23000, driver error 1062', $inhalt, $log);
+        }
+    }
+
     /** The page names a reference that leads to the log line - and nothing else. */
     public function testTheErrorPageShowsAReferenceAndNoDetails(): void
     {

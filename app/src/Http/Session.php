@@ -32,9 +32,15 @@ final class Session
      * would then be handed a fresh, empty session - which, if it lands last,
      * logs the user out of every tab. Fixation is closed by the regeneration
      * at login itself (login()).
+     *
+     * gc_maxlifetime: PHP's default of 24 minutes would let the garbage
+     * collector delete a session file before the idle limit of 30 minutes
+     * (60 in the Barrierefrei-Modus, App\Http\LoginGuard) is reached - the
+     * user would be logged out early, at random.
      */
     public const array OPTIONEN = [
         'cache_limiter' => 'nocache',
+        'gc_maxlifetime' => LoginGuard::LEERLAUF_BARRIEREFREI_SEKUNDEN + 15 * 60,
     ];
 
     /**

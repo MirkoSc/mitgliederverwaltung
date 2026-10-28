@@ -1,12 +1,12 @@
 /*
- * Benutzermenü (app/views/partials/kopf.php): ein <details>, das ohne
- * Skript funktioniert. Dieses Skript ergänzt nur, was <details> nicht kann:
- * Escape schließt das Menü und gibt den Fokus an den Auslöser zurück, ein
- * Klick daneben schließt es (docs/spec/06-oberflaeche.md §4: vollständig mit
- * Tastatur bedienbar).
+ * User menu (app/views/partials/kopf.php): a <details> that works without
+ * a script. This script only adds what <details> cannot do: Escape closes
+ * the menu and hands the focus back to its trigger, and a click elsewhere
+ * closes it (docs/spec/06-oberflaeche.md section 4: fully usable by
+ * keyboard).
  *
- * Die Entscheidung steckt in sollSchliessen() - reine Logik, getestet mit
- * node --test tests/js.
+ * The decision lives in sollSchliessen() - plain logic, tested with
+ * node --test 'tests/js/**' (see tests/js/benutzermenue.test.js).
  */
 (function () {
     'use strict';

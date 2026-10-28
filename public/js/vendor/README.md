@@ -30,4 +30,6 @@ die nutzt die Anwendung nicht (kein `hx-on`, CLAUDE.md §4), und die CSP ohne
 
 Konfiguriert wird htmx über `<meta name="htmx-config">` im Layout, nicht über
 ein Skript: `includeIndicatorStyles: false` (die Indikator-Styles stehen
-handgeschrieben im Stylesheet) und `selfRequestsOnly: true`.
+handgeschrieben im Stylesheet), `selfRequestsOnly: true` und
+`historyCacheSize: 0` (keine Seitenkopien mit Mitgliederdaten im
+`sessionStorage`, 02 §7) und `allowEval: false`.

@@ -239,8 +239,9 @@ final class CspComplianceTest extends TestCase
      * htmx is configured through <meta name="htmx-config">, never through a
      * script: script-src 'self' would drop an inline configuration block.
      * includeIndicatorStyles off keeps htmx from injecting a <style> element
-     * that style-src drops anyway, and selfRequestsOnly keeps an hx-
-     * attribute from ever sending member data to a foreign host.
+     * that style-src drops anyway, selfRequestsOnly keeps an hx- attribute
+     * from ever sending member data to a foreign host, and historyCacheSize 0
+     * keeps htmx from storing whole pages in sessionStorage.
      */
     public function testHtmxIsConfiguredWithoutAScript(): void
     {
@@ -249,6 +250,9 @@ final class CspComplianceTest extends TestCase
         self::assertMatchesRegularExpression('/<meta name="htmx-config" content=\x27[^\x27]+\x27>/', $layout);
         self::assertStringContainsString('"includeIndicatorStyles":false', $layout);
         self::assertStringContainsString('"selfRequestsOnly":true', $layout);
+        // No page snapshots - member data - in sessionStorage (02 section 7).
+        self::assertStringContainsString('"historyCacheSize":0', $layout);
+        self::assertStringContainsString('"allowEval":false', $layout);
         self::assertStringContainsString('src="/js/vendor/htmx.min.js', $layout);
     }
 }

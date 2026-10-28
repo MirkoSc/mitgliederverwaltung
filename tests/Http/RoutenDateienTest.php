@@ -90,6 +90,18 @@ final class RoutenDateienTest extends TestCase
         self::assertSame('gespeichert', $this->aufrufen($router, new Request(HttpMethod::Post, '/app/beispiel', post: ['_csrf' => $session->csrfToken()]))->body);
     }
 
+    /** 01 section 5: the cron's token is checked centrally, like the login. */
+    public function testACronRouteNeedsTheTokenFromTheConfig(): void
+    {
+        $router = $this->routerAus(dirname(__DIR__) . '/Fixtures/routen-cron');
+        $aufruf = fn(array $query): Response => $this->aufrufen($router, new Request(HttpMethod::Get, '/cron', query: $query));
+
+        self::assertSame(403, $aufruf([])->status);
+        self::assertSame(403, $aufruf(['token' => 'falsch'])->status);
+        self::assertSame(403, $aufruf(['token' => ['test-token']])->status);
+        self::assertSame('cron gelaufen', $aufruf(['token' => 'test-token'])->body);
+    }
+
     public function testARouteFileMustReturnItsClosure(): void
     {
         $this->expectException(\LogicException::class);

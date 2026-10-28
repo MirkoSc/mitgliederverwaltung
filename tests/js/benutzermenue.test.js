@@ -4,21 +4,21 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { sollSchliessen } = require('../../public/js/benutzermenue.js');
 
-test('Escape schließt ein offenes Menü', () => {
+test('Escape closes an open menu', () => {
     assert.equal(sollSchliessen({ art: 'keydown', taste: 'Escape', innerhalb: true, offen: true }), true);
 });
 
-test('andere Tasten lassen es offen', () => {
+test('other keys leave it open', () => {
     assert.equal(sollSchliessen({ art: 'keydown', taste: 'Enter', innerhalb: true, offen: true }), false);
     assert.equal(sollSchliessen({ art: 'keydown', taste: 'Tab', innerhalb: false, offen: true }), false);
 });
 
-test('ein Klick daneben schließt, ein Klick im Menü nicht', () => {
+test('a click elsewhere closes it, a click inside does not', () => {
     assert.equal(sollSchliessen({ art: 'click', innerhalb: false, offen: true }), true);
     assert.equal(sollSchliessen({ art: 'click', innerhalb: true, offen: true }), false);
 });
 
-test('ein geschlossenes Menü bleibt unberührt', () => {
+test('a closed menu stays as it is', () => {
     assert.equal(sollSchliessen({ art: 'keydown', taste: 'Escape', innerhalb: false, offen: false }), false);
     assert.equal(sollSchliessen({ art: 'click', innerhalb: false, offen: false }), false);
 });

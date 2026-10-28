@@ -43,8 +43,8 @@ final class JobRepositoryTest extends DatabaseTestCase
         $id = $this->jobs->anlegen('import', null);
         $jetzt = new \DateTimeImmutable('2026-10-01 12:00:00');
 
-        self::assertTrue($this->jobs->sperren($id, 30, $jetzt));
-        self::assertFalse($this->jobs->sperren($id, 30, $jetzt->modify('+10 seconds')));
+        self::assertNotNull($this->jobs->sperren($id, 30, $jetzt));
+        self::assertNull($this->jobs->sperren($id, 30, $jetzt->modify('+10 seconds')));
         self::assertSame(JobStatus::Laeuft, $this->jobs->finde($id)?->status);
     }
 
@@ -55,52 +55,84 @@ final class JobRepositoryTest extends DatabaseTestCase
         $jetzt = new \DateTimeImmutable('2026-10-01 12:00:00');
         $this->jobs->sperren($id, 30, $jetzt);
 
-        self::assertTrue($this->jobs->sperren($id, 30, $jetzt->modify('+31 seconds')));
+        self::assertNotNull($this->jobs->sperren($id, 30, $jetzt->modify('+31 seconds')));
     }
 
     public function testSavingAStepReleasesTheLockAndKeepsThePosition(): void
     {
         $id = $this->jobs->anlegen('import', null, ['zeile' => 0]);
-        $this->jobs->sperren($id, 30);
+        $sperre = $this->jobs->sperren($id, 30);
+        self::assertNotNull($sperre);
 
-        $this->jobs->schrittSpeichern($id, ['zeile' => 100], 40);
+        self::assertTrue($this->jobs->schrittSpeichern($sperre, ['zeile' => 100], 40));
 
         $job = $this->jobs->finde($id);
         self::assertSame(['zeile' => 100], $job?->state);
         self::assertSame(40, $job->progress);
         self::assertNull($job->lockedUntil);
-        self::assertTrue($this->jobs->sperren($id, 30), 'the next step may start at once');
+        self::assertNotNull($this->jobs->sperren($id, 30), 'the next step may start at once');
+    }
+
+    /**
+     * A step that outlived its lock must not overwrite the position of the
+     * step that took over - nor release that step's lock.
+     */
+    public function testAStepThatLostItsLockWritesNothing(): void
+    {
+        $id = $this->jobs->anlegen('import', null, ['zeile' => 0]);
+        $jetzt = new \DateTimeImmutable('2026-10-01 12:00:00');
+        $langsam = $this->jobs->sperren($id, 30, $jetzt);
+        $uebernommen = $this->jobs->sperren($id, 30, $jetzt->modify('+31 seconds'));
+        self::assertNotNull($langsam);
+        self::assertNotNull($uebernommen);
+
+        self::assertTrue($this->jobs->schrittSpeichern($uebernommen, ['zeile' => 200], 80));
+        self::assertNotNull($this->jobs->sperren($id, 30, $jetzt->modify('+40 seconds')));
+        $neu = $this->jobs->finde($id);
+
+        self::assertFalse($this->jobs->schrittSpeichern($langsam, ['zeile' => 100], 40));
+        self::assertFalse($this->jobs->abschliessen($langsam, []));
+        self::assertFalse($this->jobs->fehlschlagen($langsam, new \RuntimeException('zu spät')));
+        self::assertEquals($neu, $this->jobs->finde($id), 'position and lock of the newer step are untouched');
     }
 
     public function testAFinishedJobIsNeverTakenAgain(): void
     {
         $id = $this->jobs->anlegen('import', null);
-        $this->jobs->abschliessen($id, ['zeilen' => 250]);
+        $sperre = $this->jobs->sperren($id, 30);
+        self::assertNotNull($sperre);
+
+        self::assertTrue($this->jobs->abschliessen($sperre, ['zeilen' => 250]));
 
         $job = $this->jobs->finde($id);
         self::assertSame(JobStatus::Fertig, $job?->status);
+        self::assertSame(['zeilen' => 250], $job->state);
         self::assertSame(100, $job->progress);
-        self::assertFalse($this->jobs->sperren($id, 30));
+        self::assertNull($this->jobs->sperren($id, 30));
     }
 
     /** Only the class: a database message would quote row data (CLAUDE.md section 4). */
     public function testAFailedJobKeepsTheExceptionClassOnly(): void
     {
         $id = $this->jobs->anlegen('import', null);
+        $sperre = $this->jobs->sperren($id, 30);
+        self::assertNotNull($sperre);
 
-        $this->jobs->fehlschlagen($id, new \RuntimeException('Zeile von Max Muster kaputt'));
+        $this->jobs->fehlschlagen($sperre, new \RuntimeException('Zeile von Max Muster kaputt'));
 
         $job = $this->jobs->finde($id);
         self::assertSame(JobStatus::Fehler, $job?->status);
         self::assertSame(\RuntimeException::class, $job->lastError);
-        self::assertFalse($this->jobs->sperren($id, 30));
+        self::assertNull($this->jobs->sperren($id, 30));
     }
 
     public function testProgressStaysBetweenZeroAndHundred(): void
     {
         $id = $this->jobs->anlegen('import', null);
+        $sperre = $this->jobs->sperren($id, 30);
+        self::assertNotNull($sperre);
 
-        $this->jobs->schrittSpeichern($id, [], 250);
+        $this->jobs->schrittSpeichern($sperre, [], 250);
 
         self::assertSame(100, $this->jobs->finde($id)?->progress);
     }

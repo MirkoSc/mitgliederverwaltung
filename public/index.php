@@ -15,11 +15,14 @@ ini_set('zend.exception_string_param_max_len', '0');
 // Maintenance mode: set while the updater switches releases. The docroot
 // shim performs the same check one level up (between the two renames of a
 // switch this file does not exist); this copy covers an installation whose
-// shim is older. /admin stays reachable for the update step chain, and so do
-// the assets that page needs.
+// shim is older. /admin stays reachable for the update step chain, the login
+// for an admin whose session ran out meanwhile, and the assets those pages
+// need - the same list as the shim.
 $maintenanceFlag = dirname(__DIR__, 2) . '/shared/maintenance.flag';
 $requestPath = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $maintenanceBypass = str_starts_with($requestPath, '/admin')
+    || $requestPath === '/anmelden'
+    || str_starts_with($requestPath, '/anmelden/')
     || str_starts_with($requestPath, '/css/')
     || str_starts_with($requestPath, '/js/');
 if (is_file($maintenanceFlag) && !$maintenanceBypass) {
@@ -37,17 +40,15 @@ if (is_file($maintenanceFlag) && !$maintenanceBypass) {
 // Deliberately hand-rolled rather than using Support\FileLogger: the
 // autoloader may itself be the thing that failed. Same redaction rule as
 // Http\Kernel - class, message, method, path, file, line, never the full
-// exception string.
-try {
-    /** @var Kernel $kernel */
-    $kernel = require dirname(__DIR__) . '/app/src/bootstrap.php';
-    $kernel->handle(Request::fromGlobals())->send();
-} catch (\Throwable $e) {
+// exception string, and never the message of a database error (it quotes
+// row data).
+$protokollieren = static function (string $art, \Throwable $e) use ($requestPath): void {
     $zeile = sprintf(
-        '[%s] BOOTSTRAP %s: %s [%s %s] at %s:%d',
+        '[%s] %s %s: %s [%s %s] at %s:%d',
         date('c'),
+        $art,
         $e::class,
-        $e->getMessage(),
+        $e instanceof \PDOException ? 'SQLSTATE ' . $e->getCode() . ' (message withheld)' : $e->getMessage(),
         $_SERVER['REQUEST_METHOD'] ?? '-',
         $requestPath,
         $e->getFile(),
@@ -59,10 +60,34 @@ try {
     if (is_dir(dirname($logDatei)) || @mkdir(dirname($logDatei), 0775, true) || is_dir(dirname($logDatei))) {
         @file_put_contents($logDatei, $zeile . "\n", FILE_APPEND | LOCK_EX);
     }
+};
+
+try {
+    /** @var Kernel $kernel */
+    $kernel = require dirname(__DIR__) . '/app/src/bootstrap.php';
+    $antwort = $kernel->handle(Request::fromGlobals());
+} catch (\Throwable $e) {
+    $protokollieren('BOOTSTRAP', $e);
 
     http_response_code(500);
     header('Content-Type: text/html; charset=utf-8');
     echo '<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Fehler</title></head>'
         . '<body><h1>Interner Fehler</h1><p>Die Mitgliederverwaltung ist gerade nicht erreichbar. '
         . 'Bitte später erneut versuchen.</p></body></html>';
+    exit;
+}
+
+// Sending is outside the Kernel: a streamed download (an export is produced
+// while it is sent) can still fail half way. Then the status line is long
+// gone - log it, and append nothing, or the error page would end up inside
+// the downloaded file.
+try {
+    $antwort->send();
+} catch (\Throwable $e) {
+    $protokollieren('SEND', $e);
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Interner Fehler.';
+    }
 }

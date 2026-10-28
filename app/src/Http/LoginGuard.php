@@ -137,7 +137,14 @@ final readonly class LoginGuard
             return Response::json(['fehler' => 'Nicht angemeldet.'], 401);
         }
 
-        return Response::redirect(self::ANMELDUNG . self::weiter($request, $abgelaufen));
+        $ziel = self::ANMELDUNG . self::weiter($request, $abgelaufen);
+
+        // htmx would follow a 302 and swap the whole login page into the
+        // small part of the page it was about to update; HX-Redirect makes
+        // it load the login as a page of its own.
+        return $request->istHtmx()
+            ? new Response(401, ['HX-Redirect' => $ziel])
+            : Response::redirect($ziel);
     }
 
     /**

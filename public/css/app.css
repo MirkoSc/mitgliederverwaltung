@@ -1,24 +1,24 @@
 /*
- * Designsystem der Mitgliederverwaltung - Ausgangsstand aus Issue #1.
+ * Design system of the Mitgliederverwaltung - starting point from issue #1.
  *
- * Gehört Issue #9 (Designsystem und Layout), das diese Datei ausbaut.
- * Ergänzungen anderer Issues kommen als eigene Datei nach
- * public/css/teile/ (docs/spec/05-entwicklung.md §6).
+ * Owned by issue #9 (design system and layout), which builds it out.
+ * Additions of other issues go into a file of their own under
+ * public/css/teile/ (docs/spec/05-entwicklung.md section 6).
  *
- * Handgeschrieben, kein Build-Schritt. Reihenfolge: Tokens, Grundgerüst,
- * Kopf und Navigation, Inhalt, Bausteine.
+ * Handwritten, no build step. Order: tokens, base, header and navigation,
+ * content, components.
  *
- * Grundsätze
- * - Mobile first: alles ohne Media Query gilt ab 360 px.
- * - Hell und Dunkel über prefers-color-scheme; jede Farbe ist ein Token.
- * - Barrierefrei-Modus = Klasse .modus-barrierefrei am <html>, die nur
- *   Tokens überschreibt (docs/spec/06-oberflaeche.md §4).
- * - Keine Inline-Styles (CSP: style-src 'self', CLAUDE.md §4).
+ * Principles
+ * - Mobile first: everything outside a media query holds from 360 px.
+ * - Light and dark via prefers-color-scheme; every colour is a token.
+ * - Barrierefrei-Modus = class .modus-barrierefrei on <html>, which only
+ *   overrides tokens (docs/spec/06-oberflaeche.md section 4).
+ * - No inline styles (CSP: style-src 'self', CLAUDE.md section 4).
  *
- * Gestaltung: das Grün eines Rasenplatzes als Kopfband, darin die
- * Navigation; die aktuelle Seite trägt eine gelbe Linie wie eine
- * Platzmarkierung - die eine auffällige Farbe, alles andere bleibt ruhig.
- * Im Kopfband ist dasselbe Gelb auch der Tastaturfokus.
+ * Look: the green of a football pitch as the header band, the navigation
+ * in it; the current page carries a yellow line like a pitch marking - the
+ * one loud colour, everything else stays calm. Inside the band the same
+ * yellow is the keyboard focus.
  */
 
 /* ---------------------------------------------------------------- Tokens */
@@ -33,13 +33,13 @@
     --farbe-rand: #d3dbd5;
     --farbe-link: #1e5b45;
 
-    /* Kopfband: Rasengrün, darauf Kreideweiß und die gelbe Markierung. */
+    /* Header band: pitch green, chalk white on it and the yellow marking. */
     --farbe-verein: #1e5b45;
     --farbe-verein-text: #ffffff;
     --farbe-verein-gedaempft: #c9ddd3;
     --farbe-markierung: #f2c230;
 
-    /* Tastaturfokus: dunkel auf hellem Grund, im Kopfband gelb (.kopf). */
+    /* Keyboard focus: dark on light surfaces, yellow in the header (.kopf). */
     --farbe-fokus: #0b3d2c;
 
     --farbe-ok: #1c6b3f;
@@ -93,9 +93,9 @@
     }
 }
 
-/* Barrierefrei-Modus (06 §4): große Schrift, sehr hoher Kontrast, heller
-   Grund auch im Dunkelmodus, große Flächen, sehr deutlicher Fokus. Die
-   Klasse am <html> schlägt die Dunkel-Tokens über die Spezifität. */
+/* Barrierefrei-Modus (06 section 4): large type, very high contrast, a
+   light background even in dark mode, large targets, a very clear focus.
+   The class on <html> beats the dark tokens by specificity. */
 :root.modus-barrierefrei {
     color-scheme: light;
 
@@ -109,6 +109,15 @@
     --farbe-verein-gedaempft: #ffffff;
     --farbe-fokus: #000000;
 
+    --farbe-ok: #0b4a26;
+    --farbe-info: #0a3a6b;
+    --farbe-warnung: #5a3a00;
+    --farbe-fehler: #7a1410;
+    --farbe-ok-flaeche: #e7f3ec;
+    --farbe-info-flaeche: #e8f0f8;
+    --farbe-warnung-flaeche: #fbf1dd;
+    --farbe-fehler-flaeche: #fbebea;
+
     --schrift-basis: 1.5rem;
     --schrift-klein: 1.25rem;
     --zeilenhoehe: 1.6;
@@ -116,7 +125,7 @@
     --fokus-breite: 5px;
 }
 
-/* ----------------------------------------------------------- Grundgerüst */
+/* ------------------------------------------------------------------ Base */
 
 *,
 *::before,
@@ -196,7 +205,7 @@ a {
     }
 }
 
-/* ------------------------------------------------- Kopf und Navigation */
+/* ------------------------------------------------ Header and navigation */
 
 .kopf {
     --farbe-fokus: var(--farbe-markierung);
@@ -205,7 +214,7 @@ a {
     color: var(--farbe-verein-text);
 }
 
-/* Das aufgeklappte Benutzermenü liegt hell über dem Inhalt. */
+/* The opened user menu lies light on top of the content. */
 .benutzermenue-liste {
     --farbe-fokus: var(--farbe-link);
 }
@@ -228,7 +237,7 @@ a {
     letter-spacing: -0.01em;
 }
 
-/* Benutzermenü: <details>, also ohne Skript und mit Tastatur bedienbar. */
+/* User menu: a <details>, so it works without a script and by keyboard. */
 .benutzermenue {
     position: relative;
 }
@@ -313,8 +322,8 @@ a {
     font-size: var(--schrift-klein);
 }
 
-/* Hauptnavigation am unteren Rand des Kopfbands; die aktuelle Seite trägt
-   die gelbe Markierungslinie. */
+/* Main navigation at the bottom edge of the header band; the current page
+   carries the yellow marking line. */
 .navi ul {
     display: flex;
     flex-wrap: wrap;
@@ -341,8 +350,8 @@ a {
     color: var(--farbe-verein-text);
 }
 
-/* Schmale Schirme: die Einträge als gleich breite Felder, zwei je Zeile,
-   statt dass der letzte allein umbricht. */
+/* Narrow screens: the entries as equal cells, two per row, instead of the
+   last one wrapping on its own. */
 @media (max-width: 29.99rem) {
     .navi ul {
         display: grid;
@@ -360,7 +369,7 @@ a {
     border-bottom-color: var(--farbe-markierung);
 }
 
-/* ---------------------------------------------------------------- Inhalt */
+/* --------------------------------------------------------------- Content */
 
 .inhalt {
     flex: 1;
@@ -409,7 +418,7 @@ a {
     }
 }
 
-/* -------------------------------------------------------------- Bausteine */
+/* ------------------------------------------------------------ Components */
 
 .knopf {
     display: inline-flex;
@@ -457,7 +466,7 @@ a {
     background: var(--farbe-fehler-flaeche);
 }
 
-/* Platzhalter einer Seite, die ein späteres Issue baut. */
+/* Placeholder of a page a later issue builds. */
 .platzhalter {
     max-width: 70ch;
     padding: var(--abstand-5);
@@ -475,7 +484,7 @@ a {
     font-size: var(--schrift-klein);
 }
 
-/* Auswahl untereinander (Listen). */
+/* A selection, one below the other (lists). */
 .auswahl {
     display: grid;
     gap: var(--abstand-3);
@@ -502,7 +511,7 @@ a {
     color: var(--farbe-gedaempft);
 }
 
-/* Abschnitte der Einstellungen und ihre Sprungleiste. */
+/* Sections of the settings page and their jump links. */
 .sprungleiste ul {
     display: flex;
     flex-wrap: wrap;
@@ -521,7 +530,7 @@ a {
     scroll-margin-top: var(--abstand-4);
 }
 
-/* Fehlerseiten und Anmeldung: schmal, für sich. */
+/* Error pages and login: narrow, on their own. */
 .meldeseite,
 .anmeldung {
     max-width: 34rem;

@@ -22,3 +22,7 @@ composer.phar
 # Real member data for the one-off legacy import (docs/spec/10-import.md) -
 # never commit anything from here.
 /import-daten/
+
+# Extensions tests/Feature/ErweiterungsSeitenTest.php writes into app/src/
+# for one run; a run that dies leaves them behind - never commit one.
+/app/src/**/Testlauf*.php

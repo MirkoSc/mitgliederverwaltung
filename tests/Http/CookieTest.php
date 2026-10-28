@@ -26,10 +26,18 @@ final class CookieTest extends TestCase
         self::assertSame('td=wert; Path=/; HttpOnly; SameSite=Lax', Cookie::hostPrefixed('td', 'wert', secure: false)->header());
     }
 
-    public function testBothNamesAreRead(): void
+    public function testEachSchemeReadsItsOwnName(): void
     {
-        self::assertSame('a', Cookie::hostPrefixedFrom(new Request(HttpMethod::Get, '/', cookies: ['__Host-td' => 'a']), 'td'));
-        self::assertSame('b', Cookie::hostPrefixedFrom(new Request(HttpMethod::Get, '/', cookies: ['td' => 'b']), 'td'));
+        $beide = new Request(HttpMethod::Get, '/', cookies: ['__Host-td' => 'a', 'td' => 'b']);
+
+        self::assertSame('a', Cookie::hostPrefixedFrom($beide, 'td', secure: true));
+        self::assertSame('b', Cookie::hostPrefixedFrom($beide, 'td', secure: false));
+    }
+
+    /** Over HTTPS a plain-named cookie may have been planted - it does not count. */
+    public function testOverHttpsThePlainNameIsIgnored(): void
+    {
+        self::assertNull(Cookie::hostPrefixedFrom(new Request(HttpMethod::Get, '/', cookies: ['td' => 'untergeschoben']), 'td', secure: true));
     }
 
     public function testExpiredKeepsNameAndAttributes(): void

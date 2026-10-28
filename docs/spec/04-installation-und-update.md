@@ -78,7 +78,7 @@ wiederholbar:
 | `extract` | ZIP/Signatur erneut prüfen, nach `releases/vX.Y.Z/` entpacken, Liste ins Release legen |
 | `backup` | Backup unmittelbar vor dem Umschalten (§6); Fehler bricht ab |
 | `switch` | `maintenance.flag` → `rename(current, releases/_prev)` → `rename(neu, current)` → `opcache_reset()` |
-| `migrate` | alle Migrationen > `schema_version`; bei Fehler bleibt Wartungsmodus, Admin wählt Wiederholen oder Rollback |
+| `migrate` | alle noch nicht in `schema_version` eingetragenen Migrationen (03 §4); bei Fehler bleibt Wartungsmodus, Admin wählt Wiederholen oder Rollback |
 | `finish` | Docroot-Dateien auffrischen, Selbsttest (Startseite → 200), Flag weg, Download aufräumen, letzte 2 Releases behalten |
 
 - **Download-Härtung**: nur `https` zu den GitHub-Hosts, erste Adresse muss
@@ -99,8 +99,10 @@ wiederholbar:
 ## 4. Wartungsmodus
 
 `App\Service\MaintenanceMode`, Flag `shared/maintenance.flag` (JSON: Grund,
-Start). Der Shim beantwortet alles außer `/admin` und den Assets, die die
-Update-Seite braucht, mit 503.
+Start). Der Shim beantwortet alles außer `/admin`, der Anmeldung
+(`/anmelden…` – ein Admin, dessen Sitzung während eines abgestürzten
+Updates abgelaufen ist, muss wieder hineinkommen) und den Assets, die diese
+Seiten brauchen, mit 503.
 Das Admin-Layout zeigt bei gesetztem Flag auf jeder Seite ein Banner mit
 „Freigeben" (`POST /admin/wartung/aufheben`) – ein abgestürztes Update darf
 die Instanz nicht dauerhaft sperren.
@@ -127,7 +129,8 @@ signierten `checksums.txt` des Releases. Abweichung = Warnung im Admin
 - Erstellen als Schrittkette (`/admin/backups`), Rotation 10, Download
   gestreamt.
 - Restore im Installer als Schrittkette (Dump häppchenweise mit Offset im
-  Status, danach nur Migrationen > Backup-Stand). Der Restore fragt den
+  Status, danach die Migrationen, die im Backup noch nicht eingetragen
+  sind, 03 §4). Der Restore fragt den
   Sicherungsschlüssel ab (oder `config.php` hochladen) und schreibt ihn
   in die neue `config.php`; ohne ihn ist das Backup nicht lesbar.
 

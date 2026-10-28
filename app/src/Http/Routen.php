@@ -13,10 +13,11 @@ use App\Dienste;
  *
  * Every route names its access declaration (App\Http\Zugriff), and this is
  * the one place that turns the declaration into the check: the handler is
- * wrapped in the login guard where the declaration asks for a login, and
- * every POST additionally in the CSRF check (App\Http\CsrfSchutz) - inside
- * the guard, so an anonymous request gets the login first. A route file
- * cannot register a route without either.
+ * wrapped in the login guard where the declaration asks for a login, a cron
+ * route in the check of the cron token, and every other POST in the CSRF
+ * check (App\Http\CsrfSchutz) - inside the guard, so an anonymous request
+ * gets the login first. A route file cannot register a route without the
+ * check its declaration names.
  *
  * A route file returns `static function (Routen $routen): void`; it builds
  * its controllers lazily inside the handlers from $routen->dienste(), so a
@@ -77,10 +78,32 @@ final class Routen
         }
     }
 
+    /**
+     * The cron of the hoster's control panel calls `/cron?token=…`
+     * (docs/spec/01-plattform.md section 5): the token from config.php is
+     * its only credential, compared in constant time.
+     *
+     * @param \Closure(Request, array<string, string>): ResponseInterface $handler
+     * @return \Closure(Request, array<string, string>): ResponseInterface
+     */
+    private static function cronToken(#[\SensitiveParameter] string $erwartet, \Closure $handler): \Closure
+    {
+        return static function (Request $request, array $params = []) use ($erwartet, $handler): ResponseInterface {
+            $token = $request->query['token'] ?? null;
+
+            return is_string($token) && $token !== '' && hash_equals($erwartet, $token)
+                ? $handler($request, $params)
+                : new Response(403, ['Content-Type' => 'text/plain; charset=utf-8'], 'Zugriff verweigert.');
+        };
+    }
+
     private function add(HttpMethod $methode, string $muster, Zugriff $zugriff, \Closure $handler): void
     {
         if ($this->ersatz !== null) {
             $handler = ($this->ersatz)($methode, $muster, $zugriff, $handler);
+        }
+        if ($zugriff->art === ZugriffArt::Cron) {
+            $handler = self::cronToken($this->dienste->config->cronToken, $handler);
         }
         if (CsrfSchutz::noetig($methode, $zugriff)) {
             $handler = $this->csrf->pruefe($zugriff->api, $handler);

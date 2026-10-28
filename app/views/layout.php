@@ -32,12 +32,15 @@ $htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barriere
              scripts out (CLAUDE.md section 4). includeIndicatorStyles off:
              htmx would otherwise inject a style element, which style-src
              'self' drops silently. selfRequestsOnly: an htmx attribute must
-             never send member data to a foreign host. */ ?>
-    <meta name="htmx-config" content='{"includeIndicatorStyles":false,"selfRequestsOnly":true}'>
+             never send member data to a foreign host. historyCacheSize 0:
+             htmx would otherwise keep snapshots of whole pages - member data
+             - in sessionStorage (02 section 7). allowEval off: the CSP has
+             no 'unsafe-eval' anyway, and nothing here may need it. */ ?>
+    <meta name="htmx-config" content='{"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0,"allowEval":false}'>
     <?php foreach ($stylesheets as $stylesheet): ?>
     <link rel="stylesheet" href="<?= e($stylesheet) ?>?v=<?= e($version) ?>">
     <?php endforeach; ?>
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/icon.svg?v=<?= e($version) ?>" type="image/svg+xml">
     <?php /* Only external files (CLAUDE.md section 4); values a script needs
              travel as data-* attributes. */ ?>
     <script src="/js/vendor/htmx.min.js?v=<?= e($version) ?>" defer></script>

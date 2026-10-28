@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Http;
 
 use App\Http\HttpMethod;
+use App\Http\LoginGuard;
 use App\Http\Request;
 use App\Http\Session;
 use App\View\FlashArt;
@@ -87,5 +88,11 @@ final class SessionTest extends TestCase
     {
         self::assertSame('nocache', Session::OPTIONEN['cache_limiter']);
         self::assertSame('__Host-sid', Session::NAME_HTTPS);
+    }
+
+    /** The garbage collector must not end a session the guard still allows. */
+    public function testSessionFilesOutliveTheLongestIdleLimit(): void
+    {
+        self::assertGreaterThan(LoginGuard::LEERLAUF_BARRIEREFREI_SEKUNDEN, Session::OPTIONEN['gc_maxlifetime']);
     }
 }

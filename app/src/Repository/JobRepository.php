@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Domain\Job;
+use App\Domain\JobSperre;
 use App\Domain\JobStatus;
 
 /**
@@ -12,9 +13,11 @@ use App\Domain\JobStatus;
  * step (docs/spec/01-plattform.md section 4).
  *
  * A step runs like this: sperren() - do one idempotent piece of work -
- * schrittSpeichern() (or abschliessen() / fehlschlagen()). The lock expires
- * on its own, so a step that died half way is simply repeated by the next
- * request; that is why every step must be idempotent.
+ * schrittSpeichern() (or abschliessen() / fehlschlagen()) with the lock it
+ * got. The lock expires on its own, so a step that died half way is simply
+ * repeated by the next request; that is why every step must be idempotent.
+ * A step that outlived its lock finds its write refused (false) - the
+ * request that took over owns the job now.
  */
 final readonly class JobRepository
 {
@@ -46,19 +49,21 @@ final readonly class JobRepository
     }
 
     /**
-     * Takes the job for one step, atomically: true only for the one request
-     * that got the lock. A finished or failed job is never taken again.
+     * Takes the job for one step, atomically: a lock only for the one request
+     * that got it, null for everybody else. A finished or failed job is never
+     * taken again.
      */
-    public function sperren(int $id, int $sekunden, ?\DateTimeImmutable $jetzt = null): bool
+    public function sperren(int $id, int $sekunden, ?\DateTimeImmutable $jetzt = null): ?JobSperre
     {
         $jetzt ??= new \DateTimeImmutable();
+        $bis = self::zeit($jetzt->modify(sprintf('+%d seconds', $sekunden)));
         $stmt = $this->pdo->prepare(
             'UPDATE job SET status = ?, locked_until = ?, updated_at = ?
              WHERE id = ? AND status IN (?, ?) AND (locked_until IS NULL OR locked_until <= ?)',
         );
         $stmt->execute([
             JobStatus::Laeuft->value,
-            self::zeit($jetzt->modify(sprintf('+%d seconds', $sekunden))),
+            $bis,
             self::zeit($jetzt),
             $id,
             JobStatus::Offen->value,
@@ -66,40 +71,66 @@ final readonly class JobRepository
             self::zeit($jetzt),
         ]);
 
-        return $stmt->rowCount() === 1;
+        return $stmt->rowCount() === 1 ? new JobSperre($id, $bis) : null;
     }
 
     /**
-     * Records the position after a step and releases the lock.
+     * Records the position after a step and releases the lock. False when
+     * the lock was lost meanwhile - nothing is written then.
      *
      * @param array<string, mixed> $state
      */
-    public function schrittSpeichern(int $id, array $state, int $progress, ?\DateTimeImmutable $jetzt = null): void
+    public function schrittSpeichern(JobSperre $sperre, array $state, int $progress, ?\DateTimeImmutable $jetzt = null): bool
     {
-        $this->pdo->prepare(
-            'UPDATE job SET state = ?, progress = ?, locked_until = NULL, updated_at = ? WHERE id = ?',
-        )->execute([self::json($state), max(0, min(100, $progress)), self::zeit($jetzt), $id]);
+        return $this->schreiben(
+            $sperre,
+            'state = ?, progress = ?',
+            [self::json($state), max(0, min(100, $progress))],
+            $jetzt,
+        );
     }
 
     /**
      * @param array<string, mixed> $state
      */
-    public function abschliessen(int $id, array $state, ?\DateTimeImmutable $jetzt = null): void
+    public function abschliessen(JobSperre $sperre, array $state, ?\DateTimeImmutable $jetzt = null): bool
     {
-        $this->pdo->prepare(
-            'UPDATE job SET status = ?, state = ?, progress = 100, locked_until = NULL, updated_at = ? WHERE id = ?',
-        )->execute([JobStatus::Fertig->value, self::json($state), self::zeit($jetzt), $id]);
+        return $this->schreiben(
+            $sperre,
+            'status = ?, state = ?, progress = 100',
+            [JobStatus::Fertig->value, self::json($state)],
+            $jetzt,
+        );
     }
 
     /**
      * Ends the chain with an error. Only the exception class is kept: the
      * message of a database error quotes row data (CLAUDE.md section 4).
      */
-    public function fehlschlagen(int $id, \Throwable $fehler, ?\DateTimeImmutable $jetzt = null): void
+    public function fehlschlagen(JobSperre $sperre, \Throwable $fehler, ?\DateTimeImmutable $jetzt = null): bool
     {
-        $this->pdo->prepare(
-            'UPDATE job SET status = ?, last_error = ?, locked_until = NULL, updated_at = ? WHERE id = ?',
-        )->execute([JobStatus::Fehler->value, substr($fehler::class, 0, 255), self::zeit($jetzt), $id]);
+        return $this->schreiben(
+            $sperre,
+            'status = ?, last_error = ?',
+            [JobStatus::Fehler->value, substr($fehler::class, 0, 255)],
+            $jetzt,
+        );
+    }
+
+    /**
+     * One write under the lock: only while `locked_until` is still the value
+     * this lock set, and releasing it in the same statement.
+     *
+     * @param list<string|int> $werte
+     */
+    private function schreiben(JobSperre $sperre, string $spalten, array $werte, ?\DateTimeImmutable $jetzt): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE job SET ' . $spalten . ', locked_until = NULL, updated_at = ? WHERE id = ? AND locked_until = ?',
+        );
+        $stmt->execute([...$werte, self::zeit($jetzt), $sperre->jobId, $sperre->bis]);
+
+        return $stmt->rowCount() === 1;
     }
 
     /**

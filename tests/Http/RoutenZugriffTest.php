@@ -106,7 +106,9 @@ final class RoutenZugriffTest extends TestCase
 
         $_SESSION = [];
         $antwort = $this->aufrufen($router, $route->method, $pfad);
-        if ($route->zugriff->brauchtAnmeldung()) {
+        if ($route->zugriff->art === ZugriffArt::Cron) {
+            self::assertSame(403, $antwort->status, $muster . ' must want the cron token');
+        } elseif ($route->zugriff->brauchtAnmeldung()) {
             self::assertTrue(
                 $antwort->status === 401 || ($antwort->status === 302 && str_starts_with($antwort->headers['Location'] ?? '', '/anmelden')),
                 $muster . ' must turn an anonymous visitor away',
@@ -189,6 +191,19 @@ final class RoutenZugriffTest extends TestCase
         }
     }
 
+    /** The cron token opens /cron and nothing else (01 section 5). */
+    public function testOnlyTheCronIsDeclaredCron(): void
+    {
+        $ausserhalb = [];
+        foreach ($this->router()->routes() as $route) {
+            if ($route->zugriff->art === ZugriffArt::Cron && $route->pattern !== '/cron' && !str_starts_with($route->pattern, '/cron/')) {
+                $ausserhalb[] = $route->pattern;
+            }
+        }
+
+        self::assertSame([], $ausserhalb, 'declared cron outside /cron');
+    }
+
     /** /admin is the admin's: every route there declares an admin.* right. */
     public function testEveryAdminRouteNeedsAnAdminRight(): void
     {
@@ -242,7 +257,9 @@ final class RoutenZugriffTest extends TestCase
     private static function erlaubt(Zugriff $zugriff, Rolle $rolle): bool
     {
         return match ($zugriff->art) {
-            ZugriffArt::Oeffentlich, ZugriffArt::Cron, ZugriffArt::Angemeldet => true,
+            ZugriffArt::Oeffentlich, ZugriffArt::Angemeldet => true,
+            // A login is no cron token (App\Http\Routen).
+            ZugriffArt::Cron => false,
             ZugriffArt::Recht => $zugriff->recht instanceof Permission && $rolle->darf($zugriff->recht),
         };
     }

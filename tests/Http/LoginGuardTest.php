@@ -80,6 +80,15 @@ final class LoginGuardTest extends TestCase
         self::assertStringContainsString('application/json', $antwort->headers['Content-Type']);
     }
 
+    /** An htmx request must not get the login page swapped into its target. */
+    public function testHtmxRequestsAreSentToTheLoginAsAWholePage(): void
+    {
+        $antwort = $this->aufrufen(Zugriff::angemeldet(), headers: ['hx-request' => 'true']);
+
+        self::assertSame(401, $antwort->status);
+        self::assertSame('/anmelden?weiter=%2Fapp%2Fmitglieder', $antwort->headers['HX-Redirect']);
+    }
+
     public function testALoggedInAccountWithTheRightGetsThrough(): void
     {
         $this->anmelden(new Konto(5, 'Test', Rolle::Vorstand));

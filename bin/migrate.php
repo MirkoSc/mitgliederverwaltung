@@ -33,7 +33,7 @@ try {
     $migrator = new Migrator(ConnectionFactory::create($config), $paths->migrationsDir());
 
     if ($migrator->pending() === []) {
-        echo sprintf("Schema version %d, nothing to apply.\n", $migrator->currentVersion());
+        echo sprintf("All migrations applied (highest version %d).\n", $migrator->currentVersion());
         exit(0);
     }
 
@@ -41,10 +41,11 @@ try {
         echo sprintf("Applying %03d_%s ...\n", $migration->version, $migration->name);
     });
 
+    // Not "from -> to": a migration merged later may sit below the highest
+    // version (docs/spec/03-datenhaltung.md section 4).
     echo sprintf(
-        "Applied %d migration(s), schema version %d -> %d.\n",
+        "Applied %d migration(s), highest version now %d.\n",
         count($result->applied),
-        $result->fromVersion,
         $result->toVersion,
     );
     exit(0);

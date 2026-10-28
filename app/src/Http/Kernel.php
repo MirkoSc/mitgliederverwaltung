@@ -72,6 +72,28 @@ final class Kernel
         };
     }
 
+    /**
+     * The message that may go into a log. A database error quotes the values
+     * of the row ("Duplicate entry 'erika@example.org' for key ...",
+     * "Incorrect integer value: 'Müller'"), and member data is plaintext in
+     * this database (E-11) - so of a PDOException only the SQLSTATE and the
+     * driver's error number are kept.
+     */
+    public static function meldung(\Throwable $e): string
+    {
+        if (!$e instanceof \PDOException) {
+            return $e->getMessage();
+        }
+
+        $info = $e->errorInfo ?? [];
+
+        return sprintf(
+            'SQLSTATE %s, driver error %s (message withheld, it may quote row data)',
+            is_string($info[0] ?? null) ? $info[0] : (string) $e->getCode(),
+            is_int($info[1] ?? null) ? (string) $info[1] : '-',
+        );
+    }
+
     private function errorResponse(\Throwable $e, Request $request): ResponseInterface
     {
         // The reference ties the page the user sees to the log line - the
@@ -84,14 +106,13 @@ final class Kernel
         // data from a form. Bootstrap forces the ini setting on and the
         // docroot ships a .user.ini as a net before that; logging class,
         // message and request context only keeps the guarantee even if both
-        // were to fail. PDO exception messages never contain bound values,
-        // so getMessage() is safe here - and exception messages never carry
-        // member data by convention (01 section 7).
+        // were to fail. Our own exception messages never carry member data
+        // (01 section 7); a database message does - see self::meldung().
         $zeile = sprintf(
             '[%s] %s: %s [%s %s] at %s:%d',
             $referenz,
             $e::class,
-            $e->getMessage(),
+            self::meldung($e),
             $request->method->value,
             $request->path,
             $e->getFile(),

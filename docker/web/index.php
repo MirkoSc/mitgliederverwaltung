@@ -38,8 +38,12 @@ if (($https === '' || $https === 'off')
 // /admin stays reachable while the flag is set - the update step chain runs
 // there - and so do its stylesheet and scripts, otherwise the page that is
 // supposed to end the maintenance would arrive unstyled and without the
-// JavaScript that drives the steps.
+// JavaScript that drives the steps. And the login: an admin whose session
+// ran out during a crashed update must be able to get back to /admin
+// (docs/spec/04-installation-und-update.md section 4).
 $durchlassen = str_starts_with($pfad, '/admin')
+    || $pfad === '/anmelden'
+    || str_starts_with($pfad, '/anmelden/')
     || str_starts_with($pfad, '/css/')
     || str_starts_with($pfad, '/js/');
 

@@ -11,7 +11,12 @@ use App\Tests\Support\AppTestCase;
  * End to end through the real directories (docs/spec/05-entwicklung.md
  * section 6): a settings section or a list dropped into its directory shows
  * up on its page - no route, no template and no list anywhere else changed.
- * The files are written for the test and removed afterwards.
+ *
+ * The files are written for the test and removed afterwards - in tearDown,
+ * and by a shutdown function should the run die on the way. Should one be
+ * left behind all the same, it cannot do harm: .gitignore keeps
+ * `Testlauf*.php` out of every commit (and so out of every release), and
+ * each carries a key of its own, so two of them never collide.
  */
 final class ErweiterungsSeitenTest extends AppTestCase
 {
@@ -31,16 +36,23 @@ final class ErweiterungsSeitenTest extends AppTestCase
         $datei = dirname(__DIR__, 2) . '/app/src/' . $verzeichnis . '/' . $klasse . '.php';
         file_put_contents($datei, $code);
         $this->angelegt[] = $datei;
+        register_shutdown_function(static function () use ($datei): void {
+            if (is_file($datei)) {
+                unlink($datei);
+            }
+        });
     }
 
+    /** Class name prefix and key of one test run. */
     private static function kennung(): string
     {
-        return 'Testlauf' . bin2hex(random_bytes(4));
+        return bin2hex(random_bytes(4));
     }
 
     public function testANewSettingsSectionAppearsOnTheSettingsPage(): void
     {
-        $klasse = self::kennung() . 'Abschnitt';
+        $kennung = self::kennung();
+        $klasse = 'Testlauf' . $kennung . 'Abschnitt';
         $this->anlegen('Admin/Einstellungen', $klasse, <<<PHP
             <?php
             declare(strict_types=1);
@@ -50,7 +62,7 @@ final class ErweiterungsSeitenTest extends AppTestCase
             final class {$klasse} implements Abschnitt
             {
                 public static function erzeugen(Dienste \$dienste): self { return new self(); }
-                public function schluessel(): string { return 'testlauf'; }
+                public function schluessel(): string { return 'testlauf-{$kennung}'; }
                 public function titel(): string { return 'Testlauf-Abschnitt'; }
                 public function reihenfolge(): int { return 1; }
                 public function recht(): Permission { return Permission::AdminEinstellungen; }
@@ -62,14 +74,15 @@ final class ErweiterungsSeitenTest extends AppTestCase
 
         $seite = $this->get('/admin')->body;
 
-        self::assertStringContainsString('<section class="abschnitt" id="testlauf" aria-labelledby="titel-testlauf">', $seite);
-        self::assertStringContainsString('<h2 id="titel-testlauf">Testlauf-Abschnitt</h2>', $seite);
+        self::assertStringContainsString('<section class="abschnitt" id="testlauf-' . $kennung . '" aria-labelledby="titel-testlauf-' . $kennung . '">', $seite);
+        self::assertStringContainsString('<h2 id="titel-testlauf-' . $kennung . '">Testlauf-Abschnitt</h2>', $seite);
         self::assertStringContainsString('Inhalt aus dem Abschnitt.', $seite);
     }
 
     public function testANewListAppearsOnTheListsPageAndHasItsOwnAddress(): void
     {
-        $klasse = self::kennung() . 'Liste';
+        $kennung = self::kennung();
+        $klasse = 'Testlauf' . $kennung . 'Liste';
         $this->anlegen('Listen', $klasse, <<<PHP
             <?php
             declare(strict_types=1);
@@ -79,7 +92,7 @@ final class ErweiterungsSeitenTest extends AppTestCase
             final class {$klasse} implements Liste
             {
                 public static function erzeugen(Dienste \$dienste): self { return new self(); }
-                public function schluessel(): string { return 'testlauf'; }
+                public function schluessel(): string { return 'testlauf-{$kennung}'; }
                 public function titel(): string { return 'Testlauf-Liste'; }
                 public function beschreibung(): string { return 'Zeigt, dass Listen gefunden werden.'; }
                 public function reihenfolge(): int { return 1; }
@@ -88,12 +101,12 @@ final class ErweiterungsSeitenTest extends AppTestCase
             PHP);
 
         $this->als(Rolle::Admin);
-        self::assertStringContainsString('<a href="/app/listen/testlauf">Testlauf-Liste</a>', $this->get('/app/listen')->body);
-        self::assertStringContainsString('Zeigt, dass Listen gefunden werden.', $this->get('/app/listen/testlauf')->body);
+        self::assertStringContainsString('<a href="/app/listen/testlauf-' . $kennung . '">Testlauf-Liste</a>', $this->get('/app/listen')->body);
+        self::assertStringContainsString('Zeigt, dass Listen gefunden werden.', $this->get('/app/listen/testlauf-' . $kennung)->body);
 
         // A list with fee data does not exist for the board (09).
         $this->als(Rolle::Vorstand);
         self::assertStringNotContainsString('Testlauf-Liste', $this->get('/app/listen')->body);
-        self::assertSame(404, $this->get('/app/listen/testlauf')->status);
+        self::assertSame(404, $this->get('/app/listen/testlauf-' . $kennung)->status);
     }
 }

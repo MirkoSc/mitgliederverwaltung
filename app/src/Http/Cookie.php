@@ -61,13 +61,14 @@ final readonly class Cookie
     }
 
     /**
-     * A cookie set by hostPrefixed(), whichever of the two names it uses.
-     * Reading both is safe: a browser only ever sends `__Host-` cookies that
-     * came over HTTPS.
+     * A cookie set by hostPrefixed(), under the name it got for this scheme.
+     * Over HTTPS only the `__Host-` name counts: the plain name could have
+     * been planted by a sibling subdomain or a plain-HTTP response, which is
+     * exactly what the prefix rules out.
      */
-    public static function hostPrefixedFrom(Request $request, string $name): ?string
+    public static function hostPrefixedFrom(Request $request, string $name, bool $secure): ?string
     {
-        return $request->cookie('__Host-' . $name) ?? $request->cookie($name);
+        return $request->cookie($secure ? '__Host-' . $name : $name);
     }
 
     /**
