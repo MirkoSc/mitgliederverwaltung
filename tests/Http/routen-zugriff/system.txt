@@ -1,0 +1,5 @@
+# app/routes/system.php - settings section System: admin only.
+GET /admin/systemcheck -> admin.einstellungen
+GET /admin/integritaet -> admin.einstellungen
+POST /admin/integritaet/start -> admin.einstellungen
+POST /admin/integritaet/schritt -> admin.einstellungen

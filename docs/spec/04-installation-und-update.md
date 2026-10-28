@@ -115,7 +115,9 @@ Der Shim leitet außerdem `GET`/`HEAD` über HTTP auf HTTPS um (Ausnahmen:
 
 `/admin/integritaet`: vergleicht jede Datei in `current/` mit der
 signierten `checksums.txt` des Releases. Abweichung = Warnung im Admin
-(02 §9).
+(02 §9). Umsetzung: `App\Service\Integritaet\CodeIntegritaet` als Schrittkette
+(htmx fordert jeden Schritt selbst an); Anzeige im Abschnitt „System“ der
+Einstellungen (`SystemAbschnitt`, Routen in `app/routes/system.php`).
 
 ## 6. Backup & Restore
 
@@ -142,7 +144,8 @@ signierten `checksums.txt` des Releases. Abweichung = Warnung im Admin
 (sodium, gd, zip, curl), `PASSWORD_ARGON2ID`, Schreibrechte auf
 `shared/var/`, sperrende `.htaccess` in `shared/`/`releases/`/`current/`,
 `shared/config.php` nicht über die eigene Domain abrufbar. Dienst ohne
-Abhängigkeit zu Http/Session.
+Abhängigkeit zu Http/Session (`App\Service\SystemCheck\SystemCheck`); die
+Ergebnisse lädt der Abschnitt „System“ per htmx nach.
 
 ## Pflicht-Tests
 
