@@ -9,3 +9,7 @@ braucht, legt sie als eigene Datei hier ab (`<bereich>.css`) statt
 Nur Ergänzungen mit den Tokens aus `app.css` (Farben, Abstände, Schrift),
 keine eigenen Farbwerte: hell/dunkel und der Barrierefrei-Modus wirken dann
 von selbst.
+
+Bevor eine Datei hier eigene Klassen erfindet: Die Musterseite
+`/admin/designsystem` zeigt, was es schon gibt (Formular, Liste/Karten,
+Reiter, Liste neben Detail, Meldungen, Etiketten …).
