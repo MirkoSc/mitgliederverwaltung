@@ -1,0 +1,15 @@
+/* The update step chain in the settings section Update and the maintenance
+   banner (issue #4). Tokens from app.css only. */
+
+.update-verlauf {
+    max-width: var(--text-breite);
+    margin-bottom: var(--abstand-4);
+}
+
+.update-verlauf ul {
+    padding-left: 1.25em;
+}
+
+.wartung-banner form {
+    margin-top: var(--abstand-3);
+}

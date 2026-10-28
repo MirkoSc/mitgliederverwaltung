@@ -22,6 +22,8 @@ enum AuditAktion: string
     case RolleGeaendert = 'rolle.geaendert';
     case BackupErstellt = 'backup.erstellt';
     case UpdateDurchgefuehrt = 'update.durchgefuehrt';
+    case UpdateZurueckgerollt = 'update.zurueckgerollt';
+    case WartungAufgehoben = 'wartung.aufgehoben';
     case RestoreDurchgefuehrt = 'restore.durchgefuehrt';
     case ExportErzeugt = 'export.erzeugt';
     case ImportDurchgefuehrt = 'import.durchgefuehrt';
@@ -44,6 +46,8 @@ enum AuditAktion: string
             self::RolleGeaendert => 'Rolle geändert',
             self::BackupErstellt => 'Backup erstellt',
             self::UpdateDurchgefuehrt => 'Update durchgeführt',
+            self::UpdateZurueckgerollt => 'Update zurückgerollt',
+            self::WartungAufgehoben => 'Wartungsmodus aufgehoben',
             self::RestoreDurchgefuehrt => 'Backup eingespielt',
             self::ExportErzeugt => 'Export erzeugt',
             self::ImportDurchgefuehrt => 'Import durchgeführt',
