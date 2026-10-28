@@ -109,6 +109,8 @@ Offen:
 | Familie | 130 € | ab 2 Personen in einem Haushalt (§4) |
 | Rentner aktiv | 50 € | ab 67 mit Rentennachweis |
 | Rentner passiv | 30 € | ab 67 mit Rentennachweis |
+| Mindestbeitrag | offen (bisher 25 €) | für Helfer, Trainer, Funktionäre (BT6 ✅) |
+| Beitragsfrei | 0 € | Grund als Pflicht-Bemerkung, z. B. Bildung und Teilhabe; nicht im Einzug (BT7 ✅) |
 
 - **muss** Beitragsarten und Beträge im Admin pflegbar; jede Beitragsart
   ist jedem Mitglied zuweisbar, unabhängig vom Alter (Hinweis, keine
@@ -132,18 +134,10 @@ Offen:
 - **muss** Ein Beitrag **je Mitglied**, egal in wie vielen Abteilungen –
   die Beitragsstruktur wurde umgestellt, Abteilungsbeiträge gibt es nicht
   mehr (BT5 ✅).
-- BT6: Die alte Software kennt einen **Mindestbeitrag** (25 €, rund 50
-  Mitglieder – Helfer, Trainer, Funktionäre, seit 2018 statt
-  beitragsfrei). In der neuen Beitragsordnung fehlt er. Fällt er weg, und
-  wenn ja, welche Beitragsart bekommen diese Mitglieder?
-- BT7: **Beitragsfrei** über „Bildung und Teilhabe" (Jobcenter/
-  Landratsamt, wenige Kinder). Braucht es eine Beitragsart „beitragsfrei"
-  (0 €)? *Vorschlag:* ja, eine Beitragsart „Beitragsfrei" mit Pflicht-
-  Bemerkung zum Grund; diese Mitglieder fehlen im Einzug.
-- BT8: Befristeter **Rabatt** (50 % bis Jahresende, z. B. Ausbildung,
-  wenige Fälle). *Vorschlag:* keine Rabatt-Funktion – Auszubildende
-  bekommen die Beitragsart „Jugend/…/Azubis", Einzelfälle über den von
-  Hand änderbaren Jahresbeitrag.
+- BT6a: Betrag des Mindestbeitrags künftig – bleibt es bei 25 €?
+- **nicht** Rabatt-Funktion: Auszubildende bekommen die Beitragsart
+  „Jugend/…/Azubis", Einzelfälle über den von Hand änderbaren
+  Jahresbeitrag (BT8 ✅).
 
 ### Einzug und Bezahlt-Status
 
@@ -262,21 +256,33 @@ Aktiven ein Zuschlag **„aktiv"** (24 €). Daraus folgt die Zuordnung auf
 die neue Beitragsordnung – und das Aktiv-Häkchen: wer den Zuschlag hat,
 ist aktiv.
 
-| alt (Grundbeitrag + Zuschlag) | Anzahl ca. | neu |
-|---|---|---|
-| Erwachsene + aktiv | 110 | Aktiv (85 €), aktiv |
-| Erwachsene | 130 | Passiv (50 €), passiv |
-| Kinder / Jugendliche | 160 | Jugend/Schüler/Studenten/Azubis (45 €) |
-| Rentner + aktiv | 1 | Rentner aktiv (50 €) |
-| Rentner | 80 | Rentner passiv (30 €) |
-| Familienkarte | 56 | Familie (130 €), Zahler der Familie |
-| Beitragsfrei FK | 125 | Mitglied einer Familie, kein eigener Beitrag |
-| Mindestbeitrag (± aktiv) | 53 | offen (BT6) |
-| Beitragsfrei (Bildung und Teilhabe) | 4 | offen (BT7) |
-| 50 % Rabatt befristet | 4 | entfällt (BT8) |
+**Zuordnung alt → neu (X3 ✅).** Alle 12 Kombinationen, die im Export
+vorkommen (über alle Abteilungen eines Mitglieds zusammengefasst):
 
-Ist ein Mitglied in zwei Abteilungen, werden beide Abteilungen übernommen,
-die Beitragsart einmal (X3 ✅ im Grundsatz).
+| alt (Grundbeitrag + Zuschlag) | Anzahl | neue Beitragsart | Aktiv-Häkchen |
+|---|---:|---|---|
+| Erwachsene + aktiv | 110 | Aktiv (85 €) | aktiv |
+| Erwachsene | 134 | Passiv (50 €) | passiv |
+| Kinder | 140 | Jugend/Schüler/Studenten/Azubis (45 €) | aktiv |
+| Jugendliche | 17 | Jugend/Schüler/Studenten/Azubis (45 €) | aktiv |
+| Rentner + aktiv | 1 | Rentner aktiv (50 €) | aktiv |
+| Rentner | 80 | Rentner passiv (30 €) | passiv |
+| Familienkarte | 56 | Familie (130 €), Zahler der Familie | aus Notiz¹ |
+| Beitragsfrei FK | 121 | Mitglied einer Familie, kein eigener Beitrag | aus Notiz¹ |
+| Mindestbeitrag + aktiv | 11 | Mindestbeitrag | aktiv |
+| Mindestbeitrag | 42 | Mindestbeitrag | passiv |
+| Beitragsfrei | 4 | Beitragsfrei, Grund aus der Notiz | aktiv |
+| (keine Mitgliedschaft) | 2 | kein Mitglied – nur Kontoinhaber der Mitglieder, für die gezahlt wird | – |
+
+¹ „aktiv", wenn die Notiz „aktiv" enthält, sonst passiv; Mirko prüft die
+Liste nach dem Import.
+
+- Ein **befristeter Rabatt** (4 Mitglieder, 50 %) wird nicht übernommen
+  (BT8 ✅): voller Beitrag der neuen Beitragsart.
+- Ist ein Mitglied in mehreren Abteilungen (11), werden alle Abteilungen
+  übernommen, die Beitragsart einmal.
+- Kinder/Jugendliche über 18 bzw. Rentner unter 67 erscheinen nach dem
+  Import als Hinweis („Hinweise statt Sperren").
 
 Zuordnung (Vorschlag):
 
