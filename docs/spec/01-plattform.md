@@ -65,10 +65,13 @@ Release-ZIP mit, `setup.php` kopiert sie, der Updater hält sie aktuell
   `App\Http\Kernel` → `Router` → Controller.
 - Ohne `shared/config.php` läuft die Anwendung im **Installationsmodus**
   (nur `/install*`).
-- Routen werden zentral in `app/src/routes.php` registriert; jede mit
-  `App\Http\Zugriff` (öffentlich / angemeldet / Recht X). Eine Testdatei
-  `tests/Http/routen-zugriff.txt` hält die Matrix fest – eine neue Route
-  ändert sie sichtbar im Diff.
+- Routen stehen in einer Datei je Bereich unter `app/routes/<bereich>.php`
+  (alle werden geladen, 05 §6); jede Route mit `App\Http\Zugriff`
+  (öffentlich / Cron-Token / angemeldet / Recht X). `App\Http\Routen`
+  macht aus der Deklaration die Prüfung: Login-Guard, wo eine Anmeldung
+  nötig ist, CSRF-Prüfung auf jedem POST. Je Routen-Datei hält
+  `tests/Http/routen-zugriff/<bereich>.txt` die Deklarationen fest – eine
+  neue Route ändert sie sichtbar im Diff.
 - Antworten: HTML-Seiten (ein Layout), htmx-Fragmente, Datei-Downloads
   (Exporte, Lastschriftdatei); JSON nur für Schrittketten.
 

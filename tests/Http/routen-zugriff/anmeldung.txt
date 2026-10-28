@@ -1,0 +1,5 @@
+# app/routes/anmeldung.php - the way in (public, E-F3). Issue #6 replaces
+# the placeholder and the development login with the real login.
+GET /anmelden -> öffentlich
+POST /anmelden/entwicklung -> öffentlich
+POST /abmelden -> öffentlich

@@ -1,0 +1,2 @@
+# app/routes/beitraege.php - fees and direct debit: admin only (08).
+GET /app/beitraege -> beitraege.verwalten

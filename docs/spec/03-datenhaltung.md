@@ -19,7 +19,7 @@
 | Tabelle | Spalten (Auszug) |
 |---|---|
 | `schema_version` | version, applied_at |
-| `setting` | key, value (JSON) |
+| `setting` | name PK (nicht `key`: reserviertes Wort), value (JSON), updated_at |
 | `user` | email UNIQUE, name, password_hash, status (`eingeladen`/`aktiv`/`gesperrt`), rolle (`admin`/`vorstand`), modus_barrierefrei, mfa_method NULL, session_epoch, created_at, last_login_at |
 | `mfa_totp` | user_id, secret_enc, confirmed_at, last_step NULL, created_at |
 | `mfa_email_code` | user_id, code_hash, expires_at, attempts, created_at |
@@ -29,7 +29,7 @@
 | `rate_limit` | key_hash PK, window_start, count |
 | `audit_log` | id, ts, user_id NULL (kein FK), action, entity NULL, entity_id NULL, ip_hash NULL, details (JSON), prev_hash, hash |
 | `mail_queue` | id, to_address, subject, body, status, attempts, next_try_at, created_at |
-| `job` | id, typ, status, user_id, state (JSON), progress, locked_until, created_at, updated_at |
+| `job` | id, typ, status (`offen`/`laeuft`/`fertig`/`fehler`), user_id NULL, state (JSON), progress (0–100), last_error NULL (nur Exception-Klasse), locked_until, created_at, updated_at |
 | `file_blob` | id, storage (`fs`/`db`), key_enc, header, size, cipher_sha256, mime, created_at |
 | `file_blob_chunk` | blob_id, seq, data |
 
@@ -50,7 +50,12 @@ Entfallen gegenüber Vereinsbelege: `vault`, `vault_grant`, `user_key`,
 
 ## 4. Migrationen
 
-- `migrations/NNN_name.sql`, fortlaufend, nie nachträglich ändern.
+- `migrations/NNN_name.sql`, nie nachträglich ändern. Nummern gehören
+  dem Issue, das sie im Arbeitsplan zugewiesen bekommt; Lücken sind normal.
+- Der Runner (`App\Service\Migration\Migrator`) wendet **jede noch nicht
+  eingetragene** Migration an, aufsteigend – nicht nur die über der
+  höchsten. Parallele Issues werden in beliebiger Reihenfolge gemergt; eine
+  Datenbank mit 040 bekommt 015 trotzdem, wenn es später kommt.
 - **Eine Version rückwärtskompatibel**: hinzufügen ja; umbenennen/löschen
   erst in der Folgeversion (Rollback läuft mit altem Code auf neuem
   Schema).

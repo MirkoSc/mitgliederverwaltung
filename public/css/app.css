@@ -1,0 +1,547 @@
+/*
+ * Design system of the Mitgliederverwaltung - starting point from issue #1.
+ *
+ * Owned by issue #9 (design system and layout), which builds it out.
+ * Additions of other issues go into a file of their own under
+ * public/css/teile/ (docs/spec/05-entwicklung.md section 6).
+ *
+ * Handwritten, no build step. Order: tokens, base, header and navigation,
+ * content, components.
+ *
+ * Principles
+ * - Mobile first: everything outside a media query holds from 360 px.
+ * - Light and dark via prefers-color-scheme; every colour is a token.
+ * - Barrierefrei-Modus = class .modus-barrierefrei on <html>, which only
+ *   overrides tokens (docs/spec/06-oberflaeche.md section 4).
+ * - No inline styles (CSP: style-src 'self', CLAUDE.md section 4).
+ *
+ * Look: the green of a football pitch as the header band, the navigation
+ * in it; the current page carries a yellow line like a pitch marking - the
+ * one loud colour, everything else stays calm. Inside the band the same
+ * yellow is the keyboard focus.
+ */
+
+/* ---------------------------------------------------------------- Tokens */
+
+:root {
+    color-scheme: light dark;
+
+    --farbe-grund: #f3f5f2;
+    --farbe-flaeche: #ffffff;
+    --farbe-text: #17211c;
+    --farbe-gedaempft: #55625b;
+    --farbe-rand: #d3dbd5;
+    --farbe-link: #1e5b45;
+
+    /* Header band: pitch green, chalk white on it and the yellow marking. */
+    --farbe-verein: #1e5b45;
+    --farbe-verein-text: #ffffff;
+    --farbe-verein-gedaempft: #c9ddd3;
+    --farbe-markierung: #f2c230;
+
+    /* Keyboard focus: dark on light surfaces, yellow in the header (.kopf). */
+    --farbe-fokus: #0b3d2c;
+
+    --farbe-ok: #1c6b3f;
+    --farbe-info: #1a5c9e;
+    --farbe-warnung: #8a5a00;
+    --farbe-fehler: #a3231b;
+    --farbe-ok-flaeche: #e7f3ec;
+    --farbe-info-flaeche: #e8f0f8;
+    --farbe-warnung-flaeche: #fbf1dd;
+    --farbe-fehler-flaeche: #fbebea;
+
+    --schrift: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    --schrift-basis: 1rem;
+    --schrift-klein: 0.875rem;
+    --zeilenhoehe: 1.5;
+
+    --abstand-1: 0.25rem;
+    --abstand-2: 0.5rem;
+    --abstand-3: 0.75rem;
+    --abstand-4: 1rem;
+    --abstand-5: 1.5rem;
+    --abstand-6: 2.5rem;
+
+    --radius: 6px;
+    --tippflaeche: 2.75rem;
+    --fokus-breite: 3px;
+    --inhalt-breite: 72rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --farbe-grund: #121915;
+        --farbe-flaeche: #1a231e;
+        --farbe-text: #e6ede8;
+        --farbe-gedaempft: #a3b1a8;
+        --farbe-rand: #2e3a33;
+        --farbe-link: #86d3ae;
+
+        --farbe-verein: #163f31;
+        --farbe-verein-gedaempft: #a9c6b8;
+        --farbe-fokus: #f2c230;
+
+        --farbe-ok: #6cc48f;
+        --farbe-info: #7fb4ee;
+        --farbe-warnung: #e0b155;
+        --farbe-fehler: #f08a83;
+        --farbe-ok-flaeche: #172a20;
+        --farbe-info-flaeche: #17232f;
+        --farbe-warnung-flaeche: #2b2415;
+        --farbe-fehler-flaeche: #2e1c1a;
+    }
+}
+
+/* Barrierefrei-Modus (06 section 4): large type, very high contrast, a
+   light background even in dark mode, large targets, a very clear focus.
+   The class on <html> beats the dark tokens by specificity. */
+:root.modus-barrierefrei {
+    color-scheme: light;
+
+    --farbe-grund: #ffffff;
+    --farbe-flaeche: #ffffff;
+    --farbe-text: #000000;
+    --farbe-gedaempft: #000000;
+    --farbe-rand: #000000;
+    --farbe-link: #0b3d2c;
+    --farbe-verein: #0b3d2c;
+    --farbe-verein-gedaempft: #ffffff;
+    --farbe-fokus: #000000;
+
+    --farbe-ok: #0b4a26;
+    --farbe-info: #0a3a6b;
+    --farbe-warnung: #5a3a00;
+    --farbe-fehler: #7a1410;
+    --farbe-ok-flaeche: #e7f3ec;
+    --farbe-info-flaeche: #e8f0f8;
+    --farbe-warnung-flaeche: #fbf1dd;
+    --farbe-fehler-flaeche: #fbebea;
+
+    --schrift-basis: 1.5rem;
+    --schrift-klein: 1.25rem;
+    --zeilenhoehe: 1.6;
+    --tippflaeche: 3.5rem;
+    --fokus-breite: 5px;
+}
+
+/* ------------------------------------------------------------------ Base */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--farbe-grund);
+    color: var(--farbe-text);
+    font-family: var(--schrift);
+    font-size: var(--schrift-basis);
+    line-height: var(--zeilenhoehe);
+}
+
+h1,
+h2,
+h3 {
+    line-height: 1.25;
+    margin: 0 0 var(--abstand-4);
+}
+
+h1 {
+    font-size: 1.75em;
+    letter-spacing: -0.01em;
+}
+
+h2 {
+    font-size: 1.3em;
+}
+
+p {
+    margin: 0 0 var(--abstand-4);
+    max-width: 70ch;
+}
+
+a {
+    color: var(--farbe-link);
+    text-underline-offset: 0.15em;
+}
+
+:focus-visible {
+    outline: var(--fokus-breite) solid var(--farbe-fokus);
+    outline-offset: 2px;
+}
+
+.sprungmarke {
+    position: absolute;
+    left: var(--abstand-4);
+    top: -10rem;
+    z-index: 10;
+    padding: var(--abstand-2) var(--abstand-4);
+    background: var(--farbe-flaeche);
+    color: var(--farbe-text);
+}
+
+.sprungmarke:focus {
+    top: var(--abstand-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ------------------------------------------------ Header and navigation */
+
+.kopf {
+    --farbe-fokus: var(--farbe-markierung);
+
+    background: var(--farbe-verein);
+    color: var(--farbe-verein-text);
+}
+
+/* The opened user menu lies light on top of the content. */
+.benutzermenue-liste {
+    --farbe-fokus: var(--farbe-link);
+}
+
+.kopf-zeile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--abstand-4);
+    max-width: var(--inhalt-breite);
+    margin: 0 auto;
+    padding: var(--abstand-3) var(--abstand-4);
+}
+
+.marke {
+    color: inherit;
+    font-weight: 700;
+    font-size: 1.125em;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+}
+
+/* User menu: a <details>, so it works without a script and by keyboard. */
+.benutzermenue {
+    position: relative;
+}
+
+.benutzermenue > summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-2);
+    cursor: pointer;
+    list-style: none;
+    text-align: right;
+    line-height: 1.2;
+}
+
+.benutzermenue > summary::-webkit-details-marker {
+    display: none;
+}
+
+.benutzermenue-name {
+    font-weight: 600;
+}
+
+.benutzermenue-rolle {
+    font-size: var(--schrift-klein);
+    color: var(--farbe-verein-gedaempft);
+}
+
+.benutzermenue-liste {
+    position: absolute;
+    right: 0;
+    top: calc(100% + var(--abstand-2));
+    z-index: 5;
+    width: min(21rem, calc(100vw - 2 * var(--abstand-4)));
+    margin: 0;
+    padding: var(--abstand-2) 0;
+    list-style: none;
+    background: var(--farbe-flaeche);
+    color: var(--farbe-text);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 24px rgb(0 0 0 / 18%);
+}
+
+.benutzermenue-liste a,
+.benutzermenue-liste .menue-knopf,
+.benutzermenue-liste .eintrag-spaeter {
+    display: block;
+    width: 100%;
+    min-height: var(--tippflaeche);
+    padding: var(--abstand-2) var(--abstand-4);
+    color: inherit;
+    line-height: 1.75rem;
+    text-decoration: none;
+    text-align: left;
+}
+
+.benutzermenue-liste form {
+    margin: 0;
+}
+
+.menue-knopf {
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.benutzermenue-liste a:hover,
+.menue-knopf:hover {
+    background: var(--farbe-grund);
+}
+
+.eintrag-spaeter {
+    color: var(--farbe-gedaempft);
+    cursor: default;
+}
+
+.eintrag-spaeter small {
+    font-size: var(--schrift-klein);
+}
+
+/* Main navigation at the bottom edge of the header band; the current page
+   carries the yellow marking line. */
+.navi ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--abstand-1);
+    max-width: var(--inhalt-breite);
+    margin: 0 auto;
+    padding: 0 var(--abstand-2);
+    list-style: none;
+}
+
+.navi a,
+.navi .eintrag-spaeter {
+    display: flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-3);
+    border-bottom: 4px solid transparent;
+    color: var(--farbe-verein-gedaempft);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.navi a:hover {
+    color: var(--farbe-verein-text);
+}
+
+/* Narrow screens: the entries as equal cells, two per row, instead of the
+   last one wrapping on its own. */
+@media (max-width: 29.99rem) {
+    .navi ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    }
+
+    .navi a,
+    .navi .eintrag-spaeter {
+        justify-content: center;
+    }
+}
+
+.navi a[aria-current="page"] {
+    color: var(--farbe-verein-text);
+    border-bottom-color: var(--farbe-markierung);
+}
+
+/* --------------------------------------------------------------- Content */
+
+.inhalt {
+    flex: 1;
+    width: 100%;
+    max-width: var(--inhalt-breite);
+    margin: 0 auto;
+    padding: var(--abstand-5) var(--abstand-4) var(--abstand-6);
+}
+
+.fuss {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--abstand-2) var(--abstand-4);
+    width: 100%;
+    max-width: var(--inhalt-breite);
+    margin: 0 auto;
+    padding: var(--abstand-4);
+    border-top: 1px solid var(--farbe-rand);
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+.fuss-links {
+    display: flex;
+    gap: var(--abstand-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.fuss a {
+    color: inherit;
+}
+
+@media (min-width: 48rem) {
+    .kopf-zeile,
+    .inhalt {
+        padding-left: var(--abstand-5);
+        padding-right: var(--abstand-5);
+    }
+
+    .navi ul {
+        padding: 0 var(--abstand-3);
+    }
+}
+
+/* ------------------------------------------------------------ Components */
+
+.knopf {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-5);
+    border: 2px solid var(--farbe-verein);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+    color: var(--farbe-link);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.knopf-haupt {
+    background: var(--farbe-verein);
+    color: var(--farbe-verein-text);
+}
+
+.hinweis {
+    padding: var(--abstand-3) var(--abstand-4);
+    border-left: 4px solid currentColor;
+    border-radius: var(--radius);
+}
+
+.hinweis-ok {
+    color: var(--farbe-ok);
+    background: var(--farbe-ok-flaeche);
+}
+
+.hinweis-info {
+    color: var(--farbe-info);
+    background: var(--farbe-info-flaeche);
+}
+
+.hinweis-warnung {
+    color: var(--farbe-warnung);
+    background: var(--farbe-warnung-flaeche);
+}
+
+.hinweis-fehler {
+    color: var(--farbe-fehler);
+    background: var(--farbe-fehler-flaeche);
+}
+
+/* Placeholder of a page a later issue builds. */
+.platzhalter {
+    max-width: 70ch;
+    padding: var(--abstand-5);
+    border: 2px dashed var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+}
+
+.platzhalter p:last-child {
+    margin-bottom: 0;
+}
+
+.platzhalter-stand {
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+/* A selection, one below the other (lists). */
+.auswahl {
+    display: grid;
+    gap: var(--abstand-3);
+    max-width: 48rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.auswahl li {
+    padding: var(--abstand-4);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+}
+
+.auswahl a {
+    font-weight: 600;
+    font-size: 1.125em;
+}
+
+.auswahl p {
+    margin: var(--abstand-1) 0 0;
+    color: var(--farbe-gedaempft);
+}
+
+/* Sections of the settings page and their jump links. */
+.sprungleiste ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--abstand-2) var(--abstand-4);
+    margin: 0 0 var(--abstand-5);
+    padding: 0;
+    list-style: none;
+}
+
+.abschnitt {
+    margin-bottom: var(--abstand-5);
+    padding: var(--abstand-5) var(--abstand-4);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+    scroll-margin-top: var(--abstand-4);
+}
+
+/* Error pages and login: narrow, on their own. */
+.meldeseite,
+.anmeldung {
+    max-width: 34rem;
+}
+
+.referenz {
+    color: var(--farbe-gedaempft);
+}
+
+.anmeldung-wahl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--abstand-3);
+}

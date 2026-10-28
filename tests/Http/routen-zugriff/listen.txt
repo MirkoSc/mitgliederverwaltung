@@ -1,0 +1,4 @@
+# app/routes/listen.php - lists: both roles (09); a list with fee data
+# declares its own right inside (App\Listen\Liste::recht()).
+GET /app/listen -> listen.sehen
+GET /app/listen/{liste:[a-z0-9-]+} -> listen.sehen

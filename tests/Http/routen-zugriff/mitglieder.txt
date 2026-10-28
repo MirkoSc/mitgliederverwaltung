@@ -1,0 +1,2 @@
+# app/routes/mitglieder.php - members: both roles (07 section 9).
+GET /app/mitglieder -> mitglieder.sehen

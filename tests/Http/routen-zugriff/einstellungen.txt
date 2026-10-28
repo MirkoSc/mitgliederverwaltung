@@ -1,0 +1,2 @@
+# app/routes/einstellungen.php - the settings page: admin only (06 section 2).
+GET /admin -> admin.einstellungen
