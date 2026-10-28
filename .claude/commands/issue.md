@@ -16,7 +16,7 @@ Setze GitHub-Issue #$ARGUMENTS um. Halte dich strikt an diesen Ablauf:
    Betrifft das Issue die Oberfläche: vorher den Skill `frontend-design`
    laden und anwenden.
 5. Prüfe: `docker compose run --rm app php vendor/bin/phpunit` und – falls
-   die Oberfläche betroffen ist – die Frontend-Tests. Alles muss grün sein,
+   JS betroffen ist – `node --test tests/js`. Alles muss grün sein,
    ohne Deprecations.
 6. Falls Architektur/Datenmodell betroffen: Spec bzw. CLAUDE.md im selben
    Branch aktualisieren; neue Grundsatzentscheidungen in

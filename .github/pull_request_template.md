@@ -4,11 +4,12 @@ Closes #
 
 ## Manuell zu prüfen
 - [ ] Mobil 360 px
-- [ ] Desktop
+- [ ] PC
+- [ ] PC im Barrierefrei-Modus (nur Tastatur)
 - [ ] 
 
 ## Checkliste
-- [ ] Tests grün (PHPUnit, Frontend-Tests), keine Deprecations
+- [ ] Tests grün (PHPUnit, node --test), keine Deprecations
 - [ ] UI-Änderungen nach dem Skill `frontend-design` gestaltet
 - [ ] Keine Klartext-Mitgliederdaten in Logs/Mails/Temp-Dateien/URLs
 - [ ] Rechte-Deklaration für neue Routen

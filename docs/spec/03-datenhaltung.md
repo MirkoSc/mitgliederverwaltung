@@ -45,9 +45,7 @@ Jede fachliche Tabelle (kommt mit der fachlichen Spec) folgt diesem Muster:
 |---|---|---|
 | `schema_version` | version, applied_at | – |
 | `setting` | key, value (JSON) | – (sensible Werte als `*_enc` mit S) |
-| `user` | email_enc, email_bi UNIQUE, display_name_enc, password_hash, status (`eingeladen`/`aktiv`/`gesperrt`), expires_at NULL, mfa_required, mfa_method NULL, session_epoch, created_at, last_login_at | S |
-| `role` | system_key NULL UNIQUE, name UNIQUE, is_system, is_external, permissions JSON `{recht: reichweite}`, created_at | – |
-| `user_role` | user_id, role_id | – |
+| `user` | email_enc, email_bi UNIQUE, display_name_enc, password_hash, status (`eingeladen`/`aktiv`/`gesperrt`), rolle (`admin`/`vorstand`), modus_barrierefrei, expires_at NULL, mfa_required, mfa_method NULL, session_epoch, created_at, last_login_at | S |
 | `user_key` | user_id, public_key, wrapped_private_key, kdf_salt, kdf_ops, kdf_mem, kdf_alg | – (selbst gewrappt) |
 | `vault` | version, public_key, public_key_mac, created_at, recovery_confirmed_at, retired_at | – (MAC: S) |
 | `vault_grant` | user_id, vault_version, sealed_private_key, granted_by, granted_at | – (versiegelt) |

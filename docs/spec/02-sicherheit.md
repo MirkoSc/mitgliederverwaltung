@@ -98,7 +98,8 @@ Blind Index: HMAC-SHA256(BIK, zweck | 0x00 | normalisierter Wert), BIK = KDF(VK_
   `samesite=Strict`). Die Sessiondatei allein ist wertlos.
 - Session-Cookie über HTTPS `__Host-sid` (`samesite=Lax`); im Docker-Dev
   über HTTP ohne Präfix. `secure` aus dem Request-Schema abgeleitet.
-- Idle-Timeout 30 min, absolut 12 h (Settings). Hintergrund-Anfragen
+- Idle-Timeout 30 min (im Barrierefrei-Modus 60 min, mit Warnung vor
+  dem Abmelden – 06 §4), absolut 12 h (Settings). Hintergrund-Anfragen
   (`X-Hintergrund: 1`) verlängern die Leerlaufzeit nicht.
 - Jeder Request prüft das Konto erneut (`LoginGuard`): Sperre, Ablauf,
   `session_epoch` wirken sofort. Session-ID-Regeneration bei Login und
@@ -125,16 +126,16 @@ Blind Index: HMAC-SHA256(BIK, zweck | 0x00 | normalisierter Wert), BIK = KDF(VK_
 
 ## 6. Rollen und Rechte (Mechanik)
 
-- Rechte sind ein PHP-Enum `App\Domain\Permission`; Rollen sind Datensätze
-  mit einer Menge von Rechten, im Admin pflegbar; mitgelieferte
-  Systemrollen über `system_key`.
-- Technische Rechte stehen fest: `admin.users`, `admin.vault_grant`,
-  `admin.settings`, `admin.system` (Backup, Update, Wartung), `audit.view`.
-  **Fachliche Rechte und Rollen** (Vorstand, Kassierer, Abteilungsleiter, …)
-  kommen mit der fachlichen Spec.
-- Je Recht eine Reichweite (`alle` oder eingeschränkt, z. B. auf eine
-  Abteilung – fachlich offen); Einschränkungen filtern im Repository per
-  `Zugriffsbereich::sqlBedingung()`, nie nur in der View.
+- Rechte sind ein PHP-Enum `App\Domain\Permission`. Es gibt **zwei feste
+  Rollen** (Einfachheit, kein Rollen-Editor):
+  - **Admin**: alle Rechte.
+  - **Vorstand**: Mitglieder suchen, ansehen, anlegen, bearbeiten (auch
+    IBAN, Abteilung, Beitragsart), Listen und Exporte. **Nicht**:
+    Jahresbeiträge, Einzug, Bezahlt-Status, Lastschriftdatei,
+    Einstellungen, Benutzer, System.
+- Die Zuordnung Rolle → Rechte steht im Code (ein `match`), die Rolle am
+  Benutzer. Keine Reichweiten/Scopes – alle sehen alle Mitglieder.
+  Übernommene Scope-Mechanik aus Vereinsbelege entfällt.
 - `/admin/*` nur mit mindestens einem `admin.*`-Recht.
 
 ## 7. Web-Sicherheit
@@ -153,9 +154,9 @@ Blind Index: HMAC-SHA256(BIK, zweck | 0x00 | normalisierter Wert), BIK = KDF(VK_
 - `.user.ini`: `zend.exception_ignore_args = On`,
   `zend.exception_string_param_max_len = 0`, `display_errors = Off`.
 - Kein Inline-JS, keine `on*`-Attribute, kein `eval`/`new Function` – auch
-  nicht in Bibliotheken. Ein `CspComplianceTest` prüft die ausgelieferten
-  Dateien. Braucht die gewählte UI-Technik (E-05) eine Lockerung (z. B.
-  Styles zur Laufzeit), wird sie einzeln begründet.
+  nicht in Bibliotheken. htmx über `<meta name="htmx-config">`,
+  `includeIndicatorStyles=false`, kein `hx-on`. Ein `CspComplianceTest`
+  prüft alle Templates.
 - **Daten im Browser**: entschlüsselte Fachdaten nur im Speicher der
   geöffneten Seite, nie in localStorage, sessionStorage, IndexedDB oder
   einem Service-Worker-Cache; `Cache-Control: no-store` auf allen Antworten

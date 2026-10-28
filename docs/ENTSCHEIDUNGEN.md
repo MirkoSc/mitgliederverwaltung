@@ -41,19 +41,15 @@ Ein geteiltes Composer-Paket würde drei Release-Zyklen koppeln und braucht
 eine eigene Pflege. Der übernommene Kern ist stabil; Sicherheitsfixes werden
 per Issue in die anderen Projekte gespiegelt.
 
-### E-05 ❓ UI-Technik – nach der Fachlichkeit entscheiden
-Offen, bewusst zurückgestellt: welche Oberfläche zur Fachlichkeit passt
-(viele große Tabellen? komplexe Formulare? Mitgliederportal?). Mögliche
-Wege auf dem Hoster:
-- server-gerenderte PHP-Seiten (ggf. mit htmx) wie Vereinsbelege – Login,
-  Installer, Updater und Designsystem direkt übernehmbar;
-- dasselbe mit CSS-/JS-Build in GitHub Actions;
-- Single-Page-App (z. B. Vue, Angular, Svelte, React) mit PHP-JSON-API,
-  in GitHub Actions gebaut;
-- Blazor WebAssembly (C#) mit PHP-API.
-Mitzuentscheiden: Komponentenbibliothek (fertig gestaltet, headless oder
-selbst gebaut) und deren CSP-Verträglichkeit. Feste Grenzen unabhängig
-davon: CLAUDE.md §1 und §4.
+### E-05 ✅ UI-Technik: PHP-Seiten + htmx wie Vereinsbelege
+Nach Klärung der Fachlichkeit: die Oberfläche besteht aus Listen mit
+Filtern, einem Mitglieder-Formular, wenigen Abläufen und Einstellungen –
+bei ~700 Mitgliedern. Server-gerenderte Seiten mit htmx reichen dafür,
+Login/2FA/Installer/Updater/Backup lassen sich samt Oberfläche aus
+Vereinsbelege übernehmen, kein Build, eine Sprache. Eine Single-Page-App
+hätte alle diese Oberflächen und eine JSON-API neu verlangt.
+Dazu: so wenige Seiten wie möglich, Handy + PC, Barrierefrei-Modus je
+Benutzer für den PC (06-oberflaeche.md).
 
 ### E-06 ✅ Kein Event Sourcing
 Verschlüsselte Event-Payloads würden Replay an eine Session binden.

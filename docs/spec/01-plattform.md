@@ -69,8 +69,8 @@ Release-ZIP mit, `setup.php` kopiert sie, der Updater hält sie aktuell
   `App\Http\Zugriff` (öffentlich / angemeldet / Recht X). Eine Testdatei
   `tests/Http/routen-zugriff.txt` hält die Matrix fest – eine neue Route
   ändert sie sichtbar im Diff.
-- Antwortformate (HTML-Seiten, Fragmente, JSON-API) hängen von der
-  UI-Technik ab (E-05).
+- Antworten: HTML-Seiten (ein Layout), htmx-Fragmente, Datei-Downloads
+  (Exporte, Lastschriftdatei); JSON nur für Schrittketten.
 
 ## 4. Lange Vorgänge: Schrittketten
 

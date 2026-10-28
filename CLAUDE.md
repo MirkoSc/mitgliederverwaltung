@@ -29,6 +29,7 @@ aktuelle Issue verlinkt**, nicht alle.
 | `docs/spec/03-datenhaltung.md` | DB-Konventionen, Verschlüsselungs-Klassifizierung, technische Tabellen, Blobs, Migrationen |
 | `docs/spec/04-installation-und-update.md` | setup.php, Installer, Self-Updater (Kanäle stable/beta), Release, Wartungsmodus, Backup/Restore, Systemcheck |
 | `docs/spec/05-entwicklung.md` | Docker, Tests, CI, Übernahme aus den Schwesterprojekten, Fremdbibliotheken |
+| `docs/spec/06-oberflaeche.md` | UI-Technik, Seitenaufbau (wenige Seiten), Muster, Barrierefrei-Modus |
 
 Schwesterprojekte (gleicher Hoster, gleiche Bauweise):
 `MirkoSc/vereinsbelege` (Hauptvorlage: Login, 2FA, Tresor, Installer,
@@ -58,12 +59,9 @@ erfunden** (05 §3).
   Ausnahme nur für gestreamte Downloads (Zeitlimit je Stück neu gesetzt).
 - Kein Build-Step auf dem Server; `vendor/` liegt im Release-ZIP. Nur reine
   PHP-Bibliotheken ohne native Abhängigkeiten.
-- **UI-Technik ist bewusst noch offen** (E-05) und wird erst nach der
-  Fachlichkeit entschieden – server-gerenderte Seiten, Single-Page-App oder
-  etwas dazwischen. Unabhängig davon gilt: kein Build auf dem Server (ein
-  Build in GitHub Actions ist möglich, das Ergebnis liegt dann im
-  Release-ZIP), keine externen Hosts/CDNs, CSP ohne `unsafe-inline` und
-  `unsafe-eval` für Skripte.
+- Server-gerendertes PHP + htmx + wenig Vanilla JS + handgeschriebenes
+  CSS (E-05), kein SPA-Framework, kein Build – weder auf dem Server noch
+  für CSS/JS. Keine externen Hosts/CDNs.
 - **Eine Installation = ein Verein.** Kein Mandanten-Konzept.
 - Öffentliches Repo: **niemals Secrets, Zugangsdaten oder echte
   Mitgliederdaten committen** – Testdaten nur erfunden/anonymisiert.
@@ -82,26 +80,31 @@ Identisch zu Vereinsbelege/Vereinskalender (Details 01 §2):
 
 Repo spiegelt ein Release: `app/src/` (Namespace `App\`, Unterordner
 `Http`, `Config`, `Database`, `Domain`, `Repository`, `Service/<Bereich>`,
-`Installer`, `Admin`, `App`, `PublicPages`, `Support`), `app/data/`,
-`public/` (Einstiegspunkt und ausgelieferte Assets), `bin/`,
-`migrations/`, `tests/`, `docker/`, `setup.php`. Wo der Quellcode der
-Oberfläche liegt, folgt aus E-05. `tools/` für Hilfsskripte, die **nicht**
+`Installer`, `Admin`, `App`, `PublicPages`, `Support`, `View`),
+`app/views/` (Templates, ein Layout + `partials/`), `app/data/`,
+`public/` (Einstiegspunkt, CSS, JS, vendored JS-Libs unter
+`public/js/vendor/`), `bin/`, `migrations/`, `tests/`, `docker/`,
+`setup.php`. `tools/` für Hilfsskripte, die **nicht**
 Teil eines Releases sind.
 
 ## 3. Bereiche der Anwendung (technisch)
 
-- **Öffentlich**: Startseite, Anmeldung, „Passwort vergessen",
-  `/impressum`, `/datenschutz`. Ob es weitere öffentliche Seiten gibt
-  (z. B. ein Formular ohne Anmeldung), ist fachlich offen (E-F1).
+- **Öffentlich**: Anmeldung, „Passwort vergessen", `/impressum`,
+  `/datenschutz` – sonst nichts (E-F3).
 - **Anwenderseite** (`/app/...`): alles Fachliche, je nach Recht.
-- **Adminseite** (`/admin/...`): Benutzer, Rollen, Tresor-Freigaben, Mail,
-  Rechtstexte, Einstellungen, Backup, Update, Systemcheck, Audit-Log.
+- **Adminseite** (`/admin/...`): Benutzer (zwei feste Rollen Admin/
+  Vorstand), Tresor-Freigaben, Mail, Rechtstexte, Einstellungen, Backup,
+  Update, Systemcheck, Audit-Log.
 
-**Oberfläche:** Technik offen (E-05). Fest steht: ein einheitliches
-Designsystem für alle Bereiche, mobile-first, hell/dunkel, barrierefrei
-(Tastatur, sichtbarer Fokus, `prefers-reduced-motion`). Jede UI-Arbeit
-lädt den Skill **`frontend-design`** (`.claude/skills/frontend-design/`,
-unverändert übernommen von Anthropic, Apache-2.0) und hält sich daran.
+**Oberfläche (06-oberflaeche.md):** so wenige Seiten wie möglich –
+Mitglieder, Listen, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
+und PC. Barrierearmut als solide Grundlage, kein Vollstandard; dazu ein
+**Barrierefrei-Modus** je Benutzer (PC: große Schrift, hoher Kontrast,
+große Flächen, nur Tastatur möglich) als CSS-Klasse, kein zweites Layout.
+Ein Layout, ein handgeschriebenes Designsystem (`public/css/app.css`,
+hell/dunkel). Jede UI-Arbeit lädt den Skill **`frontend-design`**
+(`.claude/skills/frontend-design/`, unverändert von Anthropic,
+Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
 
 ## 4. Sicherheits-Invarianten (Details: 02-sicherheit.md)
 
@@ -128,15 +131,16 @@ unverändert übernommen von Anthropic, Apache-2.0) und hält sich daran.
 - CSRF-Token zentral auf jeder POST-Route (`App\Http\CsrfSchutz`).
   Session-Cookie `httponly`, `samesite=Lax`, über HTTPS `__Host-sid`.
 - CSP `script-src 'self'` **ohne** `unsafe-inline`/`unsafe-eval` (kein
-  Inline-JS, keine `on*`-Attribute), keine externen Hosts. Jede
-  ausgelieferte JS-Bibliothek liegt im Release, mit Version, Lizenz und
-  Prüfsumme dokumentiert.
+  Inline-JS, keine `on*`-Attribute, htmx ohne `hx-on`), keine externen
+  Hosts. JS-Libs vendored unter `public/js/vendor/` mit Version, Lizenz
+  und Prüfsumme in dessen `README.md`. htmx wird über
+  `<meta name="htmx-config">` konfiguriert.
 - Entschlüsselte Daten werden im Browser **nie dauerhaft gespeichert**
   (kein localStorage/IndexedDB/Service-Worker-Cache), Antworten mit
   Fachdaten tragen `Cache-Control: no-store`.
 - Rechte **serverseitig pro Aktion** (`Permission`-Enum). Jede Route
   deklariert ihren Zugriff (`App\Http\Zugriff`, Pflichtargument von
-  `Router::get/post`); Scopes filtern per SQL im Repository.
+  `Router::get/post`). Zwei feste Rollen, keine Scopes (02 §6).
 
 ## 5. Datenhaltung (Details: 03-datenhaltung.md)
 
@@ -159,8 +163,8 @@ unverändert übernommen von Anthropic, Apache-2.0) und hält sich daran.
 
 - Lokal: `docker compose up` (PHP 8.5 + MariaDB, produktionsnah:
   `disable_functions=exec,…`, `max_execution_time=30`, `wait_timeout=120`).
-- Tests: PHPUnit (`failOnDeprecation`, `failOnWarning`); Frontend-Tests
-  je nach UI-Technik (E-05). Pflicht-Tests stehen je Spec unter
+- Tests: PHPUnit (`failOnDeprecation`, `failOnWarning`), JS-Logik mit
+  `node --test tests/js`. Pflicht-Tests stehen je Spec unter
   „Pflicht-Tests".
 - SQL nur in Repositories, nur Prepared Statements, kein ORM.
 - Jede Schema-Änderung = neue Migration `NNN_name.sql`; alte nie ändern;

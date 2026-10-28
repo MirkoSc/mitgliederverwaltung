@@ -28,6 +28,7 @@ Code und noch keine fachliche Spezifikation.
 | [docs/spec/03-datenhaltung.md](docs/spec/03-datenhaltung.md) | DB-Konventionen, Verschlüsselungs-Klassifizierung, Blobs, Migrationen |
 | [docs/spec/04-installation-und-update.md](docs/spec/04-installation-und-update.md) | setup.php, Installer, Updater, Release, Backup, Systemcheck |
 | [docs/spec/05-entwicklung.md](docs/spec/05-entwicklung.md) | Docker, Tests, CI, Übernahme aus den Schwesterprojekten |
+| [docs/spec/06-oberflaeche.md](docs/spec/06-oberflaeche.md) | Oberfläche: wenige Seiten, Handy + PC, Barrierefrei-Modus |
 | [.claude/skills/frontend-design/](.claude/skills/frontend-design/SKILL.md) | UI-Gestaltungs-Skill von Anthropic (Apache-2.0), gilt für jede UI-Arbeit |
 
 ## Lizenz
