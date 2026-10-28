@@ -15,7 +15,8 @@ und `beta`.
 
 **Status:** Technischer Rahmen und Fachlichkeit sind spezifiziert, der
 Arbeitsplan steht als Issues bereit; es gibt noch keinen Code. Die
-Umsetzung läuft vollautomatisch über GitHub Actions (`docs/VORGEHEN.md`).
+Umsetzung läuft vollautomatisch aus einer Claude-Code-Sitzung
+(`docs/VORGEHEN.md`).
 
 ## Dokumente
 

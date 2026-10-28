@@ -1,9 +1,9 @@
 # Arbeitsplan
 
 37 Issues, geschnitten für **eine Claude-Code-Sitzung bzw. einen
-Automatik-Job je Issue**. Die Reihenfolge ergibt sich allein aus
+Agenten je Issue**. Die Reihenfolge ergibt sich allein aus
 „Abhängig von" im Issue; alles in derselben Welle kann **parallel** laufen.
-Die Automatik (`.github/workflows/`, siehe `docs/VORGEHEN.md`) startet ein
+Der Workflow `entwicklung` (siehe `docs/VORGEHEN.md`) startet ein
 Issue, sobald alle Abhängigkeiten geschlossen sind.
 
 ## Modelle
@@ -83,10 +83,9 @@ Docker-Projekte für Tests, Konflikte beim Merge löst der jeweilige Job.
 
 | Label | Bedeutung |
 |---|---|
-| `auto` | wird von der Automatik bearbeitet |
+| `auto` | wird vom Workflow `entwicklung` bearbeitet |
 | `manuell` | nur von Hand starten (#37) |
-| `in-arbeit` | ein Job arbeitet gerade daran |
-| `braucht-hilfe` | Automatik ist hängen geblieben – Mirko schaut drauf, entfernt das Label, dann geht es weiter |
+| `braucht-hilfe` | Automatik ist hängen geblieben – Mirko schaut drauf; danach den Workflow erneut starten |
 | `modell:opus` / `modell:sonnet` / `modell:haiku` | Modell für Umsetzung und Reparatur |
 | `effort:low` … `effort:xhigh` | Gründlichkeit |
 | `welle:N` | nur zur Übersicht |

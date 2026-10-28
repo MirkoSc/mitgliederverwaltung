@@ -22,6 +22,3 @@ composer.phar
 # Real member data for the one-off legacy import (docs/spec/10-import.md) -
 # never commit anything from here.
 /import-daten/
-
-# Read-only checkouts of the sister projects in automated runs
-/.vorlagen/
