@@ -15,6 +15,7 @@ use App\Http\Kernel;
 use App\Http\Request;
 use App\Http\Response;
 use App\Http\Session;
+use App\Service\Migration\Migrator;
 use App\Support\FileLogger;
 use App\Support\Version;
 use App\View\Stylesheets;
@@ -61,6 +62,24 @@ abstract class AppTestCase extends TestCase
     protected function pdoFabrik(): ?\Closure
     {
         return null;
+    }
+
+    /**
+     * A migrated, empty database for a feature test whose pages read from
+     * one (the settings page does, since the section Mail exists). Use as
+     * `return $this->mitDatenbank();` in pdoFabrik().
+     *
+     * @return \Closure(): \PDO
+     */
+    protected function mitDatenbank(): \Closure
+    {
+        $pdo = DatabaseTestCase::leereDatenbank();
+        if ($pdo === null) {
+            self::markTestSkipped('Test database not available.');
+        }
+        new Migrator($pdo, dirname(__DIR__, 2) . '/migrations')->migrate();
+
+        return static fn(): \PDO => $pdo;
     }
 
     public static function baueDienste(TestKonten $konten, ?\Closure $pdoFabrik = null): Dienste
