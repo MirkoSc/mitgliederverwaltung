@@ -114,7 +114,7 @@ final class Session
             session_regenerate_id(true);
         }
 
-        unset($_SESSION['csrf']);
+        unset($_SESSION['csrf'], $_SESSION['rolle']);
         $zeit = ($now ?? new \DateTimeImmutable())->getTimestamp();
         $_SESSION['user_id'] = $userId;
         $_SESSION['login_at'] = $zeit;
@@ -142,6 +142,25 @@ final class Session
         }
 
         $_SESSION['session_epoch'] = $epoch;
+    }
+
+    /**
+     * Regenerates the session id when the account's role changed since the
+     * last request (02 section 4: "ID-Regeneration bei Login und
+     * Rechtewechsel") - App\Http\LoginGuard calls it on every request with
+     * the role it just read. The first call after the login only records
+     * the role; login() itself regenerated already.
+     */
+    public function rolleAbgleichen(string $rolle): void
+    {
+        $bisher = $_SESSION['rolle'] ?? null;
+        if ($bisher === $rolle) {
+            return;
+        }
+        if (is_string($bisher) && session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+        $_SESSION['rolle'] = $rolle;
     }
 
     /** The logged-in user's id, or null. */

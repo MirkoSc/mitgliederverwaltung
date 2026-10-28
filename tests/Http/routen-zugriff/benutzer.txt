@@ -1,0 +1,8 @@
+# app/routes/benutzer.php - forms of the settings section Benutzer: admin
+# only (02 section 6, admin.benutzer).
+POST /admin/benutzer -> admin.benutzer
+POST /admin/benutzer/{id:[0-9]+}/einladung -> admin.benutzer
+POST /admin/benutzer/{id:[0-9]+}/rolle -> admin.benutzer
+POST /admin/benutzer/{id:[0-9]+}/sperren -> admin.benutzer
+POST /admin/benutzer/{id:[0-9]+}/entsperren -> admin.benutzer
+POST /admin/benutzer/{id:[0-9]+}/loeschen -> admin.benutzer

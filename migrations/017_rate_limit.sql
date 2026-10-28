@@ -10,6 +10,6 @@ CREATE TABLE rate_limit (
     window_start DATETIME NOT NULL,
     count INT UNSIGNED NOT NULL DEFAULT 0,
     -- The cron sweep runs over the window start (App\Service\Cron\
-    -- RateLimitCleanupTask).
+    -- AnmeldungCleanupTask).
     KEY idx_rate_limit_window (window_start)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
