@@ -117,22 +117,6 @@ final readonly class SystemCheck
     }
 
     /**
-     * Results as one JSON document, for pasting into an issue. Built from
-     * CheckResult::toArray() only - there is no other way in, so no secret
-     * can ride along.
-     *
-     * @param list<CheckResult> $results what all() returned
-     */
-    public static function toJson(array $results): string
-    {
-        return (string) json_encode([
-            'status' => self::worstOf($results)->value,
-            'php' => PHP_VERSION,
-            'checks' => array_map(static fn(CheckResult $r): array => $r->toArray(), $results),
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
-    }
-
-    /**
      * @param list<CheckResult> $results
      */
     public static function worstOf(array $results): CheckStatus

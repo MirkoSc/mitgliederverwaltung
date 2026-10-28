@@ -11,6 +11,7 @@ use App\Service\Integritaet\CodeIntegritaet;
 use App\Service\Integritaet\IntegritaetPruefungLaeuftBereits;
 use App\Service\Integritaet\IntegritaetPruefungNichtMoeglich;
 use App\Service\SystemCheck\CurlStatusProbe;
+use App\Service\SystemCheck\StatusProbe;
 use App\Service\SystemCheck\SystemCheck;
 
 /**
@@ -37,7 +38,7 @@ final readonly class SystemController
         $check = new SystemCheck(
             pdo: $this->dienste->pdo(),
             varDir: $paths->varDir(),
-            statusProbe: new CurlStatusProbe(),
+            statusProbe: $this->dienste->dienst(StatusProbe::class, static fn(): StatusProbe => new CurlStatusProbe())(...),
             sharedDir: $paths->sharedDir(),
         );
 

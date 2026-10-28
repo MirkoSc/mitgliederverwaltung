@@ -15,7 +15,7 @@ use App\Http\Zugriff;
  * Admin only.
  */
 return static function (Routen $routen): void {
-    $admin = Zugriff::recht(Permission::AdminEinstellungen);
+    $admin = Zugriff::recht(Permission::AdminSystem);
 
     $routen->get('/admin/systemcheck', $admin, static fn(Request $r): Response => SystemController::aus($routen->dienste())->systemcheck($r));
     $routen->get('/admin/integritaet', $admin, static fn(Request $r): Response => SystemController::aus($routen->dienste())->integritaet($r));

@@ -280,24 +280,10 @@ final class SystemCheckTest extends TestCase
         self::assertSame(CheckStatus::Fail, SystemCheck::worstOf([$warn, $fail, $ok]));
     }
 
-    public function testTheJsonCarriesTheOverallStatusAndEveryCheck(): void
-    {
-        $results = new SystemCheck(null, $this->tempDir())->all();
-
-        $json = json_decode(SystemCheck::toJson($results), true, flags: JSON_THROW_ON_ERROR);
-
-        self::assertSame(SystemCheck::worstOf($results)->value, $json['status']);
-        self::assertSame(PHP_VERSION, $json['php']);
-        self::assertSame($this->keys($results), array_column($json['checks'], 'key'));
-        foreach ($json['checks'] as $check) {
-            self::assertSame(['key', 'label', 'expected', 'actual', 'status', 'detail'], array_keys($check));
-        }
-    }
-
     /**
      * As in tools/hosting-check.php (hc_redact): nothing secret reaches the
      * output. Here that holds by construction - a CheckResult has six string
-     * fields and the JSON is built from them alone - and by one detail: the
+     * fields - and by one detail: the
      * directory that was probed is a server path, so it stays out of the
      * result. The planted values below are what a config.php would hold.
      */
@@ -315,8 +301,7 @@ final class SystemCheckTest extends TestCase
 
         try {
             $results = new SystemCheck(null, $dir)->all();
-            $json = SystemCheck::toJson($results);
-            $text = $json . print_r(array_map(static fn(CheckResult $r): array => $r->toArray(), $results), true);
+            $text = print_r(array_map(static fn(CheckResult $r): array => $r->toArray(), $results), true);
 
             foreach ($geheim as $wert) {
                 self::assertStringNotContainsString($wert, $text);

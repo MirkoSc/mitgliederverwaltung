@@ -37,7 +37,7 @@ final readonly class SystemAbschnitt implements Abschnitt
 
     public function recht(): Permission
     {
-        return Permission::AdminEinstellungen;
+        return Permission::AdminSystem;
     }
 
     public function template(): string

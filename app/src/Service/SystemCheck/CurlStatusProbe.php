@@ -18,7 +18,7 @@ namespace App\Service\SystemCheck;
  * No curl_close(): deprecated since PHP 8.5 and without effect since 8.0
  * (same as App\Service\Update\ReleaseDownloader).
  */
-final readonly class CurlStatusProbe
+final readonly class CurlStatusProbe implements StatusProbe
 {
     private const int TIMEOUT_S = 5;
 

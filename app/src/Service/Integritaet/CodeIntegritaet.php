@@ -17,9 +17,9 @@ use App\Service\Update\ReleaseSwitcher;
  * docroot web/ (shim, .htaccess, .user.ini, foreign files) and the
  * permissions and structure of shared/config.php (kind `umgebung`).
  *
- * The list lies in the release directory itself (current/checksums.txt,
- * issue #241) and moves with every switch and rollback; an older
- * installation's shared/release_checksums.txt is the fallback. Once a
+ * The list lies in the release directory itself (current/checksums.txt)
+ * and moves with every switch and rollback; shared/release_checksums.txt
+ * (as stored by setup.php and the updater) is the fallback. Once a
  * release signing key is fixed (ReleaseSignatur::PUBLIC_KEY) the list must
  * carry a valid signature, so whoever can change files over FTP can no
  * longer rewrite the list to match. Before that the check catches crude
@@ -72,7 +72,7 @@ final readonly class CodeIntegritaet
     /**
      * @param string $releaseRoot current/ - the files under test
      * @param string $listenDatei shared/release_checksums.txt - fallback when
-     *        current/ has no list of its own (installed before issue #241)
+     *        current/ has no list of its own (e.g. the development environment)
      * @param string $statusDir where the chain keeps its state (shared/var)
      * @param (\Closure(): \DateTimeImmutable)|null $clock
      * @param string|null $webDir the docroot; null skips its checks
@@ -103,11 +103,10 @@ final readonly class CodeIntegritaet
 
     /**
      * A warning that does not stop the check: the list names another
-     * version than current/VERSION. Since issue #241 the list moves with the
-     * release directory, so this only happens with the shared/ list of an
-     * older installation (after a rollback or an update stopped before the
-     * switch - the older updater stored the list at the download step) - or
-     * when current/VERSION itself was changed. Never a reason to refuse: a
+     * version than current/VERSION. The list in the release moves with the
+     * release directory, so this only happens with the shared/ fallback list
+     * (after a rollback or an update stopped before the switch) - or when
+     * current/VERSION itself was changed. Never a reason to refuse: a
      * tampered VERSION file must not switch the check off - it is reported
      * as a changed file like any other.
      */
@@ -120,10 +119,10 @@ final readonly class CodeIntegritaet
         }
 
         return sprintf(
-            'Die Prüfsummenliste gehört zu Version %s, current/VERSION nennt %s. Bei Installationen aus der '
-            . 'Zeit vor der Liste im Release passiert das nach einem Rollback oder einem vor dem Umschalten '
-            . 'abgebrochenen Update – dann weichen viele Dateien ab, bis das nächste Update vollständig '
-            . 'durchläuft. Ohne einen solchen Grund ist die VERSION-Datei selbst verändert worden.',
+            'Die Prüfsummenliste gehört zu Version %s, current/VERSION nennt %s. Das passiert '
+            . 'nach einem Rollback oder einem vor dem Umschalten abgebrochenen Update – dann weichen viele '
+            . 'Dateien ab, bis das nächste Update vollständig durchläuft. Ohne einen solchen Grund ist die '
+            . 'VERSION-Datei selbst verändert worden.',
             $liste->version,
             $installiert ?? '(keine)',
         );
@@ -142,7 +141,7 @@ final readonly class CodeIntegritaet
         }
         $datei = $this->listenPfad();
         if ($datei === null) {
-            // Every installation since issue #241 has a list in its release;
+            // Every release carries its list;
             // a release without one (current/VERSION present - the
             // development environment has none) lost it. Deleting the list
             // must not quietly switch the check off.
@@ -398,8 +397,7 @@ final readonly class CodeIntegritaet
     }
 
     /**
-     * What runs with every request but lies outside current/ (issue #241,
-     * N-03): the docroot and shared/config.php. One short step - a handful
+     * What runs with every request but lies outside current/ (the docroot and shared/config.php. One short step - a handful
      * of small files.
      *
      * - web/index.php must be ReleaseSwitcher::SHIM byte for byte;
@@ -414,8 +412,7 @@ final readonly class CodeIntegritaet
      *   literals>;` - its content is individual and is never compared,
      *   but code in it would run with every request.
      *
-     * A legacy state from before #241 has no `umgebung` kind yet; it is
-     * added here.
+     * A state without the `umgebung` kind gets it added here.
      *
      * @param array<string, mixed> $stand
      * @return array<string, mixed>
@@ -682,8 +679,7 @@ final readonly class CodeIntegritaet
     }
 
     /**
-     * The list in the release (issue #241), else the one in shared/ an
-     * installation from before kept. Never a symlink: it may point anywhere.
+     * The list in the release, else the one in shared/. Never a symlink: it may point anywhere.
      */
     private function listenPfad(): ?string
     {

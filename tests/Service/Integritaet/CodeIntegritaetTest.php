@@ -332,17 +332,17 @@ final class CodeIntegritaetTest extends TestCase
         self::assertStringContainsString('app/src/A.php', $json);
     }
 
-    // ---- issue #241: list in the release, signature, web/ and config.php ----
+    // ---- list in the release, signature, web/ and config.php ----
 
     /**
-     * Since #241 the list lies in the release directory and moves with it;
+     * The list lies in the release directory and moves with it;
      * it is preferred over shared/ and is no additional file itself.
      */
     public function testTheListInTheReleaseIsPreferredAndNoFinding(): void
     {
         rename($this->liste, $this->release . '/checksums.txt');
         file_put_contents($this->release . '/checksums.txt.sig', "irrelevant\n");
-        // A stale list in shared/ (from the updater before #241) is ignored.
+        // A stale list in shared/ (from the updater) is ignored.
         file_put_contents($this->liste, str_repeat('3', 64) . "  mitgliederverwaltung-v0.9.0.zip\n"
             . str_repeat('3', 64) . "  release/VERSION\n");
 
@@ -444,7 +444,7 @@ final class CodeIntegritaetTest extends TestCase
     }
 
     /**
-     * N-03: the docroot runs with every request but lies outside current/.
+     * The docroot runs with every request but lies outside current/.
      */
     public function testDocrootDifferencesAreFindings(): void
     {
@@ -578,7 +578,7 @@ final class CodeIntegritaetTest extends TestCase
     }
 
     /**
-     * A check started by the release before #241 knows no `umgebung` kind;
+     * A saved check state without the `umgebung` kind;
      * continued after the update it still finishes.
      */
     public function testAStateFromBeforeTheUpdateStillFinishes(): void
@@ -644,7 +644,7 @@ final class CodeIntegritaetTest extends TestCase
 
     /**
      * The list moved into the release with its signature, as setup.php and
-     * the updater leave it since #241.
+     * the updater leave it.
      */
     private function signierteListe(string $secret): void
     {
