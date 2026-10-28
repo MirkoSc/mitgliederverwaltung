@@ -34,21 +34,21 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 - **nicht** Öffentliche Seiten außer Anmeldung, Impressum, Datenschutz
   (E-F3: geklärt, vorerst nein).
 
-Offen:
-- B2: Was genau ist „keine Finanzen" für den Vorstand? *Vorschlag:* er
-  darf Mitglieder anlegen und bearbeiten (inkl. IBAN, Abteilung,
-  Beitragsart), sieht aber keine Einzüge und kann nichts auf „bezahlt"
-  setzen oder Lastschriftdateien erzeugen.
+- **muss** „Keine Finanzen" heißt: Der Vorstand darf Mitglieder anlegen
+  und bearbeiten (auch IBAN, Abteilung, Beitragsart). Einzug, Bezahlt-
+  Status und Lastschriftdatei sind dem Admin vorbehalten (B2 ✅).
 
 ## 2. Mitglieder – Stammdaten
 
 - **muss** Klassische Stammdaten: Name, Vorname, Anschrift, Telefon,
   E-Mail, Geburtsdatum, IBAN, Eintrittsdatum.
 - **muss** Suche nach Mitgliedern.
-- **muss** Aktiv/passiv – passive Mitglieder werden ebenfalls geführt.
+- **muss** Aktiv/passiv ist ein eigenes Häkchen am Mitglied, unabhängig
+  von der Beitragsart; passt beides nicht zusammen, gibt es einen Hinweis
+  (BT4 ✅).
 - **muss** Geschlecht (gebraucht für die BLSV-Meldung, §6).
 
-- **muss** Mitgliedsnummer aus der alten Software wird übernommen; neue
+- **muss** Mitgliedsnummer = `Adressnummer` der alten Software (X2 ✅); neue
   Mitglieder bekommen die nächste freie Nummer (M1 ✅).
 - **muss** Austritt mit Datum und Grund (z. B. „verstorben"); Ehemalige
   bleiben gespeichert, standardmäßig ausgeblendet, Löschen nur von Hand
@@ -89,11 +89,13 @@ Offen:
   unter 18, oder auch Großeltern, volljährige Kinder?
   *Vorschlag:* jeder darf hinzugefügt werden; Hinweis nur bei Kindern
   ≥ 18.
-- F4: Woher kennt die alte Software die Zusammengehörigkeit einer
-  Familie? Im Export zahlt jede Person „selbst"; erkennbar ist nur die
-  Beitragsart („Familienkarte" beim Zahler, „Beitragsfrei FK" bei den
-  anderen). *Vorschlag:* beim Import Familien über gleiche Anschrift
-  vorschlagen, du bestätigst sie in einer Liste.
+- F4: Woher kommt die Zusammengehörigkeit einer Familie? Im Export ist
+  sie nur indirekt erkennbar: „Familienkarte" beim Zahler, „Beitragsfrei
+  FK" bei den anderen, oft ein Hinweis in den Notizen („FK mit …"),
+  selten ein abweichender Zahler. Mirko sucht nach einer echten
+  Zuordnung. *Vorschlag, falls es keine gibt:* der Import schlägt
+  Familien aus gleicher Anschrift und Notiz-Hinweis vor, Mirko bestätigt
+  sie in einer Liste.
 
 ## 5. Beiträge
 
@@ -127,18 +129,21 @@ Offen:
 - BT3: Beitragsänderung – gilt ein neuer Betrag ab dem nächsten
   Beitragsjahr, bereits erzeugte Jahresbeiträge bleiben unverändert?
   *Vorschlag:* ja.
-- BT4 (neu formuliert): Woran erkennt man, ob jemand aktiv oder passiv
-  ist? Die Beitragsart verrät es nur teilweise („Passiv", „Rentner
-  passiv"), bei „Jugend" und „Familie" nicht. Beispiel: Die Mutter in
-  einer Familienkarte macht keinen Sport – ist sie passiv? *Vorschlag:*
-  „aktiv/passiv" ist ein eigenes Häkchen am Mitglied, unabhängig von der
-  Beitragsart. Passt beides nicht zusammen (Häkchen „aktiv", Beitragsart
-  „Passiv"), gibt es einen Hinweis.
-- BT5: Die alte Software rechnet Beiträge **je Abteilung** (wer in zwei
-  Abteilungen ist, hat zwei Beiträge). Die neue Beitragsordnung ist ein
-  Beitrag **je Mitglied**, egal wie viele Abteilungen. Stimmt das, und
-  gibt es keine zusätzlichen Abteilungsbeiträge mehr? *Vorschlag:* ja,
-  ein Beitrag je Mitglied.
+- **muss** Ein Beitrag **je Mitglied**, egal in wie vielen Abteilungen –
+  die Beitragsstruktur wurde umgestellt, Abteilungsbeiträge gibt es nicht
+  mehr (BT5 ✅).
+- BT6: Die alte Software kennt einen **Mindestbeitrag** (25 €, rund 50
+  Mitglieder – Helfer, Trainer, Funktionäre, seit 2018 statt
+  beitragsfrei). In der neuen Beitragsordnung fehlt er. Fällt er weg, und
+  wenn ja, welche Beitragsart bekommen diese Mitglieder?
+- BT7: **Beitragsfrei** über „Bildung und Teilhabe" (Jobcenter/
+  Landratsamt, wenige Kinder). Braucht es eine Beitragsart „beitragsfrei"
+  (0 €)? *Vorschlag:* ja, eine Beitragsart „Beitragsfrei" mit Pflicht-
+  Bemerkung zum Grund; diese Mitglieder fehlen im Einzug.
+- BT8: Befristeter **Rabatt** (50 % bis Jahresende, z. B. Ausbildung,
+  wenige Fälle). *Vorschlag:* keine Rabatt-Funktion – Auszubildende
+  bekommen die Beitragsart „Jugend/…/Azubis", Einzelfälle über den von
+  Hand änderbaren Jahresbeitrag.
 
 ### Einzug und Bezahlt-Status
 
@@ -167,7 +172,7 @@ Offen:
   eigenen Liste „selbst kassieren" (E4 ✅).
 
 Offen:
-- E6: Der Export der alten Software enthält **keine Mandatsreferenz**.
+- E6 (Mirko prüft): Der Export der alten Software enthält **keine Mandatsreferenz**.
   Welche Referenz stand in den bisherigen Lastschriftdateien? Am
   einfachsten: in einer alten Einzugsdatei bzw. im Online-Banking bei
   einer Lastschrift nachsehen, wie die Mandatsreferenz aussieht (nur das
@@ -227,8 +232,11 @@ Offen:
 
 ### Altdatei: Export der bisherigen Software
 
-Analysiert wurde nur der **Aufbau** einer Beispieldatei (Spaltennamen,
-Formate). Die Datei selbst und alle Inhalte bleiben außerhalb des Repos.
+Analysiert wurden zwei Exporte: der volle Aufbau (167 Spalten) an
+wenigen Beispielen und ein vollständiger Export aller ~716 Mitglieder
+ohne Namen/Anschriften (102 Spalten). Die Dateien und ihre Inhalte
+bleiben außerhalb des Repos; hier stehen nur Spalten, Kategorien und
+Zählungen.
 
 - Ein Blatt, **167 Spalten**, eine Zeile je Mitglied. Datumswerte als
   Text `TT.MM.JJJJ`, IBAN mit Leerzeichen gruppiert, Telefonnummern in
@@ -236,15 +244,45 @@ Formate). Die Datei selbst und alle Inhalte bleiben außerhalb des Repos.
 - Abteilungen und Beiträge stehen in Spaltengruppen „(alle)(1..3)"
   (Historie) und „(alle aktuell)(1..3)" (aktuell) mit Abteilungsnummer,
   Abteilungsname, Beitragsnummer, Beitragsname, Betrag, von, bis, Rabatt.
-- Bekannte Werte: Zahlart „Lastschriftzahler"/„Rechnungszahler";
-  Beitragsnamen u. a. „aktiv", „Erwachsene", „Familienkarte",
-  „Beitragsfrei FK"; Abteilungen u. a. „Fußball" (09), „Turnen" (34).
+- Abteilungen: **01** Badminton, **09** Fußball, **16** Kegeln,
+  **34** Turnen (in Notizen meist „Gymnastik" genannt). Etwa 13 Mitglieder
+  sind in zwei Abteilungen.
+- Zahlart: 706 „Lastschriftzahler", 10 „Rechnungszahler".
+- 14 Mitglieder zahlen über eine andere Person (Ehepartner, Eltern);
+  2 Einträge sind reine Zahler-Adressen ohne eigene Mitgliedschaft.
+- 15 Übungsleiter mit Lizenznummer (`Uel*`-Spalten).
+- Notizfelder sind fast immer befüllt, oft mit Abteilung + aktiv/passiv
+  („Fußball-Passiv") oder Funktionen (Wirtschaftshelfer, Bahndienst,
+  Jugendtrainer …).
+
+**Alte Beitragslogik:** je Abteilung ein **Grundbeitrag** (Erwachsene
+50 €, Kinder/Jugendliche 36 €, Rentner 25 €, Familienkarte 110 €,
+Beitragsfrei FK 0 €, Mindestbeitrag 25 €, Beitragsfrei 0 €) plus bei
+Aktiven ein Zuschlag **„aktiv"** (24 €). Daraus folgt die Zuordnung auf
+die neue Beitragsordnung – und das Aktiv-Häkchen: wer den Zuschlag hat,
+ist aktiv.
+
+| alt (Grundbeitrag + Zuschlag) | Anzahl ca. | neu |
+|---|---|---|
+| Erwachsene + aktiv | 110 | Aktiv (85 €), aktiv |
+| Erwachsene | 130 | Passiv (50 €), passiv |
+| Kinder / Jugendliche | 160 | Jugend/Schüler/Studenten/Azubis (45 €) |
+| Rentner + aktiv | 1 | Rentner aktiv (50 €) |
+| Rentner | 80 | Rentner passiv (30 €) |
+| Familienkarte | 56 | Familie (130 €), Zahler der Familie |
+| Beitragsfrei FK | 125 | Mitglied einer Familie, kein eigener Beitrag |
+| Mindestbeitrag (± aktiv) | 53 | offen (BT6) |
+| Beitragsfrei (Bildung und Teilhabe) | 4 | offen (BT7) |
+| 50 % Rabatt befristet | 4 | entfällt (BT8) |
+
+Ist ein Mitglied in zwei Abteilungen, werden beide Abteilungen übernommen,
+die Beitragsart einmal (X3 ✅ im Grundsatz).
 
 Zuordnung (Vorschlag):
 
 | Spalte(n) alt | Ziel | Bemerkung |
 |---|---|---|
-| `Adressnummer` bzw. `LfdNr` | Mitgliedsnummer | offen, welche (X2) |
+| `Adressnummer` | Mitgliedsnummer | `LfdNr` wird nicht gebraucht (X2 ✅) |
 | `Anrede`, `Vorname`, `Nachname`, `Titel` | Name | |
 | `Geschlecht` (m/w) | Geschlecht | für BLSV |
 | `GebDatum` | Geburtsdatum | `AlterInJahren`, `GebSpezial` werden nicht gebraucht |
@@ -255,19 +293,17 @@ Zuordnung (Vorschlag):
 | `EintrittsDatum`, `AustrittsDatum`, `Austrittsgrund` | Eintritt/Austritt | |
 | `Zahlart` | Lastschrift ja/nein | „Rechnungszahler" → selbst kassieren |
 | `Abteilungsnummer/-name (alle aktuell)(1..3)` | Abteilungen | |
-| `Beitragsname (alle aktuell)(1)` | Beitragsart | über Zuordnungstabelle alt → neu (X3) |
+| `Beitragsname (alle aktuell)(1..3)` | Beitragsart + aktiv/passiv | Zuordnungstabelle oben |
 | `AdrNotizen`, `MitNotizen` | Bemerkung | |
-| `Multifeld 1` (Werte A/H/I) | ? | Bedeutung offen (X4) |
+| `Multifeld 1`, `Multifeld 1_` (Kürzel/Zahlen, selten befüllt) | – | Bedeutung unbekannt, wird nicht übernommen (X4 ✅) |
 | `Post*`, `Zahler*`-Anschrift, `Konto2/3*`, `Fax*`, `*Dienst`, `Homepage`, `Nation`, `GeburtsOrt`, `Sortierfeld`, `Wahlfeld*`, `Zeitung`, `Helfer`, `Mahnstufe`, `offenerPosten*`, `UnbedenkBesch*`, `Uel*` (Übungsleiter) | – | nicht übernommen (in der Beispieldatei leer, 0 oder doppelt) |
 
 Offen:
-- X2: Welche Nummer ist die Mitgliedsnummer – `Adressnummer` oder
-  `LfdNr`? (Sie sind nicht immer gleich.)
-- X3: Zuordnung alte → neue Beitragsarten (z. B. „Erwachsene" → „Aktiv"?
-  „Beitragsfrei FK" → Mitglied einer Familie ohne eigenen Beitrag).
-  Machen wir mit der Liste aller alten Beitragsnamen.
-- X4: Was bedeuten die Werte A/H/I in `Multifeld 1`, und werden sie
-  gebraucht?
+- X5: Abteilung „Turnen" (34) heißt im Alltag „Gymnastik". *Vorschlag:*
+  in der neuen Anwendung „Gymnastik", BLSV-Nummer 34 bleibt.
+- X6: Die Notizen enthalten oft nur Abteilung + aktiv/passiv – das
+  steckt künftig in eigenen Feldern. *Vorschlag:* Notizen trotzdem
+  vollständig in die Bemerkung übernehmen; aufräumen kann man später.
 
 ## 9. Noch nicht besprochen
 
@@ -275,6 +311,8 @@ Bewusst gesammelt, damit nichts verloren geht – jeweils nur, wenn ihr es
 braucht:
 - Kommunikation (Rundmail an Abteilung, Serienbrief, Mitgliedsausweis)
 - Ehrungen/Jubiläen (25/40/50 Jahre Mitgliedschaft)
-- Funktionen im Verein (Übungsleiter, Abteilungsleiter)
+- Funktionen im Verein (Übungsleiter mit Lizenznummer – 15 in der
+  alten Software –, Wirtschaftshelfer, Bahndienst, Jugendtrainer …;
+  stehen heute in den Notizen)
 - Änderungsprotokoll je Mitglied („wer hat wann die IBAN geändert")
 - Kopplung an Vereinsbelege oder Vereinskalender (E-F4)
