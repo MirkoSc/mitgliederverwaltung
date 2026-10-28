@@ -13,6 +13,17 @@ use App\Tests\Support\AppTestCase;
  */
 final class SeitenTest extends AppTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->datenbank();
+    }
+
+    protected function pdoFabrik(): ?\Closure
+    {
+        return fn(): \PDO => $this->datenbank();
+    }
+
     public function testAnonymousVisitorsAreSentToTheLogin(): void
     {
         self::assertWeiterleitungNach('/app', $this->get('/'));

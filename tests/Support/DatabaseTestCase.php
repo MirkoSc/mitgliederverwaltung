@@ -73,6 +73,12 @@ abstract class DatabaseTestCase extends TestCase
         return dirname(__DIR__, 2) . '/migrations';
     }
 
+    /** The shared test connection, or null without a database (see AppTestCase::datenbank()). */
+    public static function verbindungFuerTests(): ?\PDO
+    {
+        return self::connect();
+    }
+
     private static function connect(): ?\PDO
     {
         if (self::$sharedPdo !== null) {
@@ -108,7 +114,7 @@ abstract class DatabaseTestCase extends TestCase
         return self::$sharedPdo = $pdo;
     }
 
-    protected function dropAllTables(\PDO $pdo): void
+    public static function dropAllTables(\PDO $pdo): void
     {
         $tables = $pdo
             ->query('SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()')

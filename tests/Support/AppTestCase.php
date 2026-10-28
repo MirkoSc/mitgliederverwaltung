@@ -15,6 +15,7 @@ use App\Http\Kernel;
 use App\Http\Request;
 use App\Http\Response;
 use App\Http\Session;
+use App\Service\Migration\Migrator;
 use App\Support\FileLogger;
 use App\Support\Version;
 use App\View\Stylesheets;
@@ -38,6 +39,29 @@ abstract class AppTestCase extends TestCase
     protected TestKonten $konten;
 
     private static int $naechsteId = 100;
+
+    private ?\PDO $datenbank = null;
+
+    /**
+     * A migrated, empty test database - for the tests whose pages read the
+     * database (the settings page reads the legal texts). Feature tests
+     * stay database-free unless they ask for it: call this in setUp() and
+     * return it from pdoFabrik(). Skipped without a database.
+     */
+    protected function datenbank(): \PDO
+    {
+        if ($this->datenbank !== null) {
+            return $this->datenbank;
+        }
+        $pdo = DatabaseTestCase::verbindungFuerTests();
+        if ($pdo === null) {
+            self::markTestSkipped('Test database not available.');
+        }
+        DatabaseTestCase::dropAllTables($pdo);
+        new Migrator($pdo, dirname(__DIR__, 2) . '/migrations')->migrate();
+
+        return $this->datenbank = $pdo;
+    }
 
     protected function setUp(): void
     {

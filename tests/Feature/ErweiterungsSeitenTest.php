@@ -20,6 +20,17 @@ use App\Tests\Support\AppTestCase;
  */
 final class ErweiterungsSeitenTest extends AppTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->datenbank();
+    }
+
+    protected function pdoFabrik(): ?\Closure
+    {
+        return fn(): \PDO => $this->datenbank();
+    }
+
     /** @var list<string> */
     private array $angelegt = [];
 
