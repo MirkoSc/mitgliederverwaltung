@@ -141,12 +141,12 @@ final class VereinTest extends AppTestCase
         ]]);
 
         $rest = $this->dienste->pdo()->query('SELECT id, name, vereinsnummer FROM verband')->fetchAll(\PDO::FETCH_ASSOC);
-        self::assertSame([['id' => $blsv, 'name' => 'BLSV', 'vereinsnummer' => '777']], $rest);
+        self::assertSame([['id' => (int) $blsv, 'name' => 'BLSV', 'vereinsnummer' => '777']], $rest);
     }
 
     public function testWithoutALogoThePlaceholderIsDelivered(): void
     {
-        $antwort = $this->aufrufen(new Request(HttpMethod::Get, '/logo/kopf'));
+        $antwort = $this->kernel->handle(new Request(HttpMethod::Get, '/logo/kopf'));
 
         self::assertInstanceOf(FileResponse::class, $antwort);
         self::assertSame('image/svg+xml', $antwort->headers['Content-Type']);
@@ -167,14 +167,14 @@ final class VereinTest extends AppTestCase
         self::assertWeiterleitungNach('/admin#verein', $antwort);
         $this->abmelden();
         foreach (['kopf', 'anmeldung', 'favicon', 'apple'] as $groesse) {
-            $bild = $this->aufrufen(new Request(HttpMethod::Get, '/logo/' . $groesse, query: ['v' => '1']));
+            $bild = $this->kernel->handle(new Request(HttpMethod::Get, '/logo/' . $groesse, query: ['v' => '1']));
             self::assertInstanceOf(FileResponse::class, $bild, $groesse);
             self::assertSame('image/png', $bild->headers['Content-Type']);
             self::assertStringContainsString('immutable', $bild->headers['Cache-Control']);
             self::assertSame(IMAGETYPE_PNG, getimagesize($bild->filePath)[2]);
         }
         // Without ?v= the same URL must be revalidated.
-        $ohne = $this->aufrufen(new Request(HttpMethod::Get, '/logo/kopf'));
+        $ohne = $this->kernel->handle(new Request(HttpMethod::Get, '/logo/kopf'));
         self::assertInstanceOf(FileResponse::class, $ohne);
         self::assertSame('no-cache', $ohne->headers['Cache-Control']);
 

@@ -21,7 +21,7 @@ final class VereinsdatenTest extends TestCase
 
         self::assertSame('DE89370400440532013000', $daten->wert('iban'));
         self::assertSame('COBADEFF', $daten->wert('bic'));
-        self::assertSame('DE98ZZZ0920000001', $daten->wert('glaeubiger_id'));
+        self::assertSame('DE98ZZZ092000001', $daten->wert('glaeubiger_id'));
     }
 
     public function testAnInvalidDateIsDroppedAndReported(): void
