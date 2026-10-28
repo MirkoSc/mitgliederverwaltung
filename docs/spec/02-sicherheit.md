@@ -152,8 +152,14 @@ Blind Index: HMAC-SHA256(BIK, zweck | 0x00 | normalisierter Wert), BIK = KDF(VK_
   Lockerungen nur einzeln begründet (vgl. Vereinskalender §2).
 - `.user.ini`: `zend.exception_ignore_args = On`,
   `zend.exception_string_param_max_len = 0`, `display_errors = Off`.
-- htmx über `<meta name="htmx-config">`, `includeIndicatorStyles=false`,
-  kein `hx-on`. Ein `CspComplianceTest` prüft alle Templates.
+- Kein Inline-JS, keine `on*`-Attribute, kein `eval`/`new Function` – auch
+  nicht in Bibliotheken. Ein `CspComplianceTest` prüft die ausgelieferten
+  Dateien. Braucht die gewählte UI-Technik (E-05) eine Lockerung (z. B.
+  Styles zur Laufzeit), wird sie einzeln begründet.
+- **Daten im Browser**: entschlüsselte Fachdaten nur im Speicher der
+  geöffneten Seite, nie in localStorage, sessionStorage, IndexedDB oder
+  einem Service-Worker-Cache; `Cache-Control: no-store` auf allen Antworten
+  mit Fachdaten; nach dem Abmelden ist nichts davon mehr im Browser.
 - Ausgaben escapen (eine Hilfsfunktion `e()`), JSON mit korrekten Headern.
 
 ## 8. Audit-Log

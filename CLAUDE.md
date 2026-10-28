@@ -51,8 +51,12 @@ erfunden** (05 §3).
   Ausnahme nur für gestreamte Downloads (Zeitlimit je Stück neu gesetzt).
 - Kein Build-Step auf dem Server; `vendor/` liegt im Release-ZIP. Nur reine
   PHP-Bibliotheken ohne native Abhängigkeiten.
-- Server-gerendertes PHP + htmx + Vanilla JS + handgeschriebenes CSS, kein
-  SPA-Framework, kein CSS-Build.
+- **UI-Technik ist bewusst noch offen** (E-05) und wird erst nach der
+  Fachlichkeit entschieden – server-gerenderte Seiten, Single-Page-App oder
+  etwas dazwischen. Unabhängig davon gilt: kein Build auf dem Server (ein
+  Build in GitHub Actions ist möglich, das Ergebnis liegt dann im
+  Release-ZIP), keine externen Hosts/CDNs, CSP ohne `unsafe-inline` und
+  `unsafe-eval` für Skripte.
 - **Eine Installation = ein Verein.** Kein Mandanten-Konzept.
 - Öffentliches Repo: **niemals Secrets, Zugangsdaten oder echte
   Mitgliederdaten committen** – Testdaten nur erfunden/anonymisiert.
@@ -71,9 +75,10 @@ Identisch zu Vereinsbelege/Vereinskalender (Details 01 §2):
 
 Repo spiegelt ein Release: `app/src/` (Namespace `App\`, Unterordner
 `Http`, `Config`, `Database`, `Domain`, `Repository`, `Service/<Bereich>`,
-`Installer`, `Admin`, `App`, `PublicPages`, `Support`), `app/views/`,
-`app/data/`, `public/` (CSS, JS, vendored JS-Libs), `bin/`, `migrations/`,
-`tests/`, `docker/`, `setup.php`. `tools/` für Hilfsskripte, die **nicht**
+`Installer`, `Admin`, `App`, `PublicPages`, `Support`), `app/data/`,
+`public/` (Einstiegspunkt und ausgelieferte Assets), `bin/`,
+`migrations/`, `tests/`, `docker/`, `setup.php`. Wo der Quellcode der
+Oberfläche liegt, folgt aus E-05. `tools/` für Hilfsskripte, die **nicht**
 Teil eines Releases sind.
 
 ## 3. Bereiche der Anwendung (technisch)
@@ -85,9 +90,11 @@ Teil eines Releases sind.
 - **Adminseite** (`/admin/...`): Benutzer, Rollen, Tresor-Freigaben, Mail,
   Rechtstexte, Einstellungen, Backup, Update, Systemcheck, Audit-Log.
 
-Jede Seite wählt ihren Bereich über `App\View\Area`. Genau **ein** Layout
-und ein handgeschriebenes Designsystem (`public/css/app.css`, hell/dunkel,
-mobile-first); Musterseite `/admin/designsystem`.
+**Oberfläche:** Technik offen (E-05). Fest steht: ein einheitliches
+Designsystem für alle Bereiche, mobile-first, hell/dunkel, barrierefrei
+(Tastatur, sichtbarer Fokus, `prefers-reduced-motion`). Jede UI-Arbeit
+lädt den Skill **`frontend-design`** (`.claude/skills/frontend-design/`,
+unverändert übernommen von Anthropic, Apache-2.0) und hält sich daran.
 
 ## 4. Sicherheits-Invarianten (Details: 02-sicherheit.md)
 
@@ -113,9 +120,13 @@ mobile-first); Musterseite `/admin/designsystem`.
   `zend.exception_ignore_args=On`.
 - CSRF-Token zentral auf jeder POST-Route (`App\Http\CsrfSchutz`).
   Session-Cookie `httponly`, `samesite=Lax`, über HTTPS `__Host-sid`.
-- CSP `script-src 'self'` **ohne** `unsafe-inline` (kein Inline-JS, keine
-  `on*`-Attribute, htmx ohne `hx-on`), keine externen Hosts. JS-Libs
-  vendored unter `public/js/vendor/` mit Version, Lizenz, Prüfsumme.
+- CSP `script-src 'self'` **ohne** `unsafe-inline`/`unsafe-eval` (kein
+  Inline-JS, keine `on*`-Attribute), keine externen Hosts. Jede
+  ausgelieferte JS-Bibliothek liegt im Release, mit Version, Lizenz und
+  Prüfsumme dokumentiert.
+- Entschlüsselte Daten werden im Browser **nie dauerhaft gespeichert**
+  (kein localStorage/IndexedDB/Service-Worker-Cache), Antworten mit
+  Fachdaten tragen `Cache-Control: no-store`.
 - Rechte **serverseitig pro Aktion** (`Permission`-Enum). Jede Route
   deklariert ihren Zugriff (`App\Http\Zugriff`, Pflichtargument von
   `Router::get/post`); Scopes filtern per SQL im Repository.
@@ -141,8 +152,8 @@ mobile-first); Musterseite `/admin/designsystem`.
 
 - Lokal: `docker compose up` (PHP 8.5 + MariaDB, produktionsnah:
   `disable_functions=exec,…`, `max_execution_time=30`, `wait_timeout=120`).
-- Tests: PHPUnit (`failOnDeprecation`, `failOnWarning`), JS-Logik mit
-  `node --test tests/js`. Pflicht-Tests stehen je Spec unter
+- Tests: PHPUnit (`failOnDeprecation`, `failOnWarning`); Frontend-Tests
+  je nach UI-Technik (E-05). Pflicht-Tests stehen je Spec unter
   „Pflicht-Tests".
 - SQL nur in Repositories, nur Prepared Statements, kein ORM.
 - Jede Schema-Änderung = neue Migration `NNN_name.sql`; alte nie ändern;

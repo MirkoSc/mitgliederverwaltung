@@ -13,9 +13,11 @@ Setze GitHub-Issue #$ARGUMENTS um. Halte dich strikt an diesen Ablauf:
 3. `git switch main && git pull && git switch -c issue-$ARGUMENTS-<kurzname>`
 4. Implementiere inkl. der Pflicht-Tests aus der Spec. Keine Änderungen
    außerhalb des Issue-Umfangs (Ideen dafür als neues Issue vorschlagen).
+   Betrifft das Issue die Oberfläche: vorher den Skill `frontend-design`
+   laden und anwenden.
 5. Prüfe: `docker compose run --rm app php vendor/bin/phpunit` und – falls
-   JS betroffen – `node --test tests/js`. Beides muss grün sein, ohne
-   Deprecations.
+   die Oberfläche betroffen ist – die Frontend-Tests. Alles muss grün sein,
+   ohne Deprecations.
 6. Falls Architektur/Datenmodell betroffen: Spec bzw. CLAUDE.md im selben
    Branch aktualisieren; neue Grundsatzentscheidungen in
    `docs/ENTSCHEIDUNGEN.md` eintragen.

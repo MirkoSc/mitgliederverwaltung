@@ -8,7 +8,8 @@ Closes #
 - [ ] 
 
 ## Checkliste
-- [ ] Tests grün (PHPUnit, node --test), keine Deprecations
+- [ ] Tests grün (PHPUnit, Frontend-Tests), keine Deprecations
+- [ ] UI-Änderungen nach dem Skill `frontend-design` gestaltet
 - [ ] Keine Klartext-Mitgliederdaten in Logs/Mails/Temp-Dateien/URLs
 - [ ] Rechte-Deklaration für neue Routen
 - [ ] Migration neu (keine alte geändert), rückwärtskompatibel

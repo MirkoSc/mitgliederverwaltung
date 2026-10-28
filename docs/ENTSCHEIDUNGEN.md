@@ -41,9 +41,19 @@ Ein geteiltes Composer-Paket würde drei Release-Zyklen koppeln und braucht
 eine eigene Pflege. Der übernommene Kern ist stabil; Sicherheitsfixes werden
 per Issue in die anderen Projekte gespiegelt.
 
-### E-05 ✅ Frontend: htmx + handgeschriebenes CSS
-Wie Vereinsbelege: vendored htmx, kein Build-Schritt, CSP-konform (kein
-`hx-on`, keine Inline-Skripte). Mobile-first, hell/dunkel.
+### E-05 ❓ UI-Technik – nach der Fachlichkeit entscheiden
+Offen, bewusst zurückgestellt: welche Oberfläche zur Fachlichkeit passt
+(viele große Tabellen? komplexe Formulare? Mitgliederportal?). Mögliche
+Wege auf dem Hoster:
+- server-gerenderte PHP-Seiten (ggf. mit htmx) wie Vereinsbelege – Login,
+  Installer, Updater und Designsystem direkt übernehmbar;
+- dasselbe mit CSS-/JS-Build in GitHub Actions;
+- Single-Page-App (z. B. Vue, Angular, Svelte, React) mit PHP-JSON-API,
+  in GitHub Actions gebaut;
+- Blazor WebAssembly (C#) mit PHP-API.
+Mitzuentscheiden: Komponentenbibliothek (fertig gestaltet, headless oder
+selbst gebaut) und deren CSP-Verträglichkeit. Feste Grenzen unabhängig
+davon: CLAUDE.md §1 und §4.
 
 ### E-06 ✅ Kein Event Sourcing
 Verschlüsselte Event-Payloads würden Replay an eine Session binden.
@@ -59,6 +69,13 @@ Falls Dateien gespeichert werden: verschlüsselte Blobs in
 ### E-09 ✅ Prozessaufrufe bleiben verboten
 Obwohl der Hoster `exec()` & Co. nicht sperrt: keine Abhängigkeit von
 Binaries des Hosters, kleinere Angriffsfläche.
+
+### E-10 ✅ UI-Gestaltung mit dem Skill `frontend-design`
+Für gutes UI wird ein fertiger Skill verwendet statt eigener Regeln:
+Anthropics offizieller `frontend-design`-Skill, unverändert unter
+`.claude/skills/frontend-design/` (Quelle `anthropics/skills`, Apache-2.0,
+GPL-verträglich). Er gilt für jede UI-Arbeit, unabhängig von E-05. Bei
+Updates wird er unverändert neu übernommen.
 
 ## Fachlich offen (vor der jeweiligen fachlichen Spec klären)
 

@@ -8,7 +8,6 @@ Voraussetzung nur Docker (PHP/Composer lokal nicht nötig):
 docker run --rm -v "$PWD":/app -w /app composer:2 composer install
 docker compose up --build                       # http://localhost:8080
 docker compose run --rm app php vendor/bin/phpunit
-node --test tests/js/*.test.js
 docker compose exec app php bin/migrate.php
 docker compose exec app php bin/build_setup.php
 ```
@@ -27,8 +26,9 @@ docker compose exec app php bin/build_setup.php
 - **PHPUnit** mit `failOnDeprecation`, `failOnWarning`,
   `failOnRisky`; Test-DB `mitgliederverwaltung_test` in der
   Docker-MariaDB.
-- **JS**: reine Logik in eigenen Modulen, getestet mit `node --test
-  tests/js` (keine npm-Abhängigkeiten).
+- **Frontend**: Werkzeuge und Testart folgen der UI-Technik (E-05);
+  Logik wird in jedem Fall automatisiert getestet, Oberflächen mobil
+  (360 px) und am Desktop geprüft.
 - **Architektur-Tests**: `NoShellExecutionTest`, `CspComplianceTest`,
   `ShimContentTest`, Routen-Zugriffsmatrix, CSRF auf jeder POST-Route.
 - Testdaten nur erfunden. Keine echten Namen, Adressen, IBANs.
@@ -50,10 +50,12 @@ Repository-URL), nicht neu erfunden:
 | Service/Update, Migration, Backup, MaintenanceMode, RateLimiter, SystemCheck | wie 04 |
 | Installer | setup.php-Vorlage, `bin/build_setup.php`, InstallController, InstallToken, ConfigWriter, FirstAdminSetup |
 | Support | FileLogger, QrCode |
-| Admin | Benutzer, Rollen, Tresor-Freigaben, Mail, Rechtstexte, Backup, Update, Systemcheck, Audit-Log, Designsystem |
-| Frontend | Layout, `app.css`, htmx (vendored), `jobs.js`, `update.js` |
+| Admin | Benutzer, Rollen, Tresor-Freigaben, Mail, Rechtstexte, Backup, Update, Systemcheck, Audit-Log (Serverlogik) |
 | Infrastruktur | Docker-Umgebung, `phpunit.xml`, CI-Workflow, Release-Workflow, `tools/release-signatur.php` |
 | Daten | `app/data/haeufige-passwoerter.txt` |
+
+Ob Oberflächen (Layout, Designsystem, Installer-/Update-Seiten) aus
+Vereinsbelege übernommen werden, hängt von E-05 ab.
 
 Nicht übernommen: alles Fachliche aus Vereinsbelege (Belege, KI, Bank,
 Lieferanten, Worker …) und aus dem Vereinskalender (Event-Store, Kalender,
@@ -65,7 +67,7 @@ Sicherheitsfix in einem Projekt wird als Issue in den anderen nachgezogen.
 ## 4. CI
 
 GitHub Actions bei Push/PR: Composer-Validierung, PHPUnit gegen MariaDB
-(Service-Container), `node --test`, Syntaxprüfung aller PHP-Dateien,
+(Service-Container), Frontend-Tests (E-05), Syntaxprüfung aller PHP-Dateien,
 Prüfung, dass `setup.php` aus der Vorlage aktuell ist. `main` ist
 geschützt (PR + grüne CI Pflicht).
 
@@ -79,6 +81,7 @@ geschützt (PR + grüne CI Pflicht).
 - Fremdbibliotheken: reines PHP, PHP 8.5, aktiv gepflegt, GPL-kompatibel;
   Prüfung im PR notieren. Lieber kleine eigene Implementierung eines exakt
   spezifizierten Protokolls (SMTP, TOTP, QR) als eine große Abhängigkeit.
-- JS-Bibliotheken vendored unter `public/js/vendor/` mit `README.md`
-  (Version, Lizenz, SHA-256).
+- JS-Bibliotheken: nie per CDN; Version, Lizenz und Prüfsumme bzw.
+  Lockfile im Repo. Wie sie ins Release kommen (vendored oder per Build in
+  GitHub Actions), folgt aus E-05.
 - Lizenz GPLv3.

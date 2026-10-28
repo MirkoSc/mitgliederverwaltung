@@ -69,7 +69,8 @@ Release-ZIP mit, `setup.php` kopiert sie, der Updater hält sie aktuell
   `App\Http\Zugriff` (öffentlich / angemeldet / Recht X). Eine Testdatei
   `tests/Http/routen-zugriff.txt` hält die Matrix fest – eine neue Route
   ändert sie sichtbar im Diff.
-- Antworten: HTML (Layout), htmx-Fragmente, JSON (`/api/*`).
+- Antwortformate (HTML-Seiten, Fragmente, JSON-API) hängen von der
+  UI-Technik ab (E-05).
 
 ## 4. Lange Vorgänge: Schrittketten
 
@@ -77,7 +78,7 @@ Kein Request darf lange laufen. Muster (übernommen aus Vereinsbelege 06 §4):
 
 - **Job-Tabelle** `job` (Typ, Status, Fortschritt, Zustand als JSON bzw.
   bei fachlichem Inhalt verschlüsselt, Sperre mit Ablauf).
-- Der **Browser treibt** die Kette (`public/js/jobs.js`): je Schritt ein
+- Der **Browser treibt** die Kette: je Schritt ein
   kurzer POST, Antwort = neuer Fortschritt. Jeder Schritt ist idempotent
   und darf nach Abbruch wiederholt werden.
 - Schritte, die entschlüsseln, laufen nur in einer Session mit entsperrtem

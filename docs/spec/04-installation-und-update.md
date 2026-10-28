@@ -97,7 +97,8 @@ wiederholbar:
 ## 4. Wartungsmodus
 
 `App\Service\MaintenanceMode`, Flag `shared/maintenance.flag` (JSON: Grund,
-Start). Der Shim beantwortet alles außer `/admin`, `/css/`, `/js/` mit 503.
+Start). Der Shim beantwortet alles außer `/admin` und den Assets, die die
+Update-Seite braucht, mit 503.
 Das Admin-Layout zeigt bei gesetztem Flag auf jeder Seite ein Banner mit
 „Freigeben" (`POST /admin/wartung/aufheben`) – ein abgestürztes Update darf
 die Instanz nicht dauerhaft sperren.
@@ -147,4 +148,5 @@ Release-ZIP, manipuliertes ZIP, kein Downgrade), `MaintenanceModeTest`,
 `ConfigWriterTest`, `InstallFlowTest` (Token, `config.php` erst nach
 Bestätigung, Kanal-Übernahme, Wiederherstellungsschlüssel nie gespeichert),
 Backup+Restore-Roundtrip (inkl. ohne `config.php`), `SystemCheckTest`,
-`tests/js/update.test.js`.
+Test der Client-Logik der Update-Schrittkette (Reihenfolge, Wiederholung
+ab dem fehlgeschlagenen Schritt).
