@@ -33,7 +33,6 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 - **nicht** Zugriff für Mitglieder selbst (E-F2: geklärt, vorerst nein).
 - **nicht** Öffentliche Seiten außer Anmeldung, Impressum, Datenschutz
   (E-F3: geklärt, vorerst nein).
-
 - **muss** „Keine Finanzen" heißt: Der Vorstand darf Mitglieder anlegen
   und bearbeiten (auch IBAN, Abteilung, Beitragsart). Einzug, Bezahlt-
   Status und Lastschriftdatei sind dem Admin vorbehalten (B2 ✅).
@@ -46,19 +45,29 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 - **muss** Aktiv/passiv ist ein eigenes Häkchen am Mitglied, unabhängig
   von der Beitragsart; passt beides nicht zusammen, gibt es einen Hinweis
   (BT4 ✅).
-- **muss** Geschlecht (gebraucht für die BLSV-Meldung, §6).
-
+- **muss** Geschlecht (gebraucht für die BLSV-Meldung, §7).
 - **muss** Mitgliedsnummer = `Adressnummer` der alten Software (X2 ✅); neue
   Mitglieder bekommen die nächste freie Nummer (M1 ✅).
 - **muss** Austritt mit Datum und Grund (z. B. „verstorben"); Ehemalige
   bleiben gespeichert, standardmäßig ausgeblendet, Löschen nur von Hand
   (M2/M3 ✅).
 - **muss** Optionales Feld „Kontoinhaber, falls abweichend" (M4 ✅).
+- **muss** Felder am Mitglied (M5 ✅ – nichts darüber hinaus):
 
-Offen:
-- M5: Weitere Felder (zweite Telefonnummer, Bemerkung, Ehrungen,
-  Funktionen im Verein …)? *Vorschlag:* eine Freitext-Bemerkung, sonst
-  nichts – weitere Felder legen wir beim Import-Mapping fest.
+  | Gruppe | Felder |
+  |---|---|
+  | Person | Mitgliedsnummer, Anrede, Vorname, Nachname, Geschlecht, Geburtsdatum |
+  | Anschrift | Straße, PLZ, Ort, Land |
+  | Kontakt | Telefon, Handy, E-Mail |
+  | Mitgliedschaft | Eintrittsdatum, Austrittsdatum + Grund, aktiv/passiv, Abteilungen (0..n) |
+  | Beitrag | Beitragsart, Zahlart (Lastschrift / selbst zahlen), IBAN, BIC (optional), Kontoinhaber falls abweichend, Mandatsreferenz, Mandatsdatum |
+  | Familie | Familie, Rolle (Zahler / Elternteil / Kind) |
+  | Nachweise | Art, gültig bis, Vermerk von wem/wann, Datei optional |
+  | Ehrungen | erhaltene Ehrungen (Stufe, Jahr) |
+  | Sonstiges | Bemerkung (Freitext) |
+
+  Dazu je Jahr der Jahresbeitrag (Betrag, Status offen / im Einzug /
+  bezahlt, Vermerke) – siehe §5.
 
 ## 3. Abteilungen
 
@@ -67,10 +76,9 @@ Offen:
 - **muss** Zuordnung eines Mitglieds zu Abteilungen ist optional
   (z. B. sehr alte Mitglieder ohne bekannte Abteilung); ein Mitglied kann
   in **mehreren** Abteilungen sein (A1 ✅).
-
-Offen:
-- A2: Passive Mitglieder – haben sie trotzdem eine Abteilung?
-  *Vorschlag:* dürfen, müssen nicht.
+- **muss** Auch passive Mitglieder dürfen Abteilungen haben, müssen aber
+  nicht (A2 ✅).
+- **muss** Abteilung „Turnen" (34) heißt künftig „Gymnastik" (X5 ✅).
 
 ## 4. Familien
 
@@ -78,24 +86,16 @@ Offen:
   **Zahler** (häufig der Vater), die anderen hängen daran und zahlen
   keinen eigenen Beitrag.
 - **muss** Kinder sind bis 18 in der Familienkarte berechtigt.
+- **muss** Jeder darf einer Familie zugeordnet werden; jede Person hat eine
+  **Rolle**: Zahler, Elternteil oder Kind. Der 18-Jahre-Hinweis gilt nur
+  für die Rolle „Kind" (F2 ✅).
 - **muss** Regeln nur als Hinweis (Leitlinie „Hinweise statt Sperren"):
   - Familie hat weniger als **2** Personen (F1 ✅),
   - Mitglieder einer Familie wohnen nicht an derselben Anschrift,
   - ein Kind in der Familie ist 18 oder älter – nur Hinweis, Umstellung
     von Hand (F3 ✅).
-
-Offen:
-- F2: Wer darf alles zur Familie gehören – nur Eltern/Partner und Kinder
-  unter 18, oder auch Großeltern, volljährige Kinder?
-  *Vorschlag:* jeder darf hinzugefügt werden; Hinweis nur bei Kindern
-  ≥ 18.
-- F4: Woher kommt die Zusammengehörigkeit einer Familie? Im Export ist
-  sie nur indirekt erkennbar: „Familienkarte" beim Zahler, „Beitragsfrei
-  FK" bei den anderen, oft ein Hinweis in den Notizen („FK mit …"),
-  selten ein abweichender Zahler. Mirko sucht nach einer echten
-  Zuordnung. *Vorschlag, falls es keine gibt:* der Import schlägt
-  Familien aus gleicher Anschrift und Notiz-Hinweis vor, Mirko bestätigt
-  sie in einer Liste.
+- **muss** Die alte Software hat einen eigenen Familien-Export
+  (`FamID`, `AdrNr`; F4 ✅) – siehe §8.
 
 ## 5. Beiträge
 
@@ -109,85 +109,96 @@ Offen:
 | Familie | 130 € | ab 2 Personen in einem Haushalt (§4) |
 | Rentner aktiv | 50 € | ab 67 mit Rentennachweis |
 | Rentner passiv | 30 € | ab 67 mit Rentennachweis |
-| Mindestbeitrag | offen (bisher 25 €) | für Helfer, Trainer, Funktionäre (BT6 ✅) |
+| Mindestbeitrag | 25 € | für Helfer, Trainer, Funktionäre (BT6 ✅) |
 | Beitragsfrei | 0 € | Grund als Pflicht-Bemerkung, z. B. Bildung und Teilhabe; nicht im Einzug (BT7 ✅) |
 
-- **muss** Beitragsarten und Beträge im Admin pflegbar; jede Beitragsart
-  ist jedem Mitglied zuweisbar, unabhängig vom Alter (Hinweis, keine
-  Sperre – z. B. 9-Jähriger als Rentner).
+- **muss** Beitragsarten und Beträge im Admin pflegbar (auch später
+  änderbar, z. B. der Mindestbeitrag); jede Beitragsart ist jedem
+  Mitglied zuweisbar, unabhängig vom Alter (Hinweis, keine Sperre –
+  z. B. 9-Jähriger als Rentner).
+- **muss** Ein Beitrag **je Mitglied**, egal in wie vielen Abteilungen –
+  die Beitragsstruktur wurde umgestellt, Abteilungsbeiträge gibt es nicht
+  mehr (BT5 ✅).
 - **muss** Beitrag ist jährlich, Stichtag 1.1.
-- **muss** Eintritt im laufenden Jahr: Beitrag anteilig auf das Restjahr
-  heruntergerechnet.
+- **muss** Ein geänderter Betrag gilt ab dem nächsten Beitragsjahr;
+  bereits erzeugte Jahresbeiträge bleiben unverändert (BT3 ✅).
+- **muss** Eintritt im laufenden Jahr: anteiliger Beitrag wird
+  **vorgeschlagen** (nach angefangenen Monaten, Eintritt im Mai → 8/12)
+  und ist von Hand änderbar (BT1 ✅). Bei ~700 Mitgliedern betrifft das
+  nur wenige Fälle im Jahr.
 - **muss** Nachweise (Rente, Studium, Ausbildung): Vermerk mit
   Ablaufdatum, **wer** ihn wann gemacht hat, optional eine Datei (Scan)
   dazu – die Datei ist keine Pflicht (BT2 ✅). Abgelaufene Nachweise
   erzeugen einen Hinweis.
-- **muss** Anteiliger Beitrag bei Eintritt im laufenden Jahr wird
-  **vorgeschlagen** (nach angefangenen Monaten, Eintritt im Mai → 8/12)
-  und ist von Hand änderbar (BT1 ✅). Bei ~700 Mitgliedern betrifft das
-  nur wenige Fälle im Jahr.
-
-Offen:
-- BT3: Beitragsänderung – gilt ein neuer Betrag ab dem nächsten
-  Beitragsjahr, bereits erzeugte Jahresbeiträge bleiben unverändert?
-  *Vorschlag:* ja.
-- **muss** Ein Beitrag **je Mitglied**, egal in wie vielen Abteilungen –
-  die Beitragsstruktur wurde umgestellt, Abteilungsbeiträge gibt es nicht
-  mehr (BT5 ✅).
-- BT6a: Betrag des Mindestbeitrags künftig – bleibt es bei 25 €?
 - **nicht** Rabatt-Funktion: Auszubildende bekommen die Beitragsart
   „Jugend/…/Azubis", Einzelfälle über den von Hand änderbaren
   Jahresbeitrag (BT8 ✅).
 
 ### Einzug und Bezahlt-Status
 
-- **muss** Auf Knopfdruck eine **einfache SEPA-Lastschriftdatei**
-  (pain.008) für die Sparkasse Aschaffenburg Miltenberg erzeugen.
+- **muss** Auf Knopfdruck eine **einfache SEPA-Lastschriftdatei** für die
+  Sparkasse Aschaffenburg Miltenberg erzeugen: DFÜ-Abkommen Anlage 3
+  **Version 3.7** → SEPA-Basislastschrift **pain.008.001.08** (E2 ✅).
+  Erste Datei als Test im Online-Banking hochladen.
+- **muss** Haupteinzug einmal im Jahr zwischen Januar und März (meist
+  Februar) über den **vollen Jahresbeitrag** – auch bei Einzug im März.
+  Nur Neueintritte im laufenden Jahr zahlen anteilig, dafür einzelne
+  Nachzügler-Einzüge. Ein Einzugslauf umfasst die offenen Beiträge mit
+  IBAN, die der Admin auswählt (E5 ✅).
 - **muss** Der Einzug wird je Mitglied gemerkt: Datei erzeugen → Status
   „im Einzug" → nach Bestätigung, dass eingezogen wurde → „bezahlt".
 - **muss** Jedes Mitglied jederzeit manuell auf „bezahlt" setzbar
   (Barzahlung, Überweisung).
-- **nicht** SEPA-Mandate einholen und verwalten. Rücklastschriften klärt
-  der Vorstand persönlich.
-- Technisch verlangt die Datei je Mitglied eine Mandatsreferenz und ein
-  Mandatsdatum sowie die Gläubiger-ID des Vereins. Einfach gelöst:
-  Mandatsreferenz = Mitgliedsnummer, Mandatsdatum = Eintrittsdatum bzw.
-  einstellbares Datum, Gläubiger-ID als Einstellung. Vorhandene Werte aus
-  der alten Software werden übernommen.
-- Vorlage für den Code: Vereinsbelege erzeugt schon pain.001-Dateien
-  (Überweisungen); pain.008 folgt demselben Muster.
-
-Offen:
-- **muss** Der Verein hat eine Gläubiger-ID, die alte Software hat
-  bereits Lastschriften erzeugt (E1 ✅).
 - **muss** Rücklastschrift: Mitglied von Hand zurück auf „offen", mit
   Vermerk (E3 ✅).
 - **muss** Mitglieder ohne IBAN bzw. „Rechnungszahler" erscheinen in einer
   eigenen Liste „selbst kassieren" (E4 ✅).
+- **muss** Der Verein hat eine Gläubiger-ID, die alte Software hat
+  bereits Lastschriften erzeugt (E1 ✅).
+- **nicht** SEPA-Mandate einholen und verwalten. Rücklastschriften klärt
+  der Vorstand persönlich.
+- Technisch verlangt die Datei je Mitglied eine Mandatsreferenz und ein
+  Mandatsdatum sowie die Gläubiger-ID des Vereins. Einfach gelöst:
+  Mandatsreferenz wie bisher (E6), Mandatsdatum = Eintrittsdatum bzw.
+  einstellbares Datum, Gläubiger-ID als Einstellung.
+- Vorlage für den Code: Vereinsbelege erzeugt schon pain.001-Dateien
+  (Überweisungen); pain.008 folgt demselben Muster.
 
 Offen:
-- E6 (Mirko prüft): Der Export der alten Software enthält **keine Mandatsreferenz**.
-  Welche Referenz stand in den bisherigen Lastschriftdateien? Am
-  einfachsten: in einer alten Einzugsdatei bzw. im Online-Banking bei
-  einer Lastschrift nachsehen, wie die Mandatsreferenz aussieht (nur das
-  Muster, z. B. „Mitgliedsnummer" oder „VEREIN-0123"). Bleibt die Referenz
-  gleich, sieht die Bank keinen Unterschied.
-- E2: Welches Dateiformat nimmt die Sparkasse an (Online-Banking-Upload
-  bzw. Banking-Programm)? *Vorschlag:* pain.008.001.08 (aktueller
-  DK-Standard), notfalls .02 – mit einer Testdatei klären.
-- E5: Einzugstermin – ein fester Termin im Jahr (z. B. Februar) plus
-  einzelne Nachzügler für Neueintritte? *Vorschlag:* ja; ein Einzugslauf
-  umfasst alle offenen Beiträge mit IBAN, die du auswählst.
+- E6 (Mirko prüft): Der Export der alten Software enthält **keine
+  Mandatsreferenz**. Welche Referenz stand in den bisherigen
+  Lastschriften? Im Online-Banking bei einer Lastschrift nachsehen, wie
+  die Mandatsreferenz aussieht (nur das Muster, z. B. „Mitgliedsnummer"
+  oder „VEREIN-0123"). Bleibt die Referenz gleich, sieht die Bank keinen
+  Unterschied.
 
 ## 6. Geburtstagskalender
 
-- **muss** Übersicht, wer wann Geburtstag hat, mit Abteilung.
+- **muss** Übersicht, wer wann Geburtstag hat, mit Abteilung und Alter.
+- **muss** Zeiträume: Woche, Monat, Jahr (als einfache Liste).
+- **muss** Runde Geburtstage markiert; **welche Alter als rund gelten,
+  ist einstellbar** (z. B. 18, 50, 60, 70, 75, 80 …). Filter „nur runde
+  Geburtstage".
+- **muss** Jede Ansicht exportierbar (xlsx oder csv).
+- **muss** Ehemalige und Verstorbene ausgeblendet (G2 ✅).
+
+## 6a. Ehrungen
+
+- **muss** Ehrungsstufen einstellbar als Jahre der Mitgliedschaft
+  (z. B. 25, 40, 50, 60, 70).
+- **muss** Liste „wer wird dieses Jahr geehrt": Mitglieder, deren
+  Eintrittsjahr + Stufe = gewähltes Jahr; mit Abteilung, exportierbar.
+- Gezählt wird ab dem Eintrittsdatum, ohne Unterbrechungen
+  (Austritt/Wiedereintritt) zu berücksichtigen.
 
 Offen:
-- G1: Form – Liste je Monat (z. B. „nächste 30 Tage" + Monatsauswahl)?
-  Runde Geburtstage hervorheben? *Vorschlag:* Liste der nächsten Wochen
-  und je Monat, runde Geburtstage markiert, druckbar.
-- G2: Ehemalige und Verstorbene ausblenden? *Vorschlag:* ja.
+- H1: Soll vermerkt werden, dass eine Ehrung erfolgt ist (Stufe + Datum),
+  damit die Liste „noch offen" zeigen kann? *Vorschlag:* ja, ein Klick
+  „geehrt" je Mitglied und Stufe.
+- H2: Mitglieder mit unbekanntem bzw. Platzhalter-Eintrittsdatum (die
+  alte Software nutzt teils „01.01.1901") – *Vorschlag:* beim Import als
+  „unbekannt" übernehmen; sie fehlen in der Ehrungsliste und erscheinen
+  als Hinweis.
 
 ## 7. BLSV-Meldung
 
@@ -256,6 +267,16 @@ Aktiven ein Zuschlag **„aktiv"** (24 €). Daraus folgt die Zuordnung auf
 die neue Beitragsordnung – und das Aktiv-Häkchen: wer den Zuschlag hat,
 ist aktiv.
 
+**Familien-Export (F4 ✅).** Eigene Datei mit den Spalten `FamID`,
+`FamName`, `AdrNr`, `Name`, `Straße`, `GebDat`, `Alter`; gebraucht werden
+nur `FamID` und `AdrNr`. Befund: 52 Familien mit 167 Personen (2–5 je
+Familie), jede mit genau einem Zahler „Familienkarte", alle anderen
+„Beitragsfrei FK", niemand in zwei Familien. Rollen beim Import: Zahler
+= wer „Familienkarte" hat; übrige unter 18 → Kind; übrige ab 18 →
+Elternteil, als Liste zur Prüfung (es könnten volljährige Kinder sein).
+4 „Familienkarte"-Zahler und 6 „Beitragsfrei FK" ohne Familie erscheinen
+als Hinweis.
+
 **Zuordnung alt → neu (X3 ✅).** Alle 12 Kombinationen, die im Export
 vorkommen (über alle Abteilungen eines Mitglieds zusammengefasst):
 
@@ -300,23 +321,17 @@ Zuordnung (Vorschlag):
 | `Zahlart` | Lastschrift ja/nein | „Rechnungszahler" → selbst kassieren |
 | `Abteilungsnummer/-name (alle aktuell)(1..3)` | Abteilungen | |
 | `Beitragsname (alle aktuell)(1..3)` | Beitragsart + aktiv/passiv | Zuordnungstabelle oben |
-| `AdrNotizen`, `MitNotizen` | Bemerkung | |
+| `AdrNotizen`, `MitNotizen` | Bemerkung | vollständig übernommen (X6 ✅) |
 | `Multifeld 1`, `Multifeld 1_` (Kürzel/Zahlen, selten befüllt) | – | Bedeutung unbekannt, wird nicht übernommen (X4 ✅) |
 | `Post*`, `Zahler*`-Anschrift, `Konto2/3*`, `Fax*`, `*Dienst`, `Homepage`, `Nation`, `GeburtsOrt`, `Sortierfeld`, `Wahlfeld*`, `Zeitung`, `Helfer`, `Mahnstufe`, `offenerPosten*`, `UnbedenkBesch*`, `Uel*` (Übungsleiter) | – | nicht übernommen (in der Beispieldatei leer, 0 oder doppelt) |
 
-Offen:
-- X5: Abteilung „Turnen" (34) heißt im Alltag „Gymnastik". *Vorschlag:*
-  in der neuen Anwendung „Gymnastik", BLSV-Nummer 34 bleibt.
-- X6: Die Notizen enthalten oft nur Abteilung + aktiv/passiv – das
-  steckt künftig in eigenen Feldern. *Vorschlag:* Notizen trotzdem
-  vollständig in die Bemerkung übernehmen; aufräumen kann man später.
+Offen zum Import sind nur noch E6, X1 und die BLSV-Vorlage.
 
 ## 9. Noch nicht besprochen
 
 Bewusst gesammelt, damit nichts verloren geht – jeweils nur, wenn ihr es
 braucht:
 - Kommunikation (Rundmail an Abteilung, Serienbrief, Mitgliedsausweis)
-- Ehrungen/Jubiläen (25/40/50 Jahre Mitgliedschaft)
 - Funktionen im Verein (Übungsleiter mit Lizenznummer – 15 in der
   alten Software –, Wirtschaftshelfer, Bahndienst, Jugendtrainer …;
   stehen heute in den Notizen)
