@@ -46,12 +46,6 @@ final readonly class Paths
         return $this->releaseRoot . '/app/routes';
     }
 
-    /** The application's PHP sources (namespace App\). */
-    public function srcDir(): string
-    {
-        return $this->releaseRoot . '/app/src';
-    }
-
     public function migrationsDir(): string
     {
         return $this->releaseRoot . '/migrations';

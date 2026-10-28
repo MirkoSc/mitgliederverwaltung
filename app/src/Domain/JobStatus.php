@@ -11,10 +11,4 @@ enum JobStatus: string
     case Laeuft = 'laeuft';
     case Fertig = 'fertig';
     case Fehler = 'fehler';
-
-    /** Whether a further step may still run. */
-    public function laeuftNoch(): bool
-    {
-        return $this === self::Offen || $this === self::Laeuft;
-    }
 }

@@ -80,10 +80,8 @@ final class RoutenDateienTest extends TestCase
         // Anonymous: the login.
         self::assertSame(302, $this->aufrufen($router, new Request(HttpMethod::Get, '/app/beispiel'))->status);
 
-        $this->konten->hinzufuegen(new Konto(3, 'V', Rolle::Vorstand));
+        $this->konten->anmelden(new Konto(3, 'V', Rolle::Vorstand));
         $session = new Session();
-        $session->start();
-        $session->login(3);
 
         self::assertSame('Beispielseite', $this->aufrufen($router, new Request(HttpMethod::Get, '/app/beispiel'))->body);
         self::assertSame(403, $this->aufrufen($router, new Request(HttpMethod::Post, '/app/beispiel'))->status, 'no token');

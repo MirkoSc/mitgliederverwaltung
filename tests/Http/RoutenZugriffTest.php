@@ -266,12 +266,7 @@ final class RoutenZugriffTest extends TestCase
 
     private function anmelden(Rolle $rolle): void
     {
-        $konto = new Konto(7, 'Test', $rolle);
-        $this->konten->hinzufuegen($konto);
-        $session = new Session();
-        $session->start();
-        $_SESSION = [];
-        $session->login($konto->id);
+        $this->konten->anmelden(new Konto(7, 'Test', $rolle));
     }
 
     private function aufrufen(Router $router, HttpMethod $methode, string $pfad, bool $mitToken = true): Response

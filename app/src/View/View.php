@@ -90,11 +90,6 @@ final class View
         $this->flashQuelle = $flashQuelle;
     }
 
-    public function version(): string
-    {
-        return $this->version;
-    }
-
     /**
      * @param array<string, mixed> $data
      */

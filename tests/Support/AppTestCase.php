@@ -91,12 +91,7 @@ abstract class AppTestCase extends TestCase
             rolle: $rolle,
             barrierefrei: $barrierefrei,
         );
-        $this->konten->hinzufuegen($konto);
-
-        $session = new Session();
-        $session->start();
-        $_SESSION = [];
-        $session->login($konto->id);
+        $this->konten->anmelden($konto);
 
         return $konto;
     }

@@ -39,12 +39,6 @@ final readonly class Response implements ResponseInterface
         );
     }
 
-    /** The same response with one more (or a replaced) header. */
-    public function withHeader(string $name, string $value): self
-    {
-        return new self($this->status, [...$this->headers, $name => $value], $this->body, $this->additionalCookies);
-    }
-
     /**
      * The same response plus one more `Set-Cookie`. The first goes into the
      * header map, every further one into $additionalCookies - a header map
