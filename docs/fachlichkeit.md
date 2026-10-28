@@ -25,15 +25,20 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 ## 1. Benutzer
 
 - **muss** Nutzer sind der Vorstand bzw. ein kleiner Verwaltungskreis
-  (Hauptnutzer: Mirko).
+  (Hauptnutzer: Mirko). Verein mit rund **700 Mitgliedern**.
+- **muss** Zwei feste Rollen, kein Rollen-Editor:
+  - **Admin** (Mirko): darf alles.
+  - **Vorstand**: Mitglieder suchen und anlegen, aber **keine Finanzen**
+    (Beiträge, Einzug, Bezahlt-Status).
 - **nicht** Zugriff für Mitglieder selbst (E-F2: geklärt, vorerst nein).
 - **nicht** Öffentliche Seiten außer Anmeldung, Impressum, Datenschutz
   (E-F3: geklärt, vorerst nein).
 
 Offen:
-- B1: Brauchen die Vorstände unterschiedliche Rechte?
-  *Vorschlag:* nein – alle dürfen alles, nur die Benutzerverwaltung ist
-  dem Admin vorbehalten.
+- B2: Was genau ist „keine Finanzen" für den Vorstand? *Vorschlag:* er
+  darf Mitglieder anlegen und bearbeiten (inkl. IBAN, Abteilung,
+  Beitragsart), sieht aber keine Einzüge und kann nichts auf „bezahlt"
+  setzen oder Lastschriftdateien erzeugen.
 
 ## 2. Mitglieder – Stammdaten
 
@@ -43,18 +48,14 @@ Offen:
 - **muss** Aktiv/passiv – passive Mitglieder werden ebenfalls geführt.
 - **muss** Geschlecht (gebraucht für die BLSV-Meldung, §6).
 
+- **muss** Mitgliedsnummer aus der alten Software wird übernommen; neue
+  Mitglieder bekommen die nächste freie Nummer (M1 ✅).
+- **muss** Austritt mit Datum und Grund (z. B. „verstorben"); Ehemalige
+  bleiben gespeichert, standardmäßig ausgeblendet, Löschen nur von Hand
+  (M2/M3 ✅).
+- **muss** Optionales Feld „Kontoinhaber, falls abweichend" (M4 ✅).
+
 Offen:
-- M1: Mitgliedsnummer – gibt es eine aus der alten Software, die weiter
-  gilt? *Vorschlag:* ja, übernehmen; neue Mitglieder bekommen die nächste
-  freie Nummer.
-- M2: Austritt – Austrittsdatum erfassen und das Mitglied als „ehemalig"
-  behalten (nicht löschen)? *Vorschlag:* ja; Ehemalige standardmäßig
-  ausgeblendet, Löschen nur von Hand.
-- M3: Verstorbene – eigener Status oder Austritt mit Grund?
-  *Vorschlag:* Austritt mit Grund „verstorben".
-- M4: Kontoinhaber – zahlt das Mitglied immer vom eigenen Konto, oder gibt
-  es abweichende Kontoinhaber (Eltern zahlen für Kinder)?
-  *Vorschlag:* optionales Feld „Kontoinhaber, falls abweichend".
 - M5: Weitere Felder (zweite Telefonnummer, Bemerkung, Ehrungen,
   Funktionen im Verein …)? *Vorschlag:* eine Freitext-Bemerkung, sonst
   nichts – weitere Felder legen wir beim Import-Mapping fest.
@@ -63,13 +64,11 @@ Offen:
 
 - **muss** Abteilungen frei einrichtbar (heute: Fußball, Gymnastik,
   Kegeln, Badminton), je mit **BLSV-Nummer** (Sportart/Fachverband).
-- **muss** Zuordnung eines Mitglieds zu einer Abteilung ist optional
-  (z. B. sehr alte Mitglieder ohne bekannte Abteilung).
+- **muss** Zuordnung eines Mitglieds zu Abteilungen ist optional
+  (z. B. sehr alte Mitglieder ohne bekannte Abteilung); ein Mitglied kann
+  in **mehreren** Abteilungen sein (A1 ✅).
 
 Offen:
-- A1: Kann ein Mitglied in **mehreren** Abteilungen sein (Fußball und
-  Badminton)? Für die BLSV-Meldung zählt es dann je Sportart.
-  *Vorschlag:* ja, 0..n Abteilungen.
 - A2: Passive Mitglieder – haben sie trotzdem eine Abteilung?
   *Vorschlag:* dürfen, müssen nicht.
 
@@ -80,21 +79,21 @@ Offen:
   keinen eigenen Beitrag.
 - **muss** Kinder sind bis 18 in der Familienkarte berechtigt.
 - **muss** Regeln nur als Hinweis (Leitlinie „Hinweise statt Sperren"):
-  - Familie hat zu wenige Personen,
+  - Familie hat weniger als **2** Personen (F1 ✅),
   - Mitglieder einer Familie wohnen nicht an derselben Anschrift,
-  - ein Kind in der Familie ist 18 oder älter.
+  - ein Kind in der Familie ist 18 oder älter – nur Hinweis, Umstellung
+    von Hand (F3 ✅).
 
 Offen:
-- F1: Mindestgröße – du schreibst einmal „mindestens 2 Personen", einmal
-  „eigentlich mindestens 3". Was gilt? *Vorschlag:* 2 (so steht es in der
-  Beitragsordnung „ab 2 Personen in einem Haushalt").
 - F2: Wer darf alles zur Familie gehören – nur Eltern/Partner und Kinder
   unter 18, oder auch Großeltern, volljährige Kinder?
   *Vorschlag:* jeder darf hinzugefügt werden; Hinweis nur bei Kindern
   ≥ 18.
-- F3: Wird ein Kind 18, soll es automatisch aus der Familie fallen oder
-  nur ein Hinweis kommen? *Vorschlag:* nur Hinweis in „Auffälligkeiten";
-  du entscheidest und stellst das Kind auf einen eigenen Beitrag um.
+- F4: Woher kennt die alte Software die Zusammengehörigkeit einer
+  Familie? Im Export zahlt jede Person „selbst"; erkennbar ist nur die
+  Beitragsart („Familienkarte" beim Zahler, „Beitragsfrei FK" bei den
+  anderen). *Vorschlag:* beim Import Familien über gleiche Anschrift
+  vorschlagen, du bestätigst sie in einer Liste.
 
 ## 5. Beiträge
 
@@ -115,22 +114,31 @@ Offen:
 - **muss** Beitrag ist jährlich, Stichtag 1.1.
 - **muss** Eintritt im laufenden Jahr: Beitrag anteilig auf das Restjahr
   heruntergerechnet.
-- **muss** Nachweise (Rente, Studium, Ausbildung) werden vermerkt.
+- **muss** Nachweise (Rente, Studium, Ausbildung): Vermerk mit
+  Ablaufdatum, **wer** ihn wann gemacht hat, optional eine Datei (Scan)
+  dazu – die Datei ist keine Pflicht (BT2 ✅). Abgelaufene Nachweise
+  erzeugen einen Hinweis.
+- **muss** Anteiliger Beitrag bei Eintritt im laufenden Jahr wird
+  **vorgeschlagen** (nach angefangenen Monaten, Eintritt im Mai → 8/12)
+  und ist von Hand änderbar (BT1 ✅). Bei ~700 Mitgliedern betrifft das
+  nur wenige Fälle im Jahr.
 
 Offen:
-- BT1: Anteilig – nach Monaten oder nach Tagen? *Vorschlag:* nach
-  angefangenen Monaten (Eintritt im Mai → 8/12), auf volle Cent gerundet;
-  der Betrag ist vor dem Einzug von Hand änderbar.
-- BT2: Nachweis – reicht ein Vermerk „Nachweis liegt vor bis
-  <Datum>", oder soll das Dokument selbst (Scan) gespeichert werden?
-  *Vorschlag:* nur Vermerk mit Ablaufdatum; abgelaufene Nachweise
-  erscheinen als Hinweis.
 - BT3: Beitragsänderung – gilt ein neuer Betrag ab dem nächsten
   Beitragsjahr, bereits erzeugte Jahresbeiträge bleiben unverändert?
   *Vorschlag:* ja.
-- BT4: Sind aktiv/passiv und die Beitragsart dasselbe, oder getrennt?
-  (Ein passives Mitglied mit Beitragsart „Familie"?) *Vorschlag:*
-  getrennt; Hinweis, wenn sie nicht zusammenpassen.
+- BT4 (neu formuliert): Woran erkennt man, ob jemand aktiv oder passiv
+  ist? Die Beitragsart verrät es nur teilweise („Passiv", „Rentner
+  passiv"), bei „Jugend" und „Familie" nicht. Beispiel: Die Mutter in
+  einer Familienkarte macht keinen Sport – ist sie passiv? *Vorschlag:*
+  „aktiv/passiv" ist ein eigenes Häkchen am Mitglied, unabhängig von der
+  Beitragsart. Passt beides nicht zusammen (Häkchen „aktiv", Beitragsart
+  „Passiv"), gibt es einen Hinweis.
+- BT5: Die alte Software rechnet Beiträge **je Abteilung** (wer in zwei
+  Abteilungen ist, hat zwei Beiträge). Die neue Beitragsordnung ist ein
+  Beitrag **je Mitglied**, egal wie viele Abteilungen. Stimmt das, und
+  gibt es keine zusätzlichen Abteilungsbeiträge mehr? *Vorschlag:* ja,
+  ein Beitrag je Mitglied.
 
 ### Einzug und Bezahlt-Status
 
@@ -151,15 +159,23 @@ Offen:
   (Überweisungen); pain.008 folgt demselben Muster.
 
 Offen:
-- E1: Gläubiger-ID – hat der Verein eine? Hat die alte Software schon
-  Lastschriften erzeugt (dann gibt es dort Mandatsreferenzen)?
+- **muss** Der Verein hat eine Gläubiger-ID, die alte Software hat
+  bereits Lastschriften erzeugt (E1 ✅).
+- **muss** Rücklastschrift: Mitglied von Hand zurück auf „offen", mit
+  Vermerk (E3 ✅).
+- **muss** Mitglieder ohne IBAN bzw. „Rechnungszahler" erscheinen in einer
+  eigenen Liste „selbst kassieren" (E4 ✅).
+
+Offen:
+- E6: Der Export der alten Software enthält **keine Mandatsreferenz**.
+  Welche Referenz stand in den bisherigen Lastschriftdateien? Am
+  einfachsten: in einer alten Einzugsdatei bzw. im Online-Banking bei
+  einer Lastschrift nachsehen, wie die Mandatsreferenz aussieht (nur das
+  Muster, z. B. „Mitgliedsnummer" oder „VEREIN-0123"). Bleibt die Referenz
+  gleich, sieht die Bank keinen Unterschied.
 - E2: Welches Dateiformat nimmt die Sparkasse an (Online-Banking-Upload
   bzw. Banking-Programm)? *Vorschlag:* pain.008.001.08 (aktueller
   DK-Standard), notfalls .02 – mit einer Testdatei klären.
-- E3: Rücklastschrift – soll ein Mitglied von „bezahlt" zurück auf
-  „offen" gesetzt werden können? *Vorschlag:* ja, von Hand, mit Vermerk.
-- E4: Mitglieder ohne IBAN – erscheinen in einer Liste „nicht im Einzug,
-  bitte selbst kassieren"? *Vorschlag:* ja.
 - E5: Einzugstermin – ein fester Termin im Jahr (z. B. Februar) plus
   einzelne Nachzügler für Neueintritte? *Vorschlag:* ja; ein Einzugslauf
   umfasst alle offenen Beiträge mit IBAN, die du auswählst.
@@ -182,8 +198,11 @@ Offen:
 Offen:
 - L1: Vorlage – Mirko stellt die BLSV-Excel-Datei bereit (ohne echte
   Mitgliederdaten).
-- L2: Stichtag der Meldung (1.1.?) und wer zählt mit (passive Mitglieder?
-  Mitglieder ohne Abteilung?).
+- L2: Stichtag und wer mitzählt, ergibt sich aus der BLSV-Vorlage
+  (wird mit der Vorlage geklärt).
+- Die alte Software führt die Abteilungen bereits mit zweistelligen
+  Nummern (z. B. „09" Fußball, „34" Turnen) – vermutlich die
+  BLSV-Sportartnummern. Mit der Vorlage abgleichen.
 
 ## 8. Export und Import
 
@@ -203,9 +222,52 @@ Offen:
 - **nicht** Ein Import, der beliebige Formate erkennt.
 
 Offen:
-- X1: Echtes `.xlsx` oder reicht CSV (öffnet Excel auch)? Für die
-  BLSV-Vorlage wird vermutlich ohnehin `.xlsx` gebraucht. *Vorschlag:*
-  `.xlsx` für beide Exporte, Import als CSV.
+- X1: Echtes `.xlsx` oder reicht CSV? Mirko prüft das (u. a. was der
+  BLSV annimmt). *Vorschlag bis dahin:* `.xlsx` für beide Exporte.
+
+### Altdatei: Export der bisherigen Software
+
+Analysiert wurde nur der **Aufbau** einer Beispieldatei (Spaltennamen,
+Formate). Die Datei selbst und alle Inhalte bleiben außerhalb des Repos.
+
+- Ein Blatt, **167 Spalten**, eine Zeile je Mitglied. Datumswerte als
+  Text `TT.MM.JJJJ`, IBAN mit Leerzeichen gruppiert, Telefonnummern in
+  freien Schreibweisen.
+- Abteilungen und Beiträge stehen in Spaltengruppen „(alle)(1..3)"
+  (Historie) und „(alle aktuell)(1..3)" (aktuell) mit Abteilungsnummer,
+  Abteilungsname, Beitragsnummer, Beitragsname, Betrag, von, bis, Rabatt.
+- Bekannte Werte: Zahlart „Lastschriftzahler"/„Rechnungszahler";
+  Beitragsnamen u. a. „aktiv", „Erwachsene", „Familienkarte",
+  „Beitragsfrei FK"; Abteilungen u. a. „Fußball" (09), „Turnen" (34).
+
+Zuordnung (Vorschlag):
+
+| Spalte(n) alt | Ziel | Bemerkung |
+|---|---|---|
+| `Adressnummer` bzw. `LfdNr` | Mitgliedsnummer | offen, welche (X2) |
+| `Anrede`, `Vorname`, `Nachname`, `Titel` | Name | |
+| `Geschlecht` (m/w) | Geschlecht | für BLSV |
+| `GebDatum` | Geburtsdatum | `AlterInJahren`, `GebSpezial` werden nicht gebraucht |
+| `Strasse`, `Plz`, `Ort`, `Land`/`Lkz` | Anschrift | |
+| `Telefon`, `Handy`, `EMail` | Kontakt | |
+| `Konto1Iban`, `Konto1Bic` | IBAN, BIC | |
+| `ZahlerVorname`/`ZahlerNachname`, `MitZahlerIban` | Kontoinhaber, falls abweichend | nur wenn Zahler ≠ Mitglied |
+| `EintrittsDatum`, `AustrittsDatum`, `Austrittsgrund` | Eintritt/Austritt | |
+| `Zahlart` | Lastschrift ja/nein | „Rechnungszahler" → selbst kassieren |
+| `Abteilungsnummer/-name (alle aktuell)(1..3)` | Abteilungen | |
+| `Beitragsname (alle aktuell)(1)` | Beitragsart | über Zuordnungstabelle alt → neu (X3) |
+| `AdrNotizen`, `MitNotizen` | Bemerkung | |
+| `Multifeld 1` (Werte A/H/I) | ? | Bedeutung offen (X4) |
+| `Post*`, `Zahler*`-Anschrift, `Konto2/3*`, `Fax*`, `*Dienst`, `Homepage`, `Nation`, `GeburtsOrt`, `Sortierfeld`, `Wahlfeld*`, `Zeitung`, `Helfer`, `Mahnstufe`, `offenerPosten*`, `UnbedenkBesch*`, `Uel*` (Übungsleiter) | – | nicht übernommen (in der Beispieldatei leer, 0 oder doppelt) |
+
+Offen:
+- X2: Welche Nummer ist die Mitgliedsnummer – `Adressnummer` oder
+  `LfdNr`? (Sie sind nicht immer gleich.)
+- X3: Zuordnung alte → neue Beitragsarten (z. B. „Erwachsene" → „Aktiv"?
+  „Beitragsfrei FK" → Mitglied einer Familie ohne eigenen Beitrag).
+  Machen wir mit der Liste aller alten Beitragsnamen.
+- X4: Was bedeuten die Werte A/H/I in `Multifeld 1`, und werden sie
+  gebraucht?
 
 ## 9. Noch nicht besprochen
 
