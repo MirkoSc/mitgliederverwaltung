@@ -44,14 +44,14 @@ Repository-URL), nicht neu erfunden:
 |---|---|
 | Http | Kernel, Router, Request, Response, Session, Cookie, CsrfSchutz, LoginGuard, Zugriff |
 | Config / Database | Config-Lader, ConnectionFactory (inkl. Neuverbindung wegen `wait_timeout`) |
-| Service/Crypto | Tresor, Server-Schlüssel, Speicherformate, Blind Index, Wiederherstellungsschlüssel, KDF-Parameter |
-| Service/Account | Login, PasswordHasher, PasswordPolicy, MFA (TOTP, E-Mail-Code, Backup-Codes, Geräte), Reset, Einladung, SessionVault, PendingLogin |
+| Service/Crypto | Server-Schlüssel (`secretbox`), Blob-Verschlüsselung (secretstream), Speicherformate – **ohne** Tresor, Blind Index, Wiederherstellungsschlüssel |
+| Service/Account | Login, PasswordHasher, PasswordPolicy, MFA (TOTP, E-Mail-Code, Backup-Codes, Geräte), Reset, Einladung, PendingLogin (ohne Tresor-Teil) – **ohne** SessionVault |
 | Service/Storage | Blobs (`fs`/`db`), Chunk-Upload |
 | Service/Mail | SmtpTransport, Mail-Queue, PublicUrl |
 | Service/Update, Migration, Backup, MaintenanceMode, RateLimiter, SystemCheck | wie 04 |
 | Installer | setup.php-Vorlage, `bin/build_setup.php`, InstallController, InstallToken, ConfigWriter, FirstAdminSetup |
 | Support | FileLogger, QrCode |
-| Admin | Benutzer (feste Rollen statt Rollen-Editor), Tresor-Freigaben, Mail, Rechtstexte, Backup, Update, Systemcheck, Audit-Log (Serverlogik) |
+| Admin | Benutzer (feste Rollen statt Rollen-Editor), Mail, Rechtstexte, Backup, Update, Systemcheck, Audit-Log (Serverlogik) |
 | Infrastruktur | Docker-Umgebung, `phpunit.xml`, CI-Workflow, Release-Workflow, `tools/release-signatur.php` |
 | Daten | `app/data/haeufige-passwoerter.txt` |
 | Oberfläche | Layout, Partials, `app.css` (als Ausgangspunkt, neu gestaltet), htmx (vendored), `jobs.js`, `update.js`, Seiten für Login/2FA/Installer/Update/Backup/Systemcheck/Benutzer |

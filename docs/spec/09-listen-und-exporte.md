@@ -20,8 +20,8 @@ Gesamtexport mit Häkchen „Ehemalige einschließen".
 - Exporte sind **unverschlüsselt** – darauf weist der Knopf hin
   („Die Datei enthält Mitgliederdaten im Klartext"). Jeder Export wird
   im Audit-Log vermerkt (wer, wann, welche Liste, wie viele Zeilen).
-- Listen werden in der Session entschlüsselt und in PHP gefiltert und
-  sortiert (07 §8).
+- Listen filtern und sortieren in SQL; nur Altersberechnungen
+  (Geburtstage, Ehrungen) rechnet PHP.
 
 ## 2. Die Listen
 
@@ -86,10 +86,10 @@ gibt es das Backup).
 
 ## 6. Datenmodell
 
-| Tabelle | Spalten | Verschl. |
-|---|---|---|
-| `ehrung` | id, mitglied_id, stufe_jahre, geehrt_am, vermerkt_von | – (ohne Namen nur eine Zahl) |
-| `setting` | `runde_geburtstage`, `ehrungsstufen` (JSON-Listen) | – |
+| Tabelle | Spalten |
+|---|---|
+| `ehrung` | id, mitglied_id, stufe_jahre, geehrt_am, vermerkt_von |
+| `setting` | `runde_geburtstage`, `ehrungsstufen` (JSON-Listen) |
 
 ## Pflicht-Tests
 

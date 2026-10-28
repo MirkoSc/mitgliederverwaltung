@@ -12,6 +12,8 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
   keinen Bestwert erreichen. Sie soll deutlich schlanker sein als
   Vereinsbelege: wenige Seiten, wenige Einstellungen, keine Sonderfälle auf
   Vorrat. Im Zweifel die einfachste Lösung, die funktioniert.
+- **Datenbank im Klartext** (E-11, nach Klärung entschieden): nur
+  Dateien und Backups werden verschlüsselt, kein Tresor.
 - **Hinweise statt Sperren.** Fachliche Regeln (Altersgrenzen, Nachweise,
   Familiengröße, Haushalt …) erzeugen **Hinweise**, blockieren aber nie.
   Alles, was technisch speicherbar ist, darf gespeichert werden, auch

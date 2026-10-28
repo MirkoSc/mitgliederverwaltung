@@ -49,7 +49,7 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
     Datum, Vermerk.
   - **Rücklastschrift**: `bezahlt` → `offen`, Pflicht-Vermerk; der
     Beitrag kann erneut eingezogen oder von Hand bezahlt werden.
-- Vermerke bilden eine Liste (wer, wann, was) im verschlüsselten Teil.
+- Vermerke bilden eine Liste (wer, wann, was).
 - Reiter „Beiträge" am Mitglied: alle Jahre mit Status und Vermerken.
 
 ## 3. Einzug
@@ -108,14 +108,11 @@ Verwendungszweck-Vorlage stehen in den Vereinsdaten (11).
 
 ## 6. Datenmodell
 
-| Tabelle | Spalten | Verschl. |
-|---|---|---|
-| `beitragsart` | id, name, betrag_cent, regel, aktiv_art, sortierung, aktiv | – (Beitragsordnung ist vereinsöffentlich) |
-| `jahresbeitrag` | id, mitglied_id, jahr, betrag_cent, status, einzug_id NULL, daten_enc (Vermerke, Zahlweise, Bezahlt-Datum) – UNIQUE(mitglied_id, jahr) | T (Schlüssel des Mitglieds, 07 §8) |
-| `einzug` | id, status, faellig_am, erstellt_von, erstellt_am, bestaetigt_am NULL, anzahl, summe_cent, dek_sealed, daten_enc (Kopie aller Transaktionsangaben, MsgId) | T |
-
-Betrag und Status bleiben Klartext (E-F5): ohne Namen verraten sie nur
-die Beitragsart, und Summen je Status lassen sich in SQL zählen.
+| Tabelle | Spalten |
+|---|---|
+| `beitragsart` | id, name, betrag_cent, regel, aktiv_art, sortierung, aktiv |
+| `jahresbeitrag` | id, mitglied_id, jahr, betrag_cent, status, einzug_id NULL, zahlweise NULL, bezahlt_am NULL, vermerke (JSON-Liste) – UNIQUE(mitglied_id, jahr) |
+| `einzug` | id, status, faellig_am, erstellt_von, erstellt_am, bestaetigt_am NULL, anzahl, summe_cent, msg_id, daten (JSON: Kopie aller Transaktionsangaben) |
 
 ## Pflicht-Tests
 

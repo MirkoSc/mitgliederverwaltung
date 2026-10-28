@@ -59,7 +59,7 @@ Wirtschaftshelfer, Bahndienst, Jugendtrainer. Am Mitglied als Häkchen.
 
 Je Mitglied 0..n Nachweise: Art (`rente`/`studium`/`ausbildung`/
 `sonstiges`), gültig bis (optional), Bemerkung, optional **eine Datei**
-(Bild oder PDF, verschlüsselter Blob, 01/03), **vermerkt von** (Benutzer)
+(Bild oder PDF, verschlüsselter Blob, 03 §3), **vermerkt von** (Benutzer)
 und **am** – automatisch gesetzt, nicht änderbar. Nachweise werden nicht
 versioniert (sie sind selbst ein Verlauf); löschen nur Admin.
 
@@ -107,34 +107,23 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 
 ## 8. Datenmodell
 
-Verschlüsselung nach 03; **ein Datenschlüssel je Mitglied** (statt je
-Zeile): `mitglied.dek_sealed` verschlüsselt auch Versionen und Nachweise
-dieses Mitglieds, jeweils mit eigener AAD (`tabelle|id|spalte`). Das hält
-das Entschlüsseln einer Liste bei ~700 Mitgliedern bei einem
-`box_seal_open` je Mitglied.
+Normale Spalten im Klartext (E-11, 03); Suche, Filter und Sortierung in
+SQL.
 
-Klartext bleibt nur, was SQL zum Filtern, Zählen und Verknüpfen braucht
-und für einen DB-Leser ohne Namen wenig verrät (E-F5):
+| Tabelle | Spalten |
+|---|---|
+| `mitglied` | id, mitgliedsnummer UNIQUE, anrede, titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, version, created_at, updated_at |
+| `mitglied_abteilung` | mitglied_id, abteilung_id |
+| `mitglied_funktion` | mitglied_id, funktion_id |
+| `mitglied_version` | id, mitglied_id, nr, anlass, geaendert_von (user_id), geaendert_am, daten (JSON: vollständiger Stand inkl. Abteilungen, Funktionen, Familie) |
+| `familie` | id, name, created_at |
+| `nachweis` | id, mitglied_id, art, gueltig_bis NULL, bemerkung, blob_id NULL (verschlüsselte Datei, 03 §3), vermerkt_von, vermerkt_am |
+| `abteilung` | id, name, blsv_nummer, sortierung, aktiv |
+| `funktion` | id, name, mit_lizenz, sortierung, aktiv |
 
-| Tabelle | Spalten | Verschl. |
-|---|---|---|
-| `mitglied` | id, mitgliedsnummer UNIQUE, beitragsart_id NULL, familie_id NULL, familie_rolle NULL, dek_sealed, daten_enc (JSON aller übrigen Felder aus §1), version (int), created_at, updated_at | T (daten) |
-| `mitglied_abteilung` | mitglied_id, abteilung_id | – |
-| `mitglied_funktion` | mitglied_id, funktion_id | – |
-| `mitglied_version` | id, mitglied_id, nr, anlass, geaendert_von (user_id), geaendert_am, daten_enc (vollständiger Stand inkl. der Klartextspalten und Verknüpfungen) | T |
-| `familie` | id, name_enc, dek_sealed, created_at | T (name) |
-| `nachweis` | id, mitglied_id, art, daten_enc (gültig bis, Bemerkung), blob_id NULL, vermerkt_von, vermerkt_am | T |
-| `abteilung` | id, name, blsv_nummer, sortierung, aktiv | – |
-| `funktion` | id, name, mit_lizenz, sortierung, aktiv | – |
-
-- Klartext sind nur Nummer und Verknüpfungen (Fremdschlüssel halten die
-  Daten stimmig). Alles andere – auch aktiv/passiv, Zahlart, Ein- und
-  Austritt – liegt im JSON; Listen und Filter rechnen PHP nach dem
-  Entschlüsseln.
-- **Suche** ohne Blind Index: die Mitgliederliste wird in der Session
-  entschlüsselt und in PHP gefiltert (Name, Mitgliedsnummer, Ort,
-  E-Mail). Bei ~700 Mitgliedern genügt das; wird es zu langsam, hilft ein
-  verschlüsselter Session-Index wie in Vereinsbelege.
+- „Ehemalig" ist berechnet: `austrittsdatum <= heute`.
+- **Suche**: ein Suchfeld über Nachname, Vorname, Mitgliedsnummer, Ort,
+  E-Mail per SQL `LIKE`, live über htmx.
 
 ## 9. Rechte
 
@@ -152,6 +141,5 @@ Hinweis-Funktion: jede Zeile der Tabelle §6 positiv und negativ, Grenzfälle
 (genau 18, genau 67, Nachweis gültig bis heute). Version: Speichern ohne
 Änderung erzeugt keine Version; Zurückholen hängt eine neue Version an und
 lässt alte unverändert; Zurückholen bei gelöschter Familie. Mitgliedsnummer
-eindeutig, nächste freie Nummer. IBAN-Prüfziffer. Verschlüsselung: kein
-Name, keine Anschrift, kein Geburtsdatum, keine IBAN im Klartext in der DB
-(Test liest die Rohzeilen). Rechte-Matrix §9 serverseitig.
+eindeutig, nächste freie Nummer. IBAN-Prüfziffer. Suche findet über alle
+Suchfelder, Groß-/Kleinschreibung egal. Rechte-Matrix §9 serverseitig.

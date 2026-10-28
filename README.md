@@ -1,8 +1,10 @@
 # Mitgliederverwaltung
 
-Mitgliederverwaltung für einen Sportverein. Alle Mitgliederdaten liegen
-verschlüsselt in der Datenbank – lesbar nur für angemeldete, freigegebene
-Benutzer, nicht für jemanden mit FTP- oder Datenbankzugriff.
+Mitgliederverwaltung für einen Sportverein: Mitglieder, Abteilungen,
+Familien, Beiträge mit SEPA-Lastschriftdatei, Geburtstage, Ehrungen,
+BLSV-Meldung und Exporte. Einfach gehalten, für Handy und PC, mit
+Barrierefrei-Modus. Anmeldung mit zweitem Faktor; Dateien und Backups
+sind verschlüsselt.
 
 Läuft auf Shared Hosting (PHP 8.5 + MySQL/MariaDB) – ohne SSH, ohne
 Composer auf dem Server, ohne `exec()`. Installation und Updates wie bei
@@ -24,7 +26,7 @@ noch keinen Code.
 | [docs/fachlichkeit.md](docs/fachlichkeit.md) | Fachliche Sammlung (Brainstorm) mit offenen Fragen |
 | [docs/hosting-befunde.md](docs/hosting-befunde.md) | Gemessene Eigenschaften des Webspace (aus Vereinsbelege übernommen) |
 | [docs/spec/01-plattform.md](docs/spec/01-plattform.md) | Hosting, Verzeichnislayout, Request-Modell, Cron, Mail, Logging |
-| [docs/spec/02-sicherheit.md](docs/spec/02-sicherheit.md) | Verschlüsselung (Tresor), Anmeldung + 2FA, Rechte, CSP/CSRF, Audit-Log |
+| [docs/spec/02-sicherheit.md](docs/spec/02-sicherheit.md) | Anmeldung + 2FA, Rollen, Datei-/Backup-Verschlüsselung, CSP/CSRF, Audit-Log |
 | [docs/spec/03-datenhaltung.md](docs/spec/03-datenhaltung.md) | DB-Konventionen, Verschlüsselungs-Klassifizierung, Blobs, Migrationen |
 | [docs/spec/04-installation-und-update.md](docs/spec/04-installation-und-update.md) | setup.php, Installer, Updater, Release, Backup, Systemcheck |
 | [docs/spec/05-entwicklung.md](docs/spec/05-entwicklung.md) | Docker, Tests, CI, Übernahme aus den Schwesterprojekten |

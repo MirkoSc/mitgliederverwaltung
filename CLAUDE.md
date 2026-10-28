@@ -26,8 +26,8 @@ aktuelle Issue verlinkt**, nicht alle.
 | Spec | Inhalt |
 |---|---|
 | `docs/spec/01-plattform.md` | Hosting-Constraints, Verzeichnislayout, Request-Modell, Schrittketten, Cron, Mail, Logging |
-| `docs/spec/02-sicherheit.md` | Bedrohungsmodell, Tresor-Verschlüsselung, Anmeldung + 2FA, Rollen/Rechte-Mechanik, CSRF/CSP, Audit-Log |
-| `docs/spec/03-datenhaltung.md` | DB-Konventionen, Verschlüsselungs-Klassifizierung, technische Tabellen, Blobs, Migrationen |
+| `docs/spec/02-sicherheit.md` | Bedrohungsmodell, Anmeldung + 2FA, zwei feste Rollen, Datei-/Backup-Verschlüsselung, CSRF/CSP, Audit-Log |
+| `docs/spec/03-datenhaltung.md` | DB-Konventionen, technische Tabellen, Blobs, Migrationen |
 | `docs/spec/04-installation-und-update.md` | setup.php, Installer, Self-Updater (Kanäle stable/beta), Release, Wartungsmodus, Backup/Restore, Systemcheck |
 | `docs/spec/05-entwicklung.md` | Docker, Tests, CI, Übernahme aus den Schwesterprojekten, Fremdbibliotheken |
 | `docs/spec/06-oberflaeche.md` | UI-Technik, Seitenaufbau (wenige Seiten), Muster, Barrierefrei-Modus |
@@ -38,8 +38,8 @@ aktuelle Issue verlinkt**, nicht alle.
 | `docs/spec/11-vereinsdaten.md` | Vereinsdaten, Bankverbindung, Gläubiger-ID, Verbandsnummern, Logo |
 
 Schwesterprojekte (gleicher Hoster, gleiche Bauweise):
-`MirkoSc/vereinsbelege` (Hauptvorlage: Login, 2FA, Tresor, Installer,
-Updater) und `MirkoSc/vereinskalender` (Ursprung von Http-Kern, Updater,
+`MirkoSc/vereinsbelege` (Hauptvorlage: Login, 2FA, Installer,
+Updater, Backup – **ohne** dessen Tresor) und `MirkoSc/vereinskalender` (Ursprung von Http-Kern, Updater,
 Shim). Was dort gelöst ist, wird **übernommen und angepasst, nicht neu
 erfunden** (05 §3).
 
@@ -99,7 +99,7 @@ Teil eines Releases sind.
   `/datenschutz` – sonst nichts (E-F3).
 - **Anwenderseite** (`/app/...`): alles Fachliche, je nach Recht.
 - **Adminseite** (`/admin/...`): Benutzer (zwei feste Rollen Admin/
-  Vorstand), Tresor-Freigaben, Mail, Rechtstexte, Einstellungen, Backup,
+  Vorstand), Mail, Rechtstexte, Einstellungen, Backup,
   Update, Systemcheck, Audit-Log.
 
 **Oberfläche (06-oberflaeche.md):** so wenige Seiten wie möglich –
@@ -114,25 +114,16 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
 
 ## 4. Sicherheits-Invarianten (Details: 02-sicherheit.md)
 
-- **Tresor-Modell wie Vereinsbelege.** Zwei Schlüsselebenen:
-  1. *Server-Schlüssel* (`shared/config.php`, nie in DB oder DB-Backup):
-     nur Betriebsdaten, die ohne angemeldeten Nutzer gebraucht werden
-     (Benutzer-Mailadressen, Mail-Queue, TOTP-Geheimnisse, SMTP-Passwort).
-  2. *Tresor* (asymmetrisch, libsodium): **alle fachlichen Daten** –
-     insbesondere alle personenbezogenen Daten der Mitglieder. Schreiben
-     geht ohne Geheimnis (Sealed Box an den Tresor-Public-Key), **Lesen nur
-     in einer angemeldeten Session** mit entsperrtem Tresor.
-- Der Tresor-Private-Key liegt **nie** im Klartext auf Platte oder in der
-  DB: gewrappt je Benutzer (Argon2id aus dem Passwort) und als
-  Wiederherstellungsschlüssel beim Verein (Papier). In der Session nur
-  verschlüsselt mit einem Schlüssel, der ausschließlich im Cookie liegt.
-- Folge: **Alles, was entschlüsseln muss, läuft in einer Nutzer-Session**
-  (browsergetriebene Schrittkette), nie im Cron. Der Cron macht nur
-  Mail-Versand und Aufräumen.
-- Anmeldung mit E-Mail + Passwort + **zweitem Faktor** (TOTP, E-Mail-Code,
-  Backup-Codes), Rate-Limits, keine User-Enumeration.
-- Keine fachlichen Klartextdaten in Logs, Mails, Fehlermeldungen,
-  Dateinamen oder URLs. Passwörter nie loggen;
+- **Kein Tresor** (E-11): Mitgliederdaten liegen im Klartext in der
+  Datenbank. Schutz durch Zugangskontrolle: Anmeldung mit E-Mail +
+  Passwort + **zweitem Faktor** (TOTP, E-Mail-Code, Backup-Codes),
+  Rate-Limits, keine User-Enumeration.
+- **Server-Schlüssel** (`shared/config.php`, nie in DB oder Backup)
+  verschlüsselt: Dateien (Nachweis-Scans), Backups, TOTP-Geheimnisse,
+  SMTP-Passwort. Lastschriftdateien und Exporte werden nie auf dem
+  Webspace gespeichert, nur beim Download erzeugt.
+- Keine Mitgliederdaten in Logs, Mails, Fehlermeldungen, Dateinamen oder
+  URLs (Mitgliedsnummer/ID genügt). Passwörter nie loggen;
   `zend.exception_ignore_args=On`.
 - CSRF-Token zentral auf jeder POST-Route (`App\Http\CsrfSchutz`).
   Session-Cookie `httponly`, `samesite=Lax`, über HTTPS `__Host-sid`.
@@ -141,28 +132,20 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
   Hosts. JS-Libs vendored unter `public/js/vendor/` mit Version, Lizenz
   und Prüfsumme in dessen `README.md`. htmx wird über
   `<meta name="htmx-config">` konfiguriert.
-- Entschlüsselte Daten werden im Browser **nie dauerhaft gespeichert**
-  (kein localStorage/IndexedDB/Service-Worker-Cache), Antworten mit
-  Fachdaten tragen `Cache-Control: no-store`.
+- Mitgliederdaten im Browser **nie dauerhaft speichern** (kein
+  localStorage/IndexedDB/Service-Worker-Cache); `Cache-Control: no-store`.
 - Rechte **serverseitig pro Aktion** (`Permission`-Enum). Jede Route
   deklariert ihren Zugriff (`App\Http\Zugriff`, Pflichtargument von
-  `Router::get/post`). Zwei feste Rollen, keine Scopes (02 §6).
+  `Router::get/post`). Zwei feste Rollen Admin/Vorstand (02 §6).
 
 ## 5. Datenhaltung (Details: 03-datenhaltung.md)
 
-- Fachliche Tabellen: je Zeile ein versiegelter Datenschlüssel
-  (`dek_sealed`) und verschlüsselte Spalten (`*_enc`, AEAD, AAD =
-  Tabelle|ID|Spalte). Strukturfelder (IDs, FKs, Status, technische
-  Zeitstempel) bleiben Klartext, damit SQL filtern/sortieren kann. **Welche**
-  Felder Klartext bleiben dürfen, wird je fachlicher Tabelle bewusst
-  entschieden und in der Spec begründet – Default ist verschlüsselt.
-- Suche/Duplikaterkennung über **Blind Indexes** (HMAC, Schlüssel aus dem
-  Tresor abgeleitet → nur in der Session berechenbar).
+- Normale Spalten im Klartext; Suchen, Filtern, Sortieren in SQL.
 - Dateien sind **Blobs**, verschlüsselt per libsodium secretstream,
   Backend `fs` (Default) oder `db`.
 - Geldbeträge immer Integer-Cent, nie `float`.
-- **Kein Event Sourcing**; stattdessen append-only **Audit-Log** mit
-  Hash-Kette.
+- **Kein Event Sourcing**; Änderungen an Mitgliedern als **Versionen**
+  (07 §7), dazu ein append-only **Audit-Log** mit Hash-Kette.
 - Zeitzone durchgängig `Europe/Berlin`.
 
 ## 6. Entwicklungs-Konventionen (Details: 05-entwicklung.md)

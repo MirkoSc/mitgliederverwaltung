@@ -13,23 +13,11 @@ PHP 8.5 + MariaDB auf demselben Shared Hoster wie Vereinsbelege und
 Vereinskalender; Deployment per Release-ZIP, `setup.php` und Self-Updater
 mit Kanälen `stable`/`beta`. Der Hoster wird nicht namentlich genannt.
 
-### E-02 ✅ Tresor-Modell wie Vereinsbelege
-Mitgliederdaten sind personenbezogen; wer FTP- oder DB-Zugriff hat, soll
-sie nicht lesen können. Deshalb asymmetrischer Tresor, Private Key nur
-gewrappt mit Benutzerpasswörtern und als Papier-Wiederherstellungsschlüssel.
-
-**Bewusst in Kauf genommene Folgen:**
-- Alles, was Mitgliederdaten entschlüsselt (Listen, Exporte, Serienmails,
-  Auswertungen), läuft nur in einer angemeldeten Session, nicht im Cron.
-  Automatische Mails mit fachlichem Inhalt (z. B. Geburtstagsgrüße) gehen
-  nur, wenn sie in einer Session vorbereitet und als Server-verschlüsselte
-  Mail-Queue-Einträge abgelegt werden – die fachliche Spec muss das
-  ausdrücklich entscheiden.
-- Nach „Passwort vergessen" muss ein Admin den Zugriff neu freigeben.
-- Geht der Wiederherstellungsschlüssel verloren **und** haben alle Admins
-  ihr Passwort vergessen, sind die Daten weg.
-- Gegen einen Angreifer, der Code auf dem Server verändert, hilft keine
-  Verschlüsselung vollständig.
+### E-02 ❌ Tresor-Modell wie Vereinsbelege – ersetzt durch E-11
+Ursprünglich geplant, nach Klärung der Fachlichkeit verworfen: der Tresor
+ist der aufwendigste Teil des Rahmens (Wiederherstellungsschlüssel,
+Freigaben je Benutzer, Zugriffsverlust nach Passwort-Reset, Filtern in
+PHP statt SQL) und passt nicht zu „einfach statt perfekt".
 
 ### E-03 ✅ Anmeldung wie Vereinsbelege
 E-Mail + Passwort + zweiter Faktor (TOTP, E-Mail-Code, Backup-Codes),
@@ -66,6 +54,20 @@ Falls Dateien gespeichert werden: verschlüsselte Blobs in
 Obwohl der Hoster `exec()` & Co. nicht sperrt: keine Abhängigkeit von
 Binaries des Hosters, kleinere Angriffsfläche.
 
+### E-11 ✅ Datenbank im Klartext, nur Dateien verschlüsselt
+Mitgliederdaten stehen im Klartext in der Datenbank. Mit dem
+Server-Schlüssel aus `config.php` verschlüsselt werden nur Dateien
+(Nachweis-Scans), Backups und Geheimnisse (TOTP, SMTP-Passwort).
+Lastschriftdateien und Exporte werden nie auf dem Webspace gespeichert.
+Schutz der Daten durch Zugangskontrolle (zweiter Faktor, HTTPS).
+
+**Bewusst in Kauf genommen:** Wer Zugang zur Datenbank (DB-Dump,
+Datenbank-Verwaltung des Hosters) oder per FTP zu `config.php` bekommt,
+kann Mitgliederdaten lesen. Gegenmaßnahmen: starke Passwörter für Hoster,
+FTP und Datenbank. Gemessen wurde vorher, dass der Tresor die Suche nicht
+spürbar verlangsamt hätte (~40 ms für 700 Mitglieder) – entschieden wurde
+wegen der Einfachheit.
+
 ### E-10 ✅ UI-Gestaltung mit dem Skill `frontend-design`
 Für gutes UI wird ein fertiger Skill verwendet statt eigener Regeln:
 Anthropics offizieller `frontend-design`-Skill, unverändert unter
@@ -87,28 +89,20 @@ BLSV-Meldung, Exporte (xlsx/csv), Erstimport. Details:
 ### E-F2 ✅ Wer meldet sich an? – nur der Vorstand
 Nur ein kleiner Verwaltungskreis (Vorstand). Kein Zugang für Mitglieder.
 
-Ursprüngliche Frage:
-Nur Funktionäre oder auch Mitglieder selbst (Self-Service)? Ein
-Mitgliederportal verträgt sich nur eingeschränkt mit dem Tresor-Modell
-(ein Mitglied darf nicht den ganzen Tresor bekommen).
+Ursprüngliche Frage: Nur Funktionäre oder auch Mitglieder selbst
+(Self-Service)?
 
 ### E-F3 ✅ Öffentliche Seiten ohne Anmeldung – keine
 Außer Anmeldung, Impressum und Datenschutz vorerst keine.
 
-Ursprüngliche Frage:
-Z. B. ein Beitrittsformular, das wie die Einreichung in Vereinsbelege nur
-verschlüsselt in einen Posteingang schreibt.
+Ursprüngliche Frage: z. B. ein öffentliches Beitrittsformular.
 
 ### E-F4 ✅ Kopplung an Vereinsbelege/Vereinskalender – keine
 Die Mitgliederverwaltung bleibt eigenständig.
 
-### E-F5 ✅ Klartext-Strukturfelder – so wenig wie möglich
-Klartext: Mitgliedsnummer, Verknüpfungen (Beitragsart, Familie, Rolle,
-Abteilungen, Funktionen), Beträge und Status der Jahresbeiträge,
-Ehrungsstufen. Alles Personenbezogene (Namen, Anschrift, Geburtsdatum,
-IBAN, Kontakt, Ein-/Austritt, aktiv/passiv, Bemerkungen) liegt im Tresor.
-Bei ~700 Mitgliedern rechnet PHP Listen und Filter nach dem Entschlüsseln
-(07 §8, 08 §6, 09 §6). Ein Datenschlüssel je Mitglied statt je Zeile.
+### E-F5 – entfallen durch E-11
+Die Frage, welche Felder trotz Tresor im Klartext bleiben dürfen, stellt
+sich ohne Tresor nicht mehr.
 
 ### E-F6 ✅ Datenübernahme – festes Importformat + einmalige Umwandlung
 Aus der bisherigen Mitgliederverwaltung (Excel/CSV). Festes Importformat

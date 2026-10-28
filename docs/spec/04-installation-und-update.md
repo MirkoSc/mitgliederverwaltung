@@ -53,14 +53,15 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
    1. DB-Zugangsdaten + Verbindungstest.
    2. Server-Schlüssel erzeugen (in der Session bis zum Abschluss).
    3. „Frische Installation" oder „Backup einspielen".
-   4. Frisch: Migrationen ab 0, erster Admin (E-Mail, Name, Passwort),
-      Tresor erzeugen, **Wiederherstellungsschlüssel einmalig anzeigen**,
-      Bestätigung durch Eingabe der letzten Gruppe.
+   4. Frisch: Migrationen ab 0, erster Admin (E-Mail, Name, Passwort).
+      Der **Server-Schlüssel wird einmal zum Ausdrucken angezeigt**
+      („Sicherungsschlüssel" – ohne ihn lassen sich Backups und Dateien
+      nicht wiederherstellen, 02 §2).
    5. Mail-Einstellungen + Testmail (überspringbar).
    6. `config.php` schreiben → Installer gesperrt; `setup.php` und Token
       löschen (sonst Hinweis).
-   Jeder Schritt ist ein eigener Request; `VK_priv` liegt nie im Klartext
-   in der Session; ein abgebrochener Durchlauf kann „neu beginnen".
+   Jeder Schritt ist ein eigener Request; ein abgebrochener Durchlauf
+   kann „neu beginnen".
 3. Erster Login inkl. Einrichtung des zweiten Faktors.
 
 ## 3. Self-Updater
@@ -115,18 +116,19 @@ signierten `checksums.txt` des Releases. Abweichung = Warnung im Admin
 
 ## 6. Backup & Restore
 
-- Backup-ZIP = DB-Dump in reinem PHP (`MysqlDumper`, Binärspalten als
-  Hex-Literale) + Blobs (`fs`) + `manifest.json` (nur Versionen und Zahlen).
-  **Fachliche Daten sind darin nur als Chiffrat enthalten.**
-- `config.php` kommt nur auf ausdrücklichen Wunsch mit (Warnung: dann sind
-  Betriebsdaten lesbar). Betriebshandbuch: `config.php` getrennt neben dem
-  Wiederherstellungsschlüssel sichern.
+- Backup = ZIP aus DB-Dump in reinem PHP (`MysqlDumper`, Binärspalten
+  als Hex-Literale), Blobs (`fs`), Logo und `manifest.json` (nur Versionen
+  und Zahlen) – als Ganzes mit dem Server-Schlüssel verschlüsselt
+  (`.zip.enc`, 02 §2). Der DB-Dump enthält Mitgliederdaten im Klartext;
+  erst die Verschlüsselung macht die Datei harmlos.
+- `config.php` kommt nie mit ins Backup. Betriebshandbuch: `config.php`
+  bzw. den ausgedruckten Sicherungsschlüssel getrennt sichern.
 - Erstellen als Schrittkette (`/admin/backups`), Rotation 10, Download
   gestreamt.
 - Restore im Installer als Schrittkette (Dump häppchenweise mit Offset im
-  Status, danach nur Migrationen > Backup-Stand). Ohne den alten
-  Server-Schlüssel: Zugangsschritt mit Wiederherstellungsschlüssel +
-  Passwort verknüpft ein Admin-Konto neu.
+  Status, danach nur Migrationen > Backup-Stand). Der Restore fragt den
+  Sicherungsschlüssel ab (oder `config.php` hochladen) und schreibt ihn
+  in die neue `config.php`; ohne ihn ist das Backup nicht lesbar.
 
 ## 7. Systemcheck
 
@@ -146,7 +148,8 @@ Idempotenz, Reparatur nach Absturz, Rollback, Shim-Selbstheilung),
 `ReleaseSignaturTest`, `UpdateChainTest` (ganze Kette gegen ein lokales
 Release-ZIP, manipuliertes ZIP, kein Downgrade), `MaintenanceModeTest`,
 `ConfigWriterTest`, `InstallFlowTest` (Token, `config.php` erst nach
-Bestätigung, Kanal-Übernahme, Wiederherstellungsschlüssel nie gespeichert),
-Backup+Restore-Roundtrip (inkl. ohne `config.php`), `SystemCheckTest`,
+Bestätigung, Kanal-Übernahme, Sicherungsschlüssel einmal angezeigt),
+Backup+Restore-Roundtrip (Backup verschlüsselt, Restore mit Schlüssel,
+falscher Schlüssel abgelehnt), `SystemCheckTest`,
 Test der Client-Logik der Update-Schrittkette (Reihenfolge, Wiederholung
 ab dem fehlgeschlagenen Schritt).

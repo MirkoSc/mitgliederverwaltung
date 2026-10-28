@@ -49,11 +49,11 @@ in der Datenbank.
 
 ## 4. Datenmodell
 
-| Tabelle | Spalten | Verschl. |
-|---|---|---|
-| `setting` | `verein` (JSON aller Felder aus §1 außer Verbänden und Logo) | – |
-| `verband` | id, name, vereinsnummer, bemerkung, sortierung | – |
-| `setting` | `logo_version` (Zeitstempel des Uploads) | – |
+| Tabelle | Spalten |
+|---|---|
+| `setting` | `verein` (JSON aller Felder aus §1 außer Verbänden und Logo) |
+| `verband` | id, name, vereinsnummer, bemerkung, sortierung |
+| `setting` | `logo_version` (Zeitstempel des Uploads) |
 
 ## Pflicht-Tests
 
