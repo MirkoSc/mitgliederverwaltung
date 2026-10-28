@@ -19,6 +19,18 @@ use App\Http\HttpMethod;
  */
 final class View
 {
+    /**
+     * The neutral crest in the header until the club uploads its logo
+     * (docs/spec/11-vereinsdaten.md section 2).
+     */
+    public const string LOGO_PLATZHALTER = '/img/vereinslogo-platzhalter.svg';
+
+    /**
+     * URL of the club logo in the header. Issue #16 sets the uploaded logo's
+     * route here (with its ?v= cache buster); until then the placeholder.
+     */
+    private string $logoUrl = self::LOGO_PLATZHALTER;
+
     /** Set once per request by the Kernel, for aria-current in the navigation. */
     private string $currentPath = '/';
 
@@ -53,6 +65,11 @@ final class View
     public function setCurrentPath(string $path): void
     {
         $this->currentPath = $path;
+    }
+
+    public function setLogo(string $url): void
+    {
+        $this->logoUrl = $url;
     }
 
     public function setAnmeldung(?Konto $konto, ?string $csrfToken): void
@@ -117,6 +134,7 @@ final class View
                 'pfad' => $this->currentPath,
                 'version' => $this->version,
                 'appName' => $this->appName,
+                'logoUrl' => $this->logoUrl,
                 'stylesheets' => $this->stylesheets,
                 'routeVorhanden' => $this->routeVorhanden ?? static fn(HttpMethod $methode, string $pfad): bool => false,
                 'partialsDir' => $this->viewsDir . '/partials',

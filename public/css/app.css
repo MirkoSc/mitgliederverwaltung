@@ -1,37 +1,73 @@
 /*
- * Design system of the Mitgliederverwaltung - starting point from issue #1.
+ * Design system of the Mitgliederverwaltung (issue #9).
  *
- * Owned by issue #9 (design system and layout), which builds it out.
- * Additions of other issues go into a file of their own under
- * public/css/teile/ (docs/spec/05-entwicklung.md section 6).
+ * Every page copies its markup from the pattern page /admin/designsystem
+ * (app/views/admin/designsystem.php) instead of inventing classes. Additions
+ * of other issues go into a file of their own under public/css/teile/
+ * (docs/spec/05-entwicklung.md section 6) and use the tokens below only -
+ * then light/dark and the Barrierefrei-Modus work by themselves.
  *
- * Handwritten, no build step. Order: tokens, base, header and navigation,
- * content, components.
+ * Handwritten, no build step. Order: font, tokens, Barrierefrei-Modus,
+ * base, header and navigation, content frame, components, patterns.
  *
  * Principles
- * - Mobile first: everything outside a media query holds from 360 px.
+ * - Mobile first: everything outside a media query holds from 360 px;
+ *   48rem is the step to the PC layout, 64rem the step to list-next-to-
+ *   detail.
  * - Light and dark via prefers-color-scheme; every colour is a token.
- * - Barrierefrei-Modus = class .modus-barrierefrei on <html>, which only
- *   overrides tokens (docs/spec/06-oberflaeche.md section 4).
+ * - Barrierefrei-Modus = class .modus-barrierefrei on <html>: tokens plus a
+ *   few layout rules (docs/spec/06-oberflaeche.md section 4).
  * - No inline styles (CSP: style-src 'self', CLAUDE.md section 4).
+ * - Text always carries the meaning; colour only repeats it.
  *
- * Look: the green of a football pitch as the header band, the navigation
- * in it; the current page carries a yellow line like a pitch marking - the
- * one loud colour, everything else stays calm. Inside the band the same
- * yellow is the keyboard focus.
+ * Look: the club's pitch. The header is the green band with the chalk
+ * white type on it, and the current page carries the yellow line of a
+ * pitch marking - the one loud colour of the whole application, kept for
+ * "you are here" and the keyboard focus inside the band. Everything below
+ * the band is quiet paper, ink and green.
+ *
+ * Type: Atkinson Hyperlegible Next, drawn by the Braille Institute for
+ * readers with low vision - distinct letter shapes (Il1, 0O, rn/m) matter
+ * for names and membership numbers, and they carry the Barrierefrei-Modus
+ * without a second face. Vendored in public/css/schrift/ (README there).
  */
+
+/* ------------------------------------------------------------------ Font */
+
+@font-face {
+    font-family: "Atkinson Hyperlegible Next";
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url("schrift/atkinson-hyperlegible-next-latin-wght-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Names like Łukasz, Şahin or Dvořák. */
+@font-face {
+    font-family: "Atkinson Hyperlegible Next";
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url("schrift/atkinson-hyperlegible-next-latin-ext-wght-normal.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
 
 /* ---------------------------------------------------------------- Tokens */
 
 :root {
     color-scheme: light dark;
 
-    --farbe-grund: #f3f5f2;
+    /* Paper and ink. */
+    --farbe-grund: #f1f4f1;
     --farbe-flaeche: #ffffff;
-    --farbe-text: #17211c;
-    --farbe-gedaempft: #55625b;
-    --farbe-rand: #d3dbd5;
+    --farbe-flaeche-2: #e7ece8;
+    --farbe-text: #16201b;
+    --farbe-gedaempft: #4c5a52;
+    --farbe-rand: #ccd5ce;
+    --farbe-rand-feld: #75847b;
     --farbe-link: #1e5b45;
+    --farbe-gewaehlt: #dcebe2;
 
     /* Header band: pitch green, chalk white on it and the yellow marking. */
     --farbe-verein: #1e5b45;
@@ -39,21 +75,30 @@
     --farbe-verein-gedaempft: #c9ddd3;
     --farbe-markierung: #f2c230;
 
+    /* The main action. */
+    --farbe-haupt: #1e5b45;
+    --farbe-haupt-text: #ffffff;
+
     /* Keyboard focus: dark on light surfaces, yellow in the header (.kopf). */
     --farbe-fokus: #0b3d2c;
 
     --farbe-ok: #1c6b3f;
     --farbe-info: #1a5c9e;
-    --farbe-warnung: #8a5a00;
+    --farbe-warnung: #845500;
     --farbe-fehler: #a3231b;
-    --farbe-ok-flaeche: #e7f3ec;
-    --farbe-info-flaeche: #e8f0f8;
-    --farbe-warnung-flaeche: #fbf1dd;
-    --farbe-fehler-flaeche: #fbebea;
+    --farbe-ok-flaeche: #e5f2ea;
+    --farbe-info-flaeche: #e6eef8;
+    --farbe-warnung-flaeche: #fbf0d9;
+    --farbe-fehler-flaeche: #fbe9e7;
 
-    --schrift: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    --schrift: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    /* Scale after Bringhurst: 14 - 16 - 18 - 21 - 24 - 36 at a 16 px base,
+       written in em so the Barrierefrei-Modus scales all of it at once. */
     --schrift-basis: 1rem;
-    --schrift-klein: 0.875rem;
+    --schrift-klein: 0.875em;
+    --schrift-h3: 1.125em;
+    --schrift-h2: 1.3125em;
+    --schrift-h1: 1.5em;
     --zeilenhoehe: 1.5;
 
     --abstand-1: 0.25rem;
@@ -63,23 +108,34 @@
     --abstand-5: 1.5rem;
     --abstand-6: 2.5rem;
 
-    --radius: 6px;
+    /* Two radii by role: small parts (fields, buttons) and panels. */
+    --radius-klein: 4px;
+    --radius: 8px;
+    --rand-feld: 1px;
     --tippflaeche: 2.75rem;
+    --zeile: var(--abstand-3);
     --fokus-breite: 3px;
-    --inhalt-breite: 72rem;
+    --fokus-abstand: 2px;
+    --inhalt-breite: 76rem;
+    --text-breite: 70ch;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --farbe-grund: #121915;
-        --farbe-flaeche: #1a231e;
+        --farbe-grund: #111814;
+        --farbe-flaeche: #19221d;
+        --farbe-flaeche-2: #212c26;
         --farbe-text: #e6ede8;
         --farbe-gedaempft: #a3b1a8;
-        --farbe-rand: #2e3a33;
+        --farbe-rand: #2f3b34;
+        --farbe-rand-feld: #75857b;
         --farbe-link: #86d3ae;
+        --farbe-gewaehlt: #1d3a2d;
 
         --farbe-verein: #163f31;
         --farbe-verein-gedaempft: #a9c6b8;
+        --farbe-haupt: #86d3ae;
+        --farbe-haupt-text: #0c2219;
         --farbe-fokus: #f2c230;
 
         --farbe-ok: #6cc48f;
@@ -93,36 +149,55 @@
     }
 }
 
-/* Barrierefrei-Modus (06 section 4): large type, very high contrast, a
-   light background even in dark mode, large targets, a very clear focus.
-   The class on <html> beats the dark tokens by specificity. */
+/* ----------------------------------------------------- Barrierefrei-Modus */
+
+/* 06 section 4: very high contrast, a light background even in dark mode,
+   clear borders around fields and buttons, large targets, a very clear
+   focus. The class on <html> beats the dark tokens by specificity. Made
+   for the PC - on a phone the type grows only a little (below). */
 :root.modus-barrierefrei {
     color-scheme: light;
 
     --farbe-grund: #ffffff;
     --farbe-flaeche: #ffffff;
+    --farbe-flaeche-2: #eef2ef;
     --farbe-text: #000000;
     --farbe-gedaempft: #000000;
     --farbe-rand: #000000;
+    --farbe-rand-feld: #000000;
     --farbe-link: #0b3d2c;
+    --farbe-gewaehlt: #d6e9dd;
     --farbe-verein: #0b3d2c;
     --farbe-verein-gedaempft: #ffffff;
+    --farbe-haupt: #0b3d2c;
+    --farbe-haupt-text: #ffffff;
     --farbe-fokus: #000000;
 
     --farbe-ok: #0b4a26;
     --farbe-info: #0a3a6b;
     --farbe-warnung: #5a3a00;
     --farbe-fehler: #7a1410;
-    --farbe-ok-flaeche: #e7f3ec;
-    --farbe-info-flaeche: #e8f0f8;
-    --farbe-warnung-flaeche: #fbf1dd;
-    --farbe-fehler-flaeche: #fbebea;
+    --farbe-ok-flaeche: #e5f2ea;
+    --farbe-info-flaeche: #e6eef8;
+    --farbe-warnung-flaeche: #fbf0d9;
+    --farbe-fehler-flaeche: #fbe9e7;
 
-    --schrift-basis: 1.5rem;
-    --schrift-klein: 1.25rem;
+    --schrift-basis: 1.125rem;
     --zeilenhoehe: 1.6;
-    --tippflaeche: 3.5rem;
-    --fokus-breite: 5px;
+    --rand-feld: 2px;
+    --tippflaeche: 3rem;
+    --zeile: var(--abstand-4);
+    --fokus-breite: 4px;
+    --fokus-abstand: 3px;
+}
+
+@media (min-width: 48rem) {
+    :root.modus-barrierefrei {
+        --schrift-basis: 1.5rem;
+        --tippflaeche: 3.5rem;
+        --fokus-breite: 5px;
+        --inhalt-breite: 90rem;
+    }
 }
 
 /* ------------------------------------------------------------------ Base */
@@ -150,35 +225,103 @@ body {
     line-height: var(--zeilenhoehe);
 }
 
+/* Figures that are compared in columns line up; running text keeps the
+   proportional ones. */
+table,
+input,
+.nummer,
+.zahl {
+    font-variant-numeric: tabular-nums;
+}
+
 h1,
 h2,
-h3 {
-    line-height: 1.25;
+h3,
+h4 {
     margin: 0 0 var(--abstand-4);
+    line-height: 1.2;
+    font-weight: 700;
 }
 
 h1 {
-    font-size: 1.75em;
-    letter-spacing: -0.01em;
+    font-size: var(--schrift-h1);
+    font-weight: 780;
+    letter-spacing: -0.015em;
 }
 
 h2 {
-    font-size: 1.3em;
+    font-size: var(--schrift-h2);
+    letter-spacing: -0.01em;
+}
+
+h3 {
+    font-size: var(--schrift-h3);
+}
+
+h4 {
+    font-size: 1em;
+}
+
+@media (min-width: 48rem) {
+    :root {
+        --schrift-h1: 2.25em;
+        --schrift-h2: 1.5em;
+    }
+}
+
+p,
+ul,
+ol,
+dl {
+    margin: 0 0 var(--abstand-4);
 }
 
 p {
-    margin: 0 0 var(--abstand-4);
-    max-width: 70ch;
+    max-width: var(--text-breite);
 }
 
 a {
     color: var(--farbe-link);
-    text-underline-offset: 0.15em;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+}
+
+a:hover {
+    text-decoration-thickness: 2px;
+}
+
+code {
+    font-size: 0.9em;
+    overflow-wrap: anywhere;
 }
 
 :focus-visible {
     outline: var(--fokus-breite) solid var(--farbe-fokus);
-    outline-offset: 2px;
+    outline-offset: var(--fokus-abstand);
+}
+
+/* Text for screen readers only (a table caption, a label the layout shows
+   otherwise). */
+.nur-lesehilfe {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.gedaempft {
+    color: var(--farbe-gedaempft);
+}
+
+.klein {
+    font-size: var(--schrift-klein);
+}
+
+.zahl {
+    text-align: right;
+    white-space: nowrap;
 }
 
 .sprungmarke {
@@ -205,6 +348,15 @@ a {
     }
 }
 
+/* 06 section 4: no animations at all in the Barrierefrei-Modus. */
+.modus-barrierefrei *,
+.modus-barrierefrei *::before,
+.modus-barrierefrei *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+}
+
 /* ------------------------------------------------ Header and navigation */
 
 .kopf {
@@ -219,6 +371,10 @@ a {
     --farbe-fokus: var(--farbe-link);
 }
 
+.modus-barrierefrei .benutzermenue-liste {
+    --farbe-fokus: #000000;
+}
+
 .kopf-zeile {
     display: flex;
     align-items: center;
@@ -229,17 +385,50 @@ a {
     padding: var(--abstand-3) var(--abstand-4);
 }
 
+/* Club logo and name of the application. */
 .marke {
+    display: flex;
+    align-items: center;
+    gap: var(--abstand-3);
+    min-width: 0;
+    min-height: var(--tippflaeche);
     color: inherit;
-    font-weight: 700;
+    font-weight: 750;
     font-size: 1.125em;
-    text-decoration: none;
+    line-height: 1.2;
     letter-spacing: -0.01em;
+    text-decoration: none;
+}
+
+.marke-logo {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: contain;
+}
+
+.marke-name {
+    min-width: 0;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+@media (max-width: 29.99rem) {
+    .marke {
+        gap: var(--abstand-2);
+        font-size: 1em;
+    }
+
+    .marke-logo {
+        width: 2rem;
+        height: 2rem;
+    }
 }
 
 /* User menu: a <details>, so it works without a script and by keyboard. */
 .benutzermenue {
     position: relative;
+    flex: none;
 }
 
 .benutzermenue > summary {
@@ -249,6 +438,7 @@ a {
     justify-content: center;
     min-height: var(--tippflaeche);
     padding: 0 var(--abstand-2);
+    border-radius: var(--radius-klein);
     cursor: pointer;
     list-style: none;
     text-align: right;
@@ -259,8 +449,18 @@ a {
     display: none;
 }
 
+.benutzermenue > summary:hover,
+.benutzermenue[open] > summary {
+    background: rgb(255 255 255 / 12%);
+}
+
 .benutzermenue-name {
-    font-weight: 600;
+    font-weight: 650;
+}
+
+.benutzermenue-name::after {
+    content: " ▾";
+    font-size: 0.8em;
 }
 
 .benutzermenue-rolle {
@@ -279,20 +479,24 @@ a {
     list-style: none;
     background: var(--farbe-flaeche);
     color: var(--farbe-text);
-    border: 1px solid var(--farbe-rand);
+    border: var(--rand-feld) solid var(--farbe-rand);
     border-radius: var(--radius);
-    box-shadow: 0 6px 24px rgb(0 0 0 / 18%);
+    box-shadow: 0 8px 28px rgb(0 0 0 / 20%);
+}
+
+.modus-barrierefrei .benutzermenue-liste {
+    width: min(32rem, calc(100vw - 2 * var(--abstand-4)));
 }
 
 .benutzermenue-liste a,
 .benutzermenue-liste .menue-knopf,
 .benutzermenue-liste .eintrag-spaeter {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
     min-height: var(--tippflaeche);
     padding: var(--abstand-2) var(--abstand-4);
     color: inherit;
-    line-height: 1.75rem;
     text-decoration: none;
     text-align: left;
 }
@@ -310,7 +514,7 @@ a {
 
 .benutzermenue-liste a:hover,
 .menue-knopf:hover {
-    background: var(--farbe-grund);
+    background: var(--farbe-flaeche-2);
 }
 
 .eintrag-spaeter {
@@ -319,6 +523,7 @@ a {
 }
 
 .eintrag-spaeter small {
+    margin-left: 0.3em;
     font-size: var(--schrift-klein);
 }
 
@@ -342,12 +547,29 @@ a {
     padding: 0 var(--abstand-3);
     border-bottom: 4px solid transparent;
     color: var(--farbe-verein-gedaempft);
-    font-weight: 600;
+    font-weight: 650;
     text-decoration: none;
 }
 
 .navi a:hover {
     color: var(--farbe-verein-text);
+    border-bottom-color: rgb(255 255 255 / 35%);
+}
+
+.navi a[aria-current="page"] {
+    color: var(--farbe-verein-text);
+    border-bottom-color: var(--farbe-markierung);
+}
+
+/* Focus inside the band: the yellow ring sits inside the entry, so the
+   bottom of the band cannot clip it. */
+.navi a:focus-visible {
+    outline-offset: calc(-1 * var(--fokus-breite));
+}
+
+.modus-barrierefrei .navi a,
+.modus-barrierefrei .navi .eintrag-spaeter {
+    border-bottom-width: 6px;
 }
 
 /* Narrow screens: the entries as equal cells, two per row, instead of the
@@ -364,12 +586,7 @@ a {
     }
 }
 
-.navi a[aria-current="page"] {
-    color: var(--farbe-verein-text);
-    border-bottom-color: var(--farbe-markierung);
-}
-
-/* --------------------------------------------------------------- Content */
+/* -------------------------------------------------------- Content frame */
 
 .inhalt {
     flex: 1;
@@ -413,37 +630,136 @@ a {
         padding-right: var(--abstand-5);
     }
 
+    .inhalt {
+        padding-top: var(--abstand-6);
+    }
+
     .navi ul {
         padding: 0 var(--abstand-3);
     }
 }
 
+/* Page title with its main action on the same line (e.g. "Neues
+   Mitglied") and an optional sentence below. */
+.seitenkopf {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--abstand-2) var(--abstand-4);
+    margin-bottom: var(--abstand-5);
+}
+
+.seitenkopf h1 {
+    margin: 0;
+}
+
+.seitenkopf p {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--farbe-gedaempft);
+}
+
 /* ------------------------------------------------------------ Components */
 
+/* Buttons. The label says what happens ("Mitglied speichern"). */
 .knopf {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: var(--abstand-2);
     min-height: var(--tippflaeche);
-    padding: 0 var(--abstand-5);
-    border: 2px solid var(--farbe-verein);
-    border-radius: var(--radius);
+    padding: var(--abstand-1) var(--abstand-5);
+    border: 2px solid var(--farbe-haupt);
+    border-radius: var(--radius-klein);
     background: var(--farbe-flaeche);
     color: var(--farbe-link);
     font: inherit;
-    font-weight: 600;
+    font-weight: 650;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
     cursor: pointer;
 }
 
-.knopf-haupt {
-    background: var(--farbe-verein);
-    color: var(--farbe-verein-text);
+.knopf:hover {
+    background: var(--farbe-flaeche-2);
 }
 
+.knopf-haupt {
+    background: var(--farbe-haupt);
+    color: var(--farbe-haupt-text);
+}
+
+.knopf-haupt:hover {
+    background: var(--farbe-haupt);
+    box-shadow: inset 0 0 0 2px var(--farbe-flaeche);
+}
+
+.knopf-gefahr {
+    border-color: var(--farbe-fehler);
+    color: var(--farbe-fehler);
+}
+
+/* A minor action that should not compete: looks like a link, keeps the
+   target size. In the Barrierefrei-Modus it gets its frame back. */
+.knopf-still {
+    border-color: transparent;
+    background: none;
+    padding-left: var(--abstand-2);
+    padding-right: var(--abstand-2);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+}
+
+.modus-barrierefrei .knopf-still {
+    border-color: var(--farbe-rand-feld);
+    padding-left: var(--abstand-4);
+    padding-right: var(--abstand-4);
+}
+
+.knopf:disabled,
+.knopf[aria-disabled="true"] {
+    border-color: var(--farbe-rand);
+    background: var(--farbe-flaeche-2);
+    color: var(--farbe-gedaempft);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.knopfreihe {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-3);
+    margin: 0 0 var(--abstand-4);
+}
+
+/* Messages: flash after a redirect and notes on a page. Never blocking;
+   the text says what to do. */
 .hinweis {
+    max-width: var(--text-breite);
+    margin: 0 0 var(--abstand-4);
     padding: var(--abstand-3) var(--abstand-4);
     border-left: 4px solid currentColor;
-    border-radius: var(--radius);
+    border-radius: var(--radius-klein);
+}
+
+.hinweis > :last-child {
+    margin-bottom: 0;
+}
+
+.hinweis strong:first-child {
+    display: block;
+    margin-bottom: var(--abstand-1);
+}
+
+.hinweis ul {
+    margin: 0;
+    padding-left: 1.25em;
+}
+
+.hinweis a {
+    color: inherit;
 }
 
 .hinweis-ok {
@@ -466,9 +782,82 @@ a {
     background: var(--farbe-fehler-flaeche);
 }
 
+.modus-barrierefrei .hinweis {
+    border: 2px solid currentColor;
+    border-left-width: 8px;
+}
+
+.flash:empty {
+    display: none;
+}
+
+/* Small labels with a state, always as a word ("aktiv", "Ehemalig"). */
+.etikett {
+    display: inline-block;
+    padding: 0.1em 0.6em;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--farbe-flaeche-2);
+    color: var(--farbe-text);
+    font-size: var(--schrift-klein);
+    font-weight: 650;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.etikett-ok {
+    background: var(--farbe-ok-flaeche);
+    color: var(--farbe-ok);
+}
+
+.etikett-info {
+    background: var(--farbe-info-flaeche);
+    color: var(--farbe-info);
+}
+
+.etikett-warnung {
+    background: var(--farbe-warnung-flaeche);
+    color: var(--farbe-warnung);
+}
+
+.etikett-fehler {
+    background: var(--farbe-fehler-flaeche);
+    color: var(--farbe-fehler);
+}
+
+.modus-barrierefrei .etikett {
+    border-color: currentColor;
+}
+
+/* Membership number: read aloud and typed in, so it is set apart. */
+.nummer {
+    font-weight: 650;
+    letter-spacing: 0.02em;
+}
+
+/* Panels: a section of a page (settings, a block in the member). */
+.abschnitt {
+    margin-bottom: var(--abstand-5);
+    padding: var(--abstand-5) var(--abstand-4);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+    scroll-margin-top: var(--abstand-4);
+}
+
+.abschnitt > :last-child {
+    margin-bottom: 0;
+}
+
+@media (min-width: 48rem) {
+    .abschnitt {
+        padding: var(--abstand-5);
+    }
+}
+
 /* Placeholder of a page a later issue builds. */
 .platzhalter {
-    max-width: 70ch;
+    max-width: var(--text-breite);
     padding: var(--abstand-5);
     border: 2px dashed var(--farbe-rand);
     border-radius: var(--radius);
@@ -484,7 +873,588 @@ a {
     font-size: var(--schrift-klein);
 }
 
-/* A selection, one below the other (lists). */
+/* An empty list or an empty detail: says why and offers the next step. */
+.leer {
+    max-width: var(--text-breite);
+    padding: var(--abstand-5) var(--abstand-4);
+    border: 1px dashed var(--farbe-rand-feld);
+    border-radius: var(--radius);
+    color: var(--farbe-gedaempft);
+}
+
+.leer > :last-child {
+    margin-bottom: 0;
+}
+
+/* Data of a record as label and value; two columns from the PC on. */
+.angaben {
+    display: grid;
+    gap: var(--abstand-1) var(--abstand-4);
+}
+
+.angaben dt {
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+.angaben dd {
+    margin: 0 0 var(--abstand-3);
+}
+
+@media (min-width: 48rem) {
+    .angaben {
+        grid-template-columns: minmax(9rem, max-content) 1fr;
+    }
+
+    .angaben dt {
+        padding-top: 0.15em;
+    }
+}
+
+.modus-barrierefrei .angaben {
+    grid-template-columns: 1fr;
+}
+
+/* ------------------------------------------------------------- Forms */
+
+/* Every field: label above, help below, a clear frame. */
+input:not([type="checkbox"], [type="radio"], [type="hidden"]),
+select,
+textarea {
+    width: 100%;
+    min-height: var(--tippflaeche);
+    padding: var(--abstand-2) var(--abstand-3);
+    border: var(--rand-feld) solid var(--farbe-rand-feld);
+    border-radius: var(--radius-klein);
+    background: var(--farbe-flaeche);
+    color: var(--farbe-text);
+    font: inherit;
+}
+
+textarea {
+    min-height: 6rem;
+    resize: vertical;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    flex: none;
+    width: 1.25em;
+    height: 1.25em;
+    margin: 0;
+    accent-color: var(--farbe-haupt);
+}
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+    border-color: var(--farbe-fehler);
+    box-shadow: inset 0 0 0 1px var(--farbe-fehler);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background: var(--farbe-flaeche-2);
+    color: var(--farbe-gedaempft);
+}
+
+::placeholder {
+    color: var(--farbe-gedaempft);
+    opacity: 1;
+}
+
+.formular {
+    display: grid;
+    gap: var(--abstand-4);
+    margin: 0 0 var(--abstand-5);
+}
+
+.feld {
+    display: grid;
+    align-content: start;
+    gap: var(--abstand-1);
+    min-width: 0;
+}
+
+.feld > label,
+.feldgruppe > legend {
+    font-weight: 650;
+}
+
+.feld-hinweis,
+.feld-fehler {
+    margin: 0;
+    font-size: var(--schrift-klein);
+}
+
+.feld-hinweis {
+    color: var(--farbe-gedaempft);
+}
+
+.feld-fehler {
+    color: var(--farbe-fehler);
+    font-weight: 650;
+}
+
+/* Short values (postcode, date, amount) keep a short field. */
+.feld-kurz input,
+.feld-kurz select {
+    max-width: 12rem;
+}
+
+/* Checkbox or radio with its label to the right - the whole line clicks. */
+.feld-haken {
+    display: flex;
+    align-items: center;
+    gap: var(--abstand-3);
+    min-height: var(--tippflaeche);
+    cursor: pointer;
+}
+
+.feldgruppe {
+    display: grid;
+    gap: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.feldgruppe > legend {
+    margin-bottom: var(--abstand-1);
+    padding: 0;
+}
+
+/* Long forms (the member): one column on a phone, two on the PC; a field
+   that needs the room spans both (.feld-breit). One column again in the
+   Barrierefrei-Modus. */
+@media (min-width: 48rem) {
+    .formular-zweispaltig {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--abstand-4) var(--abstand-5);
+    }
+
+    .formular-zweispaltig > .feld-breit,
+    .formular-zweispaltig > h2,
+    .formular-zweispaltig > h3,
+    .formular-zweispaltig > .hinweis,
+    .formular-zweispaltig > .formular-aktionen {
+        grid-column: 1 / -1;
+    }
+}
+
+.modus-barrierefrei .formular-zweispaltig {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* The save button is always in reach (06 section 3): the bar sticks to the
+   bottom edge of the window while the form is longer than the screen. */
+.formular-aktionen {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-3);
+    padding: var(--abstand-3) 0;
+    border-top: 1px solid var(--farbe-rand);
+    background: var(--farbe-flaeche);
+}
+
+.modus-barrierefrei .formular-aktionen {
+    border-top-width: 2px;
+}
+
+/* Search and filters above a list. */
+.suche {
+    display: grid;
+    gap: var(--abstand-3);
+    margin: 0 0 var(--abstand-4);
+}
+
+.suche-feld input {
+    font-size: 1.125em;
+}
+
+.filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--abstand-2) var(--abstand-4);
+}
+
+.filter .feld {
+    flex: 1 1 10rem;
+}
+
+.filter .feld-haken {
+    flex: none;
+}
+
+@media (min-width: 48rem) {
+    .filter .feld {
+        flex: 0 1 14rem;
+    }
+}
+
+/* ------------------------------------------------------- Lists (tables) */
+
+/* A list is a table on the PC and a stack of cards on a phone (06 section
+   3). Every cell but the first carries data-label - the card shows it as
+   the label. Columns marked .nebenspalte give way first: next to an
+   opened detail and in the Barrierefrei-Modus. */
+.tabelle-rahmen {
+    overflow-x: auto;
+}
+
+.liste {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--farbe-flaeche);
+}
+
+.liste caption {
+    margin-bottom: var(--abstand-2);
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+    text-align: left;
+}
+
+.liste th,
+.liste td {
+    padding: var(--zeile) var(--abstand-3);
+    border-bottom: 1px solid var(--farbe-rand);
+    text-align: left;
+    vertical-align: top;
+}
+
+.liste thead th {
+    padding-top: var(--abstand-2);
+    padding-bottom: var(--abstand-2);
+    border-bottom: 2px solid var(--farbe-text);
+    background: var(--farbe-flaeche-2);
+    font-size: var(--schrift-klein);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.liste th.zahl,
+.liste td.zahl {
+    text-align: right;
+}
+
+.liste tbody tr:hover {
+    background: var(--farbe-flaeche-2);
+}
+
+.liste tbody tr:has([aria-current="true"]) {
+    background: var(--farbe-gewaehlt);
+    box-shadow: inset 4px 0 0 var(--farbe-haupt);
+}
+
+.liste-titel a {
+    font-weight: 650;
+}
+
+/* Sorting: the header is a link; the arrow repeats aria-sort. */
+.liste th a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.liste th a:hover {
+    text-decoration: underline;
+}
+
+.liste th[aria-sort="ascending"] a::after {
+    content: " ▲";
+    font-size: 0.75em;
+}
+
+.liste th[aria-sort="descending"] a::after {
+    content: " ▼";
+    font-size: 0.75em;
+}
+
+.modus-barrierefrei .liste th,
+.modus-barrierefrei .liste td {
+    border-bottom-width: 2px;
+    border-bottom-color: var(--farbe-text);
+}
+
+.modus-barrierefrei .nebenspalte {
+    display: none;
+}
+
+/* Phone: one card per row. The table semantics give way to readable
+   cards; the header row only holds the sort links, which a phone does not
+   need. */
+@media (max-width: 47.99rem) {
+    .liste,
+    .liste tbody,
+    .liste tr,
+    .liste td {
+        display: block;
+    }
+
+    .liste {
+        background: none;
+    }
+
+    .liste caption {
+        display: block;
+    }
+
+    .liste thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+
+    .liste tbody tr {
+        position: relative;
+        margin-bottom: var(--abstand-3);
+        padding: var(--abstand-3) var(--abstand-4);
+        border: 1px solid var(--farbe-rand);
+        border-radius: var(--radius);
+        background: var(--farbe-flaeche);
+    }
+
+    .liste td {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 var(--abstand-3);
+        padding: var(--abstand-1) 0;
+        border: 0;
+    }
+
+    .liste td.zahl {
+        text-align: left;
+    }
+
+    .liste td[data-label]::before {
+        content: attr(data-label);
+        flex: 0 0 8.5rem;
+        color: var(--farbe-gedaempft);
+        font-size: var(--schrift-klein);
+        line-height: 1.75;
+    }
+
+    .liste td.liste-titel {
+        padding-bottom: var(--abstand-2);
+        font-size: 1.125em;
+    }
+
+    /* The whole card opens the record - the link covers it. */
+    .liste .liste-titel a::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+    }
+
+    /* Something clickable inside a card besides the title stays on top. */
+    .liste td :is(button, input, select, .knopf) {
+        position: relative;
+        z-index: 1;
+    }
+}
+
+/* Paging: 50 per page are enough for a club (06 section 3). */
+.blaettern {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--abstand-3);
+    margin: var(--abstand-4) 0;
+}
+
+.blaettern-stand {
+    margin: 0;
+    color: var(--farbe-gedaempft);
+}
+
+/* ------------------------------------------------------------- Patterns */
+
+/* Tabs of a record (Daten, Beiträge, Verlauf): links with
+   aria-current="page" - every tab has its own URL, works without a
+   script, htmx may swap only the panel. */
+.reiter {
+    margin: 0 0 var(--abstand-5);
+}
+
+/* The base line is a shadow so the tab's own underline paints over it -
+   no negative margin that would make the scroll box scroll vertically. */
+.reiter ul {
+    display: flex;
+    gap: var(--abstand-1);
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    list-style: none;
+    box-shadow: inset 0 -1px 0 var(--farbe-rand);
+}
+
+.reiter a,
+.reiter .eintrag-spaeter {
+    display: flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-4);
+    border-bottom: 4px solid transparent;
+    color: var(--farbe-gedaempft);
+    font-weight: 650;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.reiter a:hover {
+    color: var(--farbe-text);
+    border-bottom-color: var(--farbe-rand-feld);
+}
+
+.reiter a[aria-current="page"] {
+    color: var(--farbe-text);
+    border-bottom-color: var(--farbe-haupt);
+}
+
+.reiter a:focus-visible {
+    outline-offset: calc(-1 * var(--fokus-breite));
+}
+
+.modus-barrierefrei .reiter ul {
+    box-shadow: inset 0 -2px 0 var(--farbe-text);
+}
+
+.modus-barrierefrei .reiter a {
+    border: 2px solid var(--farbe-text);
+    border-bottom-width: 0;
+    border-radius: var(--radius-klein) var(--radius-klein) 0 0;
+}
+
+.modus-barrierefrei .reiter a[aria-current="page"] {
+    background: var(--farbe-gewaehlt);
+    box-shadow: inset 0 -6px 0 var(--farbe-haupt);
+}
+
+/* List next to detail (06 section 2): on the PC the opened record stands
+   right of the list; on a phone and in the Barrierefrei-Modus it is a view
+   of its own with "Zurück". The server marks an opened record with
+   .geteilt-mit-detail - nothing here needs a script. */
+.geteilt {
+    display: grid;
+    gap: var(--abstand-5);
+    align-items: start;
+}
+
+.geteilt-liste,
+.geteilt-detail {
+    min-width: 0;
+}
+
+.geteilt-mit-detail .geteilt-liste,
+.geteilt:not(.geteilt-mit-detail) .geteilt-detail {
+    display: none;
+}
+
+.zurueck {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    margin-bottom: var(--abstand-2);
+    font-weight: 650;
+}
+
+.zurueck::before {
+    content: "← ";
+    white-space: pre;
+}
+
+.detail-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--abstand-2) var(--abstand-3);
+    margin-bottom: var(--abstand-4);
+}
+
+.detail-kopf :is(h2, h3) {
+    margin: 0;
+}
+
+@media (min-width: 64rem) {
+    :root:not(.modus-barrierefrei) .geteilt {
+        grid-template-columns: minmax(22rem, 2fr) minmax(0, 3fr);
+    }
+
+    :root:not(.modus-barrierefrei) .geteilt-mit-detail .geteilt-liste,
+    :root:not(.modus-barrierefrei) .geteilt:not(.geteilt-mit-detail) .geteilt-detail {
+        display: block;
+    }
+
+    :root:not(.modus-barrierefrei) .geteilt .zurueck {
+        display: none;
+    }
+
+    /* Next to the detail the list is narrow: only its main columns. */
+    :root:not(.modus-barrierefrei) .geteilt-mit-detail .nebenspalte {
+        display: none;
+    }
+
+    :root:not(.modus-barrierefrei) .geteilt-detail {
+        position: sticky;
+        top: var(--abstand-4);
+        max-height: calc(100vh - 2 * var(--abstand-4));
+        overflow-y: auto;
+        padding: var(--abstand-5);
+        border: 1px solid var(--farbe-rand);
+        border-radius: var(--radius);
+        background: var(--farbe-flaeche);
+    }
+}
+
+/* htmx loading indicator (includeIndicatorStyles is off - the CSP would
+   drop htmx's injected <style>, so the rules live here). */
+.htmx-indicator {
+    visibility: hidden;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    visibility: visible;
+}
+
+.laedt {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--abstand-2);
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+.laedt::before {
+    content: "";
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: laedt-drehen 0.8s linear infinite;
+}
+
+@keyframes laedt-drehen {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ------------------------------------------------- Page-level patterns */
+
+/* A selection, one below the other (the page "Listen"). */
 .auswahl {
     display: grid;
     gap: var(--abstand-3);
@@ -495,15 +1465,27 @@ a {
 }
 
 .auswahl li {
+    position: relative;
     padding: var(--abstand-4);
     border: 1px solid var(--farbe-rand);
     border-radius: var(--radius);
     background: var(--farbe-flaeche);
 }
 
+.auswahl li:hover {
+    border-color: var(--farbe-rand-feld);
+}
+
 .auswahl a {
-    font-weight: 600;
+    font-weight: 650;
     font-size: 1.125em;
+}
+
+/* The whole entry opens the list. */
+.auswahl a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
 }
 
 .auswahl p {
@@ -521,13 +1503,10 @@ a {
     list-style: none;
 }
 
-.abschnitt {
-    margin-bottom: var(--abstand-5);
-    padding: var(--abstand-5) var(--abstand-4);
-    border: 1px solid var(--farbe-rand);
-    border-radius: var(--radius);
-    background: var(--farbe-flaeche);
-    scroll-margin-top: var(--abstand-4);
+.sprungleiste a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
 }
 
 /* Error pages and login: narrow, on their own. */
@@ -544,4 +1523,50 @@ a {
     display: flex;
     flex-wrap: wrap;
     gap: var(--abstand-3);
+}
+
+/* -------------------------------------- Pattern page /admin/designsystem */
+
+.muster {
+    margin-bottom: var(--abstand-6);
+}
+
+.muster > h2 {
+    padding-top: var(--abstand-4);
+    border-top: 2px solid var(--farbe-text);
+}
+
+.muster-farben {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: var(--abstand-3);
+    margin: 0 0 var(--abstand-4);
+    padding: 0;
+    list-style: none;
+}
+
+.muster-farben li {
+    display: grid;
+    gap: var(--abstand-1);
+    font-size: var(--schrift-klein);
+}
+
+.muster-farben li::before {
+    content: "";
+    height: 3rem;
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius-klein);
+}
+
+.farbe-grund::before { background: var(--farbe-grund); }
+.farbe-flaeche::before { background: var(--farbe-flaeche); }
+.farbe-text::before { background: var(--farbe-text); }
+.farbe-gedaempft::before { background: var(--farbe-gedaempft); }
+.farbe-verein::before { background: var(--farbe-verein); }
+.farbe-markierung::before { background: var(--farbe-markierung); }
+.farbe-haupt::before { background: var(--farbe-haupt); }
+.farbe-fehler::before { background: var(--farbe-fehler); }
+
+.muster-schrift > * {
+    margin-bottom: var(--abstand-2);
 }
