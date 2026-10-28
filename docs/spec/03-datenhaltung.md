@@ -27,7 +27,7 @@
 | `trusted_device` | id, user_id, token_hash UNIQUE, label, created_at, last_used_at, expires_at |
 | `auth_token` | id, user_id, typ (`reset`/`invite`), token_hash UNIQUE, expires_at, used_at NULL, created_at |
 | `rate_limit` | key_hash PK, window_start, count |
-| `audit_log` | id, ts, user_id NULL (kein FK), action, entity NULL, entity_id NULL, ip_hash NULL, details (JSON), prev_hash, hash |
+| `audit_log` | id, ts, user_id NULL (kein FK), action, entity NULL, entity_id NULL (Text), ip_hash NULL, details (JSON), prev_hash, hash |
 | `mail_queue` | id, to_address, subject, body, status, attempts, next_try_at, created_at |
 | `job` | id, typ, status (`offen`/`laeuft`/`fertig`/`fehler`), user_id NULL, state (JSON), progress (0–100), last_error NULL (nur Exception-Klasse), locked_until, created_at, updated_at |
 | `file_blob` | id, storage (`fs`/`db`), key_enc, header, size, cipher_sha256, mime, created_at |
