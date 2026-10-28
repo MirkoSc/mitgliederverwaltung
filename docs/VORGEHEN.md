@@ -19,7 +19,7 @@ Repository sagen „starte die Entwicklung“ (bzw. den Workflow
 - mergt main ein, testet, squash-mergt und schließt das Issue.
 
 Wie viele Agenten gleichzeitig laufen, hängt von der Maschine der Sitzung
-ab (bei 4 CPU-Kernen 2). Die Sitzung muss dafür laufen bleiben.
+ab; höchstens 4 gleichzeitig, weil jeder Agent eine eigene Docker-Umgebung startet. Die Sitzung muss laufen bleiben; startet der Container neu, den Workflow einfach erneut starten – er setzt fort.
 
 ## Wenn etwas hängt
 
