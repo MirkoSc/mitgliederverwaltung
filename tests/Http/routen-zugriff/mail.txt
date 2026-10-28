@@ -1,0 +1,3 @@
+# app/routes/mail.php - forms of the settings section Mail: admin only.
+POST /admin/mail -> admin.einstellungen
+POST /admin/mail/test -> admin.einstellungen

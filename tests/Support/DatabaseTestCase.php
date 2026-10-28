@@ -23,6 +23,26 @@ abstract class DatabaseTestCase extends TestCase
         TestDatenbank::alleTabellenLoeschen(TestDatenbank::verbindenOderAbbrechen());
     }
 
+    /**
+     * An empty database for a test that is not a DatabaseTestCase itself
+     * (a feature test through App\Tests\Support\AppTestCase); null without
+     * a reachable server, the same rule as setUp().
+     */
+    public static function leereDatenbank(): ?\PDO
+    {
+        $pdo = TestDatenbank::verbinden();
+        if ($pdo === null) {
+            if (getenv('TEST_DB_REQUIRED') === '1') {
+                self::fail('Test database not available: ' . TestDatenbank::fehler());
+            }
+
+            return null;
+        }
+        TestDatenbank::alleTabellenLoeschen($pdo);
+
+        return $pdo;
+    }
+
     protected function pdo(): \PDO
     {
         return TestDatenbank::verbindenOderAbbrechen();

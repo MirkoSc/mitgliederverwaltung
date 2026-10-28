@@ -1,0 +1,44 @@
+/* Forms of the settings section Mail (issue #7). Tokens from app.css only. */
+
+.formular {
+    display: grid;
+    gap: var(--abstand-4);
+    max-width: 32rem;
+    margin-bottom: var(--abstand-5);
+}
+
+.formular .feld {
+    display: grid;
+    gap: var(--abstand-1);
+}
+
+.formular label {
+    font-weight: 600;
+}
+
+.formular input:not([type="checkbox"]),
+.formular select {
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-3);
+    border: 2px solid currentColor;
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+    color: inherit;
+    font: inherit;
+}
+
+.formular .feld-hinweis {
+    margin: 0;
+}
+
+.formular .feld-haken {
+    display: flex;
+    align-items: center;
+    gap: var(--abstand-2);
+    min-height: var(--tippflaeche);
+    font-weight: 400;
+}
+
+.formular .knopf {
+    justify-self: start;
+}

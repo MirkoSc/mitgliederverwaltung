@@ -78,6 +78,26 @@ abgelehnt (02 §6).
 - Texte nach dem Skill `frontend-design` (Abschnitt „Writing"): Knöpfe
   sagen, was passiert („Mitglied speichern", nicht „Absenden"), Fehler
   sagen, was zu tun ist.
+- **Musterseite `/admin/designsystem`** (nur Admin, #9) zeigt jeden
+  Baustein aus `public/css/app.css` mit erfundenen Beispieldaten; neue
+  Seiten kopieren ihr Markup von dort statt eigene Klassen zu erfinden.
+  `?barrierefrei=1` zeigt sie im Barrierefrei-Modus, ohne die Einstellung
+  des Benutzers zu ändern. Die Bausteine: Knöpfe (`knopf`, `knopf-haupt`,
+  `knopf-gefahr`, `knopf-still`), Meldungen (`hinweis-*`), Etiketten
+  (`etikett-*`), Formular (`formular`, auf langen Formularen
+  `formular-zweispaltig`, `feld`, `feld-hinweis`, `feld-fehler`,
+  `feld-haken`, `formular-aktionen` = Speichern-Leiste, die am unteren
+  Rand klebt), Suche und Filter (`suche`, `filter`), Liste (`liste` –
+  Tabelle am PC, Karten am Handy über `data-label` je Zelle;
+  `nebenspalte` entfällt neben dem Detail und im Barrierefrei-Modus),
+  Blättern (`blaettern`), Leerzustand (`leer`), Reiter (`reiter`, Links mit
+  `aria-current="page"`), Liste neben Detail (`geteilt`, vom Server mit
+  `geteilt-mit-detail` markiert, ohne Skript), Angaben (`angaben`),
+  Ladeanzeige (`htmx-indicator`, `laedt`).
+- Schrift: **Atkinson Hyperlegible Next** (Braille Institute, OFL),
+  selbst ausgeliefert unter `public/css/schrift/`; Logo in der Kopfzeile
+  über `App\View\View::setLogo()`, ohne Upload ein neutrales Wappen
+  (11 §2).
 
 ## 4. Barrierefrei-Modus
 
@@ -99,7 +119,9 @@ nichts Wesentliches.
 Umsetzung einfach gehalten: eine Klasse am `<html>`-Element
 (`modus-barrierefrei`), die die Farb-, Größen- und Abstands-Tokens
 überschreibt, plus wenige Layout-Regeln. Kein zweites Layout, keine
-zweiten Templates.
+zweiten Templates. Die große Schrift greift ab PC-Breite (48rem); am Handy
+wächst sie nur leicht, Kontrast und Rahmen gelten überall. Die Punkte
+Zeit (Leerlauf, Warnung) und Rückfragen setzt #10 um.
 
 ## Pflicht-Tests
 

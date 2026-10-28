@@ -108,7 +108,8 @@ und PC. Barrierearmut als solide Grundlage, kein Vollstandard; dazu ein
 **Barrierefrei-Modus** je Benutzer (PC: große Schrift, hoher Kontrast,
 große Flächen, nur Tastatur möglich) als CSS-Klasse, kein zweites Layout.
 Ein Layout, ein handgeschriebenes Designsystem (`public/css/app.css`,
-hell/dunkel). Jede UI-Arbeit lädt den Skill **`frontend-design`**
+hell/dunkel); alle Bausteine zeigt die Musterseite `/admin/designsystem`
+– neue Seiten kopieren ihr Markup von dort. Jede UI-Arbeit lädt den Skill **`frontend-design`**
 (`.claude/skills/frontend-design/`, unverändert von Anthropic,
 Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
 

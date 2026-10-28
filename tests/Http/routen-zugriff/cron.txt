@@ -1,0 +1,2 @@
+# app/routes/cron.php - the hoster's cron; the token from config.php is the only credential (01 section 5).
+GET /cron -> cron-token
