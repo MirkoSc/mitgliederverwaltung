@@ -7,9 +7,11 @@
  * @var bool $entwicklung the development accounts are switched on
  * @var bool $abgelaufen the session ran out (App\Http\LoginGuard)
  * @var string $csrf
+ * @var string $logoAnmeldungUrl club logo or placeholder (App\View\View)
  */
 ?>
 <section class="anmeldung">
+    <img class="anmeldung-logo" src="<?= e($logoAnmeldungUrl) ?>" alt="" width="160" height="80">
     <h1>Anmelden</h1>
     <?php if ($abgelaufen): ?>
         <p class="hinweis hinweis-info">Ihre Sitzung ist abgelaufen. Bitte melden Sie sich neu an.</p>
