@@ -31,7 +31,27 @@ abstract class DatabaseTestCase extends TestCase
             self::markTestSkipped('Test database not available: ' . (self::$connectError ?? 'unknown error'));
         }
 
-        $this->dropAllTables($pdo);
+        self::dropAllTables($pdo);
+    }
+
+    /**
+     * An empty database for a test that is not a DatabaseTestCase itself
+     * (a feature test through App\Tests\Support\AppTestCase); null without
+     * a reachable server, the same rule as setUp().
+     */
+    public static function leereDatenbank(): ?\PDO
+    {
+        $pdo = self::connect();
+        if ($pdo === null) {
+            if (getenv('TEST_DB_REQUIRED') === '1') {
+                self::fail('Test database not available: ' . (self::$connectError ?? 'unknown error'));
+            }
+
+            return null;
+        }
+        self::dropAllTables($pdo);
+
+        return $pdo;
     }
 
     protected function pdo(): \PDO
@@ -108,7 +128,7 @@ abstract class DatabaseTestCase extends TestCase
         return self::$sharedPdo = $pdo;
     }
 
-    protected function dropAllTables(\PDO $pdo): void
+    protected static function dropAllTables(\PDO $pdo): void
     {
         $tables = $pdo
             ->query('SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()')

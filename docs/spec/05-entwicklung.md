@@ -128,6 +128,7 @@ Bis zu neun Issues werden gleichzeitig von getrennten Agenten bearbeitet
   | Einstellungs-Abschnitte | eigene Klasse `app/src/Admin/Einstellungen/<Name>Abschnitt.php` (implementiert `Abschnitt`) + Template, automatisch gefunden; Formulare posten an Routen der eigenen Routen-Datei |
   | Listen | eigene Klasse `app/src/Listen/<Name>Liste.php` (implementiert `Liste`), automatisch gefunden, erreichbar unter `/app/listen/<schluessel>` |
   | Reiter/Abschnitte am Mitglied | eigene Klasse `app/src/App/Mitglied/<Name>Reiter.php` bzw. `…Abschnitt.php` (implementiert `Reiter` bzw. `Abschnitt`), automatisch gefunden |
+  | Cron-Aufgaben | eigene Klasse `app/src/Service/Cron/<Name>Task.php` (implementiert `CronTask`), automatisch gefunden (01 §5) |
   | Dienste | was ein Bereich braucht, baut er selbst aus `App\Dienste` (`pdo()`, `einstellungen()`, `jobs()`, `view`, `session` …) und teilt es je Request über `$dienste->dienst(Klasse::class, fn)` – keine zentrale Verdrahtung |
   | CSS | Designsystem `public/css/app.css` gehört #9; Ergänzungen als eigene Datei `public/css/teile/<name>.css` (automatisch eingebunden, nach `app.css`) |
   | JS | eigene Datei `public/js/<name>.js`; Seiten binden sie über `scripts` im Render-Aufruf ein |

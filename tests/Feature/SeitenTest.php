@@ -13,6 +13,12 @@ use App\Tests\Support\AppTestCase;
  */
 final class SeitenTest extends AppTestCase
 {
+    /** The settings page reads the mail settings (issue #7). */
+    protected function pdoFabrik(): ?\Closure
+    {
+        return $this->mitDatenbank();
+    }
+
     public function testAnonymousVisitorsAreSentToTheLogin(): void
     {
         self::assertWeiterleitungNach('/app', $this->get('/'));
