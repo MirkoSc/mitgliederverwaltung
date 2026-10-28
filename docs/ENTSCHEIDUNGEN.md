@@ -82,9 +82,10 @@ Updates wird er unverändert neu übernommen.
 Die Sammlung und Klärung läuft in `docs/fachlichkeit.md`.
 
 ### E-F1 ❓ Funktionsumfang – in Klärung
-Grob steht fest: Stammdaten, Abteilungen, Familien, Beiträge mit
-SEPA-Lastschriftdatei, Geburtstagskalender, BLSV-Meldung, Excel-Export,
-Erstimport. Details: `docs/fachlichkeit.md`.
+Steht fest: Stammdaten mit Versionen, Abteilungen, Familien, Funktionen,
+Beiträge mit SEPA-Lastschriftdatei, Geburtstagskalender, Ehrungen,
+BLSV-Meldung, Exporte (xlsx/csv), Erstimport. Details:
+`docs/fachlichkeit.md`. Offen nur noch Kleinigkeiten (E6, L3, V1).
 
 ### E-F2 ✅ Wer meldet sich an? – nur der Vorstand
 Nur ein kleiner Verwaltungskreis (Vorstand). Kein Zugang für Mitglieder.
@@ -101,9 +102,8 @@ Ursprüngliche Frage:
 Z. B. ein Beitrittsformular, das wie die Einreichung in Vereinsbelege nur
 verschlüsselt in einen Posteingang schreibt.
 
-### E-F4 ❓ Kopplung an Vereinsbelege/Vereinskalender
-Eigenständig oder Datenaustausch (z. B. Beitragseingänge, Mannschaften)?
-Wenn ja, nur über Export/Import-Dateien, nie über eine geteilte Datenbank.
+### E-F4 ✅ Kopplung an Vereinsbelege/Vereinskalender – keine
+Die Mitgliederverwaltung bleibt eigenständig.
 
 ### E-F5 ❓ Klartext-Strukturfelder
 Welche fachlichen Felder (z. B. Eintrittsdatum, Abteilungs-ID, Status)

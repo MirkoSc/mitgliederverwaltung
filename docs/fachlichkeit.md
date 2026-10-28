@@ -339,10 +339,29 @@ Zuordnung (Vorschlag):
 
 Offen zum Import ist nur noch E6.
 
-## 9. Noch nicht besprochen
+## 9. Versionen je Mitglied
 
-Bewusst gesammelt, damit nichts verloren geht – jeweils nur, wenn ihr es
-braucht:
-- Kommunikation (Rundmail an Abteilung, Serienbrief, Mitgliedsausweis)
-- Änderungsprotokoll je Mitglied („wer hat wann die IBAN geändert")
-- Kopplung an Vereinsbelege oder Vereinskalender (E-F4)
+- **muss** Jede Änderung an einem Mitglied erzeugt eine neue **Version**
+  mit allen Werten (alte Werte bleiben erhalten), wer und wann.
+- **muss** Versionsliste am Mitglied mit Anzeige, was sich gegenüber der
+  vorherigen Version geändert hat.
+- **muss** Zurück auf eine alte Version: deren Werte werden als **neue
+  Version hinten angehängt** („wiederhergestellt aus Version 3") – es wird
+  nie etwas überschrieben oder gelöscht.
+- Inhalt einer Version: alle Felder am Mitglied (§2) einschließlich
+  Abteilungen, Funktionen, Beitragsart, Familie und Rolle.
+  **Nicht** versioniert, weil sie selbst schon Verlauf sind: Jahresbeiträge
+  und Einzüge, Nachweis-Vermerke, Ehrungs-Vermerke.
+
+Offen:
+- V1: Was passiert beim Zurückholen einer Version, deren Familie es nicht
+  mehr gibt? *Vorschlag:* die übrigen Werte werden übernommen, die Familie
+  bleibt leer, mit Hinweis.
+
+## 10. Bewusst nicht (vorerst)
+
+- Rundmails, Serienbriefe, Mitgliedsausweise – später möglich; bis dahin
+  gefilterte Liste exportieren.
+- Kopplung an Vereinsbelege oder Vereinskalender – die
+  Mitgliederverwaltung bleibt eigenständig (E-F4 ✅).
+- Zugang für Mitglieder, öffentliche Formulare (E-F2/E-F3 ✅).
