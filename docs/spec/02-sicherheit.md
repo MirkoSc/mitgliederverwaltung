@@ -94,8 +94,29 @@ Verschlüsselung einzelner Datenbankfelder.
     IBAN, Abteilung, Beitragsart), Listen und Exporte. **Nicht**:
     Jahresbeiträge, Einzug, Bezahlt-Status, Lastschriftdatei,
     Einstellungen, Benutzer, System.
-- Rolle → Rechte steht im Code (ein `match`). Keine Scopes – alle sehen
-  alle Mitglieder. Geprüft serverseitig je Route (`App\Http\Zugriff`).
+- Rolle → Rechte steht im Code (ein `match` in `App\Domain\Rolle`).
+  Keine Scopes – alle sehen alle Mitglieder. Geprüft serverseitig je Route
+  (`App\Http\Zugriff`).
+- Das Enum ist seit #1 vollständig (05 §6); spätere Issues nutzen diese
+  Rechte und erweitern es nicht:
+
+  | Recht | Wofür | Admin | Vorstand |
+  |---|---|:-:|:-:|
+  | `mitglieder.sehen` | Mitglieder suchen, ansehen, Verlauf ansehen | ✓ | ✓ |
+  | `mitglieder.bearbeiten` | anlegen, bearbeiten (auch IBAN, Abteilung, Beitragsart), Version zurückholen, Familien, Nachweis/Ehrung vermerken | ✓ | ✓ |
+  | `mitglieder.loeschen` | Mitglied löschen, Nachweis löschen | ✓ | – |
+  | `listen.sehen` | Listen ansehen und exportieren | ✓ | ✓ |
+  | `beitraege.verwalten` | alles aus 08: Jahresbeiträge, Bezahlt-Status, Reiter „Beiträge", Einzug, Lastschriftdatei, Liste „Selbst kassieren", Beitragsspalten im Gesamtexport | ✓ | – |
+  | `admin.einstellungen` | Einstellungen-Seite: Vereinsdaten, Abteilungen, Beitragsarten, Funktionen, Geburtstage, Ehrungsstufen, Mail, Rechtstexte | ✓ | – |
+  | `admin.benutzer` | Benutzer einladen, sperren, löschen, Rolle ändern | ✓ | – |
+  | `admin.import` | Erst- und Abgleich-Import (10) | ✓ | – |
+  | `admin.system` | Update, Backup/Restore, Systemcheck, Integritätscheck, Wartung | ✓ | – |
+  | `admin.audit` | Audit-Log ansehen | ✓ | – |
+
+  Jede Route unter `/admin` verlangt ein `admin.*`-Recht, jede unter
+  `/app` eine Anmeldung; öffentlich sind nur `/`, `/anmelden…`,
+  `/abmelden`, `/impressum`, `/datenschutz` (E-F3,
+  `tests/Http/RoutenZugriffTest.php`).
 
 ## 7. Web-Sicherheit
 

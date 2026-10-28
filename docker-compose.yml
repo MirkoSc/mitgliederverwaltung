@@ -1,0 +1,53 @@
+# Local development (docs/spec/05-entwicklung.md section 1).
+#
+#   docker compose up --build                      # http://localhost:8080
+#   docker compose run --rm app composer install
+#   docker compose run --rm app vendor/bin/phpunit
+#
+# Several agents test in parallel (05 section 6): each uses its own project,
+# e.g. `docker compose -p issue-7 run --rm app vendor/bin/phpunit`. `run`
+# publishes no ports, and the database publishes none at all, so parallel
+# projects never collide; only a deliberate `docker compose up` takes 8080.
+services:
+  app:
+    build: ./docker/php
+    ports:
+      - "8080:80"
+    working_dir: /var/www/html/current
+    environment:
+      # The PHPUnit suite creates its own database next to the dev one.
+      TEST_DB_HOST: db
+      TEST_DB_USER: root
+      TEST_DB_PASSWORD: dev-root
+    volumes:
+      # Same layout as on the host (CLAUDE.md section 2): docroot shim in
+      # web/, the release in current/, persistent state in shared/.
+      - ./:/var/www/html/current
+      - ./docker/web:/var/www/html/web
+      - ./docker/shared:/var/www/html/shared
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mirror.gcr.io/library/mariadb:10.6
+    # wait_timeout mirrors the target host: 120 s instead of the usual
+    # 28800, so a connection left idle too long dies in dev exactly as it
+    # does in production (App\Database\ConnectionFactory).
+    command: ["--wait-timeout=120", "--interactive-timeout=120"]
+    environment:
+      MARIADB_DATABASE: mitgliederverwaltung
+      MARIADB_USER: mitgliederverwaltung
+      MARIADB_PASSWORD: dev-password
+      MARIADB_ROOT_PASSWORD: dev-root
+    volumes:
+      # Named volume: bind-mounting /var/lib/mysql breaks on NTFS.
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  dbdata:

@@ -1,0 +1,4 @@
+# app/routes/start.php - reviewed against docs/spec/02-sicherheit.md section 6.
+# "/" only redirects to /app; /app sends each account to its first page.
+GET / -> öffentlich
+GET /app -> angemeldet

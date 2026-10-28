@@ -13,9 +13,26 @@ Composer auf dem Server, ohne `exec()`. Installation und Updates wie bei
 `setup.php` hochladen, Rest per Browser; Updates über die Kanäle `stable`
 und `beta`.
 
-**Status:** Technischer Rahmen und Fachlichkeit sind spezifiziert, der
-Arbeitsplan steht als Issues bereit; es gibt noch keinen Code. Die
-Umsetzung läuft vollautomatisch über GitHub Actions (`docs/VORGEHEN.md`).
+**Status:** Technischer Rahmen und Fachlichkeit sind spezifiziert, das
+Projektgerüst steht (Layout, Navigation, Platzhalterseiten,
+Erweiterungspunkte); die Fachlichkeit folgt Issue für Issue
+(`docs/ARBEITSPLAN.md`, `docs/VORGEHEN.md`).
+
+## Entwicklung
+
+Voraussetzung ist nur Docker:
+
+```bash
+docker compose run --rm app composer install
+docker compose up --build              # http://localhost:8080
+docker compose run --rm app vendor/bin/phpunit
+node --test 'tests/js/**/*.test.js'
+```
+
+Bis die echte Anmeldung gebaut ist, bietet `/anmelden` in der
+Entwicklungsumgebung zwei Beispielzugänge (Admin, Vorstand). Details,
+parallele Projekte und die Arbeit ohne Internet im Container:
+[docs/spec/05-entwicklung.md](docs/spec/05-entwicklung.md) §1.
 
 ## Dokumente
 

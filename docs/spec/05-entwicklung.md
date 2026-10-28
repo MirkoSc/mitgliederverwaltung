@@ -5,22 +5,42 @@
 Voraussetzung nur Docker (PHP/Composer lokal nicht nötig):
 
 ```bash
-docker run --rm -v "$PWD":/app -w /app composer:2 composer install
+docker compose run --rm app composer install    # vendor/ (Composer steckt im Image)
 docker compose up --build                       # http://localhost:8080
-docker compose run --rm app php vendor/bin/phpunit
-node --test tests/js/*.test.js
+docker compose run --rm app vendor/bin/phpunit
+node --test 'tests/js/**/*.test.js'
 docker compose exec app php bin/migrate.php
-docker compose exec app php bin/build_setup.php
 ```
 
-- `docker-compose.yml`: PHP 8.5 (Apache, fpm-ähnliche Einstellungen) +
-  MariaDB 10.6. Produktionsnah: `disable_functions=exec,shell_exec,…`,
-  `max_execution_time=30`, `wait_timeout=120`, Zeitzone `Europe/Berlin`.
+Parallel arbeitende Agenten nehmen je ein eigenes Projekt (§6), z. B.
+`docker compose -p issue-7 run --rm app vendor/bin/phpunit` – `run`
+veröffentlicht keine Ports, die Datenbank nie.
+
+- `docker-compose.yml`: PHP 8.5 mit Apache + MariaDB 10.6. Produktionsnah:
+  `disable_functions=exec,shell_exec,…`, `max_execution_time=30`,
+  `wait_timeout=120`; die Zeitzone setzt allein der Bootstrap (das Image
+  steht absichtlich auf UTC, damit ein Umweg auffällt).
+- Basis des Images ist das offizielle Drupal-Image (`php:8.5-apache` plus
+  fertig übersetzte gd, zip, pdo_mysql, opcache); Drupal selbst wird
+  entfernt. So braucht der Bau keinen Debian-Paketspiegel – in der
+  Sandbox der Agenten ist der gesperrt.
+- Composer im Image läuft über einen Wrapper ohne `disable_functions`
+  (Composer braucht `proc_open`, die Anwendung nie).
+- Ohne Internet im Container (Sandbox): `composer install` auf dem Host.
+  Holt Composer dort Pakete als Git-Klon statt als ZIP, die `.git`-Ordner
+  unter `vendor/` löschen (`find vendor -name .git -type d -prune -exec
+  rm -rf {} +`) – sonst ruft PHPUnit `git` per `proc_open` auf, und das
+  ist im Image gesperrt.
 - `docker/web/` = Docroot (Shim, `.htaccess`, `.user.ini`) – dieselben
   Dateien wie auf dem Server.
 - `docker/shared/config.php` ist committet (Dev-Zugang zur lokalen
-  MariaDB, kein Geheimnis); alles andere unter `docker/shared/` ist
-  ignoriert. Ohne `config.php` startet der Installer.
+  MariaDB, kein Geheimnis, `debug` an); alles andere unter
+  `docker/shared/` ist ignoriert. Ohne `config.php` meldet jede Seite
+  „Noch nicht eingerichtet" (ab #3: Installer).
+- Bis zur echten Anmeldung (#6) bietet `/anmelden` zwei Beispielzugänge
+  (Admin, Vorstand) – nur mit `debug` in `config.php` **und** einer
+  Entwicklungsversion (`…-dev`), also nie auf einer echten Installation
+  (`App\Http\Entwicklungskonten`). #6 entfernt sie.
 
 ## 2. Tests
 
@@ -28,8 +48,16 @@ docker compose exec app php bin/build_setup.php
   `failOnRisky`; Test-DB `mitgliederverwaltung_test` in der
   Docker-MariaDB.
 - **JS**: reine Logik in eigenen Modulen, getestet mit `node --test
-  tests/js` (keine npm-Abhängigkeiten). Oberflächen werden mobil
-  (360 px), am PC und am PC im Barrierefrei-Modus geprüft.
+  'tests/js/**/*.test.js'` (keine npm-Abhängigkeiten; ein Skript in
+  `public/js/` exportiert seine Logik per `module.exports`, wenn es unter
+  Node läuft – Muster: `public/js/benutzermenue.js`).
+- **Feature-Tests** erben von `App\Tests\Support\AppTestCase`: echte
+  Verdrahtung (alle Routen-Dateien, Guard, CSRF, Templates), angemeldet
+  per `als(Rolle::Vorstand)` ohne echte Anmeldung; `get()`/`post()`
+  (POST mit CSRF-Token, abschaltbar). Datenbank-Tests erben von
+  `App\Tests\Support\DatabaseTestCase` (leere Test-DB je Test).
+- Oberflächen werden mobil (360 px), am PC und am PC im
+  Barrierefrei-Modus geprüft.
 - **Architektur-Tests**: `NoShellExecutionTest`, `CspComplianceTest`,
   `ShimContentTest`, Routen-Zugriffsmatrix, CSRF auf jeder POST-Route.
 - Testdaten nur erfunden. Keine echten Namen, Adressen, IBANs.
@@ -93,16 +121,23 @@ Bis zu neun Issues werden gleichzeitig von getrennten Agenten bearbeitet
 
   | Was | Wo ein Issue etwas hinzufügt |
   |---|---|
-  | Routen | eigene Datei `app/routes/<bereich>.php` (alle Dateien werden geladen) |
-  | Zugriffsmatrix-Test | eigene Datei `tests/Http/routen-zugriff/<bereich>.txt` |
-  | Rechte | `Permission`-Enum ist in #1 **vollständig** angelegt – nicht erweitern, nur nutzen; fehlt wirklich eins, im PR begründen |
-  | Navigation | in #1 vollständig (Mitglieder, Listen, Beiträge, Einstellungen, Benutzermenü) |
-  | Einstellungs-Abschnitte | eigene Klasse `app/src/Admin/Einstellungen/<Name>Abschnitt.php` + Template, automatisch gefunden |
-  | Listen | eigene Klasse `app/src/Listen/<Name>Liste.php`, automatisch gefunden |
-  | Reiter/Abschnitte am Mitglied | eigene Klasse `app/src/App/Mitglied/<Name>Reiter.php` bzw. `…Abschnitt.php`, automatisch gefunden |
-  | CSS | Designsystem `public/css/app.css` gehört #9; Ergänzungen als eigene Datei `public/css/teile/<name>.css` (automatisch eingebunden) |
-  | JS | eigene Datei `public/js/<name>.js` |
-  | Migrationen | nur im zugewiesenen Nummernbereich des Issues (`docs/ARBEITSPLAN.md`); ohne Bereich `1NN` mit NN = Issue-Nummer. Der Runner sortiert numerisch und erlaubt Lücken. |
+  | Routen | eigene Datei `app/routes/<bereich>.php`, gibt `static function (App\Http\Routen $routen): void` zurück (alle Dateien werden geladen, in Namensreihenfolge); Controller entstehen erst im Handler aus `$routen->dienste()` |
+  | Zugriffsmatrix-Test | eigene Datei `tests/Http/routen-zugriff/<bereich>.txt` (gleicher Name wie die Routen-Datei), eine Zeile je Route: `GET /pfad -> recht` |
+  | Rechte | `Permission`-Enum ist in #1 **vollständig** angelegt (Tabelle in 02 §6) – nicht erweitern, nur nutzen; fehlt wirklich eins, im PR begründen |
+  | Navigation | in #1 vollständig (`App\View\Navigation`: Mitglieder `/app/mitglieder`, Listen `/app/listen`, Beiträge `/app/beitraege`, Einstellungen `/admin`, Benutzermenü). Ein Eintrag erscheint inaktiv, bis seine Route existiert – wer die Route anlegt, schaltet ihn frei |
+  | Einstellungs-Abschnitte | eigene Klasse `app/src/Admin/Einstellungen/<Name>Abschnitt.php` (implementiert `Abschnitt`) + Template, automatisch gefunden; Formulare posten an Routen der eigenen Routen-Datei |
+  | Listen | eigene Klasse `app/src/Listen/<Name>Liste.php` (implementiert `Liste`), automatisch gefunden, erreichbar unter `/app/listen/<schluessel>` |
+  | Reiter/Abschnitte am Mitglied | eigene Klasse `app/src/App/Mitglied/<Name>Reiter.php` bzw. `…Abschnitt.php` (implementiert `Reiter` bzw. `Abschnitt`), automatisch gefunden |
+  | Dienste | was ein Bereich braucht, baut er selbst aus `App\Dienste` (`pdo()`, `einstellungen()`, `jobs()`, `view`, `session` …) und teilt es je Request über `$dienste->dienst(Klasse::class, fn)` – keine zentrale Verdrahtung |
+  | CSS | Designsystem `public/css/app.css` gehört #9; Ergänzungen als eigene Datei `public/css/teile/<name>.css` (automatisch eingebunden, nach `app.css`) |
+  | JS | eigene Datei `public/js/<name>.js`; Seiten binden sie über `scripts` im Render-Aufruf ein |
+  | Migrationen | nur im zugewiesenen Nummernbereich des Issues (`docs/ARBEITSPLAN.md`); ohne Bereich `1NN` mit NN = Issue-Nummer. Der Runner sortiert numerisch, erlaubt Lücken und holt später gemergte kleinere Nummern nach (03 §4). |
+
+  Alle Erweiterungen (Abschnitt, Liste, Reiter) teilen
+  `App\Support\Erweiterung`: `erzeugen(Dienste)`, `schluessel()`
+  (klein mit Bindestrich, eindeutig), `titel()`, `reihenfolge()`,
+  `recht()`. Gefunden werden sie über den Dateinamen
+  (`App\Support\Erweiterungen`).
 
 - Gemeinsame Domain-Klassen und Repositories (#15) werden von späteren
   Issues **ergänzt**, nicht umgebaut. Größere Änderungen an fremdem Code

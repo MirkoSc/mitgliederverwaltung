@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Http;
+
+use App\Http\HttpMethod;
+use App\Http\MatchType;
+use App\Http\Response;
+use App\Http\Router;
+use App\Http\Zugriff;
+use PHPUnit\Framework\TestCase;
+
+final class RouterTest extends TestCase
+{
+    private static function handler(): \Closure
+    {
+        return static fn(): Response => Response::html('ok');
+    }
+
+    public function testMatchesStaticRoute(): void
+    {
+        $router = new Router();
+        $router->get('/', Zugriff::oeffentlich(), self::handler());
+
+        $match = $router->match(HttpMethod::Get, '/');
+
+        self::assertSame(MatchType::Matched, $match->type);
+        self::assertSame([], $match->params);
+    }
+
+    public function testExtractsParamBeforeLiteralSuffix(): void
+    {
+        $router = new Router();
+        $router->get('/datei/{id}.pdf', Zugriff::oeffentlich(), self::handler());
+
+        $match = $router->match(HttpMethod::Get, '/datei/42.pdf');
+
+        self::assertSame(MatchType::Matched, $match->type);
+        self::assertSame(['id' => '42'], $match->params);
+    }
+
+    public function testCustomConstraintRejectsNonMatchingParam(): void
+    {
+        $router = new Router();
+        $router->get('/datei/{id:\d+}', Zugriff::oeffentlich(), self::handler());
+
+        self::assertSame(MatchType::Matched, $router->match(HttpMethod::Get, '/datei/7')->type);
+        self::assertSame(MatchType::NotFound, $router->match(HttpMethod::Get, '/datei/abc')->type);
+    }
+
+    public function testUnknownPathIsNotFound(): void
+    {
+        $router = new Router();
+        $router->get('/', Zugriff::oeffentlich(), self::handler());
+
+        self::assertSame(MatchType::NotFound, $router->match(HttpMethod::Get, '/gibtsnicht')->type);
+    }
+
+    public function testWrongMethodIsMethodNotAllowedWithAllowHeaderData(): void
+    {
+        $router = new Router();
+        $router->get('/app/mitglieder', Zugriff::oeffentlich(), self::handler());
+
+        $match = $router->match(HttpMethod::Post, '/app/mitglieder');
+
+        self::assertSame(MatchType::MethodNotAllowed, $match->type);
+        self::assertSame([HttpMethod::Get], $match->allowedMethods);
+    }
+
+    public function testDecodesExtractedParams(): void
+    {
+        $router = new Router();
+        $router->get('/datei/{id}.pdf', Zugriff::oeffentlich(), self::handler());
+
+        $match = $router->match(HttpMethod::Get, '/datei/%C3%A4bc.pdf');
+
+        self::assertSame(['id' => 'äbc'], $match->params);
+    }
+
+    public function testHeadIsTreatedAsGet(): void
+    {
+        self::assertSame(HttpMethod::Get, HttpMethod::fromString('HEAD'));
+    }
+}

@@ -1,5 +1,5 @@
-# Placeholder until issue #1 builds the real pipeline (PHPUnit against
-# MariaDB, node --test, syntax check). Keep the workflow name "CI": the
+# Tests on every push to main and every pull request
+# (docs/spec/05-entwicklung.md section 4). Keep the workflow name "CI": the
 # automation (pruefen.yml) listens for completed runs of exactly this name.
 name: CI
 
@@ -8,6 +8,7 @@ on:
   push:
     branches: [main]
 
+# Read-only token: CI runs the branch's code and never writes.
 permissions:
   contents: read
 
@@ -15,7 +16,62 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    services:
+      mariadb:
+        # Same server as the target host (docs/hosting-befunde.md); from
+        # mirror.gcr.io because Docker Hub throttles anonymous pulls.
+        image: mirror.gcr.io/library/mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder
-        run: echo "No code yet - issue #1 replaces this job with the real test pipeline."
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql, zip, gd, sodium, curl, mbstring, fileinfo, dom
+          coverage: none
+          # Both trace settings are left in the WORSE of the two possible
+          # states (arguments kept, parameters not capped) - worse than the
+          # target host itself: the tests have to hold there.
+          ini-values: error_reporting=E_ALL, display_errors=On, zend.assertions=1, zend.exception_ignore_args=0, zend.exception_string_param_max_len=15
+
+      - name: Validate composer files
+        run: composer validate --strict --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Lint every PHP file
+        run: find app bin docker/web migrations public tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+
+      - name: PHPUnit (deprecations, notices and warnings fail the build)
+        run: vendor/bin/phpunit
+        env:
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_PORT: 3306
+          TEST_DB_USER: root
+          TEST_DB_PASSWORD: ci-root
+          # A missing database fails the build instead of skipping the
+          # database tests.
+          TEST_DB_REQUIRED: '1'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The quoted glob is expanded by node itself, so the step also holds
+      # while tests/js/ has no test file.
+      - name: JavaScript tests
+        run: node --test 'tests/js/**/*.test.js'
