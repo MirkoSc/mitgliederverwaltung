@@ -5,6 +5,25 @@ Die 37 Issues aus `docs/ARBEITSPLAN.md` werden von Claude-Agenten in
 viele gleichzeitig. Ein Mensch muss nur starten und bei `braucht-hilfe`
 nachsehen.
 
+## Einfachster Weg: aus einer Claude-Code-Sitzung
+
+Ohne jede Einrichtung in GitHub: in einer Claude-Code-Sitzung mit diesem
+Repository sagen „starte die Entwicklung“ (bzw. den Workflow
+`entwicklung` ausführen, `.claude/workflows/entwicklung.js`). Er
+
+- liest, welche Issues schon geschlossen sind (Fortsetzen ist jederzeit
+  möglich),
+- startet jedes Issue, sobald seine Abhängigkeiten gemergt sind – je
+  Issue ein Agent mit dem Modell aus dem Arbeitsplan in einem eigenen
+  Worktree,
+- lässt jeden PR von Opus 5.5 prüfen (bis zu 3 Reparatur-Runden),
+- mergt main ein, testet, squash-mergt und schließt das Issue.
+
+Wie viele Agenten gleichzeitig laufen, hängt von der Maschine der Sitzung
+ab (bei 4 CPU-Kernen 2). Die Sitzung muss dafür laufen bleiben.
+
+## Alternative: GitHub Actions (mehr Parallelität, braucht Einrichtung)
+
 ## Wie es läuft
 
 ```
