@@ -21,6 +21,7 @@ Code und noch keine fachliche Spezifikation.
 | [CLAUDE.md](CLAUDE.md) | Verbindliche Architektur-Referenz (Claude Code liest sie in jeder Session) |
 | [docs/VORGEHEN.md](docs/VORGEHEN.md) | Wie mit Claude Code gearbeitet wird |
 | [docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md) | Getroffene technische und offene fachliche Entscheidungen |
+| [docs/fachlichkeit.md](docs/fachlichkeit.md) | Fachliche Sammlung (Brainstorm) mit offenen Fragen |
 | [docs/hosting-befunde.md](docs/hosting-befunde.md) | Gemessene Eigenschaften des Webspace (aus Vereinsbelege übernommen) |
 | [docs/spec/01-plattform.md](docs/spec/01-plattform.md) | Hosting, Verzeichnislayout, Request-Modell, Cron, Mail, Logging |
 | [docs/spec/02-sicherheit.md](docs/spec/02-sicherheit.md) | Verschlüsselung (Tresor), Anmeldung + 2FA, Rechte, CSP/CSRF, Audit-Log |

@@ -5,11 +5,18 @@ Mitgliederverwaltung für einen Sportverein. Dieses Dokument ist die
 Dokument gilt das Dokument – oder es wird im selben PR bewusst geändert.
 Änderungswünsche laufen als GitHub Issues, nicht in dieser Datei.
 
-**Stand:** Nur der technische Rahmen steht fest. Es gibt noch keinen Code
-und noch keine fachliche Spezifikation (welche Mitgliederdaten, Beiträge,
-Abteilungen …). Fachliche Specs kommen später als eigene Dateien unter
-`docs/spec/` dazu; bis dahin wird **nichts Fachliches erfunden** – offene
-Punkte stehen in `docs/ENTSCHEIDUNGEN.md`.
+**Stand:** Der technische Rahmen steht fest. Die Fachlichkeit wird in
+`docs/fachlichkeit.md` gesammelt und geklärt; erst geklärte Bereiche
+werden zu Specs unter `docs/spec/`. Es wird **nichts Fachliches erfunden**.
+
+**Leitlinien (gelten für jede Session):**
+- **Einfach statt perfekt.** Die Anwendung wird nicht verkauft. Sie soll
+  deutlich schlanker sein als Vereinsbelege: wenige Seiten, wenige
+  Einstellungen, keine Sonderfälle oder Konfigurierbarkeit auf Vorrat.
+  Übernommener Code aus Vereinsbelege ist willkommen, Ausbau darüber hinaus
+  nur auf ausdrücklichen Wunsch.
+- **Hinweise statt Sperren.** Fachliche Regeln (Alter, Nachweise,
+  Familiengröße, Haushalt …) warnen, blockieren aber nie.
 
 Diese Datei ist bewusst kurz gehalten (sie wird in JEDER Session geladen).
 Details stehen in `docs/spec/*.md` – **lies nur die Spec-Dateien, die das

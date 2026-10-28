@@ -79,16 +79,25 @@ Updates wird er unverändert neu übernommen.
 
 ## Fachlich offen (vor der jeweiligen fachlichen Spec klären)
 
-### E-F1 ❓ Funktionsumfang
-Welche Bereiche (Stammdaten, Abteilungen, Beiträge/SEPA, Kommunikation,
-Ehrungen, Online-Beitritt …) und in welcher Reihenfolge.
+Die Sammlung und Klärung läuft in `docs/fachlichkeit.md`.
 
-### E-F2 ❓ Wer meldet sich an?
+### E-F1 ❓ Funktionsumfang – in Klärung
+Grob steht fest: Stammdaten, Abteilungen, Familien, Beiträge mit
+SEPA-Lastschriftdatei, Geburtstagskalender, BLSV-Meldung, Excel-Export,
+Erstimport. Details: `docs/fachlichkeit.md`.
+
+### E-F2 ✅ Wer meldet sich an? – nur der Vorstand
+Nur ein kleiner Verwaltungskreis (Vorstand). Kein Zugang für Mitglieder.
+
+Ursprüngliche Frage:
 Nur Funktionäre oder auch Mitglieder selbst (Self-Service)? Ein
 Mitgliederportal verträgt sich nur eingeschränkt mit dem Tresor-Modell
 (ein Mitglied darf nicht den ganzen Tresor bekommen).
 
-### E-F3 ❓ Öffentliche Seiten ohne Anmeldung
+### E-F3 ✅ Öffentliche Seiten ohne Anmeldung – keine
+Außer Anmeldung, Impressum und Datenschutz vorerst keine.
+
+Ursprüngliche Frage:
 Z. B. ein Beitrittsformular, das wie die Einreichung in Vereinsbelege nur
 verschlüsselt in einen Posteingang schreibt.
 
@@ -100,6 +109,11 @@ Wenn ja, nur über Export/Import-Dateien, nie über eine geteilte Datenbank.
 Welche fachlichen Felder (z. B. Eintrittsdatum, Abteilungs-ID, Status)
 dürfen für SQL-Filter Klartext bleiben (03 §2)?
 
-### E-F6 ❓ Datenübernahme
+### E-F6 ✅ Datenübernahme – festes Importformat + einmalige Umwandlung
+Aus der bisherigen Mitgliederverwaltung (Excel/CSV). Festes Importformat
+der Anwendung; die Altdatei wird einmalig lokal per Skript umgewandelt
+(`docs/fachlichkeit.md` §8).
+
+Ursprüngliche Frage:
 Aus welchem Altbestand (Excel/CSV, andere Vereinssoftware) werden Mitglieder
 initial übernommen?
