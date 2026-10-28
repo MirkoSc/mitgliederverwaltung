@@ -13,15 +13,10 @@ use App\Tests\Support\AppTestCase;
  */
 final class SeitenTest extends AppTestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->datenbank();
-    }
-
+    /** The settings page reads the mail settings (issue #7). */
     protected function pdoFabrik(): ?\Closure
     {
-        return fn(): \PDO => $this->datenbank();
+        return $this->mitDatenbank();
     }
 
     public function testAnonymousVisitorsAreSentToTheLogin(): void

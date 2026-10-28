@@ -94,15 +94,29 @@ Kein Request darf lange laufen. Muster (übernommen aus Vereinsbelege 06 §4):
 - Der Cron des Hoster-Kontrollpanels ruft `/cron?token=…` per HTTP auf
   (Token aus `config.php`, Vergleich mit `hash_equals`).
 - Aufgaben: Mail-Queue versenden, Aufräumen (abgelaufene Tokens, Rate-Limit-
-  Zeilen, `var/tmp/`, alte Backups), sonst nichts.
-- Eine Sperre (`flock` bzw. DB-Lock) verhindert überlappende Läufe;
-  Aufräumarbeiten sind gedrosselt (nicht bei jedem Minutenlauf).
+  Zeilen, `var/tmp/`, alte Backups und liegengebliebene Backup-Ketten),
+  sonst nichts.
+- Eine Sperre (DB-Lock `GET_LOCK`, `App\Repository\CronSperre`) verhindert
+  überlappende Läufe; sie endet mit dem Lauf bzw. der Verbindung, ein
+  abgestürzter Lauf blockiert also nichts. Aufräumarbeiten sind gedrosselt
+  (höchstens stündlich, Zeitstempel im Setting `cron_letztes_aufraeumen`).
+- Eine Aufgabe ist eine Klasse `app/src/Service/Cron/<Name>Task.php`
+  (`CronTask`), automatisch gefunden (`CronAufgaben`); `istAufraeumen()`
+  trennt „bei jedem Aufruf" (Mail-Queue) von „gedrosselt". Eine fehlerhafte
+  Aufgabe wird geloggt (nur Klasse) und hält die anderen nicht auf.
 
 ## 6. Mail
 
-- Eigener SMTP-Client (`App\Service\Mail\SmtpTransport`, übernommen),
-  Einstellungen im Admin bzw. im Installer-Schritt, Passwort mit dem
-  Server-Schlüssel verschlüsselt.
+- Eigener SMTP-Client (`App\Service\Mail\SmtpTransport`, übernommen; kein
+  PHP-`mail()`-Fallback), Einstellungen im Admin (Abschnitt „Mail" der
+  Einstellungsseite, mit Testmail) bzw. im Installer-Schritt, Passwort mit
+  dem Server-Schlüssel verschlüsselt (Schnittstelle `GeheimnisSchutz`;
+  Standard `ServerKeyGeheimnisSchutz`, mit #5 ggf. durch dessen Dienst
+  ersetzbar). Tests nutzen einen Fake-Transport (`MailTransport`).
+- `mail_queue` ist Klartext (Spalten `to_address`, `subject`, `body`): Mails
+  gehen nur an Benutzer und enthalten keine Mitgliederdaten. Erfolgreiche
+  Mails werden nach 7 Tagen entfernt, endgültig fehlgeschlagene
+  (`fehler`, nach 5 Versuchen mit Wartezeit) bleiben sichtbar.
 - **Mail-Queue** (`mail_queue`), Versand im Cron. Sicherheitsmails (Reset, 2FA-Code, neues Gerät) gehen
   sofort raus.
 - Link-Basis aus dem Setting `oeffentliche_url` (Schutz vor

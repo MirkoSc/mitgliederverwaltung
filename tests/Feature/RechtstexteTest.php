@@ -13,15 +13,9 @@ use App\Tests\Support\AppTestCase;
  */
 final class RechtstexteTest extends AppTestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->datenbank();
-    }
-
     protected function pdoFabrik(): ?\Closure
     {
-        return fn(): \PDO => $this->datenbank();
+        return $this->mitDatenbank();
     }
 
     public function testBothPagesAreReachableWithoutLogin(): void

@@ -9,6 +9,8 @@
  * @var \App\View\Area $bereich
  * @var string $pfad
  * @var string $appName
+ * @var string $logoUrl club logo or the neutral placeholder (App\View\View)
+ * @var string $version
  * @var \App\Domain\Konto|null $konto
  * @var string|null $csrfToken
  * @var \Closure(\App\Http\HttpMethod, string): bool $routeVorhanden
@@ -25,7 +27,11 @@ $menue = $zeigeNavigation ? Navigation::benutzermenue($konto) : [];
 ?>
 <header class="kopf">
     <div class="kopf-zeile">
-        <a class="marke" href="<?= $zeigeNavigation ? '/app' : '/' ?>"><?= e($appName) ?></a>
+        <?php /* alt="" - the name right next to it says the same. */ ?>
+        <a class="marke" href="<?= $zeigeNavigation ? '/app' : '/' ?>">
+            <img class="marke-logo" src="<?= e($logoUrl === \App\View\View::LOGO_PLATZHALTER ? $logoUrl . '?v=' . $version : $logoUrl) ?>" alt="" width="40" height="40">
+            <span class="marke-name"><?= e($appName) ?></span>
+        </a>
 
         <?php if ($zeigeNavigation): ?>
             <details class="benutzermenue">

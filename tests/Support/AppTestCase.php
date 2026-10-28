@@ -40,29 +40,6 @@ abstract class AppTestCase extends TestCase
 
     private static int $naechsteId = 100;
 
-    private ?\PDO $datenbank = null;
-
-    /**
-     * A migrated, empty test database - for the tests whose pages read the
-     * database (the settings page reads the legal texts). Feature tests
-     * stay database-free unless they ask for it: call this in setUp() and
-     * return it from pdoFabrik(). Skipped without a database.
-     */
-    protected function datenbank(): \PDO
-    {
-        if ($this->datenbank !== null) {
-            return $this->datenbank;
-        }
-        $pdo = DatabaseTestCase::verbindungFuerTests();
-        if ($pdo === null) {
-            self::markTestSkipped('Test database not available.');
-        }
-        DatabaseTestCase::dropAllTables($pdo);
-        new Migrator($pdo, dirname(__DIR__, 2) . '/migrations')->migrate();
-
-        return $this->datenbank = $pdo;
-    }
-
     protected function setUp(): void
     {
         $_SESSION = [];
@@ -85,6 +62,24 @@ abstract class AppTestCase extends TestCase
     protected function pdoFabrik(): ?\Closure
     {
         return null;
+    }
+
+    /**
+     * A migrated, empty database for a feature test whose pages read from
+     * one (the settings page does, since the section Mail exists). Use as
+     * `return $this->mitDatenbank();` in pdoFabrik().
+     *
+     * @return \Closure(): \PDO
+     */
+    protected function mitDatenbank(): \Closure
+    {
+        $pdo = DatabaseTestCase::leereDatenbank();
+        if ($pdo === null) {
+            self::markTestSkipped('Test database not available.');
+        }
+        new Migrator($pdo, dirname(__DIR__, 2) . '/migrations')->migrate();
+
+        return static fn(): \PDO => $pdo;
     }
 
     public static function baueDienste(TestKonten $konten, ?\Closure $pdoFabrik = null): Dienste

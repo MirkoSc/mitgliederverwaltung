@@ -12,6 +12,8 @@
  * @var string $version
  * @var list<string> $stylesheets
  * @var \App\Domain\Konto|null $konto
+ * @var bool|null $barrierefreiVorschau set by the pattern page only: shows
+ *      the page in the Barrierefrei-Modus without changing the setting
  */
 $seitentitel = ($title ?? '') !== '' ? $title . ' – ' . $appName : $appName;
 // The public pages may have no session, so they have no token - and then
@@ -19,7 +21,8 @@ $seitentitel = ($title ?? '') !== '' ? $title . ' – ' . $appName : $appName;
 $csrfToken = ($bereich !== \App\View\Area::Oeffentlich && ($csrf ?? '') !== '') ? (string) $csrf : null;
 // Barrierefrei-Modus: one class on <html> that overrides the tokens of the
 // design system (06 section 4) - no second layout.
-$htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barrierefrei"' : '';
+$barrierefrei = ($konto ?? null)?->barrierefrei === true || ($barrierefreiVorschau ?? false) === true;
+$htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
 ?>
 <!DOCTYPE html>
 <html lang="de"<?= $htmlKlasse ?>>

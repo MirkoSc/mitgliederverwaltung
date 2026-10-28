@@ -147,7 +147,11 @@ Append-only `audit_log` mit Hash-Kette (`prev_hash`, `hash`), IP nur als
 HMAC unter dem Server-Schlüssel. Protokolliert: Anmeldungen, Benutzer- und
 Rollenänderungen, Backup, Update, Restore, Export, Import, Einzug
 erzeugt/bestätigt/verworfen, Version zurückgeholt, Mitglied gelöscht.
-Ansicht im Admin. Änderungen an Mitgliedern selbst stehen in deren
+Ansicht im Admin (Seite `/admin/audit`, verlinkt aus den Einstellungen) mit
+Kettenprüfung bei jedem Aufruf. Schnittstelle für alle Bereiche:
+`$dienste->audit()->protokollieren(AuditAktion::…, $userId, …)`. Nicht
+erkannt wird das Abschneiden der letzten Einträge (dafür bräuchte es eine
+Kopie des Kopf-Hashs außerhalb der Datenbank). Änderungen an Mitgliedern selbst stehen in deren
 Versionen (07 §7).
 
 ## 9. Integritätscheck Code
