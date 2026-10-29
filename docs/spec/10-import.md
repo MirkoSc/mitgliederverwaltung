@@ -93,6 +93,38 @@ docker compose run --rm app php tools/altdaten-umwandeln.php import-daten/mitgli
     zusammengefügt in `bemerkung`.
 - Schreibt zusätzlich eine kurze Zusammenfassung nach STDERR (Anzahl je
   Beitragsart, Familien, nicht zuordenbare Zeilen) – ohne Namen.
+- Optional `--stichtag=TT.MM.JJJJ`: Tag, an dem „unter 18" gemessen wird
+  (Default heute); macht Läufe und Tests reproduzierbar.
+- Aufbau: `tools/altdaten-umwandeln.php` (Einstieg) und
+  `tools/altdaten/` (`XlsxLeser`, `Umwandler`, `Ergebnis`, `Zaehler`,
+  `Kommandozeile`; Namespace `Tools\Altdaten`, nicht im Autoloader, nicht
+  im Release).
+- Spaltennamen der Altdatei wie in `docs/fachlichkeit.md` §8; verglichen
+  wird ohne Groß-/Kleinschreibung und Satzzeichen. Pflicht sind
+  `Adressnummer` und `Nachname` (sonst Abbruch mit Hinweis, „falsche
+  Datei?"); fehlt eine andere Spalte, steht sie in der Zusammenfassung.
+  Abteilungen, Beitragsnamen: Spalten „… (alle aktuell)(1..3)", die
+  Historie „(alle)(1..3)" wird nie gelesen. Ein Platz „Abteilung + Beitrag"
+  kann eine Abteilung mehrfach nennen (Grundbeitrag und Zuschlag „aktiv"),
+  Abteilungen werden einmal gezählt.
+- Mehrere Grundbeiträge bei einem Mitglied: der höchste zählt
+  (Familienkarte, Erwachsene, Kinder, Jugendliche, Rentner,
+  Mindestbeitrag, Beitragsfrei FK, Beitragsfrei); „aktiv" ist ein Zuschlag
+  in irgendeinem Platz. Unbekannter Beitragsname oder gar kein
+  Grundbeitrag: Mitglied wird übernommen, aber ohne Beitragsart, und
+  erscheint in der Zusammenfassung.
+- Abweichender Zahler: `ZahlerAdressNummer` ≠ eigene Nummer (oder ohne
+  Nummer: Zahlername ≠ eigener Name). `kontoinhaber` = `ZahlerVorname
+  ZahlerNachname`, sonst Name der Zeile mit dieser Adressnummer; `iban` =
+  `MitZahlerIban`, sonst `Konto1Iban`, sonst IBAN der Zahlerzeile.
+- `land` = `Lkz`, sonst `Land`. Datumswerte werden auf `TT.MM.JJJJ`
+  gebracht (auch `JJJJ-MM-TT` und Excel-Seriennummern); Platzhalter
+  `01.01.1901` und nicht lesbare Daten werden leer (Zähler in der
+  Zusammenfassung). Zahlart „Lastschriftzahler" → `lastschrift`,
+  „Rechnungszahler" → `selbst`, sonst leer.
+- Übungsleiter: die Lizenz-Spalte unter den `Uel*`-Spalten (erste mit
+  „Lizenz", sonst „Nummer"/„Nr" im Namen); Wert nicht leer und nicht `0` ⇒
+  Funktion „Übungsleiter" + `lizenznummer`.
 
 ## 4. Abgleich mit einer späteren Datei
 
@@ -136,7 +168,8 @@ ausgetretene Mitglieder nie unter „Fehlt", nur angehakte Zeilen werden
 umgesetzt, „ganz löschen" bei vorhandenen Jahresbeiträgen abgelehnt,
 Version mit Anlass `abgleich`, ein zweiter Abgleich mit derselben Datei
 findet nichts mehr. Umwandlungsskript gegen
-eine **erfundene** Beispiel-Altdatei unter `tests/fixtures/altdaten/`
-(gleiche Spalten wie die echte, Fantasiedaten): alle 12
+eine **erfundene** Beispiel-Altdatei unter `tests/Fixtures/altdaten/`
+(gleiche Spaltennamen wie die echte, Fantasiedaten; `erzeugen.php` baut die
+xlsx aus `daten.php`): alle 12
 Beitragskombinationen, Familie, abweichender Zahler, Übungsleiter,
 Platzhalterdatum.
