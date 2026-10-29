@@ -30,8 +30,9 @@ docker compose run --rm app vendor/bin/phpunit
 node --test 'tests/js/**/*.test.js'
 ```
 
-Bis die echte Anmeldung gebaut ist, bietet `/anmelden` in der
-Entwicklungsumgebung zwei Beispielzugänge (Admin, Vorstand). Details,
+Den ersten Admin der lokalen Datenbank legt
+`docker compose exec app php tools/benutzer-anlegen.php <e-mail> "<name>"`
+an (nach `php bin/migrate.php`). Details,
 parallele Projekte und die Arbeit ohne Internet im Container:
 [docs/spec/05-entwicklung.md](docs/spec/05-entwicklung.md) §1.
 

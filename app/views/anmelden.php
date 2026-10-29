@@ -1,29 +1,42 @@
 <?php
 
 /**
- * Placeholder of the login (issue #1); issue #6 replaces it with e-mail,
- * password and second factor.
+ * The login (docs/spec/02-sicherheit.md section 3): e-mail address and
+ * password. One error sentence for every wrong combination - the page never
+ * says whether the address exists.
  *
- * @var bool $entwicklung the development accounts are switched on
- * @var bool $abgelaufen the session ran out (App\Http\LoginGuard)
  * @var string $csrf
+ * @var string|null $weiter where to go after the login (already checked)
+ * @var string|null $fehler
+ * @var string|null $hinweis
+ * @var string $email what the user typed, kept after a failed attempt
  */
 ?>
 <section class="anmeldung">
     <h1>Anmelden</h1>
-    <?php if ($abgelaufen): ?>
-        <p class="hinweis hinweis-info">Ihre Sitzung ist abgelaufen. Bitte melden Sie sich neu an.</p>
+    <?php if (($hinweis ?? null) !== null): ?>
+        <p class="hinweis hinweis-info"><?= e($hinweis) ?></p>
+    <?php endif; ?>
+    <?php if (($fehler ?? null) !== null): ?>
+        <p class="hinweis hinweis-fehler" role="alert" id="anmelden-fehler"><?= e($fehler) ?></p>
     <?php endif; ?>
 
-    <?php if ($entwicklung): ?>
-        <p>Die Anmeldung mit E-Mail, Passwort und zweitem Faktor kommt noch. In dieser Entwicklungsumgebung
-            sehen Sie die Seiten mit einem der beiden Beispielzugänge an.</p>
-        <form method="post" action="/anmelden/entwicklung" class="anmeldung-wahl">
-            <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
-            <button type="submit" name="konto" value="admin" class="knopf knopf-haupt">Als Admin ansehen</button>
-            <button type="submit" name="konto" value="vorstand" class="knopf">Als Vorstand ansehen</button>
-        </form>
-    <?php else: ?>
-        <p>Die Anmeldung ist noch nicht eingerichtet. Bitte versuchen Sie es nach dem nächsten Update erneut.</p>
-    <?php endif; ?>
+    <form method="post" action="/anmelden" class="formular">
+        <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
+        <?php if (($weiter ?? null) !== null): ?>
+            <input type="hidden" name="weiter" value="<?= e($weiter) ?>">
+        <?php endif; ?>
+        <div class="feld">
+            <label for="anmelden-email">E-Mail-Adresse</label>
+            <input id="anmelden-email" name="email" type="email" value="<?= e($email) ?>" autocomplete="username" required<?= ($fehler ?? null) !== null ? ' aria-describedby="anmelden-fehler"' : ' autofocus' ?>>
+        </div>
+        <div class="feld">
+            <label for="anmelden-passwort">Passwort</label>
+            <input id="anmelden-passwort" name="passwort" type="password" autocomplete="current-password" required<?= ($fehler ?? null) !== null ? ' autofocus' : '' ?>>
+        </div>
+        <p class="knopfreihe">
+            <button type="submit" class="knopf knopf-haupt">Anmelden</button>
+            <a href="/anmelden/passwort-vergessen">Passwort vergessen?</a>
+        </p>
+    </form>
 </section>

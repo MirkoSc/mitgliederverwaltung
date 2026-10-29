@@ -1,0 +1,4 @@
+# app/routes/konto.php - the own account from the user menu: every
+# logged-in account, no right needed (06 section 2).
+GET /app/konto/passwort -> angemeldet
+POST /app/konto/passwort -> angemeldet

@@ -1,5 +1,11 @@
-# app/routes/anmeldung.php - the way in (public, E-F3). Issue #6 replaces
-# the placeholder and the development login with the real login.
+# app/routes/anmeldung.php - the way in (public, E-F3): login, logout,
+# "Passwort vergessen" and the invitation, all below /anmelden.
 GET /anmelden -> öffentlich
-POST /anmelden/entwicklung -> öffentlich
+POST /anmelden -> öffentlich
 POST /abmelden -> öffentlich
+GET /anmelden/passwort-vergessen -> öffentlich
+POST /anmelden/passwort-vergessen -> öffentlich
+GET /anmelden/passwort-neu -> öffentlich
+POST /anmelden/passwort-neu -> öffentlich
+GET /anmelden/einladung -> öffentlich
+POST /anmelden/einladung -> öffentlich

@@ -1,0 +1,58 @@
+/* Settings section Benutzer (issue #6): one disclosure per account.
+   Tokens from app.css only. */
+
+.benutzer-liste {
+    margin: 0 0 var(--abstand-5);
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--farbe-rand);
+}
+
+.benutzer-liste > li {
+    border-bottom: 1px solid var(--farbe-rand);
+}
+
+.benutzer-eintrag > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-1) var(--abstand-3);
+    min-height: var(--tippflaeche);
+    padding: var(--abstand-2) 0;
+    cursor: pointer;
+}
+
+.benutzer-name {
+    flex: 1 1 12rem;
+    font-weight: 650;
+}
+
+.benutzer-rolle {
+    color: var(--farbe-gedaempft);
+}
+
+.benutzer-inhalt {
+    padding: 0 0 var(--abstand-4);
+}
+
+/* Role select and its button side by side where there is room. */
+.benutzer-rolle-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--abstand-3);
+    margin: 0 0 var(--abstand-4);
+}
+
+.benutzer-loeschen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-2) var(--abstand-4);
+    padding-top: var(--abstand-3);
+    border-top: 1px dashed var(--farbe-rand);
+}
+
+.modus-barrierefrei .benutzer-eintrag > summary {
+    padding: var(--abstand-3) 0;
+}
