@@ -27,8 +27,8 @@ $zahl = static fn(int $n): string => number_format($n, 0, ',', '.');
 <?php if ($zustand === 'hochladen'): ?>
     <p>
         Der Erstimport übernimmt die Mitglieder der bisherigen Software in einen leeren Bestand. Dafür
-        wird die Datei <strong>import.csv</strong> gebraucht, die das Umwandlungsskript auf Ihrem Rechner
-        aus den beiden Exportdateien erzeugt. Nach dem Hochladen sehen Sie zuerst eine Vorschau –
+        wird die Datei <strong>import.csv</strong> im Importformat gebraucht, erstellt aus den
+        Exportdateien der bisherigen Software. Nach dem Hochladen sehen Sie zuerst eine Vorschau –
         importiert wird erst, wenn Sie es dort bestätigen.
     </p>
     <?php if ($dateiFehlt ?? false): ?>
@@ -43,7 +43,7 @@ $zahl = static fn(int $n): string => number_format($n, 0, ',', '.');
     <?php else: ?>
         <p class="hinweis hinweis-fehler" role="alert">
             Die Datei enthält Fehler<?= $fehlerhafteZeilen > 0 ? ' in ' . e($zahl($fehlerhafteZeilen)) . ' Zeilen' : '' ?>.
-            Importiert wird nur eine Datei ohne Fehler: bitte die Fehler beheben (im Umwandlungsskript oder in
+            Importiert wird nur eine Datei ohne Fehler: bitte die Fehler beheben (in der Datei oder in
             den Einstellungen) und die Datei neu hochladen.
         </p>
     <?php endif; ?>

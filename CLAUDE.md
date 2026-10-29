@@ -34,7 +34,7 @@ aktuelle Issue verlinkt**, nicht alle.
 | `docs/spec/07-mitglieder.md` | Mitglied, Abteilungen, Familien, Funktionen, Nachweise, Hinweise, Versionen, Datenmodell |
 | `docs/spec/08-beitraege.md` | Beitragsarten, Jahresbeiträge, Einzug, Lastschriftdatei pain.008 (nur Admin) |
 | `docs/spec/09-listen-und-exporte.md` | Geburtstage, Ehrungen, Funktionen, Selbst kassieren, Auffälligkeiten, BLSV, Gesamtexport, xlsx/csv |
-| `docs/spec/10-import.md` | Erstimport und späterer Abgleich (Merge-Ansicht), Importformat, Umwandlungsskript |
+| `docs/spec/10-import.md` | Erstimport und späterer Abgleich (Merge-Ansicht), Importformat |
 | `docs/spec/11-vereinsdaten.md` | Vereinsdaten, Bankverbindung, Gläubiger-ID, Verbandsnummern, Logo |
 
 Schwesterprojekte (gleicher Hoster, gleiche Bauweise):

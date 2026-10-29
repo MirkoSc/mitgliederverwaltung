@@ -14,8 +14,8 @@ Weil der Übergang länger dauern kann, gibt es zwei Arten:
 
 1. Mirko exportiert aus der alten Software die **Mitgliederdatei** (alle
    Spalten) und die **Familiendatei** (`FamID`, `AdrNr`) als xlsx.
-2. Das Umwandlungsskript (§3) erzeugt daraus `import.csv` – auf Mirkos
-   Rechner, die Dateien verlassen ihn nicht.
+2. Daraus entsteht `import.csv` im Importformat (§2) – auf Mirkos
+   Rechner, die Dateien verlassen ihn nicht (§3).
 3. In der Anwendung: Einstellungen → Import → `import.csv` hochladen.
 4. **Vorschau**: Anzahl Mitglieder, Familien, Abteilungen; Liste der
    Zeilen mit Hinweisen (07 §6) und mit Fehlern (z. B. doppelte
@@ -97,81 +97,21 @@ leere Zelle = kein Wert. Eine Zeile je Mitglied.
 | `lizenznummer` | Text |
 | `bemerkung` | Text, mehrzeilig in Anführungszeichen |
 
-## 3. Umwandlungsskript (alte Software → `import.csv`)
+## 3. Umwandlung der Altdaten
 
-`tools/altdaten-umwandeln.ps1` – **nicht** im Release (CLAUDE.md §2),
-läuft einmalig lokal unter Windows, ohne Docker und ohne PHP (Windows
-PowerShell 5.1 oder PowerShell 7):
-
-```
-powershell -ExecutionPolicy Bypass -File tools\altdaten-umwandeln.ps1 -Ordner C:\temp\mitgliederdaten
-```
-
-Erwartet im Ordner `mitglieder.xlsx` und `familien.xlsx` und schreibt
-dorthin `import.csv` und `zusammenfassung.txt`. Statt `-Ordner` gehen auch
-`-Mitglieder`, `-Familien`, `-Ausgabe`.
-
-- `import-daten/` steht in `.gitignore` – echte Daten kommen nie ins Repo.
-- Liest xlsx mit einem kleinen eigenen Leser (nur Text und Zahlen des
-  ersten Blatts).
-- Spaltenzuordnung und Beitrags-Zuordnung genau nach
-  `docs/fachlichkeit.md` §8 (Tabellen „Zuordnung (Vorschlag)" und
-  „Zuordnung alt → neu"):
-  - Mitgliedsnummer = `Adressnummer`; Zeilen ohne Mitgliedschaft (keine
-    aktuelle Abteilung) werden nicht übernommen, ihr Name dient als
-    `kontoinhaber` der Mitglieder, für die sie zahlen (`ZahlerAdressNummer`).
-  - Beitragsart und `aktiv` aus der Kombination der aktuellen
-    Beitragsnamen; bei Familien `aktiv` aus der Notiz.
-  - Abteilung „Turnen" → BLSV-Nummer `34` (heißt künftig „Gymnastik").
-  - Familien aus der Familiendatei; Rolle: „Familienkarte" → `zahler`,
-    sonst unter 18 → `kind`, sonst `elternteil`.
-  - Übungsleiter aus `Uel*` → Funktion „Übungsleiter" + Lizenznummer.
-  - Platzhalterdatum `01.01.1901` → leer (unbekannt).
-  - IBAN ohne Leerzeichen; Notizen (`AdrNotizen`, `MitNotizen`)
-    zusammengefügt in `bemerkung`.
-- Schreibt zusätzlich eine kurze Zusammenfassung (Bildschirm und
-  `zusammenfassung.txt`: Anzahl je Beitragsart, Familien, nicht
-  zuordenbare Zeilen) – ohne Namen.
-- Optional `-Stichtag TT.MM.JJJJ`: Tag, an dem „unter 18" gemessen wird
-  (Default heute); macht Läufe und Tests reproduzierbar.
-- Eine Datei, nur ASCII im Quelltext (Umlaute als Zeichencodes), damit
-  Windows PowerShell 5.1 sie ohne BOM gleich liest. Bis #33 gab es eine
-  PHP-Fassung per Docker; sie wurde ersetzt, weil die Umwandlung nur
-  einmal auf Mirkos Windows-Rechner läuft.
-- Spaltennamen der Altdatei wie in `docs/fachlichkeit.md` §8; verglichen
-  wird ohne Groß-/Kleinschreibung und Satzzeichen. Pflicht sind
-  `Adressnummer` und `Nachname` (sonst Abbruch mit Hinweis, „falsche
-  Datei?"); fehlt eine andere Spalte, steht sie in der Zusammenfassung.
-  Abteilungen, Beitragsnamen: Spalten „… (alle aktuell)(1..3)", die
-  Historie „(alle)(1..3)" wird nie gelesen. Ein Platz „Abteilung + Beitrag"
-  kann eine Abteilung mehrfach nennen (Grundbeitrag und Zuschlag „aktiv"),
-  Abteilungen werden einmal gezählt.
-- Mehrere Grundbeiträge bei einem Mitglied: der höchste zählt
-  (Familienkarte, Erwachsene, Kinder, Jugendliche, Rentner,
-  Mindestbeitrag, Beitragsfrei FK, Beitragsfrei); „aktiv" ist ein Zuschlag
-  in irgendeinem Platz. Unbekannter Beitragsname oder gar kein
-  Grundbeitrag: Mitglied wird übernommen, aber ohne Beitragsart, und
-  erscheint in der Zusammenfassung.
-- Abweichender Zahler: `ZahlerAdressNummer` ≠ eigene Nummer (oder ohne
-  Nummer: Zahlername ≠ eigener Name). `kontoinhaber` = `ZahlerVorname
-  ZahlerNachname`, sonst Name der Zeile mit dieser Adressnummer; `iban` =
-  `MitZahlerIban`, sonst `Konto1Iban`, sonst IBAN der Zahlerzeile.
-- `land` = `Lkz`, sonst `Land`; „Deutschland" → `D`. Ein anderer Wert
-  über 3 Zeichen (mehr nimmt der Import nicht) wird leer und steht als
-  „Land laut Altdaten: …" in der `bemerkung` und in der Zusammenfassung.
-  Datumswerte werden auf `TT.MM.JJJJ`
-  gebracht (auch `JJJJ-MM-TT` und Excel-Seriennummern); Platzhalter
-  `01.01.1901` und nicht lesbare Daten werden leer (Zähler in der
-  Zusammenfassung). Zahlart „Lastschriftzahler" → `lastschrift`,
-  „Rechnungszahler" → `selbst`, sonst leer.
-- Übungsleiter: die Lizenz-Spalte unter den `Uel*`-Spalten (erste mit
-  „Lizenz", sonst „Nummer"/„Nr" im Namen); Wert nicht leer und nicht `0` ⇒
-  Funktion „Übungsleiter" + `lizenznummer`.
+Die Umwandlung der Exporte der alten Software in `import.csv` hat Mirko
+einmalig auf seinem Rechner erledigt; der Erstimport ist gelaufen
+(29.10.2026). Im Repository gibt es dafür **kein Skript** mehr (die
+früheren Fassungen `tools/altdaten-umwandeln.*` stehen in der
+Git-Historie). Die Zuordnungsregeln (Spalten, Beitragskombinationen,
+Familienrollen) stehen in `docs/fachlichkeit.md` §8. Eine Datei für einen
+späteren Abgleich (§4) wird ebenso lokal im Importformat (§2) erstellt –
+UTF-8, `land` höchstens 3 Zeichen (`D` statt „Deutschland").
 
 ## 4. Abgleich mit einer späteren Datei
 
-Gleiche Datei wie beim Erstimport (`import.csv` aus dem
-Umwandlungsskript), hochgeladen unter Einstellungen → Import, wenn der
+Gleiche Datei wie beim Erstimport (`import.csv` im Importformat, §3),
+hochgeladen unter Einstellungen → Import, wenn der
 Bestand nicht leer ist. Zugeordnet wird über die **Mitgliedsnummer**.
 
 **Merge-Ansicht** – eine Seite, drei Abschnitte, je Zeile ein Häkchen:
@@ -254,16 +194,6 @@ Einteilung in Neu/Fehlt/Geändert/unverändert, manuell angelegte und
 ausgetretene Mitglieder nie unter „Fehlt", nur angehakte Zeilen werden
 umgesetzt, „ganz löschen" bei vorhandenen Jahresbeiträgen abgelehnt,
 Version mit Anlass `abgleich`, ein zweiter Abgleich mit derselben Datei
-findet nichts mehr. Umwandlungsskript gegen
-eine **erfundene** Beispiel-Altdatei unter `tests/Fixtures/altdaten/`
-(gleiche Spaltennamen wie die echte, Fantasiedaten; `erzeugen.php` baut die
-xlsx aus `daten.php`): die erwartete Ausgabe steht in
-`erwartet-import.csv` und `erwartet-zusammenfassung.txt`; der CI-Job
-`altdaten` lässt das Skript unter Windows PowerShell 5.1 und PowerShell 7
-(Windows und Linux) laufen und verlangt byte-gleiche Ausgabe,
-`AltdatenUmwandelnTest` prüft an dieser Ausgabe alle 12
-Beitragskombinationen, Familie, abweichenden Zahler, Übungsleiter,
-Platzhalterdatum und Land, `ErstImportTest` importiert sie fehlerfrei.
-Ändert sich das Skript oder `daten.php`, wird die erwartete Ausgabe mit
-`pwsh tools/altdaten-umwandeln.ps1 -Ordner <kopie> -Stichtag 01.10.2026`
-neu erzeugt und der Diff bewusst geprüft.
+findet nichts mehr. Eine **erfundene** `import.csv` unter
+`tests/Fixtures/import/beispiel.csv` (Fantasiedaten) importiert
+fehlerfrei.
