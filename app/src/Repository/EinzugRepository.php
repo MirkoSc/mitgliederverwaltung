@@ -42,14 +42,19 @@ final readonly class EinzugRepository
     }
 
     /**
-     * Stores the file once, right after it was created. A run that already
-     * has its file keeps it - the archive is never changed (08 section 3);
-     * false then.
+     * Stores the file once, right after it was created - with the
+     * transactions as they went into it, when they name the run's id (the
+     * EndToEndIds). A run that already has its file keeps it - the archive
+     * is never changed (08 section 3); false then.
+     *
+     * @param array<mixed>|null $daten null = keep what anlegen() stored
      */
-    public function dateiSetzen(int $id, int $blobId, string $msgId): bool
+    public function dateiSetzen(int $id, int $blobId, string $msgId, ?array $daten = null): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE einzug SET datei_blob_id = ?, msg_id = ? WHERE id = ? AND datei_blob_id IS NULL');
-        $stmt->execute([$blobId, $msgId, $id]);
+        $stmt = $this->pdo->prepare(
+            'UPDATE einzug SET datei_blob_id = ?, msg_id = ?, daten = COALESCE(?, daten) WHERE id = ? AND datei_blob_id IS NULL',
+        );
+        $stmt->execute([$blobId, $msgId, $daten === null ? null : Zeilen::json($daten), $id]);
 
         return $stmt->rowCount() === 1;
     }

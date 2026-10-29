@@ -135,6 +135,41 @@ final readonly class JahresbeitragRepository
     }
 
     /**
+     * Like desEinzugs(), the rows locked until the transaction ends - for
+     * confirming or discarding a direct debit (#30). Call inside a
+     * transaction.
+     *
+     * @return list<Jahresbeitrag>
+     */
+    public function desEinzugsZumAendern(int $einzugId): array
+    {
+        return $this->mehrere('SELECT * FROM jahresbeitrag WHERE einzug_id = ? ORDER BY jahr, mitglied_id FOR UPDATE', [$einzugId]);
+    }
+
+    /**
+     * The fees with these ids that still exist, by id - e.g. the fees of an
+     * archived direct debit (#30). $zumAendern locks the rows until the
+     * transaction ends (call inside one), for taking them into a direct
+     * debit.
+     *
+     * @param list<int> $ids
+     * @return array<int, Jahresbeitrag>
+     */
+    public function mitIds(array $ids, bool $zumAendern = false): array
+    {
+        $gefunden = [];
+        foreach (array_chunk(array_values(array_unique($ids)), 1000) as $teil) {
+            $sql = 'SELECT * FROM jahresbeitrag WHERE id IN (' . Zeilen::platzhalter(count($teil)) . ') ORDER BY id'
+                . ($zumAendern ? ' FOR UPDATE' : '');
+            foreach ($this->mehrere($sql, $teil) as $beitrag) {
+                $gefunden[(int) $beitrag->id] = $beitrag;
+            }
+        }
+
+        return $gefunden;
+    }
+
+    /**
      * Writes amount, status, direct debit, payment and notes of an existing
      * fee. Which transition is allowed (amount only while `offen`, 08
      * section 2) is decided by the service that changes it; this only stores.
