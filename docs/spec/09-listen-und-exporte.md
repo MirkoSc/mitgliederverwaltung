@@ -78,6 +78,11 @@ Ansicht und Export zeigen genau das, was es liefert.
   unbekanntes Eintrittsdatum ⇒ nicht in der Liste (Hinweis, 07 §6).
 - Knopf **„geehrt"** je Zeile: vermerkt Stufe, Datum, wer. „Nur offene"
   blendet Geehrte aus. Vermerk zurücknehmbar.
+- Das Datum des Vermerks ist der Tag des Klicks. Wer vor dem 1.1. des
+  Jahres ausgetreten ist, steht nicht in der Liste. Mitglieder ohne
+  Eintrittsdatum zählt ein Hinweis über der Tabelle (ohne Namen). Der Knopf
+  ist eine `ListenAktion` an der Zeile (nur in der Ansicht, nicht im Export);
+  er postet an `/app/listen/ehrungen/vermerk` (beide Rollen).
 
 ## 3. Einstellungen dazu
 

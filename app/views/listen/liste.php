@@ -26,6 +26,7 @@ $liste = $ansicht->liste;
 $ergebnis = $ansicht->ergebnis;
 $anzahl = count($ansicht->zeilen);
 $seiten = $ansicht->seitenzahl();
+$hatAktion = array_filter($ansicht->zeilen, static fn(\App\Listen\ListenZeile $z): bool => $z->aktion !== null) !== [];
 
 /**
  * The address of this list with the current filters and order, changed by
@@ -160,6 +161,7 @@ $versteckt = static function () use ($ansicht): array {
                             ?>
                             <th scope="col"<?= $sortiert ? ' aria-sort="' . ($ansicht->absteigend ? 'descending' : 'ascending') . '"' : '' ?><?= $spalte->nebenspalte ? ' class="nebenspalte"' : '' ?>><a href="<?= e($link(['sortierung' => $spalte->schluessel, 'richtung' => $richtung, 'seite' => null])) ?>"><?= e($spalte->titel) ?></a></th>
                         <?php endforeach; ?>
+                        <?php if ($hatAktion): ?><th scope="col">Vermerk</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -185,6 +187,19 @@ $versteckt = static function () use ($ansicht): array {
                                     <?php endif; ?>
                                 </td>
                             <?php endforeach; ?>
+                            <?php if ($hatAktion): ?>
+                                <td data-label="Vermerk">
+                                    <?php if ($zeile->aktion !== null): ?>
+                                        <form method="post" action="<?= e($zeile->aktion->pfad) ?>">
+                                            <input type="hidden" name="_csrf" value="<?= e((string) $csrf) ?>">
+                                            <?php foreach ($zeile->aktion->felder as $name => $wert): ?>
+                                                <input type="hidden" name="<?= e($name) ?>" value="<?= e($wert) ?>">
+                                            <?php endforeach; ?>
+                                            <button type="submit" class="knopf<?= $zeile->aktion->zurueckgenommen ? '' : ' knopf-haupt' ?>"><?= e($zeile->aktion->beschriftung) ?></button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
