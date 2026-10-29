@@ -109,6 +109,22 @@ final class VereinTest extends AppTestCase
         self::assertStringContainsString('Die Vereinsdaten sind gespeichert.', $seite);
     }
 
+    /** 11 section 3: the header and the page title show the short name. */
+    public function testTheHeaderShowsTheShortNameOnceSaved(): void
+    {
+        $this->als(Rolle::Admin);
+        self::assertStringContainsString('<span class="marke-name">Mitgliederverwaltung</span>', $this->get('/app/mitglieder')->body);
+
+        $this->post('/admin/verein', self::formular());
+
+        $seite = $this->get('/app/mitglieder')->body;
+        self::assertStringContainsString('<span class="marke-name">SV Beispiel</span>', $seite);
+        self::assertStringContainsString('<title>Mitglieder – SV Beispiel</title>', $seite);
+
+        $this->post('/admin/verein', ['kurzname' => ''] + self::formular());
+        self::assertStringContainsString('<span class="marke-name">Sportverein Beispielstadt e. V.</span>', $this->get('/app/mitglieder')->body);
+    }
+
     public function testAnInvalidIbanIsSavedWithAHint(): void
     {
         $this->als(Rolle::Admin);

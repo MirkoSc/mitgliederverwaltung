@@ -24,7 +24,9 @@ $maintenanceBypass = str_starts_with($requestPath, '/admin')
     || $requestPath === '/anmelden'
     || str_starts_with($requestPath, '/anmelden/')
     || str_starts_with($requestPath, '/css/')
-    || str_starts_with($requestPath, '/js/');
+    || str_starts_with($requestPath, '/js/')
+    || str_starts_with($requestPath, '/img/')
+    || str_starts_with($requestPath, '/logo/');
 if (is_file($maintenanceFlag) && !$maintenanceBypass) {
     http_response_code(503);
     header('Content-Type: text/html; charset=utf-8');

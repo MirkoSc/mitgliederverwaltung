@@ -38,14 +38,17 @@ if (($https === '' || $https === 'off')
 // /admin stays reachable while the flag is set - the update step chain runs
 // there - and so do its stylesheet and scripts, otherwise the page that is
 // supposed to end the maintenance would arrive unstyled and without the
-// JavaScript that drives the steps. And the login: an admin whose session
-// ran out during a crashed update must be able to get back to /admin
-// (docs/spec/04-installation-und-update.md section 4).
+// JavaScript that drives the steps, and the club logo in its header (the
+// placeholder below /img/, an upload below /logo/). And the login: an admin
+// whose session ran out during a crashed update must be able to get back to
+// /admin (docs/spec/04-installation-und-update.md section 4).
 $durchlassen = str_starts_with($pfad, '/admin')
     || $pfad === '/anmelden'
     || str_starts_with($pfad, '/anmelden/')
     || str_starts_with($pfad, '/css/')
-    || str_starts_with($pfad, '/js/');
+    || str_starts_with($pfad, '/js/')
+    || str_starts_with($pfad, '/img/')
+    || str_starts_with($pfad, '/logo/');
 
 // Missing release = mid-switch or a crashed one; the flag = update in
 // progress. Nothing gets through while the release itself is gone - there is

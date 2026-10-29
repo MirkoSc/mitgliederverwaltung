@@ -72,6 +72,32 @@ final class SessionTest extends TestCase
         self::assertNull($session->pullFlash());
     }
 
+    /**
+     * Logout, password reset and invitation destroy the session and start a
+     * fresh one for the flash on the login page. That fresh one must not be
+     * the id the request still carries in its cookie: the browser already
+     * got the regenerated id, so a flash stored under the old one was lost
+     * (issue #36: "Ihr Passwort ist gespeichert" never appeared).
+     */
+    public function testAFlashAfterDestroyDoesNotGoBackToTheOldId(): void
+    {
+        $session = new Session();
+        $alt = (string) session_id();
+        $_COOKIE[session_name()] = $alt;
+
+        try {
+            $session->destroy();
+            $session->start();
+            $session->flash('Ihr Passwort ist gespeichert.');
+
+            self::assertNotSame($alt, session_id());
+            self::assertNotSame('', session_id());
+            self::assertSame('Ihr Passwort ist gespeichert.', $session->pullFlash()?->text);
+        } finally {
+            unset($_COOKIE[session_name()]);
+        }
+    }
+
     public function testDestroyLogsOut(): void
     {
         $session = new Session();

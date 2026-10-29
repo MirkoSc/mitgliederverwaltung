@@ -6,6 +6,7 @@
  * @var \App\Service\Audit\KettenPruefung $pruefung
  * @var list<\App\Service\Audit\AuditEintrag> $eintraege
  * @var int $anzahl
+ * @var array<int, string> $benutzerNamen user id => name
  */
 $bezeichnungen = [];
 foreach (\App\Domain\AuditAktion::cases() as $aktion) {
@@ -37,7 +38,7 @@ foreach (\App\Domain\AuditAktion::cases() as $aktion) {
                     <tr>
                         <td><?= e($eintrag->id) ?></td>
                         <td><?= e(zeitpunkt($eintrag->ts)) ?></td>
-                        <td><?= $eintrag->userId === null ? '–' : e($eintrag->userId) ?></td>
+                        <td><?= $eintrag->userId === null ? '–' : e($benutzerNamen[$eintrag->userId] ?? 'Nr. ' . $eintrag->userId) ?></td>
                         <td><?= e($bezeichnungen[$eintrag->action] ?? $eintrag->action) ?></td>
                         <td><?= $eintrag->entity === null ? '–' : e($eintrag->entity . ($eintrag->entityId === null ? '' : ' ' . $eintrag->entityId)) ?></td>
                         <td><?= $eintrag->details === '{}' ? '–' : e($eintrag->details) ?></td>

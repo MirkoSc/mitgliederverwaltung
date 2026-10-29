@@ -8,6 +8,7 @@ use App\App\Mitglied\MitgliedErweiterungen;
 use App\Dienste;
 use App\Domain\Mitglied;
 use App\Domain\MitgliederFilter;
+use App\Domain\Permission;
 use App\Http\Request;
 use App\Http\Response;
 use App\Repository\AbteilungRepository;
@@ -79,6 +80,7 @@ final readonly class MitgliederController
             'url' => self::urlBauer($filter, $mitglied?->id, null),
             'formUrl' => self::formUrl($filter, $mitglied?->id, null),
             'nurErgebnis' => false,
+            'darfAnlegen' => $this->dienste->view->konto()?->darf(Permission::MitgliederBearbeiten) === true,
         ];
         if ($mitglied !== null) {
             $daten = [...$daten, ...$this->detail($mitglied, $reiterWunsch, $filter, $heute, $daten)];

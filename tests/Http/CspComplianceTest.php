@@ -253,6 +253,8 @@ final class CspComplianceTest extends TestCase
         // No page snapshots - member data - in sessionStorage (02 section 7).
         self::assertStringContainsString('"historyCacheSize":0', $layout);
         self::assertStringContainsString('"allowEval":false', $layout);
+        // Settling "style" sets style attributes, which style-src 'self' blocks.
+        self::assertStringContainsString('"attributesToSettle":["class","width","height"]', $layout);
         self::assertStringContainsString('src="/js/vendor/htmx.min.js', $layout);
     }
 }
