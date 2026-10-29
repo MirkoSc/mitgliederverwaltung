@@ -430,7 +430,10 @@ final class InstallFlowTest extends DatabaseTestCase
         ]));
 
         self::assertInstanceOf(Response::class, $antwort);
-        self::assertWeiterleitungNach('/app/mitglieder', $antwort);
+        // The restored account has its second factor: reaching that step
+        // means the password was accepted (the code step has its own tests).
+        $ziel = ($antwort->headers['Location'] ?? null) === '/anmelden/bestaetigen' ? '/anmelden/bestaetigen' : '/app/mitglieder';
+        self::assertWeiterleitungNach($ziel, $antwort);
     }
 
     private static function schluesselAus(Response $seite): string
