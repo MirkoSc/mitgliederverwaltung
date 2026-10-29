@@ -9,7 +9,10 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
 
 - Versionierung `vX.Y.Z` (SemVer), `VERSION`-Datei im Repo (`0.0.0-dev`,
   kommt mit dem Projektgerüst).
-- **Release-Workflow** (GitHub Action bei Tag `v*`):
+- **Release-Workflow** (GitHub Action bei Tag `v*` oder von Hand per
+  „Run workflow" auf `main` mit Versionsnummer – dann legt der Workflow
+  das Tag selbst an; nötig, weil die Entwicklungssitzungen keine Tags
+  pushen dürfen):
   - Job `build` (nur `contents: read`, kein Secret): `composer install
     --no-dev --optimize-autoloader`, `VERSION` schreiben, ZIP
     `mitgliederverwaltung-vX.Y.Z.zip` (app/, public/, vendor/, bin/,
