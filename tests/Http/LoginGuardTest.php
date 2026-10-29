@@ -107,6 +107,27 @@ final class LoginGuardTest extends TestCase
         self::assertStringContainsString('Keine Berechtigung', $antwort->body);
     }
 
+    /** 02 section 3: without a second factor only its setup is reachable. */
+    public function testWithoutASecondFactorEveryPageLeadsToItsSetup(): void
+    {
+        $this->anmelden(new Konto(5, 'Test', Rolle::Admin, zweiterFaktor: false));
+
+        $antwort = $this->aufrufen(Zugriff::recht(Permission::MitgliederSehen));
+        self::assertSame(302, $antwort->status);
+        self::assertSame('/app/konto/zweiter-faktor', $antwort->headers['Location']);
+
+        $api = $this->aufrufen(Zugriff::angemeldet()->alsApi(), '/app/irgendwas');
+        self::assertSame(403, $api->status);
+        self::assertStringContainsString('/app/konto/zweiter-faktor', $api->body);
+
+        $htmx = $this->aufrufen(Zugriff::angemeldet(), headers: ['hx-request' => 'true']);
+        self::assertSame('/app/konto/zweiter-faktor', $htmx->headers['HX-Redirect']);
+
+        self::assertSame('ERREICHT', $this->aufrufen(Zugriff::angemeldet(), '/app/konto/zweiter-faktor')->body);
+        self::assertSame('ERREICHT', $this->aufrufen(Zugriff::angemeldet(), '/app/konto/zweiter-faktor/einrichten')->body);
+        self::assertSame(302, $this->aufrufen(Zugriff::angemeldet(), '/app/konto/zweiter-faktor-x')->status, 'only the setup itself');
+    }
+
     public function testIdleForThirtyMinutesEndsTheSession(): void
     {
         $this->anmelden(new Konto(5, 'Test', Rolle::Admin), self::vor(LoginGuard::LEERLAUF_SEKUNDEN + 1));
