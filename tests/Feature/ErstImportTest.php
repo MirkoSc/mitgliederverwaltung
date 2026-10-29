@@ -21,6 +21,10 @@ use App\Repository\MitgliedRepository;
 use App\Service\Import\ErstImport;
 use App\Service\Storage\BlobService;
 use App\Tests\Support\AppTestCase;
+use Tools\Altdaten\Umwandler;
+use Tools\Altdaten\XlsxLeser;
+
+require_once dirname(__DIR__, 2) . '/tools/altdaten-umwandeln.php';
 
 /**
  * The first import through the whole application (docs/spec/10-import.md
@@ -407,5 +411,20 @@ final class ErstImportTest extends AppTestCase
         $this->als(Rolle::Admin);
 
         self::assertSame(403, $this->post('/admin/import/leeren', mitToken: false)->status);
+    }
+
+    public function testTheOutputOfTheConversionScriptImportsWithoutErrors(): void
+    {
+        $this->als(Rolle::Admin);
+        $fixtures = dirname(__DIR__) . '/Fixtures/altdaten';
+        $ergebnis = new Umwandler(new \DateTimeImmutable('2026-10-01'))->umwandeln(
+            XlsxLeser::lesen($fixtures . '/mitglieder.xlsx'),
+            XlsxLeser::lesen($fixtures . '/familien.xlsx'),
+        );
+
+        $this->ganzImportieren($ergebnis->csv());
+
+        self::assertSame(count($ergebnis->zeilen), $this->anzahlZeilen('mitglied'));
+        self::assertGreaterThan(0, $this->anzahlZeilen('familie'));
     }
 }
