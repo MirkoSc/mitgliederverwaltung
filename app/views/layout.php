@@ -42,8 +42,12 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
              never send member data to a foreign host. historyCacheSize 0:
              htmx would otherwise keep snapshots of whole pages - member data
              - in sessionStorage (02 section 7). allowEval off: the CSP has
-             no 'unsafe-eval' anyway, and nothing here may need it. */ ?>
-    <meta name="htmx-config" content='{"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0,"allowEval":false}'>
+             no 'unsafe-eval' anyway, and nothing here may need it.
+             attributesToSettle without "style": htmx would otherwise
+             write the style attribute of a swapped element back and
+             forth, which style-src 'self' blocks with a console error on
+             every swap (issue #36). */ ?>
+    <meta name="htmx-config" content='{"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0,"allowEval":false,"attributesToSettle":["class","width","height"]}'>
     <?php foreach ($stylesheets as $stylesheet): ?>
     <link rel="stylesheet" href="<?= e($stylesheet) ?>?v=<?= e($version) ?>">
     <?php endforeach; ?>

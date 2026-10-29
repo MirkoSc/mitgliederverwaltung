@@ -27,8 +27,7 @@ use App\Support\Datum;
                     <?php if ($eintrag['aktuell']): ?><span class="etikett etikett-ok">aktueller Stand</span><?php endif; ?>
                 </h3>
                 <p class="verlauf-wann">
-                    <?= e(Datum::zeitpunktAnzeigen($version->geaendertAm)) ?>
-                    <?php if ($eintrag['wer'] !== null): ?>, <?= e($eintrag['wer']) ?><?php endif; ?>
+                    <?= e(Datum::zeitpunktAnzeigen($version->geaendertAm)) ?><?php if ($eintrag['wer'] !== null): ?>, <?= e($eintrag['wer']) ?><?php endif; ?>
                 </p>
                 <?php if ($eintrag['aenderungen'] !== []): ?>
                     <ul class="verlauf-aenderungen">
