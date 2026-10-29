@@ -112,6 +112,7 @@ final class SeitenTest extends AppTestCase
 
         self::assertStringContainsString('<h1>Mitglieder</h1>', $this->get('/app/mitglieder')->body);
         self::assertStringContainsString('<h1>Beiträge</h1>', $this->get('/app/beitraege')->body);
+        self::assertStringContainsString('<a href="/app/listen/funktionen">Funktionen</a>', $this->get('/app/listen')->body);
         self::assertStringContainsString('<h1>Listen</h1>', $this->get('/app/listen')->body);
         self::assertStringContainsString('<h1>Einstellungen</h1>', $this->get('/admin')->body);
     }

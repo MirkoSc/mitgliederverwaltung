@@ -29,6 +29,50 @@ final readonly class HinweisLader
     }
 
     /**
+     * The hints of every current member with at least one hint (list
+     * "Auffälligkeiten", 09 section 2). A fixed number of queries, not one per
+     * member: the members, families and proofs are read once and grouped here.
+     * Former members are left out; the family context still counts them.
+     *
+     * @return list<MitgliedHinweise> ordered by name, as the member list
+     */
+    public function fuerAlle(?\DateTimeImmutable $stichtag = null): array
+    {
+        $tag = $stichtag ?? new \DateTimeImmutable('today');
+        $alle = $this->mitglieder->alle(true, $tag);
+
+        $familien = [];
+        foreach ($alle as $person) {
+            if ($person->familieId !== null) {
+                $familien[$person->familieId][] = $person;
+            }
+        }
+        $nachweise = $this->nachweise->fuerMitglieder(
+            array_values(array_filter(array_map(static fn(Mitglied $m): ?int => $m->id, $alle))),
+        );
+        $beitragsarten = $this->beitragsarten->alle();
+
+        $ergebnis = [];
+        foreach ($alle as $mitglied) {
+            if ($mitglied->id === null || $mitglied->istEhemalig($tag)) {
+                continue;
+            }
+            $kontext = new HinweisKontext(
+                $tag,
+                $mitglied->familieId === null ? [] : ($familien[$mitglied->familieId] ?? []),
+                $nachweise[$mitglied->id] ?? [],
+                $beitragsarten,
+            );
+            $hinweise = Hinweise::fuer($mitglied, $kontext);
+            if ($hinweise !== []) {
+                $ergebnis[] = new MitgliedHinweise($mitglied, $hinweise);
+            }
+        }
+
+        return $ergebnis;
+    }
+
+    /**
      * @return list<Hinweis>
      */
     public function fuer(Mitglied $mitglied, ?\DateTimeImmutable $stichtag = null): array
