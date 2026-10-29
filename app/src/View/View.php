@@ -55,6 +55,9 @@ final class View
     /** @var (\Closure(): ?array{seit: string, grund: string})|null */
     private ?\Closure $wartungQuelle = null;
 
+    /** @var (\Closure(): string)|null short name of the club (11 section 3) */
+    private ?\Closure $nameQuelle = null;
+
     /**
      * @param list<string> $stylesheets URLs below the docroot, in order:
      *        the design system first, then the parts in public/css/teile/
@@ -176,6 +179,35 @@ final class View
     }
 
     /**
+     * Where the club's name for the header and the page title comes from
+     * (docs/spec/11-vereinsdaten.md section 3: Kurzname, else Vereinsname).
+     * Asked when a page is rendered, like the logo; empty or failing, the
+     * header shows the application name.
+     *
+     * @param \Closure(): string $nameQuelle
+     */
+    public function setNameQuelle(\Closure $nameQuelle): void
+    {
+        $this->nameQuelle = $nameQuelle;
+    }
+
+    private function anzeigename(): string
+    {
+        if ($this->nameQuelle !== null) {
+            try {
+                $name = trim(($this->nameQuelle)());
+                if ($name !== '') {
+                    return $name;
+                }
+            } catch (\Throwable) {
+                // never let the name break a page
+            }
+        }
+
+        return $this->appName;
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public function render(string $template, array $data = [], Area $bereich = Area::Oeffentlich): string
@@ -206,7 +238,7 @@ final class View
                 'bereich' => $bereich,
                 'pfad' => $this->currentPath,
                 'version' => $this->version,
-                'appName' => $this->appName,
+                'appName' => $this->anzeigename(),
                 'logoUrl' => $logo['kopf'],
                 'faviconUrl' => $logo['favicon'],
                 'faviconTyp' => $logo['favicon_typ'],

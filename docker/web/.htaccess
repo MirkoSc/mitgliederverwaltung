@@ -20,7 +20,7 @@ DirectoryIndex index.php
     # repeats it for browsers without CSP level 2.
     Header always set X-Frame-Options "DENY"
     # The application uses no device feature at all.
-    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=(), midi=()"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), midi=()"
     # A page opened from here via a link in a new tab gets no handle back
     # to a tab that shows member data.
     Header always set Cross-Origin-Opener-Policy "same-origin"
