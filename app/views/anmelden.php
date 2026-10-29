@@ -6,6 +6,7 @@
  * says whether the address exists.
  *
  * @var string $csrf
+ * @var string $logoAnmeldungUrl club logo or placeholder (App\View\View)
  * @var string|null $weiter where to go after the login (already checked)
  * @var string|null $fehler
  * @var string|null $hinweis
@@ -13,6 +14,7 @@
  */
 ?>
 <section class="anmeldung">
+    <img class="anmeldung-logo" src="<?= e($logoAnmeldungUrl) ?>" alt="" width="160" height="80">
     <h1>Anmelden</h1>
     <?php if (($hinweis ?? null) !== null): ?>
         <p class="hinweis hinweis-info"><?= e($hinweis) ?></p>

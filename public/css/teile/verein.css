@@ -1,0 +1,52 @@
+/* Settings section Verein (issue #16). Tokens from app.css only. */
+
+.formular-verein,
+.formular-verbaende {
+    max-width: 32rem;
+}
+
+.feldgruppe {
+    display: grid;
+    gap: var(--abstand-3);
+    margin: 0;
+    padding: var(--abstand-3) var(--abstand-4) var(--abstand-4);
+    border: 1px solid currentColor;
+    border-radius: var(--radius);
+}
+
+.feldgruppe > legend {
+    padding: 0 var(--abstand-2);
+    font-weight: 700;
+}
+
+.feldgruppe .feld {
+    display: grid;
+    gap: var(--abstand-1);
+}
+
+.formular input[type="file"] {
+    padding: var(--abstand-2) var(--abstand-3);
+}
+
+.logo-verwaltung {
+    display: grid;
+    gap: var(--abstand-4);
+    justify-items: start;
+}
+
+.logo-vorschau {
+    max-width: 20rem;
+    max-height: 10rem;
+    object-fit: contain;
+}
+
+/* Logo above the login form: scaled down, never stretched. */
+.anmeldung-logo {
+    display: block;
+    max-width: 10rem;
+    max-height: 5rem;
+    width: auto;
+    height: auto;
+    margin-bottom: var(--abstand-4);
+    object-fit: contain;
+}

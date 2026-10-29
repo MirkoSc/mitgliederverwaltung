@@ -29,7 +29,7 @@ $menue = $zeigeNavigation ? Navigation::benutzermenue($konto) : [];
     <div class="kopf-zeile">
         <?php /* alt="" - the name right next to it says the same. */ ?>
         <a class="marke" href="<?= $zeigeNavigation ? '/app' : '/' ?>">
-            <img class="marke-logo" src="<?= e($logoUrl === \App\View\View::LOGO_PLATZHALTER ? $logoUrl . '?v=' . $version : $logoUrl) ?>" alt="" width="40" height="40">
+            <img class="marke-logo" src="<?= e($logoUrl) ?>" alt="" width="40" height="40">
             <span class="marke-name"><?= e($appName) ?></span>
         </a>
 

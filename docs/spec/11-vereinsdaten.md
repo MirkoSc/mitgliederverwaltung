@@ -20,7 +20,10 @@ in der Datenbank.
 
 - Alle Felder optional; fehlen Gläubiger-ID oder IBAN, kann keine
   Lastschriftdatei erzeugt werden (08 §4) – die Seite Beiträge sagt das.
-- Verbände: Zeilen hinzufügen, ändern, löschen, sortieren. Die
+- Verbände: Zeilen hinzufügen, ändern, löschen, sortieren. Im Formular
+  steht je Zeile eine **Position** (Reihenfolge) und zwei leere Zeilen zum
+  Hinzufügen; eine Zeile ohne Verbandsname wird gelöscht (kein JavaScript
+  nötig). Die
   BLSV-Vereinsnummer wird beim BLSV-Export angezeigt (09 §4), damit sie
   beim Hochladen zur Hand ist.
 - IBAN wird normalisiert und per Prüfziffer geprüft (Hinweis, keine
@@ -30,12 +33,18 @@ in der Datenbank.
 
 - Upload PNG oder JPEG (kein SVG – GD kann es nicht verarbeiten, und SVG
   kann Skript enthalten), max. 5 MB.
-- Beim Upload leitet GD einmalig die Größen ab: Kopfzeile, Anmeldeseite,
-  Favicon (32 px), Apple-Touch-Icon (180 px). Muster wie das Vereinswappen
-  im Vereinskalender.
+- Beim Upload leitet GD einmalig die Größen ab (alle als PNG, nie
+  verzerrt): `kopf` (höchstens 96 × 96), `anmeldung` (höchstens 320 × 160),
+  `favicon` (32 × 32), `apple` (180 × 180, weißer Grund). Das Original wird
+  nicht aufbewahrt. Bilder über 16 Megapixel werden abgelehnt. Ein
+  abgelehnter Upload lässt das bisherige Logo unverändert.
 - Ablage in `shared/var/logo/` (überlebt Updates, Teil des Backups),
-  ausgeliefert über eine eigene Route mit `?v=<Zeitstempel>` als
-  Cache-Busting; ohne Logo ein neutraler Platzhalter.
+  ausgeliefert über die **öffentliche** Route `GET /logo/<größe>` (Anmeldeseite
+  und Favicon brauchen sie ohne Sitzung; ein Logo ist öffentliche
+  Information) mit `?v=<Zeitstempel>` als Cache-Busting – mit `?v=` ein Jahr
+  cachebar, ohne `no-cache`; ohne Logo der neutrale Platzhalter
+  (`public/img/vereinslogo-platzhalter.svg`). „Logo entfernen" löscht Dateien
+  und Einstellung.
 - Angezeigt in der Kopfzeile jeder Seite, auf der Anmeldeseite und als
   Favicon.
 
@@ -52,7 +61,7 @@ in der Datenbank.
 | Tabelle | Spalten |
 |---|---|
 | `setting` | `verein` (JSON aller Felder aus §1 außer Verbänden und Logo) |
-| `verband` | id, name, vereinsnummer, bemerkung, sortierung |
+| `verband` | id, name, vereinsnummer, bemerkung, sortierung (Migration `050_verband.sql`) |
 | `setting` | `logo_version` (Zeitstempel des Uploads) |
 
 ## Pflicht-Tests
