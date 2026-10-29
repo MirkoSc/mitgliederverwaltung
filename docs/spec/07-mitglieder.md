@@ -145,6 +145,14 @@ SQL.
   E-Mail per SQL `LIKE`, live über htmx. Jedes Wort der Eingabe muss in
   einem der Felder vorkommen („max muster" findet Max Mustermann).
 
+Umsetzung der Mitglieder-Seite (#18): `GET/POST /app/mitglieder`
+(`App\App\MitgliederController`, Liste in `MitgliederListeRepository`,
+Filter `MitgliederFilter`). Der Suchtext reist nur im POST-Body, nie in der
+URL (CLAUDE.md §4); Filter, Sortierung, Seite und das geöffnete Mitglied
+stehen in der URL. Ehemalige sind ohne Haken „Ehemalige anzeigen"
+ausgeblendet. Das geöffnete Mitglied nimmt Reiter und Abschnitte aus den
+Erweiterungspunkten `App\App\Mitglied\*` (#19 ff.).
+
 Umsetzung (#15, gemeinsame API für alle späteren Issues):
 
 - Domain-Typen in `App\Domain` (`Mitglied`, `Familie`, `Abteilung`,
