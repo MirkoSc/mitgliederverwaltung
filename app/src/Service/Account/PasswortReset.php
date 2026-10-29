@@ -65,13 +65,15 @@ final readonly class PasswortReset
         $now ??= new \DateTimeImmutable();
         $email = Benutzer::normalisiereEmail($email);
 
-        $ipFrei = $this->limits->versuch(self::LIMIT_IP, $ip, self::JE_IP, $now);
-        $kontoFrei = $this->limits->versuch(self::LIMIT_KONTO, $email, self::JE_KONTO, $now);
+        // The account counter under the account's id (RateLimiter::konto()):
+        // other spellings of the address must not reach the mailbox again.
+        $benutzer = $email === '' ? null : $this->benutzer()->findByEmail($email);
+        $ipFrei = $this->limits->versuch(self::LIMIT_IP, RateLimiter::ip($ip), self::JE_IP, $now);
+        $kontoFrei = $this->limits->versuch(self::LIMIT_KONTO, RateLimiter::konto($benutzer?->id, $email), self::JE_KONTO, $now);
         if (!$ipFrei || !$kontoFrei) {
             return ResetAnfrage::gesperrt();
         }
 
-        $benutzer = $email === '' ? null : $this->benutzer()->findByEmail($email);
         if ($benutzer === null || !$benutzer->darfAnmelden()) {
             // A locked account gets no link: it would only receive a
             // password the login then refuses anyway. An invited one has

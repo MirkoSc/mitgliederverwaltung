@@ -323,8 +323,9 @@ final class UpdateService
             // installation. Hand-edited files are kept and only reported.
             // shared/, releases/ and current/ get their deny-all .htaccess
             // here when a directory was created after setup.php ran.
+            $docrootVorher = [];
             $docrootMeldungen = [
-                ...$this->switcher->refreshDocrootFiles(),
+                ...$this->switcher->refreshDocrootFiles($docrootVorher),
                 ...$this->switcher->lockPrivateDirectories(),
             ];
 
@@ -335,6 +336,7 @@ final class UpdateService
                 if ($vorherigerShim !== null) {
                     $this->switcher->restoreShim($vorherigerShim);
                 }
+                $this->switcher->restoreDocrootFiles($docrootVorher);
                 $this->switcher->setMaintenanceFlag('Selbsttest fehlgeschlagen');
                 throw $e;
             }

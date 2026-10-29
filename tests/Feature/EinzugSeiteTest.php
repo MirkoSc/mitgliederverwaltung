@@ -120,6 +120,9 @@ final class EinzugSeiteTest extends AppTestCase
             $inhalt .= $stueck;
         }
         self::assertSame((string) strlen($inhalt), $antwort->headers['Content-Length']);
+        // The file holds nearly every IBAN: each download is in the audit log.
+        $zeilen = $this->dienste->pdo()->query("SELECT entity_id FROM audit_log WHERE action = 'einzug.datei_heruntergeladen' ORDER BY id DESC LIMIT 1")->fetchAll(\PDO::FETCH_COLUMN);
+        self::assertSame([(string) $id], $zeilen);
 
         return $inhalt;
     }

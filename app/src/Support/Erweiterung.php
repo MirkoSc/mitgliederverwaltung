@@ -31,8 +31,11 @@ interface Erweiterung
     public function reihenfolge(): int;
 
     /**
-     * The right needed to see it. Only courtesy for the display - every
-     * route behind it declares and checks its right itself.
+     * The right needed to see it. For tabs, sections and lists without a
+     * route of their own (a member's tab is a state of the members page)
+     * this IS the server-side check: the page shows only what the account
+     * may see (Erweiterungen::alle() with the account). Forms inside post
+     * to routes that declare and check their right themselves.
      */
     public function recht(): Permission;
 }

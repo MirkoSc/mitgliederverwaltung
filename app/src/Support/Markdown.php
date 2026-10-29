@@ -21,7 +21,8 @@ namespace App\Support;
  */
 final class Markdown
 {
-    private const string LINK = '/\[([^\]]+)\]\(((?:https?:\/\/|mailto:|\/)[^\s)"]+)\)/u';
+    // Own paths start with ONE slash: "//host" and "/\\host" lead to another host.
+    private const string LINK = '/\[([^\]]+)\]\(((?:https?:\/\/|mailto:|\/(?![\/\\\\]))[^\s)"]+)\)/u';
 
     public static function html(string $text): string
     {

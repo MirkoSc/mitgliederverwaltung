@@ -313,10 +313,16 @@ final class ReleaseSwitcher
      * reported, because a hand-tuned .htaccess (an IP block, a basic-auth
      * stanza) must not be silently reverted by an update.
      *
+     * $vorher receives what each replaced file held before (null: it did
+     * not exist), for restoreDocrootFiles() after a failed self-test - a
+     * directive the host does not accept answers every request with a 500,
+     * /admin included.
+     *
+     * @param array<string, string|null> $vorher
      * @return list<string> German notes for the update log, empty when
      *         everything is current
      */
-    public function refreshDocrootFiles(): array
+    public function refreshDocrootFiles(array &$vorher = []): array
     {
         $neu = $this->baseDir . '/current/docker/web';
         $alt = $this->baseDir . '/releases/_prev/docker/web';
@@ -356,10 +362,28 @@ final class ReleaseSwitcher
                 continue;
             }
 
+            $vorher[$ziel] = $vorhanden;
             $meldungen[] = sprintf('%s aktualisiert.', $datei);
         }
 
         return $meldungen;
+    }
+
+    /**
+     * Puts docroot files back as refreshDocrootFiles() found them - after a
+     * failed self-test, like restoreShim().
+     *
+     * @param array<string, string|null> $vorher
+     */
+    public function restoreDocrootFiles(array $vorher): void
+    {
+        foreach ($vorher as $ziel => $inhalt) {
+            if ($inhalt === null) {
+                @unlink($ziel);
+            } else {
+                @file_put_contents($ziel, $inhalt, LOCK_EX);
+            }
+        }
     }
 
     /**

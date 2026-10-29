@@ -88,10 +88,16 @@ Verschlüsselung einzelner Datenbankfelder.
   Zähler zurück (`App\Service\RateLimiter`); wortgleiche Fehlermeldungen
   für unbekannte Adresse, falsches Passwort, gesperrtes Konto und offene
   Einladung, Schein-`password_verify()` bei unbekanntem Konto. Adressen
-  werden getrimmt und klein geschrieben gespeichert und gesucht.
+  werden getrimmt und klein geschrieben gespeichert und gesucht. Der
+  Kontozähler hängt an der Konto-ID (`RateLimiter::konto()`), nicht an der
+  getippten Schreibweise – die Datenbank findet ein Konto auch mit Akzenten;
+  IPv6-Adressen zählen je /64 (`RateLimiter::ip()`).
+- Mails mit Links oder Codes stehen nur bis zum Versand im Klartext in
+  `mail_queue`; danach und nach dem endgültigen Fehlschlag wird der Text
+  geleert.
 - **Passwort-Reset**: Token 32 Byte, nur SHA-256 gespeichert, 30 min,
   einmalig, ein neuer Link ersetzt den alten; beendet alle Sessions.
-  Anfragen zählen je IP (10) und je Adresse (3) im Fenster; die Antwort
+  Anfragen zählen je IP (10) und je Konto bzw. Adresse (3) im Fenster; die Antwort
   ist für jede Adresse dieselbe. Ohne Tresor verliert das Konto dabei
   nichts.
 - **Eigenes Passwort ändern** (Benutzermenü): nur mit dem aktuellen
@@ -186,11 +192,16 @@ Verschlüsselung einzelner Datenbankfelder.
 ## 8. Audit-Log
 
 Append-only `audit_log` mit Hash-Kette (`prev_hash`, `hash`), IP nur als
-HMAC unter dem Server-Schlüssel. Protokolliert: Anmeldungen, Benutzer- und
-Rollenänderungen, Backup, Update, Restore, Export, Import, Einzug
-erzeugt/bestätigt/verworfen, Version zurückgeholt, Mitglied gelöscht,
+HMAC unter dem Server-Schlüssel. Protokolliert: Anmeldungen (auch
+fehlgeschlagene, mit Schritt Passwort bzw. zweiter Faktor), Abmeldung,
+Passwort geändert/zurückgesetzt, zweiter Faktor geändert, Benutzer
+eingeladen/geändert/gesperrt/gelöscht und Rollenänderungen (betroffene
+Benutzer nur mit ID), Backup erstellt und heruntergeladen, Update, Restore,
+Export, Import, Einzug erzeugt/bestätigt/verworfen, Lastschriftdatei
+heruntergeladen, Version zurückgeholt, Mitglied gelöscht,
 Mitgliederbestand geleert (Probelauf des Imports, 10 §1), Abgleich
-durchgeführt (10 §4).
+durchgeführt (10 §4). Prüfliste und letzter Sicherheits-Durchlauf:
+`docs/security-checkliste.md` (#37).
 Ansicht im Admin (Seite `/admin/audit`, verlinkt aus den Einstellungen) mit
 Kettenprüfung bei jedem Aufruf. Schnittstelle für alle Bereiche:
 `$dienste->audit()->protokollieren(AuditAktion::…, $userId, …)`. Nicht

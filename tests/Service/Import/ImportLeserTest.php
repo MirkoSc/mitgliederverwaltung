@@ -226,4 +226,14 @@ final class ImportLeserTest extends TestCase
         self::assertStringContainsString('leer', ImportLeser::lesen('', $stamm)->fehler[0]->text);
         self::assertStringContainsString('keine Mitglieder', ImportLeser::lesen("mitgliedsnummer;nachname\n", $stamm)->fehler[0]->text);
     }
+
+    /** A wrong file with millions of short lines must not exhaust the memory. */
+    public function testAFileWithFarTooManyLinesIsRefusedBeforeParsing(): void
+    {
+        $datei = ImportLeser::lesen(self::KOPF . "\n" . str_repeat("1;x\n", ImportLeser::MAX_ZEILEN + 1), $this->stammdaten());
+
+        self::assertFalse($datei->istFehlerfrei());
+        self::assertSame([], $datei->eintraege);
+        self::assertStringContainsString('mehr als 20.000 Zeilen', $datei->fehler[0]->text);
+    }
 }

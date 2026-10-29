@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\PublicPages;
 
 use App\Dienste;
+use App\Domain\AuditAktion;
 use App\Http\LoginGuard;
 use App\Http\Request;
 use App\Http\Response;
@@ -65,6 +66,10 @@ final readonly class AnmeldungController
 
         $ergebnis = Anmeldung::aus($this->dienste)->versuch($email, self::roh($request, 'passwort'), $request->ip);
         if (!$ergebnis->istErfolg()) {
+            // Without the typed address (02 section 7): which account was
+            // tried, if any, is the id the attempt found.
+            $this->dienste->audit()->protokollieren(AuditAktion::AnmeldungFehlgeschlagen, null, 'user', $ergebnis->versuchtVon,
+                ['schritt' => 'passwort', 'grund' => $ergebnis->fehler?->name], $request->ip);
             // The address stays in the field so that a typo in the password
             // does not cost the whole form - it is what the user just
             // typed, not something the server looked up.
@@ -82,6 +87,10 @@ final readonly class AnmeldungController
      */
     public function abmelden(Request $request): Response
     {
+        $userId = $this->dienste->session->userId();
+        if ($userId !== null) {
+            $this->dienste->audit()->protokollieren(AuditAktion::Abmeldung, $userId, 'user', $userId, ip: $request->ip);
+        }
         $this->dienste->session->destroy();
 
         return Response::redirect(LoginGuard::ANMELDUNG);
@@ -152,6 +161,7 @@ final readonly class AnmeldungController
         if ($benutzer !== null) {
             Kontomails::aus($this->dienste)->hinweis($benutzer->email, Kontomails::PASSWORT_ZURUECKGESETZT);
         }
+        $this->dienste->audit()->protokollieren(AuditAktion::PasswortZurueckgesetzt, $ergebnis->userId, 'user', $ergebnis->userId, ip: $request->ip);
 
         // Every session of the account just ended - this browser's too, if
         // it had one.

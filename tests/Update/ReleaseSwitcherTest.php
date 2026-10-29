@@ -308,4 +308,22 @@ final class ReleaseSwitcherTest extends TestCase
         }
         rmdir($dir);
     }
+
+    /** After a failed self-test the docroot files go back to what they were. */
+    public function testRefreshedDocrootFilesCanBePutBack(): void
+    {
+        mkdir($this->base . '/web', 0775, true);
+        file_put_contents($this->base . '/web/.htaccess', "alte CSP\n");
+        $this->prepareDocrootTemplates('releases/_prev', ['.htaccess' => "alte CSP\n"]);
+        $this->prepareDocrootTemplates('current', ['.htaccess' => "kaputte Direktive\n", '.user.ini' => "neu\n"]);
+        $switcher = new ReleaseSwitcher($this->base);
+
+        $vorher = [];
+        $switcher->refreshDocrootFiles($vorher);
+        self::assertSame("kaputte Direktive\n", file_get_contents($this->base . '/web/.htaccess'));
+
+        $switcher->restoreDocrootFiles($vorher);
+        self::assertSame("alte CSP\n", file_get_contents($this->base . '/web/.htaccess'));
+        self::assertFileDoesNotExist($this->base . '/web/.user.ini', 'a file that did not exist goes again');
+    }
 }

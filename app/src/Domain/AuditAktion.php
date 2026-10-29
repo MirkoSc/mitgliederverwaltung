@@ -21,7 +21,10 @@ enum AuditAktion: string
     case BenutzerGeloescht = 'benutzer.geloescht';
     case RolleGeaendert = 'rolle.geaendert';
     case ZweiterFaktorGeaendert = 'zweiter_faktor.geaendert';
+    case PasswortGeaendert = 'passwort.geaendert';
+    case PasswortZurueckgesetzt = 'passwort.zurueckgesetzt';
     case BackupErstellt = 'backup.erstellt';
+    case BackupHeruntergeladen = 'backup.heruntergeladen';
     case UpdateDurchgefuehrt = 'update.durchgefuehrt';
     case UpdateZurueckgerollt = 'update.zurueckgerollt';
     case WartungAufgehoben = 'wartung.aufgehoben';
@@ -33,6 +36,7 @@ enum AuditAktion: string
     case EinzugErzeugt = 'einzug.erzeugt';
     case EinzugBestaetigt = 'einzug.bestaetigt';
     case EinzugVerworfen = 'einzug.verworfen';
+    case EinzugDateiHeruntergeladen = 'einzug.datei_heruntergeladen';
     case VersionZurueckgeholt = 'mitglied.version_zurueckgeholt';
     case MitgliedGeloescht = 'mitglied.geloescht';
 
@@ -42,6 +46,8 @@ enum AuditAktion: string
             self::AnmeldungErfolgreich => 'Anmeldung',
             self::AnmeldungFehlgeschlagen => 'Anmeldung fehlgeschlagen',
             self::ZweiterFaktorGeaendert => 'Zweiter Faktor geändert',
+            self::PasswortGeaendert => 'Passwort geändert',
+            self::PasswortZurueckgesetzt => 'Passwort zurückgesetzt',
             self::Abmeldung => 'Abmeldung',
             self::BenutzerAngelegt => 'Benutzer angelegt',
             self::BenutzerGeaendert => 'Benutzer geändert',
@@ -49,6 +55,7 @@ enum AuditAktion: string
             self::BenutzerGeloescht => 'Benutzer gelöscht',
             self::RolleGeaendert => 'Rolle geändert',
             self::BackupErstellt => 'Backup erstellt',
+            self::BackupHeruntergeladen => 'Backup heruntergeladen',
             self::UpdateDurchgefuehrt => 'Update durchgeführt',
             self::UpdateZurueckgerollt => 'Update zurückgerollt',
             self::WartungAufgehoben => 'Wartungsmodus aufgehoben',
@@ -60,6 +67,7 @@ enum AuditAktion: string
             self::EinzugErzeugt => 'Einzug erzeugt',
             self::EinzugBestaetigt => 'Einzug bestätigt',
             self::EinzugVerworfen => 'Einzug verworfen',
+            self::EinzugDateiHeruntergeladen => 'Lastschriftdatei heruntergeladen',
             self::VersionZurueckgeholt => 'Version zurückgeholt',
             self::MitgliedGeloescht => 'Mitglied gelöscht',
         };

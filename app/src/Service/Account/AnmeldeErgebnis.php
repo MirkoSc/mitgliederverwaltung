@@ -15,6 +15,8 @@ final readonly class AnmeldeErgebnis
     private function __construct(
         public ?Benutzer $benutzer,
         public ?AnmeldeFehler $fehler,
+        /** The account a failed attempt was aimed at, if it exists - for the audit log only, never for the answer. */
+        public ?int $versuchtVon = null,
     ) {
     }
 
@@ -23,9 +25,9 @@ final readonly class AnmeldeErgebnis
         return new self($benutzer, null);
     }
 
-    public static function fehler(AnmeldeFehler $fehler): self
+    public static function fehler(AnmeldeFehler $fehler, ?int $versuchtVon = null): self
     {
-        return new self(null, $fehler);
+        return new self(null, $fehler, $versuchtVon);
     }
 
     /** @phpstan-assert-if-true !null $this->benutzer */

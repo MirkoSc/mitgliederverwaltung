@@ -30,7 +30,8 @@ $rollenwahl = static function (string $feldId) use ($rollen): string {
     <p><?= e($mitglied->anzeigeName()) ?>, <span class="nummer">Nr. <?= e($mitglied->mitgliedsnummer) ?></span></p>
 </div>
 
-<form method="get" action="<?= e(FamilieController::adresse($id)) ?>" class="suche" role="search">
+<form method="post" action="<?= e(FamilieController::adresse($id)) ?>" class="suche" role="search">
+    <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
     <div class="feld">
         <label for="familie-suche">Familie suchen</label>
         <input type="search" id="familie-suche" name="q" value="<?= e($suche) ?>" autocomplete="off">

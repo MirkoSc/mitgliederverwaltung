@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\App;
 
 use App\Dienste;
+use App\Domain\AuditAktion;
 use App\Http\Request;
 use App\Http\Response;
 use App\Repository\BenutzerRepository;
@@ -57,6 +58,7 @@ final readonly class KontoController
         // Every other session of the account just ended; this one lives on
         // with the new epoch and a fresh id.
         $session->adoptEpoch($ergebnis->sessionEpoch);
+        $this->dienste->audit()->protokollieren(AuditAktion::PasswortGeaendert, $userId, 'user', $userId, ip: $request->ip);
 
         $benutzer = new BenutzerRepository($this->dienste->pdo())->findById($userId);
         if ($benutzer !== null) {

@@ -98,6 +98,8 @@ final class BackupSeiteTest extends AppTestCase
         // 02 section 8: the backup is in the audit trail, once.
         $audit = $this->dienste->pdo()->query("SELECT entity, entity_id FROM audit_log WHERE action = 'backup.erstellt'")->fetchAll(\PDO::FETCH_ASSOC);
         self::assertSame([['entity' => 'backup', 'entity_id' => $name]], $audit);
+        $download = $this->dienste->pdo()->query("SELECT entity_id FROM audit_log WHERE action = 'backup.heruntergeladen'")->fetchAll(\PDO::FETCH_COLUMN);
+        self::assertSame([$name], $download, 'the download is recorded too');
     }
 
     public function testASecondStartWhileOneRunsIsRefused(): void

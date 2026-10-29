@@ -27,6 +27,8 @@ ini_set('zend.exception_ignore_args', '1');
 // Belt to those braces: even where arguments ARE kept, this caps every
 // string parameter in a trace to '...'.
 ini_set('zend.exception_string_param_max_len', '0');
+// Also set by web/.user.ini; here too, should that file be missing or edited.
+ini_set('display_errors', '0');
 
 // The ONLY place for global runtime setup: everything is stored and
 // interpreted as Europe/Berlin (CLAUDE.md section 5).

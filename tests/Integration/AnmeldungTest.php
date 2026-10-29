@@ -175,4 +175,21 @@ final class AnmeldungTest extends DatabaseTestCase
 
         self::assertSame('2026-03-02 10:00', new BenutzerRepository($this->pdo())->findById($id)?->lastLoginAt?->format('Y-m-d H:i'));
     }
+
+    /**
+     * The database finds the account under other spellings (accents do not
+     * count in its comparison); the account counter must not care either.
+     */
+    public function testOtherSpellingsOfTheAddressShareTheAccountLimit(): void
+    {
+        Benutzerdaten::anlegen($this->pdo());
+        $schreibweisen = ['erika@example.org', 'érika@example.org', 'erikä@example.org', 'erikà@example.org', 'ERÍKA@example.org'];
+
+        for ($i = 0; $i < RateLimiter::LOGIN_JE_KONTO; $i++) {
+            $this->anmeldung->versuch($schreibweisen[$i % count($schreibweisen)], 'falsch-falsch-falsch', '198.51.100.' . $i);
+        }
+
+        $ergebnis = $this->anmeldung->versuch('erika@example.org', Benutzerdaten::PASSWORT, '198.51.100.200');
+        self::assertSame(AnmeldeFehler::ZuVieleVersuche, $ergebnis->fehler);
+    }
 }

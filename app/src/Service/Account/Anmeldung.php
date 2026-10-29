@@ -23,11 +23,13 @@ use App\Service\RateLimiter;
  *     account and open invitation give the same failure with the same
  *     sentence, and the unknown-address branch burns a dummy verification
  *     so it takes the same time as a real one.
- *   - **Brute force.** Every attempt counts against the IP *and* the
- *     account BEFORE the password is checked, in one atomic step each
- *     (App\Service\RateLimiter); a success clears the account's counter,
- *     so for an account only failures stay counted. The IP counter runs
- *     its window out.
+ *   - **Brute force.** Every attempt counts against the IP (an IPv6
+ *     address by its /64) *and* the account BEFORE the password is
+ *     checked, in one atomic step each (App\Service\RateLimiter); the
+ *     account counter is kept under the account's id, whatever spelling of
+ *     the address found it. A success clears the account's counter, so for
+ *     an account only failures stay counted. The IP counter runs its window
+ *     out.
  */
 final readonly class Anmeldung
 {
@@ -59,31 +61,32 @@ final readonly class Anmeldung
         $now ??= new \DateTimeImmutable();
         $email = Benutzer::normalisiereEmail($email);
 
+        $benutzer = $email === '' ? null : $this->benutzer->findByEmail($email);
+        $konto = RateLimiter::konto($benutzer?->id, $email);
+
         // Both counters first, and both always: an attacker who is stopped
         // by the IP limit must not learn anything about the account limit.
-        $ipFrei = $this->limits->versuch(self::LIMIT_IP, $ip, RateLimiter::LOGIN_JE_IP, $now);
-        $kontoFrei = $this->limits->versuch(self::LIMIT_KONTO, $email, RateLimiter::LOGIN_JE_KONTO, $now);
+        $ipFrei = $this->limits->versuch(self::LIMIT_IP, RateLimiter::ip($ip), RateLimiter::LOGIN_JE_IP, $now);
+        $kontoFrei = $this->limits->versuch(self::LIMIT_KONTO, $konto, RateLimiter::LOGIN_JE_KONTO, $now);
         if (!$ipFrei || !$kontoFrei) {
-            return AnmeldeErgebnis::fehler(AnmeldeFehler::ZuVieleVersuche);
+            return AnmeldeErgebnis::fehler(AnmeldeFehler::ZuVieleVersuche, $benutzer?->id);
         }
-
-        $benutzer = $email === '' ? null : $this->benutzer->findByEmail($email);
 
         // Both branches end in the same answer; they differ only in how the
         // time is spent, and that is the point.
         if ($benutzer === null || !$benutzer->darfAnmelden()) {
             $this->passwoerter->verifyDummy($passwort);
 
-            return AnmeldeErgebnis::fehler(AnmeldeFehler::Zugangsdaten);
+            return AnmeldeErgebnis::fehler(AnmeldeFehler::Zugangsdaten, $benutzer?->id);
         }
         if (!$this->passwoerter->verify($passwort, $benutzer->passwordHash)) {
-            return AnmeldeErgebnis::fehler(AnmeldeFehler::Zugangsdaten);
+            return AnmeldeErgebnis::fehler(AnmeldeFehler::Zugangsdaten, $benutzer->id);
         }
 
         // Only the account's counter: clearing the IP's as well would let
         // anybody with one working account wipe the limit of their address
         // between rounds of guessing at other accounts.
-        $this->limits->reset(self::LIMIT_KONTO, $email);
+        $this->limits->reset(self::LIMIT_KONTO, $konto);
 
         if ($this->passwoerter->needsRehash($benutzer->passwordHash)) {
             // The one moment the plaintext is in hand anyway, so raised cost

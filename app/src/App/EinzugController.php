@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\App;
 
 use App\Dienste;
+use App\Domain\AuditAktion;
 use App\Domain\Einzug;
 use App\Domain\EinzugStatus;
 use App\Http\Request;
@@ -169,6 +170,8 @@ final readonly class EinzugController
         if ($einzug === null || $blob === null) {
             return $this->nichtGefunden('Zu diesem Einzug gibt es keine Lastschriftdatei.');
         }
+        // The file holds the IBANs of nearly every member (02 section 8).
+        $this->dienste->audit()->protokollieren(AuditAktion::EinzugDateiHeruntergeladen, $this->dienste->session->userId(), 'einzug', $einzug->id, ip: $r->ip);
         // The session lock would block the person's other tabs for the whole download.
         $this->dienste->session->schliessen();
 

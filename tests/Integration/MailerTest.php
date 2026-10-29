@@ -151,4 +151,24 @@ final class MailerTest extends DatabaseTestCase
         self::assertSame(1, $this->queue->deleteSentBefore($this->jetzt->modify('+1 day')));
         self::assertNotNull($this->queue->find($zweite));
     }
+
+    /** A sent or abandoned mail keeps no body: it may hold a link or a code. */
+    public function testTheBodyIsGoneOnceTheMailIsSentOrAbandoned(): void
+    {
+        $this->mailer->einreihen('a@example.org', 'Betreff', 'Ihr Link: geheim', $this->jetzt);
+        $this->mailer->sendeFaellige($this->jetzt);
+        self::assertSame('', $this->queue->find(1)?->body);
+
+        $this->transport->fehlschlaege = 99;
+        $this->mailer->einreihen('b@example.org', 'Betreff', 'Ihr Code: 123456', $this->jetzt);
+        $zeit = $this->jetzt;
+        $this->mailer->sendeFaellige($zeit);
+        self::assertSame('Ihr Code: 123456', $this->queue->find(2)?->body, 'kept while it is still retried');
+        for ($i = 0; $i < 7; $i++) {
+            $zeit = $zeit->modify('+1 day');
+            $this->mailer->sendeFaellige($zeit);
+        }
+        self::assertSame(MailStatus::Fehler, $this->queue->find(2)?->status);
+        self::assertSame('', $this->queue->find(2)?->body);
+    }
 }

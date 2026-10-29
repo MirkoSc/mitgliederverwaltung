@@ -97,6 +97,10 @@ leere Zelle = kein Wert. Eine Zeile je Mitglied.
 | `lizenznummer` | Text |
 | `bemerkung` | Text, mehrzeilig in Anführungszeichen |
 
+- Mehr als 20.000 Zeilen (`ImportLeser::MAX_ZEILEN`) gelten als falsche Datei
+  und werden vor dem Lesen abgewiesen – sonst legte eine riesige Datei bei
+  jedem Aufruf der Einstellungen den Speicher lahm (#37).
+
 ## 3. Umwandlung der Altdaten
 
 Die Umwandlung der Exporte der alten Software in `import.csv` hat Mirko

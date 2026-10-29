@@ -1,6 +1,11 @@
 Options -Indexes
 DirectoryIndex index.php
 
+# .user.ini holds only PHP settings, but nobody needs to read it from outside.
+<Files ".user.ini">
+    Require all denied
+</Files>
+
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
     # setifempty: a page that carries a token in its URL may send its own
@@ -24,6 +29,9 @@ DirectoryIndex index.php
     # A page opened from here via a link in a new tab gets no handle back
     # to a tab that shows member data.
     Header always set Cross-Origin-Opener-Policy "same-origin"
+    # Says nothing about the PHP version to whoever asks.
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
 </IfModule>
 
 RewriteEngine On

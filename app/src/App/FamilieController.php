@@ -58,7 +58,9 @@ final readonly class FamilieController
         if ($mitglied === null) {
             return $this->gibtEsNicht();
         }
-        $suche = $r->feld('q');
+        // Only from the body: the search form posts, a name in the query
+        // string would end up in the history and the hoster's logs.
+        $suche = is_string($r->post['q'] ?? null) ? trim($r->post['q']) : '';
 
         return Response::html($this->dienste->view->render('mitglied/familie-waehlen', [
             'title' => 'Familie wählen',
@@ -82,7 +84,7 @@ final readonly class FamilieController
             return $this->zurueck($mitglied, 'Diese Familie gibt es nicht mehr. Bitte neu suchen.', FlashArt::Warnung);
         }
 
-        return $this->setzen($mitglied, $familie->id, $this->leseRolle($r), sprintf('Jetzt in der %s.', $familie->name));
+        return $this->setzen($mitglied, $familie->id, $this->leseRolle($r), 'Der Familie beigetreten.');
     }
 
     /** @param array<string, string> $params */
@@ -98,7 +100,7 @@ final readonly class FamilieController
         }
 
         $familie = $this->familien->anlegen(mb_substr($name, 0, 200));
-        $antwort = $this->setzen($mitglied, $familie->id, $this->leseRolle($r), sprintf('Familie „%s" angelegt.', $familie->name));
+        $antwort = $this->setzen($mitglied, $familie->id, $this->leseRolle($r), 'Neue Familie angelegt.');
         // The save did not happen (somebody else was faster): no empty family stays behind.
         $this->familien->loeschenWennLeer($familie->id);
 
