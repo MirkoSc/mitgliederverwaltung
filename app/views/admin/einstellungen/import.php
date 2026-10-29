@@ -1,12 +1,16 @@
 <?php
 
 /**
- * Settings section Import (docs/spec/10-import.md section 1). Only
- * components of /admin/designsystem; the step chain runs in public/js/import.js
- * - an external script, never an inline one (CLAUDE.md section 4).
+ * Settings section Import (docs/spec/10-import.md sections 1 and 4). Only
+ * components of /admin/designsystem; the step chains run in
+ * public/js/import.js and public/js/abgleich.js - external scripts, never
+ * inline ones (CLAUDE.md section 4). The merge view of the reconciliation
+ * is import-abgleich.php.
  *
- * @var string $zustand hochladen | vorschau | laeuft | bestand
+ * @var string $zustand hochladen | vorschau | laeuft | bestand | abgleich | abgleich-laeuft
  * @var \App\Service\Import\ImportVorschau|null $vorschau
+ * @var \App\Domain\Job|null $abgleichZuletzt the last finished reconciliation (stock not empty)
+ * @var array<string, mixed>|null $abgleichStand position of the reconciliation chain
  * @var array<string, mixed> $stand position of the chain (job state)
  * @var \App\Domain\Job|null $zuletzt the last finished import
  * @var bool $kannLeeren
@@ -30,15 +34,7 @@ $zahl = static fn(int $n): string => number_format($n, 0, ',', '.');
     <?php if ($dateiFehlt ?? false): ?>
         <p class="hinweis hinweis-warnung" role="status">Die zuletzt hochgeladene Datei gibt es nicht mehr. Bitte noch einmal hochladen.</p>
     <?php endif; ?>
-    <form method="post" action="/admin/import/hochladen" enctype="multipart/form-data" class="formular">
-        <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
-        <div class="feld">
-            <label for="import-datei">Datei import.csv</label>
-            <input id="import-datei" name="datei" type="file" accept=".csv,text/csv" required aria-describedby="import-datei-hinweis">
-            <p id="import-datei-hinweis" class="feld-hinweis">UTF-8, Trennzeichen „;“, eine Zeile je Mitglied.</p>
-        </div>
-        <button type="submit" class="knopf knopf-haupt">Datei hochladen und prüfen</button>
-    </form>
+    <?php $knopfText = 'Datei hochladen und prüfen'; require __DIR__ . '/import-hochladen.php'; ?>
 
 <?php elseif ($zustand === 'vorschau' && $vorschau !== null): ?>
     <?php $fehlerhafteZeilen = count(array_unique(array_map(static fn($f): int => $f->zeile, $vorschau->fehler))); ?>
@@ -194,6 +190,9 @@ $zahl = static fn(int $n): string => number_format($n, 0, ',', '.');
         <p id="import-fehler" class="hinweis hinweis-fehler" role="alert" hidden></p>
     </div>
 
+<?php elseif ($zustand === 'abgleich' || $zustand === 'abgleich-laeuft'): ?>
+    <?php require __DIR__ . '/import-abgleich.php'; ?>
+
 <?php else: ?>
     <?php if ($zuletzt !== null): ?>
         <p>
@@ -202,10 +201,25 @@ $zahl = static fn(int $n): string => number_format($n, 0, ',', '.');
             <?= e($zahl((int) ($zuletzt->state['familien'] ?? 0))) ?> Familien.
         </p>
     <?php endif; ?>
+    <?php if (($abgleichZuletzt ?? null) !== null): ?>
+        <?php $s = $abgleichZuletzt->state; ?>
+        <p>
+            Letzter Abgleich am <?= e(zeitpunkt($abgleichZuletzt->updatedAt)) ?> Uhr:
+            <?= e($zahl((int) ($s['neu'] ?? 0))) ?> neu, <?= e($zahl((int) ($s['ausgetreten'] ?? 0))) ?> ausgetreten,
+            <?= e($zahl((int) ($s['geaendert'] ?? 0))) ?> geändert<?= (int) ($s['geloescht'] ?? 0) > 0 ? ', ' . e($zahl((int) $s['geloescht'])) . ' gelöscht' : '' ?>.
+        </p>
+    <?php endif; ?>
+    <h3>Abgleich mit einer neuen Datei</h3>
     <p>
-        Der Mitgliederbestand ist nicht leer. Der Erstimport geht nur in einen leeren Bestand; der Abgleich
-        mit einer späteren Datei aus der alten Software ist an dieser Stelle noch nicht verfügbar.
+        Der Mitgliederbestand ist nicht leer, deshalb wird eine neue import.csv aus der alten Software
+        abgeglichen statt importiert. Nach dem Hochladen sehen Sie, wer neu ist, wer in der Datei fehlt
+        und bei wem sich etwas geändert hat. Übernommen wird nur, was Sie anhaken.
     </p>
+    <?php if ($dateiFehlt ?? false): ?>
+        <p class="hinweis hinweis-warnung" role="status">Die zuletzt hochgeladene Datei gibt es nicht mehr. Bitte noch einmal hochladen.</p>
+    <?php endif; ?>
+    <?php $knopfText = 'Datei hochladen und abgleichen'; require __DIR__ . '/import-hochladen.php'; ?>
+
     <h3>Bestand leeren</h3>
     <?php if ($kannLeeren): ?>
         <p>
@@ -221,4 +235,6 @@ $zahl = static fn(int $n): string => number_format($n, 0, ',', '.');
 
 <?php if (in_array($zustand, ['vorschau', 'laeuft'], true)): ?>
     <script src="/js/import.js?v=<?= e($version) ?>" defer></script>
+<?php elseif (in_array($zustand, ['abgleich', 'abgleich-laeuft'], true)): ?>
+    <script src="/js/abgleich.js?v=<?= e($version) ?>" defer></script>
 <?php endif; ?>

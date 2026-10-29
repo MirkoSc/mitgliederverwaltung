@@ -52,6 +52,19 @@ final readonly class JahresbeitragRepository
         return $this->pdo->query('SELECT EXISTS(SELECT 1 FROM jahresbeitrag)')?->fetchColumn() == 1;
     }
 
+    /**
+     * The ids of all members that have at least one annual fee - those can
+     * only leave, never be deleted, in a reconciliation (10 section 4).
+     *
+     * @return array<int, true>
+     */
+    public function mitgliederMitBeitrag(): array
+    {
+        $ids = $this->pdo->query('SELECT DISTINCT mitglied_id FROM jahresbeitrag')?->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+
+        return array_fill_keys(array_map(intval(...), $ids), true);
+    }
+
     public function finde(int $id): ?Jahresbeitrag
     {
         return $this->mehrere('SELECT * FROM jahresbeitrag WHERE id = ?', [$id])[0] ?? null;

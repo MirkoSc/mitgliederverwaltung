@@ -6,7 +6,6 @@ namespace App\Service\Import;
 
 use App\Dienste;
 use App\Domain\AuditAktion;
-use App\Domain\BlobMeta;
 use App\Domain\Herkunft;
 use App\Domain\Job;
 use App\Domain\JobStatus;
@@ -19,7 +18,6 @@ use App\Repository\MitgliedRepository;
 use App\Repository\Zeilen;
 use App\Service\Audit\AuditLog;
 use App\Service\Storage\BlobService;
-use App\Support\FileLogger;
 
 /**
  * The first import (docs/spec/10-import.md section 1): upload the file,
@@ -53,12 +51,11 @@ final readonly class ErstImport
     public function __construct(
         private \PDO $pdo,
         private JobRepository $jobs,
-        private BlobService $blobs,
+        private ImportDateiAblage $ablage,
         private MitgliedRepository $mitglieder,
         private FamilieRepository $familien,
         private JahresbeitragRepository $beitraege,
         private AuditLog $audit,
-        private FileLogger $logger,
     ) {
     }
 
@@ -70,12 +67,11 @@ final readonly class ErstImport
             return new self(
                 $pdo,
                 $d->jobs(),
-                BlobService::aus($d),
+                new ImportDateiAblage($pdo, BlobService::aus($d), $d->logger),
                 new MitgliedRepository($pdo),
                 new FamilieRepository($pdo),
                 new JahresbeitragRepository($pdo),
                 $d->audit(),
-                $d->logger,
             );
         });
     }
@@ -113,10 +109,9 @@ final readonly class ErstImport
         $this->bestandMussLeerSein();
         $this->verwerfen();
 
-        $blob = $this->blobs->storeString($inhalt, new BlobMeta('text/csv', BlobMeta::bereinigterName($dateiname)));
         $this->jobs->anlegen(self::TYP, $userId, [
             'phase' => 'vorschau',
-            'blob_id' => $blob->id,
+            'blob_id' => $this->ablage->speichern($inhalt, $dateiname),
             'offset' => 0,
             'gesamt' => 0,
             'uebersprungen' => 0,
@@ -287,9 +282,12 @@ final readonly class ErstImport
         foreach ($this->mitglieder->alleLoeschen() as $blobId) {
             $this->dateiLoeschen($blobId);
         }
-        while (($job = $this->aktuellerJob()) !== null) {
-            $this->dateiLoeschen((int) ($job->state['blob_id'] ?? 0));
-            $this->jobs->loeschen($job->id);
+        // The records of earlier imports and reconciliations go with the stock.
+        foreach ([self::TYP, Abgleich::TYP] as $typ) {
+            while (($job = $this->jobs->neuesteVomTyp($typ)) !== null) {
+                $this->dateiLoeschen((int) ($job->state['blob_id'] ?? 0));
+                $this->jobs->loeschen($job->id);
+            }
         }
         $this->audit->protokollieren(AuditAktion::BestandGeleert, $userId, 'mitglied', null, ['mitglieder' => $anzahl], $ip);
 
@@ -354,38 +352,12 @@ final readonly class ErstImport
     /** The uploaded file read; null when its file is gone. */
     private function datei(Job $job): ?ImportDatei
     {
-        $blob = $this->blobs->find((int) ($job->state['blob_id'] ?? 0));
-        if ($blob === null || !$blob->isComplete()) {
-            return null;
-        }
-        try {
-            $inhalt = '';
-            foreach ($this->blobs->openRead($blob) as $stueck) {
-                $inhalt .= $stueck;
-            }
-        } catch (\Throwable $fehler) {
-            $this->logger->append('Import file could not be read: ' . $fehler::class);
-
-            return null;
-        }
-
-        return ImportLeser::lesen($inhalt, ImportStammdaten::aus($this->pdo));
+        return $this->ablage->lesen((int) ($job->state['blob_id'] ?? 0));
     }
 
     private function dateiLoeschen(int $blobId): void
     {
-        if ($blobId <= 0) {
-            return;
-        }
-        try {
-            $blob = $this->blobs->find($blobId);
-            if ($blob !== null) {
-                $this->blobs->delete($blob);
-            }
-        } catch (\Throwable $fehler) {
-            // An orphaned file is encrypted and harmless; the chain goes on.
-            $this->logger->append(sprintf('File %d could not be removed: %s', $blobId, $fehler::class));
-        }
+        $this->ablage->loeschen($blobId);
     }
 
     /**

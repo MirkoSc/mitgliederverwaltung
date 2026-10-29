@@ -1,0 +1,57 @@
+/* Merge view of the reconciliation in the settings section Import
+   (issue #34, docs/spec/10-import.md section 4). Tokens from app.css only.
+   The one thing of its own: a difference reads as an edit - the value in
+   the application struck through, the value of the file marked. */
+
+.abgleich h3 {
+    margin-top: var(--abstand-6);
+}
+
+.abgleich-alle {
+    margin-bottom: var(--abstand-2);
+}
+
+.abgleich-uebernehmen {
+    margin-top: var(--abstand-5);
+}
+
+.abgleich-unterschiede {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.abgleich-unterschiede li + li {
+    margin-top: var(--abstand-1);
+}
+
+.abgleich-feld {
+    color: var(--farbe-gedaempft);
+}
+
+.abgleich-unterschiede del {
+    color: var(--farbe-gedaempft);
+    text-decoration-thickness: 1px;
+}
+
+.abgleich-unterschiede ins {
+    padding: 0 0.25em;
+    border-radius: 3px;
+    background: var(--farbe-ok-flaeche);
+    color: var(--farbe-text);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.abgleich-leer {
+    font-style: italic;
+    font-weight: 400;
+}
+
+.modus-barrierefrei .abgleich-unterschiede ins {
+    outline: 2px solid var(--farbe-ok);
+}
+
+.modus-barrierefrei .abgleich-unterschiede del {
+    text-decoration-thickness: 2px;
+}
