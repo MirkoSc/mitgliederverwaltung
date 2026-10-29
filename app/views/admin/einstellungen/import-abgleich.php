@@ -179,7 +179,8 @@ $alle = static function (string $gruppe, string $wofuer): void { ?>
             <?php else: ?>
                 <div class="feld feld-kurz">
                     <label for="abgleich-austrittsdatum">Austrittsdatum</label>
-                    <input id="abgleich-austrittsdatum" name="austrittsdatum" type="date" value="<?= e(($heute ?? new \DateTimeImmutable('today'))->format('Y-m-d')) ?>" required>
+                    <input id="abgleich-austrittsdatum" name="austrittsdatum" type="date" value="<?= e(($heute ?? new \DateTimeImmutable('today'))->format('Y-m-d')) ?>" aria-describedby="abgleich-austrittsdatum-hinweis">
+                    <p id="abgleich-austrittsdatum-hinweis" class="feld-hinweis">Gilt für alle, die hier austreten.</p>
                 </div>
                 <?php $alle('austritt', 'Fehlt in der Datei'); ?>
                 <div class="tabelle-rahmen">

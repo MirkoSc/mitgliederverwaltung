@@ -185,6 +185,15 @@ final readonly class Abgleich
         ];
 
         $sperre = $this->jobs->sperren($job->id, self::SPERRE_SEKUNDEN) ?? throw new ImportLaeuftBereits();
+        // The lock is ours: a second start (double click, second tab) may have been first.
+        $frisch = $this->jobs->finde($job->id);
+        if ($frisch === null || ($frisch->state['phase'] ?? '') !== 'vorschau') {
+            if ($frisch !== null) {
+                $this->jobs->schrittSpeichern($sperre, $frisch->state, $frisch->progress);
+            }
+
+            throw new ImportLaeuftBereits();
+        }
         $state = [
             ...$job->state,
             'phase' => 'abgleich',
@@ -221,7 +230,6 @@ final readonly class Abgleich
         $sperre = $this->jobs->sperren($job->id, self::SPERRE_SEKUNDEN) ?? throw new ImportLaeuftBereits();
         $job = $this->jobs->finde($job->id) ?? throw new ImportNichtMoeglich('Es läuft kein Abgleich.');
         $state = $job->state;
-        $geloescht = [];
 
         try {
             $datei = $this->datei($job) ?? throw new ImportNichtMoeglich('Die hochgeladene Datei gibt es nicht mehr. Bitte den Abgleich abbrechen und die Datei noch einmal hochladen.');
@@ -234,7 +242,12 @@ final readonly class Abgleich
             $offset = (int) ($state['offset'] ?? 0);
             $teil = array_slice($ops, $offset, self::SCHRITT);
             $datum = Mitglied::datum(is_string($state['austrittsdatum'] ?? null) ? $state['austrittsdatum'] : null);
-            [$zaehler, $geloescht] = $this->ausfuehren($teil, $datei, $datum, $job->userId);
+            [$zaehler, $dateien] = $this->ausfuehren($teil, $datei, $datum, $job->userId, $ip);
+            // The deletions are committed: their files go now, before the
+            // position is saved - a repeated step would not find them again.
+            foreach ($dateien as $blobId) {
+                $this->ablage->loeschen($blobId);
+            }
             foreach ($zaehler as $name => $anzahl) {
                 $state[$name] = (int) ($state[$name] ?? 0) + $anzahl;
             }
@@ -261,62 +274,78 @@ final readonly class Abgleich
             throw $fehler;
         }
 
-        foreach ($geloescht as [$id, $nummer, $blobIds]) {
-            foreach ($blobIds as $blobId) {
-                $this->ablage->loeschen($blobId);
-            }
-            $this->audit->protokollieren(AuditAktion::MitgliedGeloescht, $job->userId, 'mitglied', $id, ['mitgliedsnummer' => $nummer, 'anlass' => 'abgleich'], $ip);
+        if (($state['phase'] ?? '') !== 'fertig') {
+            return self::stand($state);
         }
+        $this->ablage->loeschen((int) ($state['blob_id'] ?? 0));
+        $this->protokollieren($job, $state, $ip);
 
-        if (($state['phase'] ?? '') === 'fertig') {
-            $this->ablage->loeschen((int) ($state['blob_id'] ?? 0));
-            $this->audit->protokollieren(
-                AuditAktion::AbgleichDurchgefuehrt,
-                $job->userId,
-                'import',
-                $job->id,
-                array_map(static fn(string $name): int => (int) ($state[$name] ?? 0), array_combine(self::ZAEHLER, self::ZAEHLER)),
-                $ip,
-            );
-        }
-
-        return self::stand($state);
+        // Only the request that finished the chain says so; the summary is shown once.
+        return [...self::stand($state), 'abgeschlossen' => true];
     }
 
-    /** Drops the upload (or a started chain) and its file; what a started chain already did stays. */
-    public function verwerfen(): void
+    /**
+     * Drops the upload (or a started chain) and its file. What a started
+     * chain already did stays, and the audit log records it as a
+     * reconciliation that was cancelled.
+     */
+    public function verwerfen(?string $ip = null): void
     {
         $job = $this->aktuellerJob();
         if ($job === null || $job->status === JobStatus::Fertig) {
             return;
         }
-        $this->ablage->loeschen((int) ($job->state['blob_id'] ?? 0));
-        $this->jobs->loeschen($job->id);
+        $this->entfernen($job, $ip);
     }
 
     /** Removes every reconciliation, finished ones included, with its file. */
     private function allesVerwerfen(): void
     {
         while (($job = $this->aktuellerJob()) !== null) {
-            $this->ablage->loeschen((int) ($job->state['blob_id'] ?? 0));
-            $this->jobs->loeschen($job->id);
+            $this->entfernen($job, null);
         }
+    }
+
+    private function entfernen(Job $job, ?string $ip): void
+    {
+        if ($job->status !== JobStatus::Fertig && ($job->state['phase'] ?? '') === 'abgleich' && (int) ($job->state['offset'] ?? 0) > 0) {
+            $this->protokollieren($job, [...$job->state, 'abgebrochen' => true], $ip);
+        }
+        $this->ablage->loeschen((int) ($job->state['blob_id'] ?? 0));
+        $this->jobs->loeschen($job->id);
+    }
+
+    /**
+     * The audit entry of a reconciliation: numbers only.
+     *
+     * @param array<string, mixed> $state
+     */
+    private function protokollieren(Job $job, array $state, ?string $ip): void
+    {
+        $details = [];
+        foreach (self::ZAEHLER as $name) {
+            $details[$name] = (int) ($state[$name] ?? 0);
+        }
+        if (($state['abgebrochen'] ?? false) === true) {
+            $details['abgebrochen'] = true;
+        }
+        $this->audit->protokollieren(AuditAktion::AbgleichDurchgefuehrt, $job->userId, 'import', $job->id, $details, $ip);
     }
 
     /**
      * Carries out the operations of one step in one transaction.
      *
      * @param list<array{string, int}> $teil
-     * @return array{array<string, int>, list<array{int, int, list<int>}>} counters; deleted members (id, number, proof files)
+     * @return array{array<string, int>, list<int>} counters; the proof files of deleted members
      */
-    private function ausfuehren(array $teil, ImportDatei $datei, ?\DateTimeImmutable $austrittsdatum, ?int $userId): array
+    private function ausfuehren(array $teil, ImportDatei $datei, ?\DateTimeImmutable $austrittsdatum, ?int $userId, ?string $ip): array
     {
         $eintraege = [];
         foreach ($datei->eintraege as $eintrag) {
             $eintraege[$eintrag->mitglied->mitgliedsnummer] = $eintrag;
         }
 
-        return Zeilen::transaktion($this->pdo, function () use ($teil, $eintraege, $datei, $austrittsdatum, $userId): array {
+        return Zeilen::transaktion($this->pdo, function () use ($teil, $eintraege, $datei, $austrittsdatum, $userId, $ip): array {
             $zaehler = array_fill_keys(self::ZAEHLER, 0);
             $geloescht = [];
             $anlass = VersionsAnlass::abgleich();
@@ -346,7 +375,7 @@ final readonly class Abgleich
                             $zaehler['uebersprungen']++;
                             break;
                         }
-                        $ziel = Mitglied::ausDaten(AbgleichVergleich::zielDaten($eintrag, $this->familienId($eintrag, $datei)), $vorhanden);
+                        $ziel = Mitglied::ausDaten(AbgleichVergleich::zielDaten($eintrag, $this->familienId($eintrag, $datei), $vorhanden, $datei->spalten), $vorhanden);
                         $this->mitglieder->speichern($ziel, $anlass, $userId);
                         $zaehler['geaendert']++;
                         break;
@@ -357,8 +386,17 @@ final readonly class Abgleich
                             $zaehler['geloescht']++;
                             break;
                         }
-                        if ($this->beitraege->fuerMitglied((int) $vorhanden->id) === []) {
-                            $geloescht[] = [(int) $vorhanden->id, $nummer, $this->mitglieder->loeschen((int) $vorhanden->id)];
+                        if (!$this->beitraege->hatBeitrag((int) $vorhanden->id)) {
+                            $geloescht = [...$geloescht, ...$this->mitglieder->loeschen((int) $vorhanden->id)];
+                            // In the same transaction as the deletion, so neither goes without the other.
+                            $this->audit->protokollieren(
+                                AuditAktion::MitgliedGeloescht,
+                                $userId,
+                                'mitglied',
+                                (int) $vorhanden->id,
+                                ['mitgliedsnummer' => $nummer, 'anlass' => 'abgleich'],
+                                $ip,
+                            );
                             $zaehler['geloescht']++;
                             break;
                         }

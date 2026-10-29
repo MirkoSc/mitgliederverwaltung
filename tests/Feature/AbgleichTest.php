@@ -382,6 +382,44 @@ final class AbgleichTest extends AppTestCase
         self::assertSame(1, (int) $this->dienste->pdo()->query("SELECT COUNT(*) FROM familie WHERE import_schluessel = 'F9'")->fetchColumn());
     }
 
+    public function testACancelledChainKeepsWhatItDidAndIsRecordedInTheAuditLog(): void
+    {
+        $this->als(Rolle::Admin);
+        $this->erstimport();
+        $zeilen = [self::zeile(1, familie: 'F1;Familie Eins;zahler', beitrag: 'Familie'), self::zeile(2, familie: 'F1;;kind', beitrag: '')];
+        for ($nr = 100; $nr < 250; $nr++) {
+            $zeilen[] = self::zeile($nr);
+        }
+        $this->hochladen(self::csv(...$zeilen));
+        $this->post('/admin/import/abgleich/starten', ['neu' => implode(',', range(100, 249))]);
+        $this->post('/admin/import/abgleich/schritt');
+        self::assertStringContainsString('Abgleich fortsetzen', $this->get('/admin')->body);
+
+        $this->post('/admin/import/abgleich/verwerfen');
+
+        self::assertNull($this->abgleich()->aktuellerJob());
+        self::assertSame(106, $this->anzahlZeilen('mitglied'), 'the first step stays');
+        $eintrag = $this->dienste->audit()->neueste(1)[0];
+        self::assertSame('abgleich.durchgefuehrt', $eintrag->action);
+        self::assertStringContainsString('"neu":100', $eintrag->details);
+        self::assertStringContainsString('"abgebrochen":true', $eintrag->details);
+    }
+
+    public function testAFinishedChainAnswersAgainWithoutASecondSummary(): void
+    {
+        $this->als(Rolle::Admin);
+        $this->erstimport();
+        $this->hochladen(self::spaetereDatei());
+        $letzte = $this->uebernehmen(['neu' => '8']);
+        self::assertTrue($letzte['abgeschlossen']);
+
+        $nochmal = $this->json($this->post('/admin/import/abgleich/schritt'));
+
+        self::assertTrue($nochmal['fertig']);
+        self::assertArrayNotHasKey('abgeschlossen', $nochmal);
+        self::assertSame(1, $nochmal['neu']);
+    }
+
     public function testADiscardedReconciliationIsGoneWithItsFile(): void
     {
         $this->als(Rolle::Admin);

@@ -27,6 +27,12 @@ final readonly class AbgleichVergleich
     /** Marks the family of a line whose key does not exist yet: it will be created. */
     public const string NEUE_FAMILIE = 'neu:';
 
+    /** The column of import.csv behind a field of Mitglied::daten() where the names differ. */
+    private const array SPALTE = [
+        'beitragsart_id' => 'beitragsart',
+        'familie_id' => 'familie',
+    ];
+
     /**
      * @param list<ImportEintrag> $neu by member number
      * @param list<AbgleichFehlt> $fehlt by member number
@@ -64,7 +70,7 @@ final readonly class AbgleichVergleich
                 $neu[$nummer] = $eintrag;
                 continue;
             }
-            $felder = self::unterschiede($vorhanden->daten(), self::zielDaten($eintrag, self::familieDerZeile($eintrag, $familien)));
+            $felder = self::unterschiede($vorhanden->daten(), self::zielDaten($eintrag, self::familieDerZeile($eintrag, $familien), $vorhanden, $datei->spalten));
             if ($felder === []) {
                 $unveraendert++;
             } else {
@@ -97,19 +103,34 @@ final readonly class AbgleichVergleich
      * The state a line of the file asks for, in the shape of
      * Mitglied::daten() - what a member is compared with and, through
      * Mitglied::ausDaten(), saved as. The IBAN and BIC are normalised as the
-     * repository stores them, so a different spelling is no change.
+     * repository stores them, so a different spelling is no change. A
+     * column the file does not have at all says nothing: the member keeps
+     * that value (with $spalten [] every column counts as present).
      *
      * @param int|string|null $familie the family's id; NEUE_FAMILIE . key for one not created yet
+     * @param list<string> $spalten the columns of the format the file has (ImportDatei::$spalten)
      * @return array<string, mixed>
      */
-    public static function zielDaten(ImportEintrag $eintrag, int|string|null $familie): array
+    public static function zielDaten(ImportEintrag $eintrag, int|string|null $familie, ?Mitglied $vorhanden = null, array $spalten = []): array
     {
-        return [
+        $daten = [
             ...$eintrag->mitglied->daten(),
             'iban' => Iban::normalisieren($eintrag->mitglied->iban),
             'bic' => strtoupper((string) preg_replace('/\s+/u', '', $eintrag->mitglied->bic)),
             'familie_id' => $familie,
         ];
+        if ($vorhanden === null || $spalten === []) {
+            return $daten;
+        }
+        $bisher = $vorhanden->daten();
+        $vorhandeneSpalten = array_flip($spalten);
+        foreach (array_keys($daten) as $feld) {
+            if (!isset($vorhandeneSpalten[self::SPALTE[$feld] ?? $feld])) {
+                $daten[$feld] = $bisher[$feld] ?? null;
+            }
+        }
+
+        return $daten;
     }
 
     /**

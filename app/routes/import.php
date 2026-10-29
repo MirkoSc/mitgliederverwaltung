@@ -27,7 +27,7 @@ return static function (Routen $routen): void {
     $routen->post('/admin/import/verwerfen', $import, static fn(Request $r): Response => $controller()->verwerfen());
     $routen->post('/admin/import/abgleich/starten', $import->alsApi(), static fn(Request $r): ResponseInterface => $controller()->abgleichStarten($r));
     $routen->post('/admin/import/abgleich/schritt', $import->alsApi(), static fn(Request $r): ResponseInterface => $controller()->abgleichSchritt($r));
-    $routen->post('/admin/import/abgleich/verwerfen', $import, static fn(Request $r): Response => $controller()->abgleichVerwerfen());
+    $routen->post('/admin/import/abgleich/verwerfen', $import, static fn(Request $r): Response => $controller()->abgleichVerwerfen($r));
     $routen->get(ImportController::PFAD_LEEREN, $import, static fn(Request $r): Response => $controller()->leerenFragen());
     $routen->post(ImportController::PFAD_LEEREN, $import, static fn(Request $r): Response => $controller()->leeren($r));
 };

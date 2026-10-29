@@ -39,7 +39,11 @@ final class AbgleichVergleichTest extends TestCase
         return $datei;
     }
 
-    /** A member as the first import would have saved it from the line "nr;Name<nr>;Vorname<nr>;Altstadt;1;09;Aktiv;;;;;". */
+    /**
+     * A member as the first import would have saved it from the line "nr;Name<nr>;Vorname<nr>;Altstadt;1;09;Aktiv;;;;;".
+     *
+     * @param array<string, mixed> $werte
+     */
     private static function importiert(int $nr, array $werte = []): Mitglied
     {
         return new Mitglied(
@@ -118,6 +122,25 @@ final class AbgleichVergleichTest extends TestCase
         $vergleich = AbgleichVergleich::aus($datei, [self::importiert(1, ['iban' => 'DE02100208900014569054', 'bic' => 'BFSWDE33XXX'])], [], []);
 
         self::assertSame(1, $vergleich->unveraendert);
+    }
+
+    public function testAColumnMissingFromTheFileIsNoChange(): void
+    {
+        // No columns ort, beitragsart, familie: what the member has there stays.
+        $datei = ImportLeser::lesen("mitgliedsnummer;nachname;vorname;aktiv;abteilungen\n1;Name1;Vorname1;1;09\n2;Anders;Vorname2;1;09\n", new ImportStammdaten(
+            [new Abteilung('Fußball', '09', 20, true, 2)],
+            [],
+            [],
+        ));
+        $bestand = [self::importiert(1, ['familieId' => 11, 'familieRolle' => FamilienRolle::Zahler]), self::importiert(2)];
+
+        $vergleich = AbgleichVergleich::aus($datei, $bestand, [], []);
+
+        self::assertSame(1, $vergleich->unveraendert);
+        self::assertSame(['nachname' => ['Name2', 'Anders']], $vergleich->geaendert[0]->felder);
+        $ziel = AbgleichVergleich::zielDaten($vergleich->geaendert[0]->eintrag, null, $bestand[1], $datei->spalten);
+        self::assertSame('Altstadt', $ziel['ort']);
+        self::assertSame(1, $ziel['beitragsart_id']);
     }
 
     public function testFamiliesAreMatchedByKeyAndANewKeyIsANewFamily(): void

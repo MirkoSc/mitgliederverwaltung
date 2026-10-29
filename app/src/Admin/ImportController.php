@@ -152,16 +152,16 @@ final readonly class ImportController
             return Response::json(['fehler' => 'Der Schritt ist fehlgeschlagen. Bitte noch einmal versuchen – bereits Übernommenes wird nicht doppelt ausgeführt.'], 500);
         }
 
-        if ($stand['fertig'] === true) {
+        if (($stand['abgeschlossen'] ?? false) === true) {
             $this->dienste->session->flash(self::zusammenfassung($stand));
         }
 
         return Response::json($stand);
     }
 
-    public function abgleichVerwerfen(): Response
+    public function abgleichVerwerfen(Request $request): Response
     {
-        $this->abgleich->verwerfen();
+        $this->abgleich->verwerfen($request->ip);
         $this->dienste->session->flash('Der Abgleich ist abgebrochen und die hochgeladene Datei gelöscht.');
 
         return Response::redirect(self::ZIEL);

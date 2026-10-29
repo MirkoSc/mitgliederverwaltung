@@ -189,6 +189,51 @@ Bestand nicht leer ist. Zugeordnet wird über die **Mitgliedsnummer**.
   y ausgetreten, z geändert) und ein Audit-Eintrag.
 - Alle Häkchen-Abschnitte haben „alle an/aus".
 
+**Umsetzung Abgleich (#34):** derselbe Abschnitt „Import“ und dieselbe
+Upload-Route `/admin/import/hochladen` – bei leerem Bestand Erstimport,
+sonst Abgleich (Dienst `App\Service\Import\Abgleich`, Routen
+`/admin/import/abgleich/*` in `app/routes/import.php`, Seite
+`app/views/admin/einstellungen/import-abgleich.php`, Skript
+`public/js/abgleich.js`).
+- Datei wie beim Erstimport verschlüsselt als Blob (`ImportDateiAblage`,
+  von beiden genutzt); Job-Typ `abgleich`, `phase` = `vorschau` |
+  `abgleich` | `fertig`. Ein neuer Upload verwirft frühere Abgleiche samt
+  Datei; „Bestand leeren“ ebenso. Eine Datei mit Fehlern zeigt nur die
+  Fehler, abgeglichen wird nur eine fehlerfreie.
+- Einteilung (`AbgleichVergleich`, ohne Datenbank): verglichen wird der
+  ganze Stand von `Mitglied::daten()` mit dem Stand, den die Zeile
+  verlangt (IBAN/BIC normalisiert wie gespeichert). Eine Spalte, die der
+  Datei ganz fehlt, sagt nichts: der Wert in der Anwendung bleibt (und ist
+  keine Änderung). Familie: Zeile ohne
+  `familie` = keine Familie; vorhandener Schlüssel = diese Familie;
+  unbekannter Schlüssel = neue Familie (Name aus `familie_name`). Den
+  Familiennamen selbst gleicht der Abgleich nicht ab. „Bereits
+  ausgetreten“ heißt: Austrittsdatum gesetzt (auch ein künftiges). Ein von
+  Hand angelegtes Mitglied, das in der Datei steht, kann unter „Geändert“
+  erscheinen; es behält beim Übernehmen seine Herkunft.
+- Häkchen: je Zeile „Anlegen“ / „Austreten“ (+ „ganz löschen“) /
+  „Übernehmen“; ohne Jahresbeiträge ist „ganz löschen“ angeboten, sonst
+  steht dort „nicht möglich, hat Jahresbeiträge“. Das Skript schickt je
+  Abschnitt eine kommagetrennte Liste von Mitgliedsnummern (tausende
+  Einzelfelder liefen in `max_input_vars`). Der Server teilt beim Start
+  neu ein und nimmt nur Nummern, die noch in ihrem Abschnitt stehen;
+  „ganz löschen“ eines Mitglieds mit Jahresbeiträgen lehnt den Start ab.
+  Das Austrittsdatum ist nur nötig, wenn jemand austreten soll.
+- Schrittkette: die Auswahl steht als Liste von (Art, Nummer) im Job,
+  100 je Schritt in einer Transaktion, Reihenfolge neu → geändert →
+  austreten → löschen. Jede Art ist wiederholbar (vorhandene Nummer wird
+  nicht doppelt angelegt, Speichern ohne Änderung schreibt keine Version,
+  gelöscht ist gelöscht). Bekommt ein zum Löschen gewähltes Mitglied
+  zwischendurch einen Jahresbeitrag, tritt es stattdessen aus. Neue
+  Mitglieder tragen Herkunft `import`. Ein angefangener Abgleich lässt sich
+  fortsetzen oder abbrechen; abgebrochen bleibt, was schon übernommen ist
+  (Audit mit `abgebrochen`).
+- Danach: Zusammenfassung als Meldung („x neu, y ausgetreten, z geändert“,
+  ggf. gelöscht/übersprungen), Audit `abgleich.durchgefuehrt` mit den
+  Zahlen, je gelöschtem Mitglied zusätzlich `mitglied.geloescht` (in
+  derselben Transaktion wie das Löschen); die Datei
+  wird gelöscht, die Job-Zeile behält nur die Zähler („Letzter Abgleich“).
+
 ## Pflicht-Tests
 
 Importformat: gültige Datei, jede Fehlerart (fehlende Nummer, doppelte

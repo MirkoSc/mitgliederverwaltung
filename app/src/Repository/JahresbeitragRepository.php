@@ -65,6 +65,14 @@ final readonly class JahresbeitragRepository
         return array_fill_keys(array_map(intval(...), $ids), true);
     }
 
+    public function hatBeitrag(int $mitgliedId): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT EXISTS(SELECT 1 FROM jahresbeitrag WHERE mitglied_id = ?)');
+        $stmt->execute([$mitgliedId]);
+
+        return (int) $stmt->fetchColumn() === 1;
+    }
+
     public function finde(int $id): ?Jahresbeitrag
     {
         return $this->mehrere('SELECT * FROM jahresbeitrag WHERE id = ?', [$id])[0] ?? null;
