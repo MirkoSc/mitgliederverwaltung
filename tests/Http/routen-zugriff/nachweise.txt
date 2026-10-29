@@ -1,0 +1,4 @@
+# app/routes/nachweise.php - proofs of a member (07 section 9).
+POST /app/mitglieder/{id:[0-9]+}/nachweise -> mitglieder.bearbeiten
+GET /app/mitglieder/{id:[0-9]+}/nachweise/{nachweis:[0-9]+}/datei -> mitglieder.sehen
+POST /app/mitglieder/{id:[0-9]+}/nachweise/{nachweis:[0-9]+}/loeschen -> mitglieder.loeschen

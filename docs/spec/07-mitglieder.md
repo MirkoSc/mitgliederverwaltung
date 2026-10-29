@@ -93,6 +93,12 @@ Je Mitglied 0..n Nachweise: Art (`rente`/`studium`/`ausbildung`/
 und **am** – automatisch gesetzt, nicht änderbar. Nachweise werden nicht
 versioniert (sie sind selbst ein Verlauf); löschen nur Admin.
 
+Die Datei (PDF, JPEG, PNG, WebP, höchstens 10 MB; der Typ wird am Inhalt
+erkannt) kommt mit dem Formular (multipart), nicht als Chunk-Upload: ein Scan
+ist klein, das Formular geht ohne JavaScript. Der Download ist ein gestreamter
+Anhang (`Cache-Control: no-store`). Gelöscht wird die Datei mit dem Nachweis
+und mit dem Mitglied.
+
 ## 6. Hinweise
 
 Hinweise sind **berechnet**, nie gespeichert: eine reine Funktion
@@ -158,6 +164,15 @@ Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
 - **Zurückholen**: übernimmt die Werte der gewählten Version als **neue**
   Version hinten. Gibt es die Familie nicht mehr, bleibt die Familie leer
   (Hinweis); dasselbe für gelöschte Abteilungen/Funktionen.
+- Umsetzung (#22): `VerlaufReiter` (Reiter `verlauf`, Template
+  `mitglied/verlauf`) zeigt die Versionen mit „alt → neu" je geändertem
+  Feld (`VerlaufAenderungen`, Namen aus den Versionen selbst; die erste
+  Version zeigt keine Änderungen). „Zurückholen" ist
+  `POST /app/mitglieder/{id}/verlauf/{nr}/zurueckholen`
+  (`mitglieder.bearbeiten`, `VerlaufController`), ruft
+  `MitgliedRepository::wiederherstellen()`, schreibt einen Audit-Eintrag
+  (nur ID/Nummern) und zeigt die Hinweise als Meldung.
+
 - Nicht versioniert: Jahresbeiträge/Einzüge (08), Nachweise (§5),
   Ehrungs-Vermerke (09).
 
