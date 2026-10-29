@@ -134,12 +134,13 @@ final readonly class Einzuege
             throw new EinzugNichtMoeglich('Bitte wählen Sie mindestens einen Beitrag für den Einzug aus.');
         }
 
-        $mitglieder = $this->mitgliederNachId();
         $blob = null;
         try {
-            $einzug = Zeilen::transaktion($this->pdo, function () use ($ids, $faelligAm, $von, $jetzt, $verein, $mitglieder, &$blob): Einzug {
+            $einzug = Zeilen::transaktion($this->pdo, function () use ($ids, $faelligAm, $von, $jetzt, $verein, &$blob): Einzug {
                 $kandidaten = [];
                 $beitraege = $this->beitraege->mitIds($ids, zumAendern: true);
+                // Read after the lock, so the file carries the members as they are now.
+                $mitglieder = $this->mitgliederNachId();
                 foreach ($ids as $id) {
                     $beitrag = $beitraege[$id] ?? null;
                     $mitglied = $beitrag === null ? null : ($mitglieder[$beitrag->mitgliedId] ?? null);
@@ -383,7 +384,7 @@ final readonly class Einzuege
             return new EinzugKandidat($beitrag, $mitglied, 'IBAN ungültig (Prüfziffer)', true);
         }
         if (!SepaText::istReferenz(self::mandatsreferenz($mitglied))) {
-            return new EinzugKandidat($beitrag, $mitglied, 'Mandatsreferenz unbrauchbar (Zeichen oder Länge)');
+            return new EinzugKandidat($beitrag, $mitglied, 'Mandatsreferenz unbrauchbar (höchstens 35 Zeichen: A–Z, 0–9, Leerzeichen und / - ? : ( ) . , \' +)');
         }
         $mandatsdatum = self::mandatsdatum($mitglied, $verein);
         if ($mandatsdatum === null) {
@@ -416,9 +417,14 @@ final readonly class Einzuege
         );
     }
 
+    /**
+     * As entered (or the member number) and never rewritten: the debtor's
+     * bank matches it against the signed mandate. One that does not fit the
+     * file keeps the fee out of the run instead (kandidat()).
+     */
     private static function mandatsreferenz(Mitglied $mitglied): string
     {
-        return SepaText::bereinigen($mitglied->effektiveMandatsreferenz(), 35);
+        return $mitglied->effektiveMandatsreferenz();
     }
 
     private static function mandatsdatum(Mitglied $mitglied, Vereinsdaten $verein): ?\DateTimeImmutable
@@ -435,9 +441,9 @@ final readonly class Einzuege
     /** The creditor: account holder, else the club name (11 section 3). */
     private static function glaeubiger(Vereinsdaten $verein): string
     {
-        $name = $verein->wert('kontoinhaber') !== '' ? $verein->wert('kontoinhaber') : $verein->wert('vereinsname');
+        $kontoinhaber = SepaText::bereinigen($verein->wert('kontoinhaber'), Pain008::NAME_LAENGE);
 
-        return SepaText::bereinigen($name, Pain008::NAME_LAENGE);
+        return $kontoinhaber !== '' ? $kontoinhaber : SepaText::bereinigen($verein->wert('vereinsname'), Pain008::NAME_LAENGE);
     }
 
     /** A BIC only when it has the right shape - otherwise the bank is found by IBAN. */

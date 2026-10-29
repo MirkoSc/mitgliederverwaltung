@@ -27,7 +27,6 @@
  * @var list<\App\Domain\Einzug> $einzuegeOffen
  * @var list<\App\Domain\Einzug> $einzuegeAlle
  * @var array<int, string|null> $einzugNamen
- * @var string $selbstKassierenAdresse
  * @var string|null $csrf
  */
 

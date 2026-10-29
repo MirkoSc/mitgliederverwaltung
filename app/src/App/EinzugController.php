@@ -11,7 +11,6 @@ use App\Http\Request;
 use App\Http\Response;
 use App\Http\ResponseInterface;
 use App\Http\StreamResponse;
-use App\Listen\Listen;
 use App\Repository\BenutzerRepository;
 use App\Repository\EinzugRepository;
 use App\Repository\JahresbeitragRepository;
@@ -40,9 +39,6 @@ final readonly class EinzugController
 
     /** The checkbox list arrives complete only with this field, sent last. */
     public const string VOLLSTAENDIG = 'auswahl_vollstaendig';
-
-    /** The key the list "Selbst kassieren" (09, #31) is expected under. */
-    private const string LISTE_SELBST_KASSIEREN = 'selbst-kassieren';
 
     public function __construct(private Dienste $dienste, private Einzuege $service, private EinzugRepository $einzuege)
     {
@@ -76,14 +72,13 @@ final readonly class EinzugController
      */
     public function seitenDaten(): array
     {
-        $einzuege = $this->einzuege->alle();
+        $einzuege = $this->einzuege->alle(mitDaten: false);
 
         return [
             'einzugAuswahl' => $this->service->zusammenstellen(),
             'einzuegeOffen' => array_values(array_filter($einzuege, static fn(Einzug $e): bool => !$e->abgeschlossen())),
             'einzuegeAlle' => $einzuege,
             'einzugNamen' => $this->namen($einzuege),
-            'selbstKassierenAdresse' => $this->selbstKassierenAdresse(),
         ];
     }
 
@@ -121,15 +116,20 @@ final readonly class EinzugController
             Geld::anzeigen($einzug->summeCent),
         );
         $fruehestens = Bankarbeitstage::naechster(self::heute());
-        if ($faellig < $fruehestens) {
-            $session->flash($meldung . sprintf(
-                ' Achtung: Die Fälligkeit %s liegt vor dem nächsten Bankarbeitstag (%s) – nimmt die Bank die Datei so nicht an, verwerfen Sie den Einzug und erzeugen Sie ihn mit einem späteren Datum neu.',
+        $achtung = match (true) {
+            $faellig < $fruehestens => sprintf(
+                'Die Fälligkeit %s liegt vor dem nächsten Bankarbeitstag (%s).',
                 Datum::anzeigen($faellig),
                 Datum::anzeigen($fruehestens),
-            ), FlashArt::Warnung);
-        } else {
-            $session->flash($meldung);
-        }
+            ),
+            !Bankarbeitstage::istBankarbeitstag($faellig) => sprintf('Der %s ist kein Bankarbeitstag.', Datum::anzeigen($faellig)),
+            default => null,
+        };
+        $session->flash(
+            $achtung === null ? $meldung : $meldung . ' Achtung: ' . $achtung
+                . ' Nimmt die Bank die Datei so nicht an, verwerfen Sie den Einzug und erzeugen Sie ihn mit einem anderen Datum neu.',
+            $achtung === null ? FlashArt::Ok : FlashArt::Warnung,
+        );
 
         // Its own page: the message on top, the download right below it.
         return Response::redirect(self::adresse((int) $einzug->id));
@@ -253,15 +253,6 @@ final readonly class EinzugController
         }
 
         return $namen;
-    }
-
-    /** The list "Selbst kassieren" once it exists (#31), else the page "Listen". */
-    private function selbstKassierenAdresse(): string
-    {
-        $konto = $this->dienste->view->konto();
-        $liste = $konto === null ? null : Listen::registry()->finde($this->dienste, self::LISTE_SELBST_KASSIEREN, $konto);
-
-        return $liste === null ? Navigation::LISTEN : Navigation::LISTEN . '/' . self::LISTE_SELBST_KASSIEREN;
     }
 
     private function nichtGefunden(string $meldung = 'Diesen Einzug gibt es nicht.'): Response

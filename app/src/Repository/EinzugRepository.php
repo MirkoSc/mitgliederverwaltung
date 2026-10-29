@@ -88,14 +88,21 @@ final readonly class EinzugRepository
 
     /**
      * The archive: every run, discarded ones included, newest first.
+     * $mitDaten false leaves out the transactions (`daten` reads as []) -
+     * the archive table needs only the head of each run, and `daten` grows
+     * with every fee ever collected.
      *
      * @return list<Einzug>
      */
-    public function alle(): array
+    public function alle(bool $mitDaten = true): array
     {
+        $spalten = $mitDaten
+            ? '*'
+            : "id, status, faellig_am, erstellt_von, erstellt_am, bestaetigt_am, bestaetigt_von, anzahl, summe_cent, msg_id, datei_blob_id, '[]' AS daten";
+
         return array_map(
             self::einzug(...),
-            $this->pdo->query('SELECT * FROM einzug ORDER BY erstellt_am DESC, id DESC')->fetchAll(\PDO::FETCH_ASSOC),
+            $this->pdo->query('SELECT ' . $spalten . ' FROM einzug ORDER BY erstellt_am DESC, id DESC')->fetchAll(\PDO::FETCH_ASSOC),
         );
     }
 

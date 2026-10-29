@@ -13,7 +13,6 @@
  * @var \App\Service\Beitraege\EinzugAuswahl $einzugAuswahl
  * @var list<\App\Domain\Einzug> $einzuegeOffen
  * @var array<int, string|null> $einzugNamen
- * @var string $selbstKassierenAdresse
  * @var string|null $csrf
  */
 
@@ -104,11 +103,21 @@ $einzugJahre = $einzugAuswahl->jahre();
     <?php endif; ?>
 
     <?php if ($einzugAuswahl->nichtAuswaehlbar !== []): ?>
-        <?php $einzugOhne = count($einzugAuswahl->nichtAuswaehlbar); ?>
+        <?php
+        $einzugOhne = count($einzugAuswahl->nichtAuswaehlbar);
+        $einzugSelbst = count(array_filter($einzugAuswahl->nichtAuswaehlbar, static fn($k): bool => $k->selbstKassieren));
+        ?>
         <details class="einzug-klappe einzug-ausnahmen">
             <summary><?= $einzugOhne === 1 ? '1 offener Beitrag lässt' : e($einzugOhne) . ' offene Beiträge lassen' ?> sich nicht per Lastschrift einziehen</summary>
-            <p class="einzug-text">Selbstzahler und Beiträge ohne gültige IBAN stehen in der Liste
-                <a href="<?= e($selbstKassierenAdresse) ?>">„Selbst kassieren“</a>. Fehlt eine Angabe zum Mandat, ergänzen Sie sie am Mitglied.</p>
+            <p class="einzug-text">
+                <?php if ($einzugSelbst > 0): ?>
+                    Selbstzahler und Beiträge ohne gültige IBAN kassieren Sie selbst – sie stehen auch auf der Seite
+                    <a href="<?= e(Navigation::LISTEN) ?>">Listen</a> unter „Selbst kassieren“.
+                <?php endif; ?>
+                <?php if ($einzugSelbst < $einzugOhne): ?>
+                    Fehlt eine Angabe zum Mandat, ergänzen Sie sie am Mitglied; danach lässt sich der Beitrag einziehen.
+                <?php endif; ?>
+            </p>
             <div class="tabelle-rahmen">
                 <table class="liste">
                     <caption><?= $einzugOhne === 1 ? '1 Beitrag' : e($einzugOhne) . ' Beiträge' ?>, nach Namen</caption>

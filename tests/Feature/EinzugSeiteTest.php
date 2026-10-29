@@ -188,7 +188,7 @@ final class EinzugSeiteTest extends AppTestCase
         self::assertStringContainsString('2 offene Beiträge lassen sich nicht per Lastschrift einziehen', $seite);
         self::assertStringContainsString('zahlt selbst', $seite);
         self::assertStringContainsString('keine IBAN', $seite);
-        self::assertStringContainsString('„Selbst kassieren“', $seite);
+        self::assertStringContainsString('unter „Selbst kassieren“', $seite);
         self::assertSame(1, substr_count($seite, 'name="beitrag[]"'), 'only the collectable fee has a checkbox');
         self::assertStringContainsString('Noch kein Einzug erzeugt.', $seite);
         // The tick list arrives complete only with the field after it.
@@ -267,6 +267,17 @@ final class EinzugSeiteTest extends AppTestCase
 
         self::assertStringContainsString('Achtung: Die Fälligkeit', $this->flash());
         self::assertCount(1, $this->einzuege()->alle());
+
+        // A day without settlement (weekend, holiday) after the earliest day.
+        $tag = Bankarbeitstage::naechster(new \DateTimeImmutable('today'));
+        while (Bankarbeitstage::istBankarbeitstag($tag)) {
+            $tag = $tag->modify('+1 day');
+        }
+        $this->post('/app/beitraege/einzuege/' . $this->neuesterEinzug() . '/verwerfen', ['sicher' => '1']);
+        $this->flash();
+        $this->erzeugen([$beitrag], ['faellig_am' => $tag->format('Y-m-d')]);
+        self::assertStringContainsString('ist kein Bankarbeitstag', $this->flash());
+        self::assertCount(2, $this->einzuege()->alle());
     }
 
     public function testConfirmingNeedsTheTickThenPaysTheFees(): void

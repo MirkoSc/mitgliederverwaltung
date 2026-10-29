@@ -176,6 +176,7 @@ final class EinzuegeTest extends DatabaseTestCase
         $ohne = $this->beitrag($this->mitglied('Ohnesorg', ['iban' => '']));
         $falsch = $this->beitrag($this->mitglied('Falk', ['iban' => 'DE02120300000000202052']));
         $ohneMandat = $this->beitrag($this->mitglied('Neumann', ['eintrittsdatum' => null]));
+        $schlechteReferenz = $this->beitrag($this->mitglied('Mandel', ['mandatsreferenz' => 'MÜ-0815']));
         $bezahlt = $this->beitrag($this->mitglied('Zahl'));
         $schonBezahlt = $this->beitraege->finde($bezahlt);
         self::assertNotNull($schonBezahlt);
@@ -193,7 +194,9 @@ final class EinzuegeTest extends DatabaseTestCase
         foreach ($auswahl->nichtAuswaehlbar as $k) {
             $gruende[(int) $k->beitrag->id] = [$k->grund, $k->selbstKassieren];
         }
-        self::assertSame([$falsch, $ohneMandat, $ohne, $selbst], array_keys($gruende), 'by name');
+        self::assertSame([$falsch, $schlechteReferenz, $ohneMandat, $ohne, $selbst], array_keys($gruende), 'by name');
+        self::assertStringStartsWith('Mandatsreferenz unbrauchbar', (string) $gruende[$schlechteReferenz][0], 'never rewritten - the bank matches it');
+        self::assertFalse($gruende[$schlechteReferenz][1]);
         self::assertSame(['zahlt selbst (Zahlart „selbst“)', true], $gruende[$selbst]);
         self::assertSame(['keine IBAN', true], $gruende[$ohne]);
         self::assertSame(['IBAN ungültig (Prüfziffer)', true], $gruende[$falsch]);
@@ -271,7 +274,7 @@ final class EinzuegeTest extends DatabaseTestCase
             'vorname' => 'Jürgen',
             'kontoinhaber' => 'Käthe Groß-Österreicher',
             'bic' => 'cobade ffxxx',
-            'mandatsreferenz' => 'MÜ-0815',
+            'mandatsreferenz' => 'MV-0815/A',
             'mandatsdatum' => new \DateTimeImmutable('2020-07-01'),
         ]));
         $ohne = $this->beitrag($this->mitglied('Weiß', ['vorname' => 'Åsa', 'iban' => self::BERT, 'eintrittsdatum' => null]));
@@ -286,7 +289,7 @@ final class EinzuegeTest extends DatabaseTestCase
         self::assertSame('NOTPROVIDED', $wert('//p:CdtrAgt/p:FinInstnId/p:Othr/p:Id'));
         self::assertSame('Kaethe Gross-Oesterreicher', $wert('//p:DrctDbtTxInf[1]/p:Dbtr/p:Nm'), 'the different account holder');
         self::assertSame('COBADEFFXXX', $wert('//p:DrctDbtTxInf[1]/p:DbtrAgt/p:FinInstnId/p:BICFI'));
-        self::assertSame('MUe-0815', $wert('//p:DrctDbtTxInf[1]/p:DrctDbtTx/p:MndtRltdInf/p:MndtId'));
+        self::assertSame('MV-0815/A', $wert('//p:DrctDbtTxInf[1]/p:DrctDbtTx/p:MndtRltdInf/p:MndtId'), 'as entered');
         self::assertSame('2020-07-01', $wert('//p:DrctDbtTxInf[1]/p:DrctDbtTx/p:MndtRltdInf/p:DtOfSgntr'));
         self::assertSame('Beitrag 2026 - Juergen Mueller (1001)', $wert('//p:DrctDbtTxInf[1]/p:RmtInf/p:Ustrd'), 'the member, not the account holder');
         self::assertSame('Asa Weiss', $wert('//p:DrctDbtTxInf[2]/p:Dbtr/p:Nm'));
@@ -473,6 +476,16 @@ final class EinzuegeTest extends DatabaseTestCase
         self::assertSame((string) $erster->id, $eintraege[0]->entityId);
         self::assertSame(['anzahl' => 1, 'summe_cent' => 8500], json_decode($eintraege[0]->details, true));
         self::assertTrue($audit->pruefen()->intakt());
+    }
+
+    public function testTheClubNameStandsInWhenTheAccountHolderHasNoUsableCharacters(): void
+    {
+        $this->vereinsdaten(['kontoinhaber' => '佐藤']);
+        $beitrag = $this->beitrag($this->mitglied('Albrecht'));
+
+        self::assertTrue($this->service->zusammenstellen()->moeglich());
+        $xml = $this->datei((int) $this->erzeugen([$beitrag])->id);
+        self::assertSame('TSV Beispielstadt 1899 e.V.', Pain008Test::xpath($xml)('//p:Cdtr/p:Nm'));
     }
 
     public function testTheRemittanceTemplateIsFilledAndCut(): void
