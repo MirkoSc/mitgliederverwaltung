@@ -17,6 +17,7 @@
  */
 
 use App\App\BeitraegeController;
+use App\App\EinzugController;
 use App\App\MitgliedController;
 use App\Domain\JahresbeitragStatus;
 use App\Domain\Zahlweise;
@@ -46,13 +47,14 @@ $versteckt = '<input type="hidden" name="_csrf" value="' . e($csrf ?? '') . '"><
     <?php endif; ?>
     <?php if ($beitrag->einzugId !== null): ?>
         <dt>Einzug</dt>
-        <dd>Nr. <?= e($beitrag->einzugId) ?></dd>
+        <dd><a href="<?= e(EinzugController::adresse($beitrag->einzugId)) ?>">Nr. <?= e($beitrag->einzugId) ?></a></dd>
     <?php endif; ?>
 </dl>
 
 <?php if ($beitrag->status === JahresbeitragStatus::ImEinzug): ?>
-    <p class="hinweis hinweis-info">Dieser Beitrag steckt im Einzug Nr. <?= e($beitrag->einzugId) ?>. Sobald die Bank
-        eingezogen hat, bestätigen Sie den Einzug auf der Seite Beiträge – dann ist er bezahlt. Wurde die Datei nicht
+    <p class="hinweis hinweis-info">Dieser Beitrag steckt im
+        <a href="<?= e(EinzugController::adresse((int) $beitrag->einzugId)) ?>">Einzug Nr. <?= e($beitrag->einzugId) ?></a>. Sobald die Bank
+        eingezogen hat, bestätigen Sie den Einzug – dann ist er bezahlt. Wurde die Datei nicht
         eingereicht, verwerfen Sie den Einzug; dann ist der Beitrag wieder offen.</p>
 <?php endif; ?>
 

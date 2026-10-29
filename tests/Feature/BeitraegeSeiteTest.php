@@ -124,17 +124,28 @@ final class BeitraegeSeiteTest extends AppTestCase
         $this->als(Rolle::Admin);
         $this->post("/app/beitraege/$bezahlt/bezahlt", ['zahlweise' => 'bar']);
 
-        $standard = $this->get('/app/beitraege', ['jahr' => '2026'])->body;
+        $standard = self::liste($this->get('/app/beitraege', ['jahr' => '2026'])->body);
         self::assertStringContainsString('Offenbach', $standard);
         self::assertStringNotContainsString('Zahlmann', $standard);
 
-        $alle = $this->get('/app/beitraege', ['jahr' => '2026', 'status' => 'alle'])->body;
+        $alle = self::liste($this->get('/app/beitraege', ['jahr' => '2026', 'status' => 'alle'])->body);
         self::assertStringContainsString('Offenbach', $alle);
         self::assertStringContainsString('Zahlmann', $alle);
         self::assertStringContainsString('/app/beitraege/' . $offen . '?zurueck=', $alle);
 
-        $nurBezahlt = $this->get('/app/beitraege', ['jahr' => '2026', 'status' => 'bezahlt'])->body;
+        $nurBezahlt = self::liste($this->get('/app/beitraege', ['jahr' => '2026', 'status' => 'bezahlt'])->body);
         self::assertStringNotContainsString('Offenbach', $nurBezahlt);
+    }
+
+    /** Only the year's list - the direct debit on the same page (#30) shows open fees of its own. */
+    private static function liste(string $seite): string
+    {
+        $anfang = strpos($seite, '<section class="beitraege-liste"');
+        self::assertNotFalse($anfang);
+        $ende = strpos($seite, '</section>', $anfang);
+        self::assertNotFalse($ende);
+
+        return substr($seite, $anfang, $ende - $anfang);
     }
 
     public function testPaidQuicklyFromTheListReturnsToTheList(): void
