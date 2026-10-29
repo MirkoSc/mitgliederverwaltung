@@ -22,25 +22,26 @@ use App\App\MitgliedController;
 use App\Service\Beitraege\Einzuege;
 use App\View\Navigation;
 
-$auswahl = $einzugAuswahl;
-$anzahl = count($auswahl->auswaehlbar);
-$jahre = $auswahl->jahre();
+// Own names only: this file runs inside beitraege/seite.php, whose variables
+// ($einzugAnzahl, $zeilen …) are still needed after it.
+$einzugAnzahl = count($einzugAuswahl->auswaehlbar);
+$einzugJahre = $einzugAuswahl->jahre();
 ?>
 <section class="abschnitt einzug" id="einzug" aria-labelledby="einzug-titel">
     <h2 id="einzug-titel">Einzug per Lastschrift</h2>
     <p class="einzug-text">Offene Beiträge auswählen und den Einzug erzeugen, die Lastschriftdatei herunterladen und im
         Online-Banking einreichen. Hat die Bank eingezogen, bestätigen Sie den Einzug – dann sind die Beiträge bezahlt.</p>
 
-    <?php if (!$auswahl->moeglich()): ?>
+    <?php if (!$einzugAuswahl->moeglich()): ?>
         <div class="hinweis hinweis-warnung">
             <p><strong>Noch keine Lastschriftdatei möglich.</strong> In den Vereinsdaten fehlt
-                <?= e(implode(', ', $auswahl->fehlendeVereinsdaten)) ?>.</p>
+                <?= e(implode(', ', $einzugAuswahl->fehlendeVereinsdaten)) ?>.</p>
             <p><a href="<?= e(Navigation::EINSTELLUNGEN) ?>#verein">Vereinsdaten in den Einstellungen ergänzen</a></p>
         </div>
     <?php endif; ?>
 
     <h3>Beiträge zusammenstellen</h3>
-    <?php if ($anzahl === 0): ?>
+    <?php if ($einzugAnzahl === 0): ?>
         <div class="leer">
             <p>Keine offenen Beiträge, die per Lastschrift eingezogen werden können.</p>
         </div>
@@ -48,17 +49,17 @@ $jahre = $auswahl->jahre();
         <form class="formular einzug-formular" method="post" action="<?= e(Navigation::BEITRAEGE) ?>/einzug">
             <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
             <ul class="beitragsjahr-stand">
-                <li><span><strong><?= e($anzahl) ?></strong> <?= $anzahl === 1 ? 'offener Beitrag' : 'offene Beiträge' ?> mit Lastschrift</span></li>
-                <li><span><strong><?= e(geld($auswahl->summeCent())) ?></strong> zusammen</span></li>
+                <li><span><strong><?= e($einzugAnzahl) ?></strong> <?= $einzugAnzahl === 1 ? 'offener Beitrag' : 'offene Beiträge' ?> mit Lastschrift</span></li>
+                <li><span><strong><?= e(geld($einzugAuswahl->summeCent())) ?></strong> zusammen</span></li>
             </ul>
-            <p class="einzug-text">Alle sind ausgewählt<?= count($jahre) > 1 ? ' (Beitragsjahre ' . e(implode(', ', $jahre)) . ')' : '' ?>.
+            <p class="einzug-text">Alle sind ausgewählt<?= count($einzugJahre) > 1 ? ' (Beitragsjahre ' . e(implode(', ', $einzugJahre)) . ')' : '' ?>.
                 Wählen Sie ab, was diesmal nicht eingezogen werden soll.</p>
 
-            <details class="einzug-klappe"<?= $anzahl <= 20 ? ' open' : '' ?>>
+            <details class="einzug-klappe"<?= $einzugAnzahl <= 20 ? ' open' : '' ?>>
                 <summary>Beiträge ansehen und abwählen</summary>
                 <div class="tabelle-rahmen">
                     <table class="liste">
-                        <caption><?= $anzahl === 1 ? '1 Beitrag' : e($anzahl) . ' Beiträge' ?>, nach Namen</caption>
+                        <caption><?= $einzugAnzahl === 1 ? '1 Beitrag' : e($einzugAnzahl) . ' Beiträge' ?>, nach Namen</caption>
                         <thead>
                             <tr>
                                 <th scope="col">Mitglied</th>
@@ -68,16 +69,16 @@ $jahre = $auswahl->jahre();
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($auswahl->auswaehlbar as $k): ?>
-                                <?php $id = (int) $k->beitrag->id; ?>
+                            <?php foreach ($einzugAuswahl->auswaehlbar as $kandidat): ?>
+                                <?php $einzugBeitragId = (int) $kandidat->beitrag->id; ?>
                                 <tr>
                                     <td class="liste-titel">
-                                        <label class="feld-haken"><input type="checkbox" name="beitrag[]" value="<?= e($id) ?>" checked>
-                                            <span><?= e($k->name()) ?><span class="nur-lesehilfe">: Beitrag <?= e($k->beitrag->jahr) ?> einziehen</span></span></label>
+                                        <label class="feld-haken"><input type="checkbox" name="beitrag[]" value="<?= e($einzugBeitragId) ?>" checked>
+                                            <span><?= e($kandidat->name()) ?><span class="nur-lesehilfe">: Beitrag <?= e($kandidat->beitrag->jahr) ?> einziehen</span></span></label>
                                     </td>
-                                    <td data-label="Nr."><span class="nummer"><?= e($k->mitglied->mitgliedsnummer) ?></span></td>
-                                    <td data-label="Jahr"><?= e($k->beitrag->jahr) ?></td>
-                                    <td data-label="Betrag" class="zahl"><?= e(geld($k->beitrag->betragCent)) ?></td>
+                                    <td data-label="Nr."><span class="nummer"><?= e($kandidat->mitglied->mitgliedsnummer) ?></span></td>
+                                    <td data-label="Jahr"><?= e($kandidat->beitrag->jahr) ?></td>
+                                    <td data-label="Betrag" class="zahl"><?= e(geld($kandidat->beitrag->betragCent)) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -87,30 +88,30 @@ $jahre = $auswahl->jahre();
 
             <div class="feld feld-kurz">
                 <label for="einzug-faellig">Fällig am</label>
-                <input type="date" id="einzug-faellig" name="faellig_am" value="<?= e($auswahl->vorschlagFaelligkeit->format('Y-m-d')) ?>" required aria-describedby="einzug-faellig-hilfe">
+                <input type="date" id="einzug-faellig" name="faellig_am" value="<?= e($einzugAuswahl->vorschlagFaelligkeit->format('Y-m-d')) ?>" required aria-describedby="einzug-faellig-hilfe">
                 <p class="feld-hinweis" id="einzug-faellig-hilfe">An diesem Tag bucht die Bank die Beiträge ab. Vorgeschlagen ist der
                     nächste Bankarbeitstag plus einen Tag, damit die Datei rechtzeitig bei der Bank ist.</p>
             </div>
-            <p class="feld-hinweis einzug-text">Verwendungszweck: „<?= e($auswahl->verwendungszweck) ?>“ –
+            <p class="feld-hinweis einzug-text">Verwendungszweck: „<?= e($einzugAuswahl->verwendungszweck) ?>“ –
                 <?= e(implode(', ', array_map(static fn(string $p, string $b): string => $p . ' = ' . $b, array_keys(Einzuege::PLATZHALTER), Einzuege::PLATZHALTER))) ?>.
                 Die Vorlage steht in den Vereinsdaten.</p>
 
             <input type="hidden" name="<?= e(EinzugController::VOLLSTAENDIG) ?>" value="1">
-            <?php if ($auswahl->moeglich()): ?>
+            <?php if ($einzugAuswahl->moeglich()): ?>
                 <button type="submit" class="knopf knopf-haupt">Einzug erzeugen</button>
             <?php endif; ?>
         </form>
     <?php endif; ?>
 
-    <?php if ($auswahl->nichtAuswaehlbar !== []): ?>
-        <?php $ohne = count($auswahl->nichtAuswaehlbar); ?>
+    <?php if ($einzugAuswahl->nichtAuswaehlbar !== []): ?>
+        <?php $einzugOhne = count($einzugAuswahl->nichtAuswaehlbar); ?>
         <details class="einzug-klappe einzug-ausnahmen">
-            <summary><?= $ohne === 1 ? '1 offener Beitrag lässt' : e($ohne) . ' offene Beiträge lassen' ?> sich nicht per Lastschrift einziehen</summary>
+            <summary><?= $einzugOhne === 1 ? '1 offener Beitrag lässt' : e($einzugOhne) . ' offene Beiträge lassen' ?> sich nicht per Lastschrift einziehen</summary>
             <p class="einzug-text">Selbstzahler und Beiträge ohne gültige IBAN stehen in der Liste
                 <a href="<?= e($selbstKassierenAdresse) ?>">„Selbst kassieren“</a>. Fehlt eine Angabe zum Mandat, ergänzen Sie sie am Mitglied.</p>
             <div class="tabelle-rahmen">
                 <table class="liste">
-                    <caption><?= $ohne === 1 ? '1 Beitrag' : e($ohne) . ' Beiträge' ?>, nach Namen</caption>
+                    <caption><?= $einzugOhne === 1 ? '1 Beitrag' : e($einzugOhne) . ' Beiträge' ?>, nach Namen</caption>
                     <thead>
                         <tr>
                             <th scope="col">Mitglied</th>
@@ -121,13 +122,13 @@ $jahre = $auswahl->jahre();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($auswahl->nichtAuswaehlbar as $k): ?>
+                        <?php foreach ($einzugAuswahl->nichtAuswaehlbar as $kandidat): ?>
                             <tr>
-                                <td class="liste-titel"><a href="<?= e(MitgliedController::adresse((int) $k->mitglied->id)) ?>"><?= e($k->name()) ?></a></td>
-                                <td data-label="Nr."><span class="nummer"><?= e($k->mitglied->mitgliedsnummer) ?></span></td>
-                                <td data-label="Jahr"><?= e($k->beitrag->jahr) ?></td>
-                                <td data-label="Betrag" class="zahl"><?= e(geld($k->beitrag->betragCent)) ?></td>
-                                <td data-label="Warum nicht"><?= e((string) $k->grund) ?></td>
+                                <td class="liste-titel"><a href="<?= e(MitgliedController::adresse((int) $kandidat->mitglied->id)) ?>"><?= e($kandidat->name()) ?></a></td>
+                                <td data-label="Nr."><span class="nummer"><?= e($kandidat->mitglied->mitgliedsnummer) ?></span></td>
+                                <td data-label="Jahr"><?= e($kandidat->beitrag->jahr) ?></td>
+                                <td data-label="Betrag" class="zahl"><?= e(geld($kandidat->beitrag->betragCent)) ?></td>
+                                <td data-label="Warum nicht"><?= e((string) $kandidat->grund) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

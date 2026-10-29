@@ -45,7 +45,7 @@ $zurueck = $hier;
     <dt>Lastschriftdatei</dt>
     <dd>
         <?php if ($dateiVorhanden): ?>
-            <a href="<?= e(EinzugController::dateiAdresse($einzugId)) ?>" download="<?= e(Einzuege::dateiname($einzug)) ?>"><?= e(Einzuege::dateiname($einzug)) ?></a>
+            <a href="<?= e(EinzugController::dateiAdresse($einzugId)) ?>" download="<?= e(Einzuege::dateiname($einzug)) ?>" class="einzug-dateiname"><?= e(Einzuege::dateiname($einzug)) ?></a>
         <?php else: ?>
             nicht vorhanden
         <?php endif; ?>

@@ -9,6 +9,25 @@
     margin-top: var(--abstand-5);
 }
 
+/* The compose form holds the tick list: as wide as the section, like the
+   list of the fees that cannot go in (other parts narrow .formular). */
+.formular.einzug-formular {
+    max-width: none;
+}
+
+.einzug-formular .knopf-haupt {
+    justify-self: start;
+}
+
+.einzug-formular .liste .feld-haken {
+    font-weight: 650;
+}
+
+/* A file name breaks nowhere. */
+.einzug-dateiname {
+    white-space: nowrap;
+}
+
 /* A list that folds away: the long checkbox list and the fees that cannot
    go into a run. A <details>, so it works without a script. */
 .einzug-klappe {

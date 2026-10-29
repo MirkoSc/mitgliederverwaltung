@@ -176,9 +176,10 @@ final class EinzugSeiteTest extends AppTestCase
         $this->beitrag('Ohnesorg', ['iban' => '']);
         $this->als(Rolle::Admin);
 
-        $seite = $this->get('/app/beitraege')->body;
+        $seite = $this->get('/app/beitraege', ['jahr' => '2026'])->body;
 
         self::assertStringContainsString('Einzug per Lastschrift', $seite);
+        self::assertStringContainsString('3 Beiträge, nach Namen', $seite, 'the year\'s list below keeps its own count');
         self::assertStringContainsString(sprintf('name="beitrag[]" value="%d" checked', $anna), $seite);
         self::assertStringContainsString('Albrecht, Anna', $seite);
         self::assertStringContainsString(sprintf('name="faellig_am" value="%s"', $this->faellig()), $seite);

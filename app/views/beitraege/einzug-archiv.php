@@ -58,7 +58,7 @@ $anzahlEinzuege = count($einzuegeAlle);
                             </td>
                             <td data-label="Datei">
                                 <?php if ($e->dateiBlobId !== null): ?>
-                                    <a href="<?= e(EinzugController::dateiAdresse($eId)) ?>" download="<?= e(Einzuege::dateiname($e)) ?>"><?= e(Einzuege::dateiname($e)) ?></a>
+                                    <a href="<?= e(EinzugController::dateiAdresse($eId)) ?>" download="<?= e(Einzuege::dateiname($e)) ?>" class="einzug-dateiname"><?= e(Einzuege::dateiname($e)) ?></a>
                                 <?php else: ?>
                                     –
                                 <?php endif; ?>
