@@ -15,6 +15,7 @@
  * @var string|null $appleIconUrl
  * @var list<string> $stylesheets
  * @var \App\Domain\Konto|null $konto
+ * @var array{seit: string, grund: string}|null $wartung maintenance flag, set by App\View\View
  * @var bool|null $barrierefreiVorschau set by the pattern page only: shows
  *      the page in the Barrierefrei-Modus without changing the setting
  */
@@ -73,6 +74,7 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
 <?php require $partialsDir . '/kopf.php'; ?>
 
 <main id="inhalt" class="inhalt">
+    <?php require $partialsDir . '/wartung.php'; ?>
     <?php require $partialsDir . '/flash.php'; ?>
     <?= $content ?>
 </main>

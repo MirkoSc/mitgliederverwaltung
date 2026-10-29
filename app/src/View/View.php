@@ -52,6 +52,9 @@ final class View
     /** @var (\Closure(): ?Flash)|null */
     private ?\Closure $flashQuelle = null;
 
+    /** @var (\Closure(): ?array{seit: string, grund: string})|null */
+    private ?\Closure $wartungQuelle = null;
+
     /**
      * @param list<string> $stylesheets URLs below the docroot, in order:
      *        the design system first, then the parts in public/css/teile/
@@ -161,6 +164,18 @@ final class View
     }
 
     /**
+     * Where full pages behind the login learn whether the maintenance flag
+     * is set (App\Service\MaintenanceMode::state()): the banner with the
+     * release button shows on every one of them (04 section 4).
+     *
+     * @param \Closure(): ?array{seit: string, grund: string} $wartungQuelle
+     */
+    public function setWartungQuelle(\Closure $wartungQuelle): void
+    {
+        $this->wartungQuelle = $wartungQuelle;
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public function render(string $template, array $data = [], Area $bereich = Area::Oeffentlich): string
@@ -184,6 +199,9 @@ final class View
                 // After the spread, so a template cannot shadow the frame
                 // it renders into.
                 'konto' => $this->konto,
+                // Only asked for pages with a navigation - the public pages
+                // have no account that could release it.
+                'wartung' => $bereich->mitNavigation() && $this->wartungQuelle !== null ? ($this->wartungQuelle)() : null,
                 'content' => $content,
                 'bereich' => $bereich,
                 'pfad' => $this->currentPath,

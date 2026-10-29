@@ -45,6 +45,29 @@ final class ReleaseSwitcherTest extends TestCase
         self::assertFileDoesNotExist($this->base . '/shared/maintenance.flag', 'flag removed after switch');
     }
 
+    /**
+     * The updater keeps the instance closed from the switch until the
+     * migrations are in and the self-test has passed (04 section 3).
+     */
+    public function testSwitchCanKeepTheMaintenanceFlag(): void
+    {
+        $this->prepareNewRelease('1.1.0');
+        $switcher = new ReleaseSwitcher($this->base);
+
+        $switcher->switchTo('1.1.0', wartungBehalten: true);
+
+        self::assertSame('1.1.0', $switcher->currentVersion());
+        self::assertFileExists($this->base . '/shared/maintenance.flag');
+
+        // a retry of the step after a lost response changes nothing about that
+        $switcher->switchTo('1.1.0', wartungBehalten: true);
+        self::assertFileExists($this->base . '/shared/maintenance.flag');
+
+        // while a plain repeat (the default) ends the maintenance
+        $switcher->switchTo('1.1.0');
+        self::assertFileDoesNotExist($this->base . '/shared/maintenance.flag');
+    }
+
     public function testSwitchIsIdempotent(): void
     {
         $this->prepareNewRelease('1.1.0');
