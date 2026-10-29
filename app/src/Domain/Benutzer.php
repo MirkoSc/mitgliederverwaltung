@@ -24,8 +24,8 @@ final readonly class Benutzer
         public BenutzerStatus $status,
         public Rolle $rolle,
         public bool $barrierefrei,
-        /** Second factor (issue #8); null = not set up. */
-        public ?string $mfaMethod,
+        /** Second factor; null = not set up yet. */
+        public ?MfaMethode $mfaMethod,
         public int $sessionEpoch,
         public \DateTimeImmutable $createdAt,
         public ?\DateTimeImmutable $lastLoginAt,
@@ -40,7 +40,7 @@ final readonly class Benutzer
 
     public function konto(): Konto
     {
-        return new Konto($this->id, $this->name, $this->rolle, $this->barrierefrei, $this->sessionEpoch);
+        return new Konto($this->id, $this->name, $this->rolle, $this->barrierefrei, $this->sessionEpoch, $this->mfaMethod !== null);
     }
 
     /**

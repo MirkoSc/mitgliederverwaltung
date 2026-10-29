@@ -78,6 +78,18 @@ final readonly class ServerCrypto
     }
 
     /**
+     * A keyed hash (HMAC-SHA256, 32 raw bytes) for values only ever
+     * compared, never read back - the codes and device tokens of the second
+     * factor (App\Service\Account\ZweiterFaktor). Under a key derived
+     * from the server key, so the secretbox key itself is not reused for a
+     * second primitive.
+     */
+    public function hmac(#[\SensitiveParameter] string $wert): string
+    {
+        return hash_hmac('sha256', $wert, hash_hmac('sha256', 'hmac', $this->key, true), true);
+    }
+
+    /**
      * Keeps the key out of var_dump() output in a debug session.
      *
      * @return array<string, string>

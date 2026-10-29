@@ -22,6 +22,12 @@ final readonly class Konto
         public bool $barrierefrei = false,
         /** `user.session_epoch`: a session with an older value has ended. */
         public int $sessionEpoch = 0,
+        /**
+         * Whether a second factor is set up (`user.mfa_method`). Until it
+         * is, App\Http\LoginGuard lets the account reach nothing but the
+         * setup page (02 section 3, "Erzwungene Einrichtung").
+         */
+        public bool $zweiterFaktor = true,
     ) {
     }
 

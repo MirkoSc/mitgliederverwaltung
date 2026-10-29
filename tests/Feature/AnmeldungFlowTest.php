@@ -62,9 +62,23 @@ final class AnmeldungFlowTest extends AppTestCase
         return $this->dienste->pdo();
     }
 
+    /**
+     * The whole login: password and - for an account with the mail as its
+     * second factor - the code from the mail. The code mail is taken off
+     * the list, so the tests count only the mails they are about.
+     */
     private function anmelden(string $email = 'erika@example.org', string $passwort = Benutzerdaten::PASSWORT, array $mehr = []): \App\Http\Response
     {
-        return $this->post('/anmelden', ['email' => $email, 'passwort' => $passwort, ...$mehr]);
+        $antwort = $this->post('/anmelden', ['email' => $email, 'passwort' => $passwort, ...$mehr]);
+        if (($antwort->headers['Location'] ?? null) !== '/anmelden/bestaetigen') {
+            return $antwort;
+        }
+
+        $mail = array_pop($this->transport->gesendet);
+        self::assertNotNull($mail, 'no code was mailed');
+        self::assertSame(1, preg_match('/^(\d{6})$/m', $mail->body, $m), $mail->body);
+
+        return $this->post('/anmelden/bestaetigen', ['code' => $m[1]]);
     }
 
     /** The link of the last mail (a reset or an invitation). */

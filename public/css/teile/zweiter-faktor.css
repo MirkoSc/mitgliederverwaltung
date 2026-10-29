@@ -1,0 +1,60 @@
+/* Second factor (issue #8): the QR code of the app setup and the list of
+   backup codes. Tokens from app.css only. */
+
+.einrichtung-schritte {
+    display: grid;
+    gap: var(--abstand-4);
+    margin: 0 0 var(--abstand-5);
+    padding-left: 1.5em;
+}
+
+/* The SVG brings its own white background and quiet zone - dark mode
+   keeps it readable for the camera. */
+.qr-code {
+    margin: var(--abstand-3) 0;
+}
+
+.qr-code svg {
+    display: block;
+    width: 12rem;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-klein);
+}
+
+/* Typed by hand from paper or another screen: steady widths, room between
+   the characters, never broken. */
+.schluessel,
+.backup-codes li {
+    font-variant-numeric: tabular-nums slashed-zero;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.schluessel {
+    font-weight: 650;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.backup-codes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--abstand-2) var(--abstand-4);
+    margin: 0 0 var(--abstand-5);
+    padding: var(--abstand-4);
+    list-style: none;
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+    font-size: var(--schrift-h3);
+}
+
+/* On paper only the codes and the sentence around them. */
+@media print {
+    body:has(.backup-codes) .kopf,
+    body:has(.backup-codes) .fuss,
+    .backup-codes ~ .knopfreihe {
+        display: none;
+    }
+}
