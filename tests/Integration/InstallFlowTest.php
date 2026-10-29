@@ -294,6 +294,18 @@ final class InstallFlowTest extends DatabaseTestCase
         $this->anmeldenMit($config, 'erika@example.org', Benutzerdaten::PASSWORT);
     }
 
+    /** setup.php creates shared/var/backups/; an install without it must not trip over its absence. */
+    public function testTheRestoreFormNeedsNoBackupFolder(): void
+    {
+        rmdir($this->paths->backupDir());
+        $this->bisZurArt();
+        $this->post('/install/art', ['art' => 'backup']);
+
+        $seite = $this->get('/install');
+        self::assertSame(200, $seite->status);
+        self::assertStringNotContainsString('name="backup_datei"', $seite->body);
+    }
+
     public function testARestoreFromABackupPutThereByFtpWithTheOldConfigPhp(): void
     {
         [$backup, $schluessel] = $this->backupEinerAnderenInstallation();

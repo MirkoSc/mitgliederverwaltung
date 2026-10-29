@@ -678,6 +678,9 @@ final readonly class InstallController
     private function backupsAufDemServer(): array
     {
         $namen = [];
+        if (!is_dir($this->paths->backupDir())) {
+            return [];
+        }
         foreach (scandir($this->paths->backupDir()) ?: [] as $name) {
             $pfad = $this->paths->backupDir() . '/' . $name;
             if (preg_match(BackupService::NAME, $name) === 1 && is_file($pfad) && !is_link($pfad)) {

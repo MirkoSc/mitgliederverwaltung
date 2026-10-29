@@ -56,13 +56,35 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
    4. Frisch: Migrationen ab 0, erster Admin (E-Mail, Name, Passwort).
       Der **Server-Schlüssel wird einmal zum Ausdrucken angezeigt**
       („Sicherungsschlüssel" – ohne ihn lassen sich Backups und Dateien
-      nicht wiederherstellen, 02 §2).
+      nicht wiederherstellen, 02 §2): nur in der Antwort, die den Admin
+      anlegt, in Vierergruppen; weiter geht es erst mit dem Haken
+      „ausgedruckt oder notiert". Ein Neuladen zeigt ihn nicht wieder,
+      bietet aber „Neuen Schlüssel erzeugen" an – bis Schritt 5 ist mit
+      ihm noch nichts verschlüsselt.
    5. Mail-Einstellungen + Testmail (überspringbar – aber ohne Mail gibt es
       keinen E-Mail-Code als zweiten Faktor, dann nur die App, 02 §3).
-   6. `config.php` schreiben → Installer gesperrt; `setup.php` und Token
-      löschen (sonst Hinweis).
-   Jeder Schritt ist ein eigener Request; ein abgebrochener Durchlauf
-   kann „neu beginnen".
+      Das SMTP-Passwort liegt sofort verschlüsselt in der Datenbank, nie in
+      der Session.
+   6. `config.php` schreiben (mit neuem Cron-Token) → Installer gesperrt;
+      `setup.php`, `setup_kanal.txt` und Token löschen (sonst Hinweis); Kanal
+      aus `setup.php` als Setting `update_kanal`; Audit-Eintrag
+      `benutzer.angelegt` bzw. `restore.durchgefuehrt`. Die Abschlussseite
+      zeigt die Cron-Adresse für das Kundenmenü.
+   Jeder Schritt ist ein eigener Request (`App\Installer\InstallController`,
+   Stand in der Session, Schritte `App\Installer\InstallSchritt`); ein
+   Schritt außer der Reihe zeigt den aktuellen (409). Datenbank-Passwort
+   und Server-Schlüssel liegen bis Schritt 6 in der Session. Ein
+   abgebrochener Durchlauf kann „neu beginnen" (ein schon angelegter
+   erster Admin wird dabei wieder gelöscht). Eine Datenbank, die schon
+   Benutzer hat, lehnt die frische Installation ab.
+   **Backup einspielen:** das verschlüsselte Backup hochladen oder – größer
+   als das Upload-Limit – per FTP nach `shared/var/backups/` legen und
+   auswählen; dazu den Sicherungsschlüssel abschreiben (Leerzeichen egal)
+   oder die alte `config.php` hochladen. Ein falscher Schlüssel scheitert,
+   bevor etwas eingespielt wird. Danach läuft die Restore-Kette (§6) per
+   `public/js/install.js` Schritt für Schritt; der letzte Schritt schreibt
+   `config.php` mit dem Schlüssel des Backups. Ein Mail-Schritt entfällt:
+   die Mail-Einstellungen kommen mit dem Backup.
 3. Erster Login inkl. Einrichtung des zweiten Faktors.
 
 ## 3. Self-Updater
@@ -208,7 +230,8 @@ Idempotenz, Reparatur nach Absturz, Rollback, Shim-Selbstheilung),
 `ReleaseDownloaderTest` (Kanäle, Host-/Repo-Prüfung, Weiterleitungen),
 `ReleaseSignaturTest`, `UpdateChainTest` (ganze Kette gegen ein lokales
 Release-ZIP, manipuliertes ZIP, kein Downgrade), `MaintenanceModeTest`,
-`ConfigWriterTest`, `InstallFlowTest` (Token, `config.php` erst nach
+`ConfigWriterTest`, `InstallTokenTest`, `SetupPhpTest` (`setup.php` aktuell),
+`InstallFlowTest` (Token, `config.php` erst nach
 Bestätigung, Kanal-Übernahme, Sicherungsschlüssel einmal angezeigt),
 Backup+Restore-Roundtrip (Backup verschlüsselt, Restore mit Schlüssel,
 falscher Schlüssel abgelehnt), `SystemCheckTest`,
