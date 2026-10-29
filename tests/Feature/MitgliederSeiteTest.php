@@ -172,6 +172,33 @@ final class MitgliederSeiteTest extends AppTestCase
         self::assertStringContainsString('hx-include="#mitglieder-form"', $antwort->body);
     }
 
+    public function testSortingSwapsTheWholeAreaSoTheFormKeepsTheSortOrder(): void
+    {
+        $this->als(Rolle::Vorstand);
+
+        $seite = $this->get('/app/mitglieder', ['sortierung' => 'ort'])->body;
+        self::assertStringContainsString('hx-post="/app/mitglieder?sortierung=ort"', $seite, 'the form carries the sort order');
+        self::assertMatchesRegularExpression('/<a href="[^"]*sortierung=ort-ab"[^>]*hx-target="#mitglieder-bereich" hx-swap="outerHTML"/', $seite);
+
+        // Sorting answers with the whole area: the search form in it has the new order.
+        $antwort = $this->htmx(['text' => 'muster', 'status' => 'alle', 'ehemalige' => '0'], 'mitglieder-bereich', ['sortierung' => 'ort']);
+        self::assertStringContainsString('id="mitglieder-form"', $antwort->body);
+        self::assertStringContainsString('<form class="suche" id="mitglieder-form" method="post" action="/app/mitglieder?sortierung=ort"', $antwort->body);
+        self::assertStringContainsString('value="muster"', $antwort->body, 'the search text stays');
+    }
+
+    public function testOpeningAMemberPushesTheAddressWithoutTheText(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $id = $this->idVon(1001);
+
+        $antwort = $this->htmx(['text' => 'muster', 'ehemalige' => '0'], 'mitglieder-bereich', ['mitglied' => (string) $id]);
+
+        self::assertStringContainsString('hx-push-url="/app/mitglieder?mitglied=' . $id . '"', $antwort->body);
+        self::assertStringNotContainsString('hx-push-url="/app/mitglieder?mitglied=' . $id . '&amp;text', $antwort->body);
+        self::assertStringNotContainsString('text=muster', $antwort->body);
+    }
+
     public function testOpeningAMemberShowsItBesideTheList(): void
     {
         $this->als(Rolle::Vorstand);

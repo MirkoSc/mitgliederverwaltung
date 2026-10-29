@@ -123,9 +123,7 @@ final class DesignsystemTest extends AppTestCase
     {
         $this->als(Rolle::Vorstand, barrierefrei: true);
 
-        foreach (['/app/listen', '/app/listen'] as $pfad) {
-            self::assertStringContainsString('<html lang="de" class="modus-barrierefrei">', $this->get($pfad)->body, $pfad);
-        }
+        self::assertStringContainsString('<html lang="de" class="modus-barrierefrei">', $this->get('/app/listen')->body);
     }
 
     /** 11 section 2: without an uploaded logo the header shows a placeholder. */

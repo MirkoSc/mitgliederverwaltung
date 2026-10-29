@@ -7,8 +7,10 @@
  *
  * Sorting and paging are links: without a script they load the page with
  * the same filters (but without the search text, which is never in a URL);
- * with htmx they post to the page, include the search form and swap this
- * part. A member opens the whole area (list and member beside it).
+ * with htmx they post to the page and include the search form. Paging swaps
+ * this part only; sorting swaps the whole area like opening a member (list
+ * and member beside it), because the search form carries the sort order in
+ * its address and must be rendered anew with it.
  *
  * @var \App\Domain\MitgliederFilter $filter
  * @var \App\Domain\MitgliederSeite $ergebnis
@@ -22,13 +24,14 @@ use App\Domain\MitgliederSortierung;
 // Attributes of a link that swaps the result list, or the whole area.
 $ergebnisLink = static fn(string $ziel, string $swap = 'innerHTML'): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
     . '" hx-include="#mitglieder-form" hx-target="#mitglieder-ergebnis" hx-swap="' . $swap . '"';
-$bereichLink = static fn(string $ziel): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
-    . '" hx-include="#mitglieder-form" hx-target="#mitglieder-bereich" hx-swap="outerHTML show:window:top"';
+// The address in the history is the GET one: it never holds the search text.
+$bereichLink = static fn(string $ziel, string $swap = 'outerHTML show:window:top'): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
+    . '" hx-include="#mitglieder-form" hx-target="#mitglieder-bereich" hx-swap="' . $swap . '" hx-push-url="' . e($ziel) . '"';
 
-$kopf = static function (MitgliederSortierung $spalte, string $titel, string $klasse = '') use ($filter, $url, $ergebnisLink): string {
+$kopf = static function (MitgliederSortierung $spalte, string $titel, string $klasse = '') use ($filter, $url, $bereichLink): string {
     $sortiert = $filter->sortierung === $spalte;
     $aria = $sortiert ? ' aria-sort="' . ($filter->absteigend ? 'descending' : 'ascending') . '"' : '';
-    $link = $ergebnisLink($url(['sortierung' => $filter->sortierungNach($spalte), 'seite' => null]));
+    $link = $bereichLink($url(['sortierung' => $filter->sortierungNach($spalte), 'seite' => null]), 'outerHTML');
 
     return '<th scope="col"' . ($klasse === '' ? '' : ' class="' . $klasse . '"') . $aria . '><a ' . $link . '>' . e($titel) . '</a></th>';
 };
