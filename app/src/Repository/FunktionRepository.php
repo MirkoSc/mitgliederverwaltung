@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Domain\Funktion;
+use App\Domain\FunktionsZuordnung;
 
 /**
  * Functions (docs/spec/07-mitglieder.md section 4), ordered by
@@ -52,6 +53,53 @@ final readonly class FunktionRepository
             ->execute([...$werte, $funktion->id]);
 
         return $funktion;
+    }
+
+    /**
+     * One row per member and function for the list "Funktionen" (09 section 2):
+     * former members left out, filtered by function in SQL, ordered by the
+     * function's order and then by the member's name.
+     *
+     * @return list<FunktionsZuordnung>
+     */
+    public function zuordnungen(?int $funktionId, \DateTimeImmutable $stichtag): array
+    {
+        $bedingungen = ['(m.austrittsdatum IS NULL OR m.austrittsdatum > ?)'];
+        $werte = [Zeilen::fuerDatum($stichtag)];
+        if ($funktionId !== null) {
+            $bedingungen[] = 'f.id = ?';
+            $werte[] = $funktionId;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "SELECT m.id AS mitglied_id, m.nachname, m.vorname, m.lizenznummer, m.telefon, m.handy, m.email,
+                    f.id AS funktion_id, f.name AS funktion,
+                    COALESCE((SELECT GROUP_CONCAT(a.name ORDER BY a.sortierung, a.name, a.id SEPARATOR ', ')
+                              FROM mitglied_abteilung ma JOIN abteilung a ON a.id = ma.abteilung_id
+                              WHERE ma.mitglied_id = m.id), '') AS abteilungen
+             FROM mitglied_funktion mf
+             JOIN mitglied m ON m.id = mf.mitglied_id
+             JOIN funktion f ON f.id = mf.funktion_id
+             WHERE " . implode(' AND ', $bedingungen) . '
+             ORDER BY f.sortierung, f.name, f.id, m.nachname, m.vorname, m.id',
+        );
+        $stmt->execute($werte);
+
+        return array_map(
+            static fn(array $z): FunktionsZuordnung => new FunktionsZuordnung(
+                mitgliedId: (int) $z['mitglied_id'],
+                nachname: (string) $z['nachname'],
+                vorname: (string) $z['vorname'],
+                funktionId: (int) $z['funktion_id'],
+                funktion: (string) $z['funktion'],
+                lizenznummer: (string) $z['lizenznummer'],
+                abteilungen: (string) $z['abteilungen'],
+                telefon: (string) $z['telefon'],
+                handy: (string) $z['handy'],
+                email: (string) $z['email'],
+            ),
+            $stmt->fetchAll(\PDO::FETCH_ASSOC),
+        );
     }
 
     public function wirdVerwendet(int $id): bool
