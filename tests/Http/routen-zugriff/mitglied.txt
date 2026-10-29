@@ -1,0 +1,7 @@
+# app/routes/mitglied.php - create and edit a member: both roles; delete:
+# admin only (07 section 9).
+GET /app/mitglieder/neu -> mitglieder.bearbeiten
+POST /app/mitglieder/neu -> mitglieder.bearbeiten
+POST /app/mitglieder/{id:[0-9]+} -> mitglieder.bearbeiten
+GET /app/mitglieder/{id:[0-9]+}/loeschen -> mitglieder.loeschen
+POST /app/mitglieder/{id:[0-9]+}/loeschen -> mitglieder.loeschen
