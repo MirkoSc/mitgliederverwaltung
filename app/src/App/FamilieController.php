@@ -170,7 +170,7 @@ final readonly class FamilieController
     {
         $this->dienste->session->flash($meldung, $art);
 
-        return Response::redirect(MitgliedController::adresse((int) $mitglied->id));
+        return Response::redirect(MitgliedController::adresse((int) $mitglied->id, 'familie'));
     }
 
     private function gibtEsNicht(): Response

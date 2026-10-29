@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Feature;
 
-use App\App\Mitglied\NachweiseAbschnitt;
+use App\App\Mitglied\NachweiseReiter;
 use App\Domain\Mitglied;
 use App\Domain\NachweisArt;
 use App\Domain\Rolle;
@@ -181,7 +181,7 @@ final class NachweiseTest extends AppTestCase
         $id = $this->mitglied();
         $this->anlegen($id, ['art' => 'rente', 'gueltig_bis' => '2020-01-31', 'bemerkung' => 'alt']);
 
-        $daten = new NachweiseAbschnitt($this->dienste)->daten($id);
+        $daten = new NachweiseReiter($this->dienste)->daten($id);
 
         self::assertCount(1, $daten['nachweise']);
         self::assertTrue($daten['darfPflegen']);

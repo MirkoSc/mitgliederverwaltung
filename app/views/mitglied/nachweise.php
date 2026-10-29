@@ -1,8 +1,8 @@
 <?php
 
 /**
- * The section "Nachweise" of an opened member (App\App\Mitglied\
- * NachweiseAbschnitt, docs/spec/07-mitglieder.md section 5).
+ * The tab "Nachweise" of an opened member (App\App\Mitglied\
+ * NachweiseReiter, docs/spec/07-mitglieder.md section 5).
  *
  * @var int $mitgliedId
  * @var list<\App\Domain\Nachweis> $nachweise
@@ -17,7 +17,7 @@
 use App\App\NachweisController;
 ?>
 <section class="nachweise" aria-labelledby="nachweise-titel">
-    <h2 id="nachweise-titel">Nachweise</h2>
+    <h2 id="nachweise-titel" class="nur-lesehilfe">Nachweise</h2>
     <?php if ($nachweise === []): ?>
         <p>Keine Nachweise vermerkt.</p>
     <?php else: ?>

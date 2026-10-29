@@ -79,12 +79,13 @@ final class DesignsystemTest extends AppTestCase
 
         $ohne = $this->get(self::SEITE)->body;
         self::assertStringContainsString('<div class="geteilt">', $ohne);
-        self::assertStringContainsString('Wählen Sie links ein Mitglied aus.', $ohne);
+        self::assertStringNotContainsString('class="detail-kopf"', $ohne, 'without a member the list has the whole width');
 
         $mit = $this->get(self::SEITE, ['mitglied' => '3', 'reiter' => 'beitraege'])->body;
         self::assertStringContainsString('<div class="geteilt geteilt-mit-detail">', $mit);
         self::assertStringContainsString('aria-current="true">Beispiel, Karl</a>', $mit);
         self::assertStringContainsString('Zurück zur Liste', $mit);
+        self::assertStringContainsString('detail-schliessen" href="/admin/designsystem#muster-geteilt">Schließen</a>', $mit);
         self::assertMatchesRegularExpression('#reiter=beitraege\#muster-geteilt" aria-current="page">Beiträge</a>#', $mit);
         self::assertStringContainsString('Beitragsart Rentner, aber erst 64 Jahre alt.', $mit);
 

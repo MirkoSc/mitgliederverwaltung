@@ -70,7 +70,7 @@ final readonly class BeitraegeReiter implements Reiter
         return [
             'beitraege' => $beitraege,
             'namen' => $namen,
-            'zurueck' => MitgliedController::adresse($mitgliedId) . '&reiter=' . $this->schluessel(),
+            'zurueck' => MitgliedController::adresse($mitgliedId, $this->schluessel()),
             'seitenAdresse' => BeitraegeController::seitenAdresse((int) new \DateTimeImmutable('today')->format('Y')),
         ];
     }

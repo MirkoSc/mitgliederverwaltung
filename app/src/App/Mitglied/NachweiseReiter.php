@@ -11,12 +11,12 @@ use App\Repository\BenutzerRepository;
 use App\Repository\NachweisRepository;
 
 /**
- * The section "Nachweise" of an opened member (docs/spec/07-mitglieder.md
+ * The tab "Nachweise" of an opened member (docs/spec/07-mitglieder.md
  * section 5, issue #23): the proofs with their file, a form to note a new
  * one, and - for the admin only - the delete button. The forms post to the
  * routes of app/routes/nachweise.php.
  */
-final readonly class NachweiseAbschnitt implements Abschnitt
+final readonly class NachweiseReiter implements Reiter
 {
     public function __construct(private Dienste $dienste)
     {
@@ -37,9 +37,10 @@ final readonly class NachweiseAbschnitt implements Abschnitt
         return 'Nachweise';
     }
 
+    /** Right after "Beiträge" (Mirko, 29.10.2026). */
     public function reihenfolge(): int
     {
-        return 40;
+        return 25;
     }
 
     public function recht(): Permission

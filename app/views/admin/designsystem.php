@@ -283,9 +283,10 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
 
 <section class="muster" id="muster-geteilt" aria-labelledby="titel-geteilt">
     <h2 id="titel-geteilt">Liste neben Mitglied</h2>
-    <p>Ein Klick auf ein Mitglied öffnet es auf derselben Seite: am PC rechts neben der Liste, am Handy und im
-        Barrierefrei-Modus als eigene Ansicht mit „Zurück zur Liste“. Der Server setzt dafür
-        <code>geteilt-mit-detail</code> – ohne Skript.</p>
+    <p>Ein Klick auf ein Mitglied öffnet es auf derselben Seite: am PC rechts neben der Liste (ohne geöffnetes
+        Mitglied hat die Liste die ganze Breite), am Handy und im Barrierefrei-Modus als eigene Ansicht mit
+        „Zurück zur Liste“. Am PC schließen „Schließen“ oder ein zweiter Klick auf das Mitglied. Der Server setzt
+        dafür <code>geteilt-mit-detail</code> – ohne Skript.</p>
 
     <div class="geteilt<?= $detail !== null ? ' geteilt-mit-detail' : '' ?>">
         <div class="geteilt-liste">
@@ -302,7 +303,7 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
                 <tbody>
                     <?php foreach ([3, 2, 1] as $id): $m = $mitglieder[$id]; ?>
                         <tr>
-                            <td class="liste-titel"><a href="<?= e($link(['mitglied' => $id], 'muster-geteilt')) ?>"<?= $id === $gewaehlt ? ' aria-current="true"' : '' ?>><?= e($m['name']) ?></a></td>
+                            <td class="liste-titel"><a href="<?= e($link($id === $gewaehlt ? [] : ['mitglied' => $id], 'muster-geteilt')) ?>"<?= $id === $gewaehlt ? ' aria-current="true"' : '' ?>><?= e($m['name']) ?></a></td>
                             <td data-label="Nr."><span class="nummer"><?= e($m['nummer']) ?></span></td>
                             <td data-label="Abteilung" class="nebenspalte"><?= e($m['abteilung']) ?></td>
                             <td data-label="Status"><span class="etikett <?= e($m['status'][1]) ?>"><?= e($m['status'][0]) ?></span></td>
@@ -313,16 +314,13 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
         </div>
 
         <div class="geteilt-detail">
-            <?php if ($detail === null): ?>
-                <div class="leer">
-                    <p>Wählen Sie links ein Mitglied aus. Es öffnet sich hier, die Liste bleibt stehen.</p>
-                </div>
-            <?php else: ?>
+            <?php if ($detail !== null): ?>
                 <a class="zurueck" href="<?= e($link([], 'muster-geteilt')) ?>">Zurück zur Liste</a>
                 <div class="detail-kopf">
                     <h3><?= e($detail['name']) ?></h3>
                     <span class="nummer">Nr. <?= e($detail['nummer']) ?></span>
                     <span class="etikett <?= e($detail['status'][1]) ?>"><?= e($detail['status'][0]) ?></span>
+                    <a class="knopf knopf-still detail-schliessen" href="<?= e($link([], 'muster-geteilt')) ?>">Schließen</a>
                 </div>
                 <?php if ($detail['hinweise'] !== []): ?>
                     <div class="hinweis hinweis-warnung">

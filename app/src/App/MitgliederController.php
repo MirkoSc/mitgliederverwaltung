@@ -81,6 +81,7 @@ final readonly class MitgliederController
             'formUrl' => self::formUrl($filter, $mitglied?->id, null),
             'nurErgebnis' => false,
             'darfAnlegen' => $this->dienste->view->konto()?->darf(Permission::MitgliederBearbeiten) === true,
+            'scripts' => ['/js/anschrift.js'],
         ];
         if ($mitglied !== null) {
             $daten = [...$daten, ...$this->detail($mitglied, $reiterWunsch, $filter, $heute, $daten)];
@@ -121,9 +122,16 @@ final readonly class MitgliederController
         }
         $gewaehlt ??= $reiter[0] ?? null;
 
+        // A section may point into a tab (the address hint into "Daten"):
+        // it gets the open tab and the address of each tab.
+        $tabUrl = self::urlBauer($filter, $id, $gewaehlt?->schluessel());
         $abschnitte = [];
         foreach (MitgliedErweiterungen::abschnitte()->alle($this->dienste, $konto) as $abschnitt) {
-            $abschnitte[] = $this->dienste->view->fragment($abschnitt->template(), $abschnitt->daten($id));
+            $abschnitte[] = $this->dienste->view->fragment($abschnitt->template(), [
+                ...$abschnitt->daten($id),
+                'offenerReiter' => $gewaehlt?->schluessel(),
+                'url' => $tabUrl,
+            ]);
         }
 
         $ehemalig = $mitglied->istEhemalig($heute);

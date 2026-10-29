@@ -11,12 +11,12 @@ use App\Repository\FamilieRepository;
 use App\Repository\MitgliedRepository;
 
 /**
- * The section "Familie" of an opened member (docs/spec/07-mitglieder.md
+ * The tab "Familie" of an opened member (docs/spec/07-mitglieder.md
  * section 3, issue #20): the family and the role, the other persons of the
  * family, and the ways to join, create or leave one. The forms post to the
  * routes of app/routes/familie.php.
  */
-final readonly class FamilieAbschnitt implements Abschnitt
+final readonly class FamilieReiter implements Reiter
 {
     public function __construct(private Dienste $dienste)
     {
@@ -37,9 +37,10 @@ final readonly class FamilieAbschnitt implements Abschnitt
         return 'Familie';
     }
 
+    /** Right after "Daten" (Mirko, 29.10.2026). */
     public function reihenfolge(): int
     {
-        return 30;
+        return 15;
     }
 
     public function recht(): Permission

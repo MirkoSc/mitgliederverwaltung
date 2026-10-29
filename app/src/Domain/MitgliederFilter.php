@@ -16,8 +16,14 @@ final readonly class MitgliederFilter
 {
     use Kopierbar;
 
-    /** 50 per page are enough for a club (06 section 3). */
+    /** 50 per page are enough for a club (06 section 3) - the default. */
     public const int SEITENGROESSE = 50;
+
+    /** What "Je Seite" offers; 0 means all members on one page. */
+    public const array ANZAHLEN = [50, 100, 200, 0];
+
+    /** The URL value of "all on one page". */
+    private const string ALLE = 'alle';
 
     /** Suffix of the sort value for descending order ("name-ab"). */
     private const string ABSTEIGEND = '-ab';
@@ -32,6 +38,8 @@ final readonly class MitgliederFilter
         public MitgliederSortierung $sortierung = MitgliederSortierung::Name,
         public bool $absteigend = false,
         public int $seite = 1,
+        /** Members per page, one of ANZAHLEN; 0 = all on one page. */
+        public int $anzahl = self::SEITENGROESSE,
     ) {
     }
 
@@ -54,7 +62,24 @@ final readonly class MitgliederFilter
                 ?? MitgliederSortierung::Name,
             absteigend: $absteigend,
             seite: max(1, self::id($daten, 'seite') ?? 1),
+            anzahl: self::anzahl(self::text($daten, 'anzahl')),
         );
+    }
+
+    /** The value of the URL parameter and the field "anzahl". */
+    public function anzahlWert(): string
+    {
+        return $this->anzahl === 0 ? self::ALLE : (string) $this->anzahl;
+    }
+
+    private static function anzahl(string $wert): int
+    {
+        if ($wert === self::ALLE) {
+            return 0;
+        }
+        $zahl = preg_match('/^[1-9][0-9]{0,4}$/D', $wert) === 1 ? (int) $wert : self::SEITENGROESSE;
+
+        return in_array($zahl, self::ANZAHLEN, true) ? $zahl : self::SEITENGROESSE;
     }
 
     /**
@@ -119,6 +144,9 @@ final readonly class MitgliederFilter
         }
         if ($this->seite > 1) {
             $parameter['seite'] = (string) $this->seite;
+        }
+        if ($this->anzahl !== self::SEITENGROESSE) {
+            $parameter['anzahl'] = $this->anzahlWert();
         }
 
         return $parameter;

@@ -2,7 +2,9 @@
 
 /**
  * The opened member beside the list (design system "Liste neben
- * Mitglied"). Hints and sections on top, then the tabs - all of them
+ * Mitglied"); nothing without one - the list then has the whole width.
+ * "Schließen" (PC) and "Zurück zur Liste" (phone, barrier-free mode) close
+ * it. Hints on top, then the tabs - all of them
  * extensions found by file name (App\App\Mitglied\Reiter, ...Abschnitt),
  * which issue #19 and the issues after it fill. The "Daten" tab always
  * exists, so there is no tab-less fallback.
@@ -20,16 +22,13 @@
 $bereichLink = require __DIR__ . '/bereich-link.php';
 ?>
 <div class="geteilt-detail">
-    <?php if ($mitglied === null): ?>
-        <div class="leer">
-            <p>Wählen Sie links ein Mitglied aus. Es öffnet sich hier, die Liste bleibt stehen.</p>
-        </div>
-    <?php else: ?>
+    <?php if ($mitglied !== null): ?>
         <a class="zurueck" <?= $bereichLink($url(['mitglied' => null, 'reiter' => null])) ?>>Zurück zur Liste</a>
         <div class="detail-kopf">
             <h2><?= e($mitglied->anzeigeName()) ?></h2>
             <span class="nummer">Nr. <?= e($mitglied->mitgliedsnummer) ?></span>
             <span class="etikett <?= e($statusKlasse) ?>"><?= e($statusText) ?></span>
+            <a class="knopf knopf-still detail-schliessen" <?= $bereichLink($url(['mitglied' => null, 'reiter' => null])) ?>>Schließen</a>
         </div>
 
         <?php foreach ($abschnitte ?? [] as $abschnitt): ?>

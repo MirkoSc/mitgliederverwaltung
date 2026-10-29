@@ -7,8 +7,8 @@ namespace App\App\Mitglied;
 use App\Support\Erweiterung;
 
 /**
- * One section inside an opened member - hints at the top, family, proofs,
- * honours (docs/spec/07-mitglieder.md, 06 section 2).
+ * One section inside an opened member above its tabs - the hints
+ * (docs/spec/07-mitglieder.md, 06 section 2).
  *
  * An issue adds its section as `app/src/App/Mitglied/<Name>Abschnitt.php`,
  * and the member page (issue #19) finds it (App\App\Mitglied\
