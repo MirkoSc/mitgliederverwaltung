@@ -114,7 +114,9 @@ final class Session
             session_regenerate_id(true);
         }
 
-        unset($_SESSION['csrf']);
+        // Nothing of a login or a setup in progress outlives the login: a
+        // re-confirmation of the second factor belongs to one login only.
+        unset($_SESSION['csrf'], $_SESSION['rolle'], $_SESSION['mfa_offen'], $_SESSION['mfa_einrichtung'], $_SESSION['mfa_bestaetigt']);
         $zeit = ($now ?? new \DateTimeImmutable())->getTimestamp();
         $_SESSION['user_id'] = $userId;
         $_SESSION['login_at'] = $zeit;
@@ -142,6 +144,151 @@ final class Session
         }
 
         $_SESSION['session_epoch'] = $epoch;
+    }
+
+    /**
+     * Regenerates the session id when the account's role changed since the
+     * last request (02 section 4: "ID-Regeneration bei Login und
+     * Rechtewechsel") - App\Http\LoginGuard calls it on every request with
+     * the role it just read. The first call after the login only records
+     * the role; login() itself regenerated already.
+     */
+    public function rolleAbgleichen(string $rolle): void
+    {
+        $bisher = $_SESSION['rolle'] ?? null;
+        if ($bisher === $rolle) {
+            return;
+        }
+        if (is_string($bisher) && session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+        $_SESSION['rolle'] = $rolle;
+    }
+
+    /**
+     * The token of a one-time link (reset, invitation) while its form is
+     * open: the link's GET moves it from the URL into the session and
+     * redirects to the bare path, so the page and its assets never carry it
+     * in the address bar, the history or a Referer. null forgets it.
+     */
+    public function merkeEinmalLink(string $typ, #[\SensitiveParameter] ?string $token): void
+    {
+        if ($token === null) {
+            unset($_SESSION['einmal_link'][$typ]);
+
+            return;
+        }
+        $_SESSION['einmal_link'][$typ] = $token;
+    }
+
+    public function einmalLink(string $typ): string
+    {
+        $token = $_SESSION['einmal_link'][$typ] ?? '';
+
+        return is_string($token) ? $token : '';
+    }
+
+    /**
+     * A login whose password was right and whose second factor is still
+     * missing (docs/spec/02-sicherheit.md section 3). Nobody is logged in
+     * yet; App\PublicPages\ZweiterFaktorAnmeldung finishes it with
+     * login(). $epoch is the account's `session_epoch` at the password
+     * check: a reset in between ends the session it leads to.
+     */
+    public function merkeOffeneAnmeldung(int $userId, int $epoch, ?string $weiter, ?\DateTimeImmutable $now = null): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+        $_SESSION['mfa_offen'] = [
+            'user_id' => $userId,
+            'epoch' => $epoch,
+            'weiter' => $weiter,
+            'seit' => ($now ?? new \DateTimeImmutable())->getTimestamp(),
+        ];
+    }
+
+    /**
+     * The open login, or null when there is none or it is older than
+     * $gueltigSekunden.
+     *
+     * @return array{user_id: int, epoch: int, weiter: ?string}|null
+     */
+    public function offeneAnmeldung(int $gueltigSekunden, ?\DateTimeImmutable $now = null): ?array
+    {
+        $offen = $_SESSION['mfa_offen'] ?? null;
+        if (
+            !is_array($offen) || !is_int($offen['user_id'] ?? null) || !is_int($offen['epoch'] ?? null)
+            || !is_int($offen['seit'] ?? null)
+            || ($now ?? new \DateTimeImmutable())->getTimestamp() - $offen['seit'] >= $gueltigSekunden
+        ) {
+            return null;
+        }
+
+        return [
+            'user_id' => $offen['user_id'],
+            'epoch' => $offen['epoch'],
+            'weiter' => is_string($offen['weiter'] ?? null) ? $offen['weiter'] : null,
+        ];
+    }
+
+    public function vergesseOffeneAnmeldung(): void
+    {
+        unset($_SESSION['mfa_offen']);
+    }
+
+    /**
+     * A second factor being set up, between "method chosen" and "first code
+     * confirmed": the method, and for the app its new secret as server-key
+     * ciphertext (App\App\ZweiterFaktorController). null forgets it.
+     *
+     * @param array{methode: string, geheimnis?: string}|null $einrichtung
+     */
+    public function merkeEinrichtung(?array $einrichtung): void
+    {
+        if ($einrichtung === null) {
+            unset($_SESSION['mfa_einrichtung']);
+
+            return;
+        }
+        $_SESSION['mfa_einrichtung'] = $einrichtung;
+    }
+
+    /** @return array{methode: string, geheimnis?: string}|null */
+    public function einrichtung(): ?array
+    {
+        $wert = $_SESSION['mfa_einrichtung'] ?? null;
+        if (!is_array($wert) || !is_string($wert['methode'] ?? null)) {
+            return null;
+        }
+        $einrichtung = ['methode' => $wert['methode']];
+        if (is_string($wert['geheimnis'] ?? null)) {
+            $einrichtung['geheimnis'] = $wert['geheimnis'];
+        }
+
+        return $einrichtung;
+    }
+
+    /**
+     * Password and current factor were confirmed again just now - what a
+     * change of the second factor needs first (02 section 3). null forgets
+     * it: one change spends it.
+     */
+    public function merkeBestaetigung(?\DateTimeImmutable $now): void
+    {
+        if ($now === null) {
+            unset($_SESSION['mfa_bestaetigt']);
+
+            return;
+        }
+        $_SESSION['mfa_bestaetigt'] = $now->getTimestamp();
+    }
+
+    public function bestaetigt(int $gueltigSekunden, ?\DateTimeImmutable $now = null): bool
+    {
+        $zeit = $_SESSION['mfa_bestaetigt'] ?? null;
+
+        return is_int($zeit) && ($now ?? new \DateTimeImmutable())->getTimestamp() - $zeit < $gueltigSekunden;
     }
 
     /** The logged-in user's id, or null. */

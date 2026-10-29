@@ -13,6 +13,12 @@ use App\Tests\Support\AppTestCase;
  */
 final class SeitenTest extends AppTestCase
 {
+    /** The settings page reads the mail settings (issue #7). */
+    protected function pdoFabrik(): ?\Closure
+    {
+        return $this->mitDatenbank();
+    }
+
     public function testAnonymousVisitorsAreSentToTheLogin(): void
     {
         self::assertWeiterleitungNach('/app', $this->get('/'));
@@ -69,9 +75,9 @@ final class SeitenTest extends AppTestCase
 
         $seite = $this->get('/app/mitglieder')->body;
 
-        self::assertStringContainsString('Passwort ändern <small>(folgt)</small>', $seite);
-        self::assertStringContainsString('Zweiter Faktor <small>(folgt)</small>', $seite);
-        self::assertStringContainsString('Barrierefrei-Modus einschalten <small>(folgt)</small>', $seite);
+        self::assertStringContainsString('<a href="/app/konto/passwort">Passwort ändern</a>', $seite);
+        self::assertStringContainsString('<a href="/app/konto/zweiter-faktor">Zweiter Faktor</a>', $seite);
+        self::assertStringContainsString('Barrierefrei-Modus einschalten</button>', $seite);
         self::assertMatchesRegularExpression('#<form method="post" action="/abmelden">\s*<input type="hidden" name="_csrf" value="[0-9a-f]{64}">#', $seite);
     }
 
@@ -81,7 +87,7 @@ final class SeitenTest extends AppTestCase
 
         $seite = $this->get('/app/mitglieder')->body;
 
-        self::assertMatchesRegularExpression('/<body class="bereich-app" hx-headers=\'\{"X-CSRF-Token":"[0-9a-f]{64}"\}\'>/', $seite);
+        self::assertMatchesRegularExpression('/<body class="bereich-app" hx-headers=\'\{"X-CSRF-Token":"[0-9a-f]{64}"\}\' data-leerlauf="1800" data-weiter="\/app\/konto\/weiterarbeiten">/', $seite);
         self::assertStringContainsString('<link rel="stylesheet" href="/css/app.css?v=0.0.0-test">', $seite);
         self::assertStringContainsString('<script src="/js/vendor/htmx.min.js?v=0.0.0-test" defer></script>', $seite);
         self::assertStringContainsString('<script src="/js/benutzermenue.js?v=0.0.0-test" defer></script>', $seite);

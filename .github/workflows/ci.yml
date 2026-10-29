@@ -53,7 +53,16 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Lint every PHP file
-        run: find app bin docker/web migrations public tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+        run: find app bin docker/web migrations public tests tools -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+
+      # setup.php is generated from bin/setup.template.php plus the shared
+      # update classes (04 section 2); a stale copy would install with old
+      # download code.
+      - name: Verify generated setup.php is up to date
+        run: |
+          php bin/build_setup.php
+          git diff --exit-code setup.php
+          php -l setup.php
 
       - name: PHPUnit (deprecations, notices and warnings fail the build)
         run: vendor/bin/phpunit

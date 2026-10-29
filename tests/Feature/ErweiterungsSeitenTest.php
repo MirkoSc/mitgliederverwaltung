@@ -20,6 +20,12 @@ use App\Tests\Support\AppTestCase;
  */
 final class ErweiterungsSeitenTest extends AppTestCase
 {
+    /** The settings page reads the mail settings (issue #7). */
+    protected function pdoFabrik(): ?\Closure
+    {
+        return $this->mitDatenbank();
+    }
+
     /** @var list<string> */
     private array $angelegt = [];
 

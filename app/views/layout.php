@@ -10,8 +10,14 @@
  * @var string $partialsDir
  * @var string $appName
  * @var string $version
+ * @var string $faviconUrl
+ * @var string $faviconTyp
+ * @var string|null $appleIconUrl
  * @var list<string> $stylesheets
  * @var \App\Domain\Konto|null $konto
+ * @var array{seit: string, grund: string}|null $wartung maintenance flag, set by App\View\View
+ * @var bool|null $barrierefreiVorschau set by the pattern page only: shows
+ *      the page in the Barrierefrei-Modus without changing the setting
  */
 $seitentitel = ($title ?? '') !== '' ? $title . ' – ' . $appName : $appName;
 // The public pages may have no session, so they have no token - and then
@@ -19,7 +25,8 @@ $seitentitel = ($title ?? '') !== '' ? $title . ' – ' . $appName : $appName;
 $csrfToken = ($bereich !== \App\View\Area::Oeffentlich && ($csrf ?? '') !== '') ? (string) $csrf : null;
 // Barrierefrei-Modus: one class on <html> that overrides the tokens of the
 // design system (06 section 4) - no second layout.
-$htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barrierefrei"' : '';
+$barrierefrei = ($konto ?? null)?->barrierefrei === true || ($barrierefreiVorschau ?? false) === true;
+$htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
 ?>
 <!DOCTYPE html>
 <html lang="de"<?= $htmlKlasse ?>>
@@ -40,12 +47,18 @@ $htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barriere
     <?php foreach ($stylesheets as $stylesheet): ?>
     <link rel="stylesheet" href="<?= e($stylesheet) ?>?v=<?= e($version) ?>">
     <?php endforeach; ?>
-    <link rel="icon" href="/icon.svg?v=<?= e($version) ?>" type="image/svg+xml">
+    <link rel="icon" href="<?= e($faviconUrl) ?>" type="<?= e($faviconTyp) ?>">
+    <?php if ($appleIconUrl !== null): ?>
+    <link rel="apple-touch-icon" href="<?= e($appleIconUrl) ?>">
+    <?php endif; ?>
     <?php /* Only external files (CLAUDE.md section 4); values a script needs
              travel as data-* attributes. */ ?>
     <script src="/js/vendor/htmx.min.js?v=<?= e($version) ?>" defer></script>
     <?php if ($bereich->mitNavigation() && ($konto ?? null) !== null): ?>
     <script src="/js/benutzermenue.js?v=<?= e($version) ?>" defer></script>
+    <?php endif; ?>
+    <?php if ($bereich !== \App\View\Area::Oeffentlich && ($konto ?? null) !== null): ?>
+    <script src="/js/leerlauf.js?v=<?= e($version) ?>" defer></script>
     <?php endif; ?>
     <?php foreach (($scripts ?? []) as $skript): ?>
     <script src="<?= e($skript) ?>?v=<?= e($version) ?>" defer></script>
@@ -58,16 +71,29 @@ $htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barriere
     if ($csrfToken !== null) {
         echo ' hx-headers=\'{"X-CSRF-Token":"' . e($csrfToken) . '"}\'';
     }
+
+    if ($bereich !== \App\View\Area::Oeffentlich && ($konto ?? null) !== null) {
+        echo ' data-leerlauf="' . \App\Http\LoginGuard::leerlaufSekunden($konto)
+            . '" data-weiter="' . e(\App\View\Navigation::WEITERARBEITEN) . '"';
+    }
 ?>>
 <a class="sprungmarke" href="#inhalt">Zum Inhalt springen</a>
 
 <?php require $partialsDir . '/kopf.php'; ?>
 
 <main id="inhalt" class="inhalt">
+    <?php require $partialsDir . '/wartung.php'; ?>
     <?php require $partialsDir . '/flash.php'; ?>
     <?= $content ?>
 </main>
 
 <?php require $partialsDir . '/fuss.php'; ?>
+<?php if ($bereich !== \App\View\Area::Oeffentlich && ($konto ?? null) !== null): ?>
+<dialog id="leerlauf-warnung" class="leerlauf-warnung" aria-labelledby="leerlauf-titel">
+    <h2 id="leerlauf-titel">Sind Sie noch da?</h2>
+    <p>Sie waren eine Weile nicht aktiv. In etwa <span data-rest>5</span> Minuten werden Sie aus Sicherheitsgründen abgemeldet.</p>
+    <button type="button" class="knopf knopf-haupt" data-weiterarbeiten>Weiterarbeiten</button>
+</dialog>
+<?php endif; ?>
 </body>
 </html>

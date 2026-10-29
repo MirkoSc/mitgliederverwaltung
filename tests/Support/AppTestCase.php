@@ -15,6 +15,7 @@ use App\Http\Kernel;
 use App\Http\Request;
 use App\Http\Response;
 use App\Http\Session;
+use App\Service\Migration\Migrator;
 use App\Support\FileLogger;
 use App\Support\Version;
 use App\View\Stylesheets;
@@ -43,7 +44,7 @@ abstract class AppTestCase extends TestCase
     {
         $_SESSION = [];
         $this->konten = new TestKonten();
-        $this->dienste = self::baueDienste($this->konten, $this->pdoFabrik());
+        $this->dienste = self::baueDienste($this->konten, $this->pdoFabrik(), $this->paths());
         $this->kernel = Anwendung::kernel($this->dienste);
     }
 
@@ -63,9 +64,36 @@ abstract class AppTestCase extends TestCase
         return null;
     }
 
-    public static function baueDienste(TestKonten $konten, ?\Closure $pdoFabrik = null): Dienste
+    /**
+     * A migrated, empty database for a feature test whose pages read from
+     * one (the settings page does, since the section Mail exists). Use as
+     * `return $this->mitDatenbank();` in pdoFabrik().
+     *
+     * @return \Closure(): \PDO
+     */
+    protected function mitDatenbank(): \Closure
     {
-        $paths = new Paths(dirname(__DIR__, 2));
+        $pdo = DatabaseTestCase::leereDatenbank();
+        if ($pdo === null) {
+            self::markTestSkipped('Test database not available.');
+        }
+        new Migrator($pdo, dirname(__DIR__, 2) . '/migrations')->migrate();
+
+        return static fn(): \PDO => $pdo;
+    }
+
+    /**
+     * Other paths than the repository's own, for a test that writes below
+     * shared/ (see Feature\VereinTest); null = the repository's.
+     */
+    protected function paths(): ?Paths
+    {
+        return null;
+    }
+
+    public static function baueDienste(TestKonten $konten, ?\Closure $pdoFabrik = null, ?Paths $paths = null): Dienste
+    {
+        $paths ??= new Paths(dirname(__DIR__, 2));
         $version = new Version('0.0.0-test');
 
         return new Dienste(

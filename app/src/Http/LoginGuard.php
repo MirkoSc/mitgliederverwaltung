@@ -6,12 +6,13 @@ namespace App\Http;
 
 use App\Domain\Konto;
 use App\View\Area;
+use App\View\Navigation;
 use App\View\View;
 
 /**
  * The gate in front of everything that is not public: /app and /admin.
- * Taken over from Vereinsbelege, without vault, scopes and the second-factor
- * setup (that comes with issue #8).
+ * Taken over from Vereinsbelege, without vault and scopes. The accounts come from the `user` table
+ * (App\Service\Account\Benutzerkonten), read on every request.
  *
  * It answers two questions server side, for the route, not by hiding a link
  * (CLAUDE.md section 4): may this request happen at all, and may THIS
@@ -21,6 +22,10 @@ use App\View\View;
  * declares is what is checked.
  *
  * A logged-in account without the right gets 403, not the login form.
+ *
+ * An account without a second factor reaches nothing but its setup
+ * (02 section 3, "Erzwungene Einrichtung beim ersten Login"): every other
+ * page sends it to Navigation::ZWEITER_FAKTOR, a JSON route answers 403.
  *
  * Expiry is part of the gate (docs/spec/02-sicherheit.md section 4): idle
  * 30 minutes (60 in the Barrierefrei-Modus), 12 hours absolute, and a
@@ -100,9 +105,15 @@ final readonly class LoginGuard
             $this->session->touch();
         }
 
+        $this->session->rolleAbgleichen($konto->rolle->value);
+
         // The chrome of every page behind the login: who is signed in, and
         // the token their forms need.
         $this->view->setAnmeldung($konto, $this->session->csrfToken());
+
+        if (!$konto->zweiterFaktor && !self::istEinrichtung($request->path)) {
+            return $this->einrichtungVerlangen($request, $zugriff->api);
+        }
 
         if (!$this->darf($konto, $zugriff)) {
             return $this->verweigern($zugriff->api);
@@ -117,6 +128,22 @@ final readonly class LoginGuard
             ZugriffArt::Oeffentlich, ZugriffArt::Cron, ZugriffArt::Angemeldet => true,
             ZugriffArt::Recht => $zugriff->recht !== null && $konto->darf($zugriff->recht),
         };
+    }
+
+    private static function istEinrichtung(string $pfad): bool
+    {
+        return $pfad === Navigation::ZWEITER_FAKTOR || str_starts_with($pfad, Navigation::ZWEITER_FAKTOR . '/');
+    }
+
+    private function einrichtungVerlangen(Request $request, bool $api): ResponseInterface
+    {
+        if ($api) {
+            return Response::json(['fehler' => 'Bitte richten Sie zuerst den zweiten Faktor ein.', 'weiter' => Navigation::ZWEITER_FAKTOR], 403);
+        }
+
+        return $request->istHtmx()
+            ? new Response(403, ['HX-Redirect' => Navigation::ZWEITER_FAKTOR])
+            : Response::redirect(Navigation::ZWEITER_FAKTOR);
     }
 
     private function verweigern(bool $api): ResponseInterface

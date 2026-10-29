@@ -1,0 +1,6 @@
+# app/routes/stammdaten.php - settings sections for lists (admin only).
+POST /admin/abteilungen -> admin.einstellungen
+POST /admin/funktionen -> admin.einstellungen
+POST /admin/beitragsarten -> admin.einstellungen
+POST /admin/geburtstage -> admin.einstellungen
+POST /admin/ehrungsstufen -> admin.einstellungen
