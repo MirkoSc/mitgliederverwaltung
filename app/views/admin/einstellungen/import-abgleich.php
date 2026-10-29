@@ -63,7 +63,7 @@ $alle = static function (string $gruppe, string $wofuer): void { ?>
     <?php $datei = $abgleichVorschau->datei; ?>
     <p class="hinweis hinweis-fehler" role="alert">
         Die Datei enthält Fehler. Abgeglichen wird nur eine Datei ohne Fehler: bitte die Fehler beheben
-        (im Umwandlungsskript oder in den Einstellungen) und die Datei neu hochladen.
+        (in der Datei oder in den Einstellungen) und die Datei neu hochladen.
     </p>
     <div class="tabelle-rahmen">
         <table class="liste">

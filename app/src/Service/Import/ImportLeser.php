@@ -54,7 +54,7 @@ final class ImportLeser
             $csv = substr($csv, 3);
         }
         if (!mb_check_encoding($csv, 'UTF-8') || str_contains($csv, "\0")) {
-            return self::dateiFehler('Die Datei ist keine Textdatei in UTF-8. Bitte import.csv mit dem Umwandlungsskript erzeugen.');
+            return self::dateiFehler('Die Datei ist keine Textdatei in UTF-8. Bitte import.csv als UTF-8 speichern.');
         }
 
         $zeilen = self::zeilen($csv);

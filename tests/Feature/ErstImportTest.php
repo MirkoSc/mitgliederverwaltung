@@ -464,9 +464,9 @@ final class ErstImportTest extends AppTestCase
     public function testTheOutputOfTheConversionScriptImportsWithoutErrors(): void
     {
         $this->als(Rolle::Admin);
-        // Expected output of tools/altdaten-umwandeln.ps1 (the CI job
-        // "altdaten" keeps it byte-identical to what the script writes).
-        $csv = (string) file_get_contents(dirname(__DIR__) . '/Fixtures/altdaten/erwartet-import.csv');
+        // An invented import.csv as the old conversion produced it (one-off,
+        // done locally; spec 10 section 3).
+        $csv = (string) file_get_contents(dirname(__DIR__) . '/Fixtures/import/beispiel.csv');
 
         $this->ganzImportieren($csv);
 
