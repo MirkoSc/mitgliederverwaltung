@@ -1,2 +1,4 @@
-# app/routes/mitglieder.php - members: both roles (07 section 9).
+# app/routes/mitglieder.php - members: both roles (07 section 9). POST is the
+# same page for the search form (the search text never goes into a URL).
 GET /app/mitglieder -> mitglieder.sehen
+POST /app/mitglieder -> mitglieder.sehen

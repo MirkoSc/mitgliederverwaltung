@@ -65,6 +65,17 @@ Mitglieder, sonst deaktivieren.
 - Gepflegt im Mitglied: „Familie wählen" (Suche) oder „neue Familie",
   Rolle wählen. Die Familie zeigt im Mitglied ihre übrigen Personen.
 - Eine Familie ohne Personen wird automatisch gelöscht.
+- Umsetzung (#20): Abschnitt **Familie** am Mitglied
+  (`App\App\Mitglied\FamilieAbschnitt`, Template `mitglied/familie`) zeigt
+  Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
+  anlegen" führt zu `GET /app/mitglieder/{id}/familie?q=` (Suche nach Name,
+  Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
+  dazu `POST …/familie/{beitreten,neu,rolle,umbenennen,verlassen}`
+  (`App\App\FamilieController`, `app/routes/familie.php`, Recht
+  `mitglieder.bearbeiten`, also beide Rollen). Jede Änderung ist ein
+  normales Speichern des Mitglieds (neue Version, Anlass `geaendert`); die
+  Rolle ohne Angabe ist `elternteil`. Das Formular „Daten" enthält Familie
+  und Rolle nicht, sie bleiben beim Speichern erhalten.
 - Beitrag: der **Zahler** hat die Beitragsart „Familie"; Elternteile und
   Kinder haben normalerweise **keine** eigene Beitragsart (08 §1).
 
@@ -170,6 +181,14 @@ SQL.
 - **Suche**: ein Suchfeld über Nachname, Vorname, Mitgliedsnummer, Ort,
   E-Mail per SQL `LIKE`, live über htmx. Jedes Wort der Eingabe muss in
   einem der Felder vorkommen („max muster" findet Max Mustermann).
+
+Umsetzung der Mitglieder-Seite (#18): `GET/POST /app/mitglieder`
+(`App\App\MitgliederController`, Liste in `MitgliederListeRepository`,
+Filter `MitgliederFilter`). Der Suchtext reist nur im POST-Body, nie in der
+URL (CLAUDE.md §4); Filter, Sortierung, Seite und das geöffnete Mitglied
+stehen in der URL. Ehemalige sind ohne Haken „Ehemalige anzeigen"
+ausgeblendet. Das geöffnete Mitglied nimmt Reiter und Abschnitte aus den
+Erweiterungspunkten `App\App\Mitglied\*` (#19 ff.).
 
 Umsetzung (#15, gemeinsame API für alle späteren Issues):
 

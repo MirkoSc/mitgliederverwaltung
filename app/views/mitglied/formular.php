@@ -181,15 +181,6 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?= $text('mandatsreferenz', 'Mandatsreferenz', '', 'Leer lassen: es gilt die Mitgliedsnummer' . ($nummer !== '' && ctype_digit($nummer) ? ' (' . (int) $nummer . ')' : '') . '.') ?>
     <?= $datum('mandatsdatum', 'Mandatsdatum', $mandatsdatumHilfe) ?>
 
-    <h3>Familie</h3>
-    <p class="feld-breit">
-        <?php if ($familie !== null): ?>
-            <?= e($familie->name) ?><?= $mitglied?->familieRolle !== null ? ', Rolle: ' . e($mitglied->familieRolle->bezeichnung()) : '' ?>
-        <?php else: ?>
-            Keine Familie.
-        <?php endif; ?>
-    </p>
-
     <h3>Funktionen</h3>
     <fieldset class="feldgruppe">
         <legend>Funktionen im Verein</legend>

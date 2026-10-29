@@ -395,7 +395,6 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertStringContainsString('Mitglied speichern', $html);
         self::assertStringContainsString('Die Prüfziffer passt nicht', $html);
         self::assertStringContainsString('Leer lassen: es gilt die Mitgliedsnummer (14).', $html);
-        self::assertStringContainsString('Keine Familie.', $html);
         self::assertStringNotContainsString('Mitglied löschen', $html, 'the board does not delete');
 
         $admin = $this->als(Rolle::Admin);
