@@ -205,9 +205,7 @@ final class MitgliedFormularTest extends TestCase
 
         self::assertSame([], $formular->fehler);
         self::assertNotNull($formular->mitglied);
-        self::assertCount(1, MitgliedFormular::hinweise($formular->mitglied));
-        self::assertSame([], MitgliedFormular::hinweise($formular->mitglied->mit(['iban' => 'DE89370400440532013000'])));
-        self::assertSame([], MitgliedFormular::hinweise($formular->mitglied->mit(['iban' => ''])), 'a missing IBAN is another rule (07 section 6)');
+        self::assertSame('DE00123456789012345678', $formular->mitglied->iban, 'kept as typed (normalised); the hint is HinweiseTest');
     }
 
     public function testInactiveEntriesAreOfferedOnlyWhenTheMemberHasThem(): void

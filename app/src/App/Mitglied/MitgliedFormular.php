@@ -220,20 +220,4 @@ final readonly class MitgliedFormular
     {
         return $this->fehler[$feld] ?? null;
     }
-
-    /**
-     * What looks wrong after a save - shown, never blocking (07 section 1).
-     * The full set of member hints (07 section 6) is computed elsewhere.
-     *
-     * @return list<string>
-     */
-    public static function hinweise(Mitglied $m): array
-    {
-        $hinweise = [];
-        if ($m->iban !== '' && !$m->hatGueltigeIban()) {
-            $hinweise[] = 'Die IBAN ist ungültig – die Prüfziffer passt nicht. Bitte die IBAN prüfen; gespeichert wurde sie trotzdem.';
-        }
-
-        return $hinweise;
-    }
 }
