@@ -111,18 +111,20 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
 - **Zusammenstellen** (`App\Service\Beitraege\Einzuege::zusammenstellen()`):
   alle offenen Beiträge aller Jahre, nach Namen. Auswählbar ist ein
   Beitrag mit Zahlart `lastschrift`, gültiger IBAN und brauchbarem Mandat
-  (Mandatsreferenz im SEPA-Zeichensatz, höchstens 35 Zeichen; ein
-  Mandatsdatum, das nicht in der Zukunft liegt). Die übrigen stehen
-  aufklappbar daneben, je mit Grund; Zahlart `selbst` und fehlende/
-  falsche IBAN verweisen auf „Selbst kassieren". Die Häkchen gehen als
+  (Mandatsreferenz im SEPA-Zeichensatz, höchstens 35 Zeichen – sie wird
+  nie umgeschrieben, weil die Bank sie mit dem unterschriebenen Mandat
+  abgleicht; ein Mandatsdatum, das nicht in der Zukunft liegt). Die
+  übrigen stehen aufklappbar daneben, je mit Grund; bei Zahlart `selbst`
+  und fehlender/falscher IBAN verweist der Text auf „Selbst kassieren"
+  (Seite Listen). Die Häkchen gehen als
   `beitrag[]`, danach ein verstecktes Feld `auswahl_vollstaendig` – fehlt
   es (der Server schneidet über `max_input_vars` stillschweigend ab), wird
   nichts erzeugt.
 - **Fälligkeit**: Vorschlag = nächster Bankarbeitstag + 1 Bankarbeitstag
   im TARGET-Kalender (Sa/So, 1.1., Karfreitag, Ostermontag, 1.5., 25./26.12.;
   `App\Service\Beitraege\Bankarbeitstage`). Ein früheres Datum als der
-  nächste Bankarbeitstag ergibt einen Hinweis nach dem Erzeugen, keine
-  Sperre.
+  nächste Bankarbeitstag oder ein Tag ohne Bankbetrieb ergibt einen
+  Hinweis nach dem Erzeugen, keine Sperre.
 - **Erzeugen** (`POST /app/beitraege/einzug`) läuft in einer Transaktion:
   gewählte Beiträge sperren und erneut prüfen – ist einer nicht mehr offen
   oder einziehbar, entsteht nichts –, Einzug anlegen, Datei erzeugen und
@@ -181,10 +183,12 @@ Regel selbst; `SepaText` unverändert aus Vereinsbelege), aufgerufen von
   Kontoinhaber und kein Vereinsname – in allen Fällen wäre die Datei
   wertlos. Die Seite nennt, was fehlt, und verlinkt die Vereinsdaten.
 - Eine BIC (Verein wie Mitglied) wird nur mit gültiger Form verwendet,
-  sonst `NOTPROVIDED`. Mandatsreferenz und Namen werden in den
-  SEPA-Zeichensatz umgeschrieben; `{name}` in der Vorlage ist Vor- und
-  Nachname des Mitglieds, der Name in `Dbtr` der Kontoinhaber (falls
-  abweichend, sonst Vor- und Nachname).
+  sonst `NOTPROVIDED`. Namen und Verwendungszweck werden in den
+  SEPA-Zeichensatz umgeschrieben, die Mandatsreferenz nicht (siehe §3);
+  `{name}` in der Vorlage ist Vor- und Nachname des Mitglieds, der Name in
+  `Dbtr` der Kontoinhaber (falls abweichend, sonst Vor- und Nachname);
+  Gläubiger ist der Kontoinhaber des Vereins, ergibt er umgeschrieben
+  nichts, der Vereinsname.
 
 ## 5. Einstellungen
 
