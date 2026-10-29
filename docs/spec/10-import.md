@@ -37,6 +37,39 @@ Weil der Übergang länger dauern kann, gibt es zwei Arten:
 - Abteilungen, Beitragsarten und Funktionen kommen aus den Seeds
   (07 §2/§4, 08 §1); der Import ordnet über Name bzw. BLSV-Nummer zu.
 
+**Umsetzung Erstimport (#32):** Abschnitt „Import“ der Einstellungen
+(`App\Admin\Einstellungen\ImportAbschnitt`, Recht `admin.import`, Routen in
+`app/routes/import.php`, Dienst `App\Service\Import\ErstImport`).
+- Hochgeladen wird `import.csv` (höchstens 8 MB). Die Datei liegt bis zum
+  Ende des Imports **verschlüsselt als Blob**; die Job-Zeile (`job`, Typ
+  `import`) hält nur Position und Zähler (`phase` = `vorschau` | `import` |
+  `fertig`, `offset`, `gesamt`), nie Mitgliederdaten. Nach dem Import, beim
+  Verwerfen und beim Leeren wird die Datei gelöscht.
+- `ImportLeser` liest und prüft die ganze Datei auf einmal und meldet alle
+  Fehler zusammen (Zeilennummer, Mitgliedsnummer, Text): fehlende/ungültige/
+  doppelte Nummer, fehlender Nachname, unbekannte Abteilung (BLSV-Nummer,
+  „9“ = „09“), Beitragsart oder Funktion (Name, ohne Groß-/Kleinschreibung),
+  kaputtes Datum, ungültiges Geschlecht/`aktiv`/Zahlart, Familie ohne Rolle
+  und umgekehrt, zu lange Werte, falsche Spaltenzahl. Mit Fehlern wird
+  **nichts** importiert, auch nicht die fehlerfreien Zeilen.
+- Leere `land` = `D`, leere `zahlart` = `lastschrift` (wie beim neuen
+  Mitglied), leere `aktiv` = aktiv. Eine Familie ohne `familie_name` heißt
+  „Familie <Nachname des ersten Mitglieds>“.
+- Die Vorschau zeigt Mitglieder, Familien, Mitglieder je Abteilung, die
+  Fehler und je Mitglied die Hinweise (07 §6, mit den Familien der Datei).
+  **Nachweis-Hinweise** (Rentennachweis fehlt, Jugendbeitrag ab 18, Nachweis
+  abgelaufen) fehlen dort bewusst: Nachweise werden nicht importiert, sonst
+  stünde jeder Rentner in der Liste.
+- Schritt = 100 Zeilen in einer Transaktion; die Position wird erst nach dem
+  Commit gespeichert. Wiederholung ist unschädlich: eine vorhandene
+  Mitgliedsnummer wird übersprungen, eine Familie zuerst per `import_schluessel`
+  gesucht. Der Schritt hält eine Sperre (25 s); ein abgestürzter Schritt
+  wird nach Ablauf der Sperre vom nächsten Request wiederholt.
+- „Bestand leeren“ (eigene Rückfrageseite): löscht alle Mitglieder samt
+  Versionen, Nachweisen (und Dateien), Ehrungs-Vermerken und alle Familien;
+  nur ohne Jahresbeitrag. Audit-Einträge: `import.durchgefuehrt` (nur Zahlen)
+  und `bestand.geleert`.
+
 ## 2. Importformat `import.csv`
 
 UTF-8, Trennzeichen `;`, erste Zeile Spaltennamen, Datum `TT.MM.JJJJ`,

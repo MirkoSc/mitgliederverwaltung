@@ -48,6 +48,22 @@ final readonly class JobRepository
         return is_array($zeile) ? self::job($zeile) : null;
     }
 
+    /** The newest job of a kind, whatever its state; null if there is none. */
+    public function neuesteVomTyp(string $typ): ?Job
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM job WHERE typ = ? ORDER BY id DESC LIMIT 1');
+        $stmt->execute([$typ]);
+        $zeile = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return is_array($zeile) ? self::job($zeile) : null;
+    }
+
+    /** Removes the job row, whatever its state. */
+    public function loeschen(int $id): void
+    {
+        $this->pdo->prepare('DELETE FROM job WHERE id = ?')->execute([$id]);
+    }
+
     /**
      * Takes the job for one step, atomically: a lock only for the one request
      * that got it, null for everybody else. A finished or failed job is never

@@ -50,6 +50,12 @@ final readonly class MitgliedRepository
         return $this->eines('SELECT * FROM mitglied WHERE mitgliedsnummer = ?', [$mitgliedsnummer]);
     }
 
+    /** How many members there are, former ones included. */
+    public function anzahl(): int
+    {
+        return (int) $this->pdo->query('SELECT COUNT(*) FROM mitglied')->fetchColumn();
+    }
+
     /** Member number for a new member: the highest + 1 (07 section 1). */
     public function naechsteNummer(): int
     {
@@ -263,6 +269,30 @@ final readonly class MitgliedRepository
             if ($familieId !== null) {
                 new FamilieRepository($this->pdo)->loeschenWennLeer($familieId);
             }
+
+            return $blobs;
+        });
+    }
+
+    /**
+     * Deletes ALL members for good - the "Bestand leeren" of the first import
+     * (docs/spec/10-import.md section 1): members with their versions,
+     * departments, functions, proofs, annual fees and honours (by the foreign
+     * keys), and every family. The caller makes sure no annual fee exists.
+     *
+     * Returns the blob ids of the deleted proofs, as loeschen() does.
+     *
+     * @return list<int>
+     */
+    public function alleLoeschen(): array
+    {
+        return Zeilen::transaktion($this->pdo, function (): array {
+            $blobs = array_map(
+                intval(...),
+                $this->pdo->query('SELECT blob_id FROM nachweis WHERE blob_id IS NOT NULL')?->fetchAll(\PDO::FETCH_COLUMN) ?: [],
+            );
+            $this->pdo->exec('DELETE FROM mitglied');
+            $this->pdo->exec('DELETE FROM familie');
 
             return $blobs;
         });
