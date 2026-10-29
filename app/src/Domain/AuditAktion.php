@@ -28,6 +28,7 @@ enum AuditAktion: string
     case RestoreDurchgefuehrt = 'restore.durchgefuehrt';
     case ExportErzeugt = 'export.erzeugt';
     case ImportDurchgefuehrt = 'import.durchgefuehrt';
+    case BestandGeleert = 'bestand.geleert';
     case EinzugErzeugt = 'einzug.erzeugt';
     case EinzugBestaetigt = 'einzug.bestaetigt';
     case EinzugVerworfen = 'einzug.verworfen';
@@ -53,6 +54,7 @@ enum AuditAktion: string
             self::RestoreDurchgefuehrt => 'Backup eingespielt',
             self::ExportErzeugt => 'Export erzeugt',
             self::ImportDurchgefuehrt => 'Import durchgeführt',
+            self::BestandGeleert => 'Mitgliederbestand geleert',
             self::EinzugErzeugt => 'Einzug erzeugt',
             self::EinzugBestaetigt => 'Einzug bestätigt',
             self::EinzugVerworfen => 'Einzug verworfen',
