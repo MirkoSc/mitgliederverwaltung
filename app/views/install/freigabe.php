@@ -14,7 +14,8 @@
         <p class="install-marke">Mitgliederverwaltung einrichten</p>
         <h1>Installation freigeben</h1>
     </header>
-    <?php $fehler = array_values($fehler); require __DIR__ . '/../partials/fehlerliste.php'; ?>
+    <?php require __DIR__ . '/../partials/install-schutz.php'; ?>
+<?php $fehler = array_values($fehler); require __DIR__ . '/../partials/fehlerliste.php'; ?>
     <p>Die Installation ist geschützt, damit niemand anderes sie vor Ihnen abschließt. Normalerweise gibt
         <code>setup.php</code> die Freigabe beim Weiterleiten mit. Kommen Sie von woanders, tragen Sie das
         Installations-Token ein: Es steht in der Datei <code>shared/install_token.txt</code>, die Sie per FTP öffnen.</p>

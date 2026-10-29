@@ -103,9 +103,6 @@ final readonly class InstallController
     public function zeigen(Request $request): ResponseInterface
     {
         $this->session->start();
-        // setup.php wrote them already; repeated so an installation whose
-        // setup.php could not gets a second try - and a visible warning.
-        DenyHtaccess::ensureAll(dirname($this->paths->releaseRoot));
 
         $token = $this->token();
         if (!$token->isReleased()) {
@@ -811,8 +808,14 @@ final readonly class InstallController
     {
         // Every installer page runs with a session, whose cache limiter
         // sends no-store (Session::OPTIONEN) - the key page included.
+        // setup.php wrote them already; repeated on every page so an
+        // installation whose setup.php could not gets another try - and a
+        // visible warning instead of a silently reachable shared/.
+        $ungeschuetzt = DenyHtaccess::ensureAll(dirname($this->paths->releaseRoot));
+
         return Response::html($this->view->render($vorlage, [
             'title' => 'Installation',
+            'ungeschuetzt' => $ungeschuetzt === [] ? '' : DenyHtaccess::describe($ungeschuetzt),
             'csrf' => $this->session->csrfToken(),
             'scripts' => ['/js/install.js'],
             ...$daten,

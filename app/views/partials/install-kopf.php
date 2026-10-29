@@ -24,4 +24,5 @@ $erreicht = true;
         <?php endforeach; ?>
     </ol>
 </header>
+<?php require __DIR__ . '/install-schutz.php'; ?>
 <?php $fehler = array_values($fehler ?? []); require __DIR__ . '/fehlerliste.php'; ?>
