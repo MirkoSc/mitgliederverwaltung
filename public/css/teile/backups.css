@@ -1,0 +1,19 @@
+/* Progress of the backup step chain in the settings section Backups
+   (issue #12). Tokens from app.css only. */
+
+.backup-verlauf {
+    max-width: var(--text-breite);
+    margin-bottom: var(--abstand-4);
+}
+
+.backup-verlauf progress {
+    display: block;
+    width: 100%;
+    height: 0.75rem;
+    margin-bottom: var(--abstand-2);
+    accent-color: var(--farbe-haupt);
+}
+
+.modus-barrierefrei .backup-verlauf progress {
+    height: 1.5rem;
+}

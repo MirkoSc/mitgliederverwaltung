@@ -12,6 +12,7 @@ use App\Http\Session;
 use App\Repository\JobRepository;
 use App\Repository\SettingRepository;
 use App\Service\Account\Benutzerkonten;
+use App\Service\Audit\AuditLog;
 use App\Support\FileLogger;
 use App\Support\Version;
 use App\View\View;
@@ -75,6 +76,12 @@ final class Dienste
     public function jobs(): JobRepository
     {
         return new JobRepository($this->pdo());
+    }
+
+    /** The audit log (docs/spec/02-sicherheit.md section 8); every area records through it. */
+    public function audit(): AuditLog
+    {
+        return $this->dienst(AuditLog::class, fn(self $d): AuditLog => new AuditLog($d->pdo(), $d->config->serverKey));
     }
 
     /**

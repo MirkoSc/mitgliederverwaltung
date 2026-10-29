@@ -1,0 +1,6 @@
+# app/routes/rechtstexte.php - Impressum and Datenschutz (issue #14, E-F3): public pages,
+# the admin's form in the settings section (admin.einstellungen).
+GET /impressum -> öffentlich
+GET /datenschutz -> öffentlich
+POST /admin/rechtstexte/impressum -> admin.einstellungen
+POST /admin/rechtstexte/datenschutz -> admin.einstellungen

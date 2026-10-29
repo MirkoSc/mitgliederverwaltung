@@ -1,0 +1,2 @@
+# app/routes/audit.php - the audit log page: admin only (02 section 8).
+GET /admin/audit -> admin.audit
