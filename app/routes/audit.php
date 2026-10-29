@@ -7,6 +7,7 @@ use App\Http\Request;
 use App\Http\Response;
 use App\Http\Routen;
 use App\Http\Zugriff;
+use App\Repository\BenutzerRepository;
 use App\View\Area;
 
 /**
@@ -17,12 +18,18 @@ return static function (Routen $routen): void {
     $routen->get('/admin/audit', Zugriff::recht(Permission::AdminAudit), static function (Request $r) use ($routen): Response {
         $dienste = $routen->dienste();
         $audit = $dienste->audit();
+        // Names instead of bare ids; a deleted user stays a number.
+        $namen = [];
+        foreach (new BenutzerRepository($dienste->pdo())->alle() as $benutzer) {
+            $namen[$benutzer->id] = $benutzer->name;
+        }
 
         return Response::html($dienste->view->render('admin/audit', [
             'title' => 'Audit-Log',
             'pruefung' => $audit->pruefen(),
             'eintraege' => $audit->neueste(100),
             'anzahl' => $audit->anzahl(),
+            'benutzerNamen' => $namen,
         ], Area::Admin));
     });
 };

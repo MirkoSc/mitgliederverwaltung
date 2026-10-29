@@ -94,6 +94,10 @@ final class BackupSeiteTest extends AppTestCase
         $inhalt = implode('', iterator_to_array($antwort->chunks, false));
         self::assertSame(file_get_contents($this->root . '/backups/' . $name), $inhalt);
         self::assertStringStartsWith(BackupCipher::MAGIC, $inhalt);
+
+        // 02 section 8: the backup is in the audit trail, once.
+        $audit = $this->dienste->pdo()->query("SELECT entity, entity_id FROM audit_log WHERE action = 'backup.erstellt'")->fetchAll(\PDO::FETCH_ASSOC);
+        self::assertSame([['entity' => 'backup', 'entity_id' => $name]], $audit);
     }
 
     public function testASecondStartWhileOneRunsIsRefused(): void

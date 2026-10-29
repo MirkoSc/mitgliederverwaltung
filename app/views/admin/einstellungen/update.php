@@ -41,7 +41,7 @@ $unfertig = $stand !== null && $stand->zielVersion !== null && !$stand->fertig;
     </p>
 </form>
 
-<div id="update" data-csrf="<?= e($csrf) ?>" data-schritte="<?= e(implode(',', $schritte)) ?>"
+<div id="update-kette" data-csrf="<?= e($csrf) ?>" data-schritte="<?= e(implode(',', $schritte)) ?>"
      data-fortsetzen-nach="<?= e($unfertig ? ($stand->abgeschlossenerSchritt ?? '') : '') ?>"
      data-unfertig="<?= $unfertig ? '1' : '0' ?>">
     <noscript>

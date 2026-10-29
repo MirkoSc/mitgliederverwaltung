@@ -80,6 +80,9 @@ final class ShimContentTest extends TestCase
         foreach ([ReleaseSwitcher::SHIM, $frontController] as $quelle) {
             self::assertStringContainsString("'/css/'", $quelle);
             self::assertStringContainsString("'/js/'", $quelle);
+            // The header logo: the placeholder below /img/, an upload below /logo/.
+            self::assertStringContainsString("'/img/'", $quelle);
+            self::assertStringContainsString("'/logo/'", $quelle);
         }
     }
 

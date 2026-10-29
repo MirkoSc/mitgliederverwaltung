@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Admin;
 
 use App\Dienste;
+use App\Domain\AuditAktion;
 use App\Http\Request;
 use App\Http\Response;
 use App\Http\ResponseInterface;
@@ -76,6 +77,14 @@ final readonly class BackupController
 
         if ($stand['gerade_fertig'] === true) {
             $this->dienste->session->flash('Das Backup ist erstellt.');
+            // 02 section 8: backups are part of the audit trail.
+            $this->dienste->audit()->protokollieren(
+                AuditAktion::BackupErstellt,
+                $this->dienste->view->konto()?->id,
+                'backup',
+                is_string($stand['name'] ?? null) ? $stand['name'] : null,
+                ['dump_zeilen' => (int) ($stand['dump_zeilen'] ?? 0)],
+            );
         }
 
         return Response::json(self::antwort($stand));

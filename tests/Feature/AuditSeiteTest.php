@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Feature;
 
 use App\Domain\AuditAktion;
+use App\Domain\BenutzerStatus;
 use App\Domain\Rolle;
+use App\Repository\BenutzerRepository;
 use App\Service\Migration\Migrator;
 use App\Tests\Support\AppTestCase;
 use App\Tests\Support\TestDatenbank;
@@ -34,6 +36,27 @@ final class AuditSeiteTest extends AppTestCase
         self::assertSame(200, $antwort->status);
         self::assertStringContainsString('Kette in Ordnung', $antwort->body);
         self::assertStringContainsString('Backup erstellt', $antwort->body);
+    }
+
+    /** The column "Benutzer" names the user; an unknown (deleted) one stays a number. */
+    public function testTheUserColumnShowsTheName(): void
+    {
+        $id = new BenutzerRepository($this->dienste->pdo())->insert(
+            'kassier@example.org',
+            'Karl Kassier',
+            'x',
+            BenutzerStatus::Aktiv,
+            Rolle::Admin,
+            new \DateTimeImmutable(),
+        );
+        $this->dienste->audit()->protokollieren(AuditAktion::ExportErzeugt, $id);
+        $this->dienste->audit()->protokollieren(AuditAktion::ExportErzeugt, 999);
+        $this->als(Rolle::Admin);
+
+        $seite = $this->get('/admin/audit')->body;
+
+        self::assertStringContainsString('<td>Karl Kassier</td>', $seite);
+        self::assertStringContainsString('<td>Nr. 999</td>', $seite);
     }
 
     public function testManipulationIsShown(): void

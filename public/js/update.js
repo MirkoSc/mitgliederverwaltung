@@ -82,7 +82,7 @@
     }
 
     function initUpdate() {
-        const wurzel = document.querySelector('#update');
+        const wurzel = document.querySelector('#update-kette');
         if (wurzel === null) {
             return;
         }
