@@ -132,14 +132,12 @@ function initImport() {
             await arbeit();
         } catch (problem) {
             status.textContent = 'Der Import ist unterbrochen.';
-            fehler.textContent = problem.message + ' „Import fortsetzen“ wiederholt den letzten Schritt.';
+            // Only the page of a started import has the button to go on; the
+            // preview has none, there a reload shows it.
+            fehler.textContent = problem.message + (fortsetzen !== null
+                ? ' „Import fortsetzen“ wiederholt den letzten Schritt.'
+                : ' Bitte die Seite neu laden; dort setzt „Import fortsetzen“ den Import fort.');
             fehler.hidden = false;
-            if (start !== null) {
-                start.hidden = true;
-            }
-            if (fortsetzen !== null) {
-                fortsetzen.hidden = false;
-            }
         } finally {
             knoepfe.forEach((knopf) => {
                 knopf.disabled = false;

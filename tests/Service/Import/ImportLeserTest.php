@@ -88,6 +88,19 @@ final class ImportLeserTest extends TestCase
         self::assertNull($datei->eintraege[2]->familie);
     }
 
+    public function testNumericFamilyKeysKeepTheirNamesAndAreNotRenumbered(): void
+    {
+        $datei = $this->lesen(
+            '1;Muster;Max;m;;;1;09;Familie;lastschrift;;501;Familie Muster;zahler;;',
+            '2;Muster;Mia;w;;;1;09;;lastschrift;;501;;kind;;',
+            '3;Alt;Anna;w;;;1;09;Familie;lastschrift;;502;;zahler;;',
+        );
+
+        self::assertCount(2, $datei->familien);
+        self::assertSame('Familie Muster', $datei->familien['501']);
+        self::assertSame('Familie Alt', $datei->familien['502']);
+    }
+
     public function testAFamilyWithoutANameIsCalledAfterItsFirstMember(): void
     {
         $datei = $this->lesen('1;Muster;Max;m;;;1;;;;;F7;;zahler;;');

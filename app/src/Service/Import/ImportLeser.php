@@ -127,7 +127,7 @@ final class ImportLeser
             return self::dateiFehler('Die Datei enthält keine Mitglieder, nur die Kopfzeile.');
         }
 
-        return new ImportDatei($eintraege, $fehler, [...$familien, ...$familienNamen], $unbekannt);
+        return new ImportDatei($eintraege, $fehler, array_replace($familien, $familienNamen), $unbekannt);
     }
 
     /**

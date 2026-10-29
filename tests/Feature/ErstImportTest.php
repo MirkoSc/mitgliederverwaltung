@@ -231,6 +231,53 @@ final class ErstImportTest extends AppTestCase
         self::assertNull($this->repo()->findeNachNummer(4)?->familieId);
     }
 
+    public function testNumericFamilyKeysGiveTheFamiliesTheirOwnNamesAndCount(): void
+    {
+        $this->als(Rolle::Admin);
+        $zeile = static fn(int $nr, string $familie, string $name, string $rolle): string => implode(';', [
+            $nr, 'Beispiel' . $nr, 'Vorname' . $nr, '01.02.1990', '01.01.2010', '1', '09',
+            $rolle === 'zahler' ? 'Familie' : '', 'lastschrift', 'DE02100208900014569054', $familie, $name, $rolle, '',
+        ]);
+        $csv = implode("\n", [
+            self::KOPF,
+            $zeile(1, '501', 'Familie Familie', 'zahler'),
+            $zeile(2, '501', '', 'kind'),
+            $zeile(3, '502', 'Familie Gemeinsam', 'zahler'),
+            $zeile(4, '502', '', 'kind'),
+        ]) . "\n";
+
+        $this->hochladen($csv);
+        $this->post('/admin/import/starten');
+        $stand = $this->json($this->post('/admin/import/schritt'));
+
+        self::assertTrue($stand['fertig']);
+        self::assertSame(2, $stand['familien']);
+        self::assertSame(2, $this->anzahlZeilen('familie'));
+        $familien = new FamilieRepository($this->dienste->pdo());
+        self::assertSame('Familie Familie', $familien->findeNachImportSchluessel('501')?->name);
+        self::assertSame('Familie Gemeinsam', $familien->findeNachImportSchluessel('502')?->name);
+    }
+
+    public function testMembersEnteredByHandDuringTheImportAreNotCountedAsImported(): void
+    {
+        $this->als(Rolle::Admin);
+        $this->hochladen($this->csv(150));
+        $this->post('/admin/import/starten');
+        $this->json($this->post('/admin/import/schritt'));
+
+        // Somebody adds a member by hand between the steps.
+        $this->repo()->speichern(
+            new Mitglied(mitgliedsnummer: 9001, nachname: 'Handgemacht', vorname: 'Hans'),
+            VersionsAnlass::angelegt(),
+            null,
+        );
+
+        $stand = $this->json($this->post('/admin/import/schritt'));
+        self::assertTrue($stand['fertig']);
+        self::assertSame(150, $stand['angelegt']);
+        self::assertSame(151, $this->anzahlZeilen('mitglied'));
+    }
+
     public function testARepeatedStepNeitherDuplicatesNorFails(): void
     {
         $this->als(Rolle::Admin);

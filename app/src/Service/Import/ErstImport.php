@@ -208,12 +208,15 @@ final readonly class ErstImport
 
             $offset = (int) ($state['offset'] ?? 0);
             $uebersprungen = (int) ($state['uebersprungen'] ?? 0);
+            $angelegt = (int) ($state['angelegt'] ?? 0);
             $teil = array_slice($datei->eintraege, $offset, self::SCHRITT);
-            $uebersprungen += $this->importieren($teil, $datei, $job->userId);
+            [$neu, $uebersprungenImSchritt] = $this->importieren($teil, $datei, $job->userId);
+            $angelegt += $neu;
+            $uebersprungen += $uebersprungenImSchritt;
             $offset += count($teil);
             $gesamt = count($datei->eintraege);
 
-            $state = [...$state, 'offset' => $offset, 'gesamt' => $gesamt, 'uebersprungen' => $uebersprungen];
+            $state = [...$state, 'offset' => $offset, 'gesamt' => $gesamt, 'uebersprungen' => $uebersprungen, 'angelegt' => $angelegt];
             if ($offset < $gesamt) {
                 if (!$this->jobs->schrittSpeichern($sperre, $state, intdiv(100 * $offset, max(1, $gesamt)))) {
                     throw new ImportLaeuftBereits();
@@ -222,7 +225,7 @@ final readonly class ErstImport
                 return self::stand($state);
             }
 
-            $state = [...$state, 'phase' => 'fertig', 'angelegt' => $this->mitglieder->anzahl(), 'familien' => count($datei->familien)];
+            $state = [...$state, 'phase' => 'fertig', 'familien' => count($datei->familien)];
             if (!$this->jobs->abschliessen($sperre, $state)) {
                 throw new ImportLaeuftBereits();
             }
@@ -294,21 +297,30 @@ final readonly class ErstImport
     }
 
     /**
-     * Saves the lines of one step; returns how many were skipped because
-     * the number belonged to somebody else already.
+     * Saves the lines of one step; returns how many of them are imported
+     * members (new, or done by an earlier try of this step) and how many
+     * were skipped because the number belonged to somebody else already.
+     * Counting the lines instead of the table keeps members entered by hand
+     * meanwhile out of the figure.
      *
      * @param list<ImportEintrag> $teil
+     * @return array{int, int} imported, skipped
      */
-    private function importieren(array $teil, ImportDatei $datei, ?int $userId): int
+    private function importieren(array $teil, ImportDatei $datei, ?int $userId): array
     {
-        return Zeilen::transaktion($this->pdo, function () use ($teil, $datei, $userId): int {
+        return Zeilen::transaktion($this->pdo, function () use ($teil, $datei, $userId): array {
+            $angelegt = 0;
             $uebersprungen = 0;
             $familienIds = [];
             foreach ($teil as $eintrag) {
                 $vorhanden = $this->mitglieder->findeNachNummer($eintrag->mitglied->mitgliedsnummer);
                 if ($vorhanden !== null) {
                     // Done by an earlier try of this step - or a member entered by hand meanwhile.
-                    $uebersprungen += $vorhanden->herkunft === Herkunft::Import ? 0 : 1;
+                    if ($vorhanden->herkunft === Herkunft::Import) {
+                        $angelegt++;
+                    } else {
+                        $uebersprungen++;
+                    }
                     continue;
                 }
 
@@ -318,9 +330,10 @@ final readonly class ErstImport
                     $mitglied = $mitglied->mit(['familieId' => $familienIds[$eintrag->familie]]);
                 }
                 $this->mitglieder->speichern($mitglied, VersionsAnlass::importiert(), $userId);
+                $angelegt++;
             }
 
-            return $uebersprungen;
+            return [$angelegt, $uebersprungen];
         });
     }
 
