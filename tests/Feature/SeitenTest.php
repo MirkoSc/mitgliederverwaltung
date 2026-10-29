@@ -112,7 +112,7 @@ final class SeitenTest extends AppTestCase
 
         self::assertStringContainsString('<h1>Mitglieder</h1>', $this->get('/app/mitglieder')->body);
         self::assertStringContainsString('<h1>Beiträge</h1>', $this->get('/app/beitraege')->body);
-        self::assertStringContainsString('Noch ist keine eingerichtet.', $this->get('/app/listen')->body);
+        self::assertStringContainsString('BLSV-Meldung', $this->get('/app/listen')->body);
         self::assertStringContainsString('<h1>Einstellungen</h1>', $this->get('/admin')->body);
     }
 

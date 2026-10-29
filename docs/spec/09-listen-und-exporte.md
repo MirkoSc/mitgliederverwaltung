@@ -100,8 +100,13 @@ Spalten in dieser Reihenfolge:
   Abteilung, Stichtag. Bis dahin: eine Zeile je Mitglied und Abteilung,
   Mitglieder ohne Abteilung mit leerem Spartenkennzeichen, Geschlecht
   `m`/`w`/`d`, Datum als echtes Excel-Datum, Stichtag 1.1. des Jahres.
-  Diese Punkte als Konstanten an **einer** Stelle, damit die Anpassung
-  klein bleibt.
+  Diese Punkte als Konstanten an **einer** Stelle
+  (`App\Service\Export\BlsvFormat`), damit die Anpassung klein bleibt.
+- Umsetzung `BlsvListe`: Stichtag-Filter (leer = 1.1. des laufenden Jahres);
+  aufgenommen sind Mitglieder, die am Stichtag eingetreten (oder ohne
+  Eintrittsdatum) und noch nicht ausgetreten sind. Die Hinweise über der
+  Tabelle nennen die BLSV-Vereinsnummer (11 §3) und die Mitgliedsnummern ohne
+  Geschlecht bzw. Geburtsdatum.
 
 ## 5. Gesamtexport „Alle Mitglieder"
 
@@ -111,6 +116,11 @@ Funktionen als kommagetrennte Namen, Familie als Name + Rolle, Beitragsart
 als Name. Admin bekommt zusätzlich je Mitglied den Status des laufenden
 Jahresbeitrags. Nachweis-Dateien und Versionen sind nicht enthalten (dafür
 gibt es das Backup).
+
+Umsetzung `AlleMitgliederListe`. Als **Beitragsspalten** (nur mit dem Recht
+`beitraege.verwalten`, also Admin) gelten Beitragsart, Zahlart, IBAN, BIC,
+Kontoinhaber, Mandatsreferenz, Mandatsdatum sowie Betrag und Status des
+Jahresbeitrags des laufenden Jahres; der Vorstand bekommt alle übrigen Felder.
 
 ## 6. Datenmodell
 
