@@ -2,3 +2,5 @@
 # logged-in account, no right needed (06 section 2).
 GET /app/konto/passwort -> angemeldet
 POST /app/konto/passwort -> angemeldet
+POST /app/konto/barrierefrei -> angemeldet
+POST /app/konto/weiterarbeiten -> angemeldet

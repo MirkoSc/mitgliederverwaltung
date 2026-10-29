@@ -57,6 +57,9 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
     <?php if ($bereich->mitNavigation() && ($konto ?? null) !== null): ?>
     <script src="/js/benutzermenue.js?v=<?= e($version) ?>" defer></script>
     <?php endif; ?>
+    <?php if ($bereich !== \App\View\Area::Oeffentlich && ($konto ?? null) !== null): ?>
+    <script src="/js/leerlauf.js?v=<?= e($version) ?>" defer></script>
+    <?php endif; ?>
     <?php foreach (($scripts ?? []) as $skript): ?>
     <script src="<?= e($skript) ?>?v=<?= e($version) ?>" defer></script>
     <?php endforeach; ?>
@@ -67,6 +70,11 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
 <body class="bereich-<?= e($bereich->value) ?>"<?php
     if ($csrfToken !== null) {
         echo ' hx-headers=\'{"X-CSRF-Token":"' . e($csrfToken) . '"}\'';
+    }
+
+    if ($bereich !== \App\View\Area::Oeffentlich && ($konto ?? null) !== null) {
+        echo ' data-leerlauf="' . \App\Http\LoginGuard::leerlaufSekunden($konto)
+            . '" data-weiter="' . e(\App\View\Navigation::WEITERARBEITEN) . '"';
     }
 ?>>
 <a class="sprungmarke" href="#inhalt">Zum Inhalt springen</a>
@@ -80,5 +88,12 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
 </main>
 
 <?php require $partialsDir . '/fuss.php'; ?>
+<?php if ($bereich !== \App\View\Area::Oeffentlich && ($konto ?? null) !== null): ?>
+<dialog id="leerlauf-warnung" class="leerlauf-warnung" aria-labelledby="leerlauf-titel">
+    <h2 id="leerlauf-titel">Sind Sie noch da?</h2>
+    <p>Sie waren eine Weile nicht aktiv. In etwa <span data-rest>5</span> Minuten werden Sie aus Sicherheitsgründen abgemeldet.</p>
+    <button type="button" class="knopf knopf-haupt" data-weiterarbeiten>Weiterarbeiten</button>
+</dialog>
+<?php endif; ?>
 </body>
 </html>
