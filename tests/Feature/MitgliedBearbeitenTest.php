@@ -65,6 +65,27 @@ final class MitgliedBearbeitenTest extends AppTestCase
         ];
     }
 
+    /**
+     * Constructor arguments of a member the hints have nothing to say about.
+     *
+     * @param array<string, mixed> $mehr
+     * @return array<string, mixed>
+     */
+    private function vollstaendig(array $mehr = []): array
+    {
+        $art = new \App\Domain\Beitragsart('Mindestbeitrag', 2500);
+        $art = new \App\Repository\BeitragsartRepository($this->dienste->pdo())->speichern($art);
+
+        return [
+            'geschlecht' => \App\Domain\Geschlecht::W,
+            'geburtsdatum' => new \DateTimeImmutable('1980-03-10'),
+            'eintrittsdatum' => new \DateTimeImmutable('2001-01-01'),
+            'beitragsartId' => $art->id,
+            'iban' => 'DE89370400440532013000',
+            ...$mehr,
+        ];
+    }
+
     private function flash(): ?string
     {
         return $this->dienste->session->pullFlash()?->text;
@@ -116,7 +137,7 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertCount(1, $versionen);
         self::assertSame('angelegt', $versionen[0]->anlass->text);
         self::assertSame($konto->id, $versionen[0]->geaendertVon);
-        self::assertSame('Mitglied angelegt.', $this->flash());
+        self::assertStringStartsWith('Mitglied angelegt.', (string) $this->flash());
     }
 
     public function testWithoutSurnameNothingIsSavedAndTheInputStays(): void
@@ -152,14 +173,14 @@ final class MitgliedBearbeitenTest extends AppTestCase
 
         $antwort = $this->post('/app/mitglieder/' . $m->id, $this->formularVon($m, ['ort' => 'Musterstadt']));
         self::assertSame($m->id, $this->idAus($antwort));
-        self::assertSame('Mitglied gespeichert.', $this->flash());
+        self::assertStringStartsWith('Mitglied gespeichert.', (string) $this->flash());
         $geaendert = $this->repo()->finde((int) $m->id);
         self::assertSame('Musterstadt', $geaendert?->ort);
         self::assertSame(2, $geaendert?->version);
         self::assertSame('geaendert', $this->repo()->versionen((int) $m->id)[0]->anlass->text);
 
         $this->post('/app/mitglieder/' . $m->id, $this->formularVon($geaendert));
-        self::assertSame('Nichts geändert – das Mitglied war schon so gespeichert.', $this->flash());
+        self::assertStringStartsWith('Nichts geändert – das Mitglied war schon so gespeichert.', (string) $this->flash());
         self::assertCount(2, $this->repo()->versionen((int) $m->id));
     }
 
@@ -189,13 +210,59 @@ final class MitgliedBearbeitenTest extends AppTestCase
 
     public function testAWrongIbanIsSavedWithAHint(): void
     {
-        $m = $this->vorhanden(9, 'Muster');
+        $m = $this->vorhanden(9, 'Muster', $this->vollstaendig());
         $this->als(Rolle::Vorstand);
 
         $this->post('/app/mitglieder/' . $m->id, $this->formularVon($m, ['iban' => 'DE00 1234 5678 9012 3456 78']));
 
         self::assertSame('DE00123456789012345678', $this->repo()->finde((int) $m->id)?->iban);
-        self::assertStringContainsString('Die IBAN ist ungültig', (string) $this->flash());
+        $flash = $this->dienste->session->pullFlash();
+        self::assertSame('Mitglied gespeichert. Es gibt einen Hinweis – er steht oben im Mitglied.', $flash?->text);
+        self::assertSame(\App\View\FlashArt::Warnung, $flash->art);
+
+        $abschnitt = \App\App\Mitglied\HinweiseAbschnitt::erzeugen($this->dienste)->daten((int) $m->id);
+        self::assertSame(
+            [\App\Service\Mitglied\HinweisArt::LastschriftOhneIban],
+            array_map(static fn($h) => $h->art, $abschnitt['hinweise']),
+        );
+    }
+
+    public function testAMemberWithoutFindingsIsSavedWithPlainConfirmation(): void
+    {
+        $m = $this->vorhanden(8, 'Muster', $this->vollstaendig());
+        $this->als(Rolle::Vorstand);
+
+        $this->post('/app/mitglieder/' . $m->id, $this->formularVon($m, ['ort' => 'Musterstadt']));
+
+        $flash = $this->dienste->session->pullFlash();
+        self::assertSame('Mitglied gespeichert.', $flash?->text);
+        self::assertSame(\App\View\FlashArt::Ok, $flash->art);
+    }
+
+    public function testTheHintsSectionShowsTheHintsAndNothingWithoutAny(): void
+    {
+        $voll = $this->vorhanden(6, 'Muster', $this->vollstaendig());
+        $luecke = $this->vorhanden(5, 'Luecke', $this->vollstaendig(['eintrittsdatum' => null]));
+        $abschnitt = \App\App\Mitglied\HinweiseAbschnitt::erzeugen($this->dienste);
+        $view = $this->dienste->view;
+
+        self::assertSame('hinweise', $abschnitt->schluessel());
+        self::assertSame('', trim($view->fragment($abschnitt->template(), $abschnitt->daten((int) $voll->id))));
+        $html = $view->fragment($abschnitt->template(), $abschnitt->daten((int) $luecke->id));
+        self::assertStringContainsString('Ein Hinweis zu diesem Mitglied', $html);
+        self::assertStringContainsString('Das Eintrittsdatum ist unbekannt', $html);
+        self::assertStringNotContainsString('Luecke', $html, 'no personal data in the text');
+        self::assertSame([], $abschnitt->daten(999999)['hinweise'], 'a member that is gone');
+    }
+
+    public function testTheHintsSectionIsFoundByFileName(): void
+    {
+        $schluessel = array_map(
+            static fn($a): string => $a->schluessel(),
+            MitgliedErweiterungen::abschnitte()->alle($this->dienste),
+        );
+
+        self::assertContains('hinweise', $schluessel);
     }
 
     public function testTheFamilyIsKeptWhenTheFormIsSaved(): void
@@ -328,7 +395,6 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertStringContainsString('Mitglied speichern', $html);
         self::assertStringContainsString('Die Prüfziffer passt nicht', $html);
         self::assertStringContainsString('Leer lassen: es gilt die Mitgliedsnummer (14).', $html);
-        self::assertStringContainsString('Keine Familie.', $html);
         self::assertStringNotContainsString('Mitglied löschen', $html, 'the board does not delete');
 
         $admin = $this->als(Rolle::Admin);

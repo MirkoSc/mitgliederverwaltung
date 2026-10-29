@@ -65,6 +65,17 @@ Mitglieder, sonst deaktivieren.
 - Gepflegt im Mitglied: „Familie wählen" (Suche) oder „neue Familie",
   Rolle wählen. Die Familie zeigt im Mitglied ihre übrigen Personen.
 - Eine Familie ohne Personen wird automatisch gelöscht.
+- Umsetzung (#20): Abschnitt **Familie** am Mitglied
+  (`App\App\Mitglied\FamilieAbschnitt`, Template `mitglied/familie`) zeigt
+  Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
+  anlegen" führt zu `GET /app/mitglieder/{id}/familie?q=` (Suche nach Name,
+  Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
+  dazu `POST …/familie/{beitreten,neu,rolle,umbenennen,verlassen}`
+  (`App\App\FamilieController`, `app/routes/familie.php`, Recht
+  `mitglieder.bearbeiten`, also beide Rollen). Jede Änderung ist ein
+  normales Speichern des Mitglieds (neue Version, Anlass `geaendert`); die
+  Rolle ohne Angabe ist `elternteil`. Das Formular „Daten" enthält Familie
+  und Rolle nicht, sie bleiben beim Speichern erhalten.
 - Beitrag: der **Zahler** hat die Beitragsart „Familie"; Elternteile und
   Kinder haben normalerweise **keine** eigene Beitragsart (08 §1).
 
@@ -108,6 +119,32 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 | Beitragsfrei ohne Grund | Regel `beitragsfrei`, Bemerkung leer |
 | Eintrittsdatum unbekannt | Eintrittsdatum fehlt |
 | Pflichtangaben für BLSV fehlen | Geschlecht oder Geburtsdatum fehlt |
+
+Umsetzung (#21): `App\Service\Mitglied\Hinweise::fuer(Mitglied,
+HinweisKontext): list<Hinweis>` liest nichts und speichert nichts; der
+`HinweisKontext` trägt Stichtag, die Personen der Familie (das übergebene
+Mitglied ersetzt das gespeicherte, so zählen auch ungespeicherte Änderungen),
+die Nachweise und alle Beitragsarten. `HinweisLader` holt den Kontext aus den
+Repositories. Jede Zeile der Tabelle ist eine `HinweisArt` (Reihenfolge der
+Tabelle = Reihenfolge der Hinweise; die Liste „Auffälligkeiten" filtert
+danach). Anzeige: `HinweiseAbschnitt` (gefundener Abschnitt am Mitglied, immer
+der aktuelle Stand); nach dem Speichern sagt die Meldung nur, *dass* es
+Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
+
+- „Aktiv/passiv" vergleicht das Häkchen mit `aktiv_art` der Beitragsart
+  (`aktiv`/`passiv`; `egal` passt zu beidem).
+- Alter und „gültig bis" zählen tageweise: genau 18 bzw. 67 zählt als 18
+  bzw. 67, ein Nachweis „gültig bis heute" ist heute noch gültig.
+- „Nachweis abgelaufen": ein Hinweis je abgelaufenem Nachweis, auch wenn ein
+  anderer gültig ist.
+- „Andere Anschrift" vergleicht Straße und PLZ (ohne Groß-/Kleinschreibung
+  und Leerzeichen am Rand) mit dem ersten Zahler der Familie; für den Zahler
+  selbst und in Familien ohne Zahler entfällt er.
+- „Lastschrift ohne gültige IBAN" gilt nicht für Elternteil/Kind *ohne* eigene
+  Beitragsart und *ohne* IBAN (sie zahlen über den Zahler); eine falsche IBAN
+  wird immer gemeldet.
+- Ehemalige: nur „Kein Beitrag" nimmt sie aus; die übrigen Regeln gelten
+  unverändert.
 
 ## 7. Versionen
 
@@ -153,6 +190,14 @@ SQL.
 - **Suche**: ein Suchfeld über Nachname, Vorname, Mitgliedsnummer, Ort,
   E-Mail per SQL `LIKE`, live über htmx. Jedes Wort der Eingabe muss in
   einem der Felder vorkommen („max muster" findet Max Mustermann).
+
+Umsetzung der Mitglieder-Seite (#18): `GET/POST /app/mitglieder`
+(`App\App\MitgliederController`, Liste in `MitgliederListeRepository`,
+Filter `MitgliederFilter`). Der Suchtext reist nur im POST-Body, nie in der
+URL (CLAUDE.md §4); Filter, Sortierung, Seite und das geöffnete Mitglied
+stehen in der URL. Ehemalige sind ohne Haken „Ehemalige anzeigen"
+ausgeblendet. Das geöffnete Mitglied nimmt Reiter und Abschnitte aus den
+Erweiterungspunkten `App\App\Mitglied\*` (#19 ff.).
 
 Umsetzung (#15, gemeinsame API für alle späteren Issues):
 
