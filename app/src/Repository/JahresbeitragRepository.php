@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Domain\Jahresbeitrag;
 use App\Domain\JahresbeitragStatus;
+use App\Domain\JahresbeitragZeile;
 use App\Domain\Vermerk;
 use App\Domain\Zahlweise;
 
@@ -56,6 +57,16 @@ final readonly class JahresbeitragRepository
         return $this->mehrere('SELECT * FROM jahresbeitrag WHERE id = ?', [$id])[0] ?? null;
     }
 
+    /**
+     * Like finde(), with the row locked until the transaction ends - for a
+     * read-change-save, so two changes at once cannot lose each other's
+     * note. Call inside a transaction.
+     */
+    public function findeZumAendern(int $id): ?Jahresbeitrag
+    {
+        return $this->mehrere('SELECT * FROM jahresbeitrag WHERE id = ? FOR UPDATE', [$id])[0] ?? null;
+    }
+
     public function fuer(int $mitgliedId, int $jahr): ?Jahresbeitrag
     {
         return $this->mehrere('SELECT * FROM jahresbeitrag WHERE mitglied_id = ? AND jahr = ?', [$mitgliedId, $jahr])[0] ?? null;
@@ -81,6 +92,33 @@ final readonly class JahresbeitragRepository
         return $status === null
             ? $this->mehrere('SELECT * FROM jahresbeitrag WHERE jahr = ? ORDER BY mitglied_id', [$jahr])
             : $this->mehrere('SELECT * FROM jahresbeitrag WHERE jahr = ? AND status = ? ORDER BY mitglied_id', [$jahr, $status->value]);
+    }
+
+    /**
+     * The fees page (08 section 2): every fee of a year with the name of its
+     * member, by name.
+     *
+     * @return list<JahresbeitragZeile>
+     */
+    public function zeilenImJahr(int $jahr): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT j.*, m.mitgliedsnummer, m.nachname, m.vorname
+             FROM jahresbeitrag j JOIN mitglied m ON m.id = j.mitglied_id
+             WHERE j.jahr = ?
+             ORDER BY m.nachname, m.vorname, m.mitgliedsnummer',
+        );
+        $stmt->execute([$jahr]);
+
+        return array_map(
+            static fn(array $z): JahresbeitragZeile => new JahresbeitragZeile(
+                beitrag: self::jahresbeitrag($z),
+                mitgliedsnummer: (int) $z['mitgliedsnummer'],
+                nachname: (string) $z['nachname'],
+                vorname: (string) $z['vorname'],
+            ),
+            $stmt->fetchAll(\PDO::FETCH_ASSOC),
+        );
     }
 
     /**
