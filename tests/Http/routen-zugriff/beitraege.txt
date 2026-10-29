@@ -1,2 +1,8 @@
 # app/routes/beitraege.php - fees and direct debit: admin only (08).
 GET /app/beitraege -> beitraege.verwalten
+POST /app/beitraege/erzeugen -> beitraege.verwalten
+GET /app/beitraege/{id:[0-9]+} -> beitraege.verwalten
+POST /app/beitraege/{id:[0-9]+}/betrag -> beitraege.verwalten
+POST /app/beitraege/{id:[0-9]+}/bezahlt -> beitraege.verwalten
+POST /app/beitraege/{id:[0-9]+}/ruecklastschrift -> beitraege.verwalten
+POST /app/beitraege/{id:[0-9]+}/vermerk -> beitraege.verwalten
