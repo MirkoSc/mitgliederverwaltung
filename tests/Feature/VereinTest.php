@@ -178,6 +178,7 @@ final class VereinTest extends AppTestCase
         self::assertInstanceOf(FileResponse::class, $ohne);
         self::assertSame('no-cache', $ohne->headers['Cache-Control']);
 
+        $this->abmelden();
         $login = $this->get('/anmelden')->body;
         self::assertMatchesRegularExpression('#<img class="anmeldung-logo" src="/logo/anmeldung\?v=\d+"#', $login);
         self::assertMatchesRegularExpression('#<link rel="icon" href="/logo/favicon\?v=\d+" type="image/png">#', $login);
@@ -216,6 +217,7 @@ final class VereinTest extends AppTestCase
 
         $this->post('/admin/verein/logo/entfernen');
 
+        $this->abmelden();
         $login = $this->get('/anmelden')->body;
         self::assertStringContainsString('src="/img/vereinslogo-platzhalter.svg?v=0.0.0-test"', $login);
         self::assertStringNotContainsString('apple-touch-icon', $login);
