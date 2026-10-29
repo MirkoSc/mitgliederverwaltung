@@ -1,0 +1,64 @@
+/* Page "Beiträge", the page of one annual fee and the member tab
+   "Beiträge" (issue #29). Tokens from app.css only. */
+
+/* The year in three numbers: open, in a direct debit, paid. */
+.beitragsjahr-stand {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--abstand-3) var(--abstand-5);
+    margin: 0 0 var(--abstand-4);
+    padding: 0;
+    list-style: none;
+}
+
+.beitragsjahr-stand li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--abstand-2);
+}
+
+.beitragsjahr-stand strong {
+    font-size: var(--schrift-h2);
+}
+
+.beitragsjahr .feld-hinweis {
+    max-width: var(--text-breite);
+}
+
+.beitraege-liste {
+    margin-top: var(--abstand-5);
+}
+
+/* "bezahlt" right in the row of an open fee. */
+.beitrag-schnell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-2);
+}
+
+.beitrag-schnell select {
+    width: auto;
+}
+
+/* The note list: what first, who and when below it. */
+.vermerke {
+    display: grid;
+    gap: var(--abstand-2);
+    margin: 0 0 var(--abstand-4);
+    padding-left: var(--abstand-4);
+}
+
+.vermerke-wer {
+    display: block;
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+.mitglied-beitraege .vermerke {
+    margin-bottom: 0;
+}
+
+.beitrag-aktionen .formular {
+    max-width: 32rem;
+}

@@ -37,20 +37,39 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
   den fehlenden Jahresbeitrag an. **Mehrfach drückbar** – es kommen nur
   fehlende dazu (eindeutig je Mitglied und Jahr). So werden Neueintritte
   im Laufe des Jahres einfach durch erneutes Drücken nachgezogen.
+  „Ehemalig" gilt zum Stichtag 1.1. des Beitragsjahres: Austritt bis
+  einschließlich 1.1. ⇒ kein Beitrag, Austritt im Laufe des Jahres ⇒
+  voller Beitrag. Wer erst in einem späteren Jahr eintritt, bekommt
+  keinen. Jeder erzeugte Beitrag trägt einen Vermerk, aus welcher
+  Beitragsart (und ggf. welchem Anteil) er stammt.
 - **Betrag**: Betrag der Beitragsart. Eintritt im selben Jahr ⇒
   **anteiliger Vorschlag** nach angefangenen Monaten:
   `betrag × (13 − Eintrittsmonat) / 12`, kaufmännisch auf Cent gerundet
   (Eintritt im Mai → 8/12). Eintritt vor dem Jahr oder unbekannt ⇒ voller
   Betrag – auch wenn der Einzug erst im März läuft.
 - Solange der Status `offen` ist, ist der Betrag **von Hand änderbar**
-  (Vermerk wer/wann).
+  (Vermerk wer/wann, Grund optional); er muss größer als 0 € sein – ein
+  Erlass ist „bezahlt" mit Zahlweise `sonstiges` und Vermerk.
 - Status: `offen` → `im_einzug` (in einem Einzug) → `bezahlt`.
   - **Bezahlt von Hand**: Zahlweise (`bar`/`ueberweisung`/`sonstiges`),
     Datum, Vermerk.
+    Nur aus `offen`; ein Beitrag `im_einzug` wird über seinen Einzug
+    bestätigt oder verworfen.
   - **Rücklastschrift**: `bezahlt` → `offen`, Pflicht-Vermerk; der
-    Beitrag kann erneut eingezogen oder von Hand bezahlt werden.
+    Beitrag kann erneut eingezogen oder von Hand bezahlt werden. Derselbe
+    Weg nimmt eine irrtümlich vermerkte Barzahlung zurück.
+  - Die Übergänge stehen an einer Stelle (`App\Domain\Jahresbeitrag`:
+    `inEinzug`, `bezahltPerEinzug`, `ausEinzugZurueck`, `bezahltVonHand`,
+    `ruecklastschrift`, `mitBetrag`); ein unzulässiger wirft
+    `BeitragNichtAenderbar` mit einer Meldung für den Benutzer.
 - Vermerke bilden eine Liste (wer, wann, was).
 - Reiter „Beiträge" am Mitglied: alle Jahre mit Status und Vermerken.
+- Seite **Beiträge** (`/app/beitraege?jahr=`): Jahr wählen, Stand des
+  Jahres (offen / im Einzug / bezahlt mit Anzahl und Summe), Knopf
+  „Beiträge für <Jahr> erzeugen", darunter die Beiträge des Jahres
+  (Vorgabe: offene, je mit „Heute bezahlt" samt Zahlweise). Jeder Beitrag
+  hat eine eigene Seite (`/app/beitraege/<id>`) für Betrag, bezahlt,
+  Rücklastschrift und Vermerke; Reiter und Liste verlinken dorthin.
 
 ## 3. Einzug
 
