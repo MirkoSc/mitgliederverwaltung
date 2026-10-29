@@ -17,4 +17,6 @@ use App\View\Navigation;
 return static function (Routen $routen): void {
     $routen->get(Navigation::PASSWORT, Zugriff::angemeldet(), static fn(Request $r): Response => KontoController::aus($routen->dienste())->passwortForm($r));
     $routen->post(Navigation::PASSWORT, Zugriff::angemeldet(), static fn(Request $r): Response => KontoController::aus($routen->dienste())->passwort($r));
+    $routen->post(Navigation::BARRIEREFREI, Zugriff::angemeldet(), static fn(Request $r): Response => KontoController::aus($routen->dienste())->barrierefrei($r));
+    $routen->post(Navigation::WEITERARBEITEN, Zugriff::angemeldet(), static fn(Request $r): Response => KontoController::aus($routen->dienste())->weiterarbeiten($r));
 };
