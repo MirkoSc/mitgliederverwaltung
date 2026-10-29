@@ -94,14 +94,15 @@ $script:FAMILIENSPALTEN = [ordered]@{
 }
 
 # Alte Abteilungen nach normalisiertem Namen ("Turnen" ist BLSV 34).
-$script:ABTEILUNGSNAMEN = @{
-    'badminton'                   = '01'
-    "fu$([char]0x00DF)ball"       = '09'
-    'fussball'                    = '09'
-    'kegeln'                      = '16'
-    'turnen'                      = '34'
-    'gymnastik'                   = '34'
-}
+# Exakter Zeichenvergleich: Windows PowerShell 5.1 haelt sonst "fussball"
+# und die Schreibung mit sz fuer denselben Schluessel.
+$script:ABTEILUNGSNAMEN = New-Object 'System.Collections.Generic.Dictionary[string,string]' ([System.StringComparer]::Ordinal)
+$script:ABTEILUNGSNAMEN.Add('badminton', '01')
+$script:ABTEILUNGSNAMEN.Add("fu$([char]0x00DF)ball", '09')
+$script:ABTEILUNGSNAMEN.Add('fussball', '09')
+$script:ABTEILUNGSNAMEN.Add('kegeln', '16')
+$script:ABTEILUNGSNAMEN.Add('turnen', '34')
+$script:ABTEILUNGSNAMEN.Add('gymnastik', '34')
 
 $script:BEKANNTE_BLSV = @('01', '09', '16', '34')
 
@@ -201,7 +202,7 @@ function AlsNummer([string]$text) {
 
 # Erste Spalte je normalisiertem Kopfnamen -> Schluessel der Definition.
 function SpaltenSuchen($kopf, $definition) {
-    $nachName = @{}
+    $nachName = New-Object 'System.Collections.Generic.Dictionary[string,int]' ([System.StringComparer]::Ordinal)
     for ($i = 0; $i -lt $kopf.Count; $i++) {
         $n = Normal $kopf[$i]
         if (-not $nachName.ContainsKey($n)) { $nachName[$n] = $i }
