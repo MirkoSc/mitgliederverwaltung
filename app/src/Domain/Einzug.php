@@ -35,4 +35,24 @@ final readonly class Einzug
         public ?int $id = null,
     ) {
     }
+
+    /**
+     * The transactions of `daten` (08 section 3, the archive), in the order
+     * of the file.
+     *
+     * @return list<EinzugPosten>
+     */
+    public function posten(): array
+    {
+        return array_values(array_map(
+            static fn(mixed $posten): EinzugPosten => EinzugPosten::ausArray(is_array($posten) ? $posten : []),
+            $this->daten,
+        ));
+    }
+
+    /** Collected (`bestaetigt`) or discarded (`verworfen`) - closed for good. */
+    public function abgeschlossen(): bool
+    {
+        return $this->status !== EinzugStatus::Erzeugt;
+    }
 }
