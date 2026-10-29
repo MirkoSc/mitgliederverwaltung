@@ -18,7 +18,10 @@ return static function (Routen $routen): void {
     $controller = static fn(): FamilieController => FamilieController::aus($routen->dienste());
     $basis = '/app/mitglieder/{id:[0-9]+}/familie';
 
+    // The search posts (CSRF like every POST): a family name - a surname -
+    // must not travel in a URL (CLAUDE.md section 4).
     $routen->get($basis, $recht, static fn(Request $r, array $p): Response => $controller()->waehlen($r, $p));
+    $routen->post($basis, $recht, static fn(Request $r, array $p): Response => $controller()->waehlen($r, $p));
     $routen->post($basis . '/beitreten', $recht, static fn(Request $r, array $p): Response => $controller()->beitreten($r, $p));
     $routen->post($basis . '/neu', $recht, static fn(Request $r, array $p): Response => $controller()->neu($r, $p));
     $routen->post($basis . '/rolle', $recht, static fn(Request $r, array $p): Response => $controller()->rolleAendern($r, $p));

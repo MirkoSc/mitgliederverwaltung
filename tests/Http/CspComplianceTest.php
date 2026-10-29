@@ -257,4 +257,11 @@ final class CspComplianceTest extends TestCase
         self::assertStringContainsString('"attributesToSettle":["class","width","height"]', $layout);
         self::assertStringContainsString('src="/js/vendor/htmx.min.js', $layout);
     }
+
+    /** .user.ini is not readable from outside, and PHP does not name its version. */
+    public function testTheDocrootHidesUserIniAndThePhpVersion(): void
+    {
+        self::assertMatchesRegularExpression('#<Files "\.user\.ini">\s*Require all denied\s*</Files>#', self::htaccess());
+        self::assertStringContainsString('Header always unset X-Powered-By', self::htaccess());
+    }
 }

@@ -389,4 +389,43 @@ final class AnmeldungFlowTest extends AppTestCase
         self::assertSame(403, $this->post('/admin/benutzer/' . $id . '/rolle', ['rolle' => 'admin'])->status);
         self::assertSame(Rolle::Vorstand, new BenutzerRepository($this->pdo())->findById($id)?->rolle);
     }
+
+    /**
+     * Changes of users, failed logins and logouts end up in the audit log
+     * (02 section 8) - with ids, never with names or addresses.
+     *
+     * @return list<array{action: string, entity_id: ?string, details: string}>
+     */
+    private function audit(): array
+    {
+        return $this->pdo()->query('SELECT action, entity_id, details FROM audit_log ORDER BY id')->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function testUserChangesFailedLoginsAndLogoutAreAudited(): void
+    {
+        Benutzerdaten::anlegen($this->pdo(), 'admin@example.org', Rolle::Admin, name: 'Anna Admin');
+        $id = Benutzerdaten::anlegen($this->pdo(), name: 'Erika Beispiel');
+        $this->post('/anmelden', ['email' => 'admin@example.org', 'passwort' => 'falsch-falsch-falsch']);
+        $this->anmelden('admin@example.org');
+
+        $this->post('/admin/benutzer', ['name' => 'Volker Muster', 'email' => 'volker@example.org', 'rolle' => 'vorstand']);
+        $this->post('/admin/benutzer/' . $id . '/rolle', ['rolle' => 'admin']);
+        $this->post('/admin/benutzer/' . $id . '/sperren');
+        $this->post('/admin/benutzer/' . $id . '/entsperren');
+        $this->post('/admin/benutzer/' . $id . '/loeschen', ['bestaetigt' => '1']);
+        $this->post('/abmelden');
+
+        $zeilen = $this->audit();
+        $aktionen = array_column($zeilen, 'action');
+        foreach (['anmeldung.fehlgeschlagen', 'benutzer.angelegt', 'rolle.geaendert', 'benutzer.gesperrt', 'benutzer.geaendert', 'benutzer.geloescht', 'abmeldung'] as $aktion) {
+            self::assertContains($aktion, $aktionen);
+        }
+        $fehlgeschlagen = $zeilen[array_search('anmeldung.fehlgeschlagen', $aktionen, true)];
+        self::assertStringContainsString('"schritt":"passwort"', $fehlgeschlagen['details']);
+        self::assertSame((string) $id, $zeilen[array_search('benutzer.geloescht', $aktionen, true)]['entity_id']);
+        $alles = json_encode($zeilen, JSON_UNESCAPED_UNICODE);
+        foreach (['Erika', 'Volker', 'example.org'] as $verboten) {
+            self::assertStringNotContainsString($verboten, (string) $alles, 'ids only');
+        }
+    }
 }

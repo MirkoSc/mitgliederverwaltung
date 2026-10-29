@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Admin;
 
 use App\Dienste;
+use App\Domain\AuditAktion;
 use App\Domain\Rolle;
 use App\Http\Request;
 use App\Http\Response;
@@ -50,6 +51,7 @@ final readonly class BenutzerController
         } catch (BenutzerRegelVerstoss $e) {
             return $this->zurueck($e->getMessage(), FlashArt::Fehler);
         }
+        $this->protokollieren($request, AuditAktion::BenutzerAngelegt, $einladung['userId'], ['rolle' => $rolle->value, 'einladung' => 'neu']);
 
         return $this->versandMelden(
             Kontomails::aus($this->dienste)->einladung($request, $einladung['email'], $einladung['token']),
@@ -64,6 +66,7 @@ final readonly class BenutzerController
         } catch (BenutzerRegelVerstoss $e) {
             return $this->zurueck($e->getMessage(), FlashArt::Fehler);
         }
+        $this->protokollieren($request, AuditAktion::BenutzerGeaendert, $id, ['einladung' => 'erneut']);
 
         return $this->versandMelden(
             Kontomails::aus($this->dienste)->einladung($request, $einladung['email'], $einladung['token']),
@@ -79,6 +82,9 @@ final readonly class BenutzerController
         }
 
         return $this->schritt(
+            $request,
+            AuditAktion::RolleGeaendert,
+            ['rolle' => $rolle->value],
             fn(BenutzerVerwaltung $v, int $admin) => $v->rolleAendern($admin, $id, $rolle),
             fn(string $name): string => sprintf('%s hat jetzt die Rolle %s.', $name, $rolle->bezeichnung()),
         );
@@ -87,6 +93,9 @@ final readonly class BenutzerController
     public function sperren(Request $request, int $id): Response
     {
         return $this->schritt(
+            $request,
+            AuditAktion::BenutzerGesperrt,
+            [],
             fn(BenutzerVerwaltung $v, int $admin) => $v->sperren($admin, $id),
             fn(string $name): string => sprintf('%s ist gesperrt und auf allen Geräten abgemeldet.', $name),
         );
@@ -95,6 +104,9 @@ final readonly class BenutzerController
     public function entsperren(Request $request, int $id): Response
     {
         return $this->schritt(
+            $request,
+            AuditAktion::BenutzerGeaendert,
+            ['gesperrt' => false],
             fn(BenutzerVerwaltung $v, int $admin) => $v->entsperren($id),
             fn(string $name): string => sprintf('%s kann sich wieder anmelden.', $name),
         );
@@ -109,16 +121,23 @@ final readonly class BenutzerController
         }
 
         return $this->schritt(
+            $request,
+            AuditAktion::BenutzerGeloescht,
+            [],
             fn(BenutzerVerwaltung $v, int $admin) => $v->loeschen($admin, $id),
             fn(string $name): string => sprintf('%s ist gelöscht.', $name),
         );
     }
 
     /**
+     * One change of a user, recorded in the audit log (02 section 8) once
+     * it has happened.
+     *
+     * @param array<string, scalar|null> $details
      * @param \Closure(BenutzerVerwaltung, int): \App\Domain\Benutzer $schritt
      * @param \Closure(string): string $meldung
      */
-    private function schritt(\Closure $schritt, \Closure $meldung): Response
+    private function schritt(Request $request, AuditAktion $aktion, array $details, \Closure $schritt, \Closure $meldung): Response
     {
         $admin = $this->dienste->session->userId() ?? 0;
         try {
@@ -126,8 +145,20 @@ final readonly class BenutzerController
         } catch (BenutzerRegelVerstoss $e) {
             return $this->zurueck($e->getMessage(), FlashArt::Fehler);
         }
+        $this->protokollieren($request, $aktion, $benutzer->id, $details);
 
         return $this->zurueck($meldung($benutzer->name));
+    }
+
+    /**
+     * The user concerned only by id - names and addresses of accounts stay
+     * out of the log.
+     *
+     * @param array<string, scalar|null> $details
+     */
+    private function protokollieren(Request $request, AuditAktion $aktion, ?int $betroffen, array $details): void
+    {
+        $this->dienste->audit()->protokollieren($aktion, $this->dienste->session->userId(), 'user', $betroffen, $details, $request->ip);
     }
 
     /**

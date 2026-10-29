@@ -85,10 +85,14 @@ final readonly class MailQueueRepository
         return $ergebnis;
     }
 
+    /**
+     * A sent mail keeps no body: it may hold an invitation or reset link or
+     * a login code, which a reader of the database could still use.
+     */
     public function markSent(int $id, ?\DateTimeImmutable $now = null): void
     {
         $this->pdo
-            ->prepare('UPDATE mail_queue SET status = ?, last_error = NULL, updated_at = ? WHERE id = ?')
+            ->prepare('UPDATE mail_queue SET status = ?, body = \'\', last_error = NULL, updated_at = ? WHERE id = ?')
             ->execute([MailStatus::Gesendet->value, ($now ?? new \DateTimeImmutable())->format(self::FORMAT), $id]);
     }
 
@@ -104,8 +108,11 @@ final readonly class MailQueueRepository
         \DateTimeImmutable $naechsterVersuch,
         ?\DateTimeImmutable $now = null,
     ): void {
+        // A mail that gave up for good is never sent again: its body (links,
+        // codes) goes, the row stays for the count on the system page.
         $this->pdo
-            ->prepare('UPDATE mail_queue SET status = ?, last_error = ?, next_try_at = ?, updated_at = ? WHERE id = ?')
+            ->prepare('UPDATE mail_queue SET status = ?, last_error = ?, next_try_at = ?, updated_at = ?'
+                . ($status === MailStatus::Fehler ? ', body = \'\'' : '') . ' WHERE id = ?')
             ->execute([
                 $status->value,
                 mb_substr($errorClass, 0, 255),

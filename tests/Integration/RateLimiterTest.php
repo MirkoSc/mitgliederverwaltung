@@ -150,4 +150,15 @@ final class RateLimiterTest extends DatabaseTestCase
             [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_EMULATE_PREPARES => false],
         );
     }
+
+    public function testAnIpv6AddressCountsByItsNetwork(): void
+    {
+        self::assertSame('2001:db8:1:2::/64', RateLimiter::ip('2001:db8:1:2:aaaa::1'));
+        self::assertSame(RateLimiter::ip('2001:db8:1:2::5'), RateLimiter::ip('2001:db8:1:2:ffff:ffff:ffff:ffff'));
+        self::assertNotSame(RateLimiter::ip('2001:db8:1:2::5'), RateLimiter::ip('2001:db8:1:3::5'));
+        self::assertSame('198.51.100.7', RateLimiter::ip('198.51.100.7'), 'IPv4 as it is');
+        self::assertSame('', RateLimiter::ip(''), 'no address stays no address (never limited)');
+        self::assertSame('id:7', RateLimiter::konto(7, 'erika@example.org'));
+        self::assertSame('email:x@example.org', RateLimiter::konto(null, 'x@example.org'));
+    }
 }

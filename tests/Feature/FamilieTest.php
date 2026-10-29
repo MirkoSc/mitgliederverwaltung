@@ -133,13 +133,18 @@ final class FamilieTest extends AppTestCase
         $b = $this->mitglied(2, 'Beispiel');
         $this->neu((int) $a->id, 'Familie Muster');
 
-        $seite = $this->get('/app/mitglieder/' . $b->id . '/familie', ['q' => 'muster']);
+        $seite = $this->post('/app/mitglieder/' . $b->id . '/familie', ['q' => 'muster']);
 
         self::assertSame(200, $seite->status);
         self::assertStringContainsString('Familie Muster', $seite->body);
         self::assertStringContainsString('Dieser Familie beitreten', $seite->body);
         self::assertStringContainsString('value="Familie Beispiel"', $seite->body);
-        self::assertStringNotContainsString('Dieser Familie beitreten', $this->get('/app/mitglieder/' . $b->id . '/familie', ['q' => 'zzz'])->body);
+        self::assertStringNotContainsString('Dieser Familie beitreten', $this->post('/app/mitglieder/' . $b->id . '/familie', ['q' => 'zzz'])->body);
+
+        // The name never travels in a URL: the form posts, a query is ignored.
+        $formular = $this->get('/app/mitglieder/' . $b->id . '/familie', ['q' => 'muster'])->body;
+        self::assertStringContainsString('<form method="post" action="/app/mitglieder/' . $b->id . '/familie" class="suche"', $formular);
+        self::assertStringNotContainsString('value="muster"', $formular);
     }
 
     public function testRenamingAndAGoneFamily(): void

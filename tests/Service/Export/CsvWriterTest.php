@@ -74,4 +74,19 @@ final class CsvWriterTest extends TestCase
         self::assertStringContainsString("Straße\r\nMüller\r\n", $csv);
         self::assertTrue(mb_check_encoding($csv, 'UTF-8'));
     }
+
+    public function testCellsThatWouldRunAsAFormulaGetAnApostrophe(): void
+    {
+        self::assertSame("'=HYPERLINK(\"x\")", CsvWriter::ohneFormel('=HYPERLINK("x")'));
+        self::assertSame("'@SUMME(A1)", CsvWriter::ohneFormel('@SUMME(A1)'));
+        self::assertSame("'+A1*2", CsvWriter::ohneFormel('+A1*2'));
+        self::assertSame("'-1+A1", CsvWriter::ohneFormel('-1+A1'));
+        self::assertSame("'\tx", CsvWriter::ohneFormel("\tx"));
+        // What only looks like a number stays as it is.
+        self::assertSame('+49 170 1234567', CsvWriter::ohneFormel('+49 170 1234567'));
+        self::assertSame('-12,50', CsvWriter::ohneFormel('-12,50'));
+        self::assertSame('Mustermann', CsvWriter::ohneFormel('Mustermann'));
+        self::assertSame('', CsvWriter::ohneFormel(''));
+        self::assertSame("'=1;2\r\n", CsvWriter::zeile(['=1', '2']));
+    }
 }

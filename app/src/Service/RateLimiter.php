@@ -69,6 +69,32 @@ final readonly class RateLimiter
         return $this->zeilen->hit($this->schluessel($zweck, $wert), $this->fensterBeginn($now ?? new \DateTimeImmutable())) <= $grenze;
     }
 
+    /**
+     * The value an IP counter is kept under: an IPv4 address as it is, an
+     * IPv6 address by its /64 network - one connection usually owns a whole
+     * /64 and could otherwise count afresh with every address in it.
+     */
+    public static function ip(string $ip): string
+    {
+        $binaer = @inet_pton($ip);
+        if ($binaer === false || strlen($binaer) !== 16) {
+            return $ip;
+        }
+
+        return (string) inet_ntop(substr($binaer, 0, 8) . str_repeat("\0", 8)) . '/64';
+    }
+
+    /**
+     * The value an account counter is kept under: the account's id when the
+     * address belongs to one. The database finds an account under many
+     * spellings (accents and case do not count in its comparison), so a
+     * counter on the typed address could be dodged with "érika@…".
+     */
+    public static function konto(?int $userId, string $email): string
+    {
+        return $userId !== null ? 'id:' . $userId : 'email:' . $email;
+    }
+
     /** Clears the counter - what a successful attempt does. */
     public function reset(string $zweck, string $wert): void
     {

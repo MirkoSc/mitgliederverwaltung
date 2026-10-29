@@ -1,5 +1,6 @@
 # app/routes/familie.php - the family of a member: both roles (07 section 9).
 GET /app/mitglieder/{id:[0-9]+}/familie -> mitglieder.bearbeiten
+POST /app/mitglieder/{id:[0-9]+}/familie -> mitglieder.bearbeiten
 POST /app/mitglieder/{id:[0-9]+}/familie/beitreten -> mitglieder.bearbeiten
 POST /app/mitglieder/{id:[0-9]+}/familie/neu -> mitglieder.bearbeiten
 POST /app/mitglieder/{id:[0-9]+}/familie/rolle -> mitglieder.bearbeiten

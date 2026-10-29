@@ -97,7 +97,7 @@ final readonly class ZweiterFaktor
      */
     public function versuch(string $ip, int $userId, ?\DateTimeImmutable $now = null): bool
     {
-        $ipFrei = $this->limits->versuch(self::LIMIT_IP, $ip, self::JE_IP, $now);
+        $ipFrei = $this->limits->versuch(self::LIMIT_IP, RateLimiter::ip($ip), self::JE_IP, $now);
         $kontoFrei = $this->limits->versuch(self::LIMIT_KONTO, (string) $userId, self::JE_KONTO, $now);
 
         return $ipFrei && $kontoFrei;

@@ -40,6 +40,14 @@ final readonly class NachweisController
         'image/webp' => 'WebP',
     ];
 
+    /** File name extension of the download, by type. */
+    private const array ENDUNG = [
+        'application/pdf' => 'pdf',
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+    ];
+
     public function __construct(
         private Dienste $dienste,
         private MitgliedRepository $mitglieder,
@@ -122,13 +130,13 @@ final readonly class NachweisController
         // The session lock would block the person's other tabs for the whole download.
         $this->dienste->session->schliessen();
 
-        $name = BlobMeta::bereinigterName($blob->originalName);
-        $ascii = preg_replace('/[^A-Za-z0-9._-]+/', '_', $name) ?? '';
-        $ascii = $ascii === '' ? 'nachweis' : $ascii;
+        // Not the uploaded name ("Attest_Erika_Mustermann.pdf"): no member
+        // data in file names (CLAUDE.md section 4) - the id is enough.
+        $name = 'nachweis-' . $nachweis->id . '.' . (self::ENDUNG[$blob->mimeType] ?? 'bin');
 
         return new StreamResponse($blobs->openRead($blob), [
             'Content-Type' => isset(self::ERLAUBT[$blob->mimeType]) ? $blob->mimeType : 'application/octet-stream',
-            'Content-Disposition' => 'attachment; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($name),
+            'Content-Disposition' => 'attachment; filename="' . $name . '"',
             'Content-Length' => (string) $blob->size,
             'Cache-Control' => 'no-store',
             'X-Content-Type-Options' => 'nosniff',

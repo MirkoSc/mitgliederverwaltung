@@ -116,7 +116,7 @@ final class NachweiseTest extends AppTestCase
         $antwort = $this->kernel->handle(new Request(HttpMethod::Get, "/app/mitglieder/$id/nachweise/{$n->id}/datei"));
         self::assertInstanceOf(StreamResponse::class, $antwort);
         self::assertSame('application/pdf', $antwort->headers['Content-Type']);
-        self::assertStringContainsString('attachment', $antwort->headers['Content-Disposition']);
+        self::assertSame('attachment; filename="nachweis-' . $n->id . '.pdf"', $antwort->headers['Content-Disposition'], 'no uploaded name');
         self::assertSame($this->pdf(), implode('', iterator_to_array($antwort->chunks, false)));
     }
 

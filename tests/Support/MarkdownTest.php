@@ -36,6 +36,10 @@ final class MarkdownTest extends TestCase
             Markdown::html('[Web](https://example.org/x) [Intern](/datenschutz)'),
         );
 
+        // "//host" and "/\\host" are no own paths, they lead to another host.
+        self::assertStringNotContainsString('<a ', Markdown::html('[x](//evil.example)'));
+        self::assertStringNotContainsString('<a ', Markdown::html('[x](/\\evil.example)'));
+
         $gefaelscht = Markdown::html('[klick](javascript:alert(1))');
         self::assertStringNotContainsString('<a ', $gefaelscht);
         self::assertStringContainsString('[klick](javascript:alert(1))', $gefaelscht);

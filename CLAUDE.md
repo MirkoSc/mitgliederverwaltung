@@ -5,10 +5,11 @@ Mitgliederverwaltung für einen Sportverein. Dieses Dokument ist die
 Dokument gilt das Dokument – oder es wird im selben PR bewusst geändert.
 Änderungswünsche laufen als GitHub Issues, nicht in dieser Datei.
 
-**Stand:** Technischer Rahmen (Specs 01–06) und Fachlichkeit (Specs
-07–10) stehen; noch kein Code. `docs/fachlichkeit.md` ist das Protokoll
-der Klärung und enthält die wenigen offenen Punkte. Es wird **nichts
-Fachliches erfunden** – Unklares wird gefragt.
+**Stand:** Specs 01–11 umgesetzt (Issues #1–#37); die Anwendung ist seit
+29.10.2026 mit echten Mitgliederdaten installiert, das Repository ist
+öffentlich. `docs/fachlichkeit.md` ist das Protokoll der Klärung und enthält
+die wenigen offenen Punkte. Es wird **nichts Fachliches erfunden** –
+Unklares wird gefragt.
 
 **Leitlinien (gelten für jede Session):**
 - **Einfach statt perfekt.** Die Anwendung wird nicht verkauft. Sie soll
@@ -184,10 +185,12 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
 - **Skills** dürfen und sollen automatisch genutzt werden, wo sie helfen –
   insbesondere `frontend-design` bei jeder UI-Arbeit, `code-review` /
   `simplify` vor dem PR.
-- **Entwicklungsphase:** Das Repository ist privat und die Software
-  nirgends installiert. Sicherheitshärtung über die Invarianten aus §4
-  hinaus ist nachrangig; Lücken werden vor der ersten Installation in #37
-  geschlossen. Die Architektur-Invarianten (kein `exec`, CSP ohne Inline-JS,
-  Rechte serverseitig) gelten trotzdem, weil spätere Korrektur teuer wäre.
+- **Betrieb:** Die Anwendung läuft mit echten Daten, das Repository ist
+  öffentlich. Das Security-Review (#37) steht in
+  `docs/security-checkliste.md`; jede neue Route oder Funktion hält §4 ein
+  und ist Anlass, die passenden Abschnitte dieser Checkliste erneut
+  durchzugehen. Jede Korrektur muss per Update auf die bestehende
+  Installation kommen – ohne Neuinstallation und ohne Handarbeit auf dem
+  Server.
 - Vor dem PR: Tests grün, betroffene Seiten geprüft (bzw. Prüfliste im PR).
 - Keine „Nebenbei-Refactorings" außerhalb des Issues – dafür neues Issue.

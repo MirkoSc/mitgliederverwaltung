@@ -12,12 +12,13 @@ use App\Listen\EhrungenListe;
 
 /**
  * "geehrt" of the honours list (docs/spec/09-listen-und-exporte.md section 2,
- * issue #26): note it or take it back. Both roles.
+ * issue #26): note it or take it back. Both roles - noting an honour is
+ * editing a member (02 section 6: mitglieder.bearbeiten).
  */
 return static function (Routen $routen): void {
     $routen->post(
         EhrungenListe::PFAD_VERMERK,
-        Zugriff::recht(Permission::ListenSehen),
+        Zugriff::recht(Permission::MitgliederBearbeiten),
         static fn(Request $r): Response => EhrungenController::aus($routen->dienste())->vermerken($r),
     );
 };

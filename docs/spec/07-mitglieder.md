@@ -68,7 +68,8 @@ Mitglieder, sonst deaktivieren.
 - Umsetzung (#20): Reiter **Familie** am Mitglied, direkt nach „Daten"
   (`App\App\Mitglied\FamilieReiter`, Template `mitglied/familie`) zeigt
   Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
-  anlegen" führt zu `GET /app/mitglieder/{id}/familie?q=` (Suche nach Name,
+  anlegen" führt zu `GET /app/mitglieder/{id}/familie`; gesucht wird per
+  `POST` auf dieselbe Adresse, der Name steht nie in der URL (#37) (Suche nach Name,
   Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
   dazu `POST …/familie/{beitreten,neu,rolle,umbenennen,verlassen}`
   (`App\App\FamilieController`, `app/routes/familie.php`, Recht

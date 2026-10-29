@@ -42,8 +42,15 @@ final class ImportLeser
         'austrittsgrund' => 255, 'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 3,
         'telefon' => 50, 'handy' => 50, 'email' => 254, 'iban' => 34, 'bic' => 11,
         'kontoinhaber' => 140, 'mandatsreferenz' => 35, 'lizenznummer' => 64,
-        'familie' => 64, 'familie_name' => 150,
+        'familie' => 64, 'familie_name' => 150, 'bemerkung' => 10000,
     ];
+
+    /**
+     * Lines a file may have. A club has a few hundred members; a wrong file
+     * with millions of short lines would otherwise exhaust the memory on
+     * every visit of the settings page, which reads the preview.
+     */
+    public const int MAX_ZEILEN = 20000;
 
     /** The largest member number the column (INT UNSIGNED) holds. */
     private const int MAX_NUMMER = 4294967295;
@@ -55,6 +62,9 @@ final class ImportLeser
         }
         if (!mb_check_encoding($csv, 'UTF-8') || str_contains($csv, "\0")) {
             return self::dateiFehler('Die Datei ist keine Textdatei in UTF-8. Bitte import.csv als UTF-8 speichern.');
+        }
+        if (substr_count($csv, "\n") > self::MAX_ZEILEN) {
+            return self::dateiFehler(sprintf('Die Datei hat mehr als %s Zeilen. Ist das die richtige Datei?', number_format(self::MAX_ZEILEN, 0, ',', '.')));
         }
 
         $zeilen = self::zeilen($csv);

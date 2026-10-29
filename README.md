@@ -66,6 +66,7 @@ einen Hinweis statt einer Sperre
 | [docs/hosting-befunde.md](docs/hosting-befunde.md) | Gemessene Eigenschaften des Webspace (aus Vereinsbelege übernommen) |
 | [docs/spec/01-plattform.md](docs/spec/01-plattform.md) | Hosting, Verzeichnislayout, Request-Modell, Cron, Mail, Logging |
 | [docs/spec/02-sicherheit.md](docs/spec/02-sicherheit.md) | Anmeldung + 2FA, Rollen, Datei-/Backup-Verschlüsselung, CSP/CSRF, Audit-Log |
+| [docs/security-checkliste.md](docs/security-checkliste.md) | Sicherheits-Prüfliste (OWASP ASVS L2) mit letztem Durchlauf und offenen Punkten |
 | [docs/spec/03-datenhaltung.md](docs/spec/03-datenhaltung.md) | DB-Konventionen, Verschlüsselungs-Klassifizierung, Blobs, Migrationen |
 | [docs/spec/04-installation-und-update.md](docs/spec/04-installation-und-update.md) | setup.php, Installer, Updater, Release, Backup, Systemcheck |
 | [docs/spec/05-entwicklung.md](docs/spec/05-entwicklung.md) | Docker, Tests, CI, Übernahme aus den Schwesterprojekten |

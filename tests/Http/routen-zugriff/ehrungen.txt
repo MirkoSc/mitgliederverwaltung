@@ -1,2 +1,2 @@
 # app/routes/ehrungen.php - note "geehrt" in the honours list: both roles (09).
-POST /app/listen/ehrungen/vermerk -> listen.sehen
+POST /app/listen/ehrungen/vermerk -> mitglieder.bearbeiten

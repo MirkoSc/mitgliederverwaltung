@@ -12,9 +12,11 @@ use App\Listen\Spalte;
  * section 1): UTF-8 with BOM, `;` as separator, CRLF line ends, dates as
  * TT.MM.JJJJ, amounts with a decimal comma.
  *
- * Values are written as they are. A phone number like "+49 170 ..." would
- * not survive the usual protection against formula injection (a leading
- * apostrophe), and the file is also meant for moving to other software.
+ * Protection against formula injection (Excel and LibreOffice run a cell
+ * starting with = + - @ as a formula, e.g. "=HYPERLINK(...)" from an
+ * imported note): such a cell gets a leading apostrophe. Values that only
+ * look like a number or phone number ("+49 170 ...", "-12,50") stay as
+ * they are, so the file still moves to other software unchanged.
  */
 final class CsvWriter
 {
@@ -48,10 +50,23 @@ final class CsvWriter
 
     private static function feld(string $text): string
     {
+        $text = self::ohneFormel($text);
         if (strpbrk($text, ";\"\r\n") === false) {
             return $text;
         }
 
         return '"' . str_replace('"', '""', $text) . '"';
+    }
+
+    public static function ohneFormel(string $text): string
+    {
+        if ($text === '' || strpbrk($text[0], "=+-@\t\r") === false) {
+            return $text;
+        }
+        if (($text[0] === '+' || $text[0] === '-') && preg_match('/^[+-][0-9\s().,\/-]*$/D', $text) === 1) {
+            return $text;
+        }
+
+        return "'" . $text;
     }
 }

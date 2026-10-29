@@ -116,6 +116,7 @@ final readonly class BackupController
                 'meldung' => 'Dieses Backup gibt es nicht mehr. Es werden nur die letzten ' . BackupService::KEEP . ' aufbewahrt.',
             ], Area::Admin), 404);
         }
+        $this->dienste->audit()->protokollieren(AuditAktion::BackupHeruntergeladen, $this->dienste->session->userId(), 'backup', $name, ip: $request->ip);
         // The session lock would block the admin's other tabs for the whole
         // download.
         $this->dienste->session->schliessen();
