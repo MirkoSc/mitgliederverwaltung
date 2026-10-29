@@ -11,9 +11,10 @@ use App\Domain\Konto;
  * request, so locking an account, a role change or a deleted user take
  * effect at once (docs/spec/02-sicherheit.md section 4).
  *
- * Until the user table exists (issue #6), App\Http\Entwicklungskonten is the
- * only implementation; App\Dienste::kontoquelle() is the one place that
- * picks it.
+ * The application's implementation is App\Service\Account\Benutzerkonten
+ * (the `user` table); feature tests put their own in
+ * (App\Tests\Support\TestKonten). App\Dienste::kontoquelle() is the one
+ * place that picks it.
  */
 interface Kontoquelle
 {
