@@ -58,6 +58,31 @@ Verschlüsselung einzelner Datenbankfelder.
   Erzwungene Einrichtung beim ersten Login; Ändern nur nach erneuter
   Bestätigung. Ist die Mail noch nicht eingerichtet (Installer-Schritt
   übersprungen), bietet die Einrichtung nur die App an und sagt warum.
+  Umsetzung (#8, `App\Service\Account\ZweiterFaktor`, Migration 025):
+  - Nach richtigem Passwort wartet die Anmeldung 10 min in der Session
+    (`Session::merkeOffeneAnmeldung()`) auf `/anmelden/bestaetigen`; bei
+    E-Mail-Code geht die Mail genau beim Übergang raus, „Code erneut
+    senden" schickt einen neuen (höchstens 5 je 15 min). Ein Feld nimmt
+    App-, Mail- und Backup-Code. Konten ohne zweiten Faktor kommen
+    sofort hinein, `LoginGuard` lässt sie aber nur auf
+    `/app/konto/zweiter-faktor` (JSON: 403).
+  - Codes zählen vor der Prüfung je IP (20) und je Konto (8) im
+    15-min-Fenster; der Mail-Code hat zusätzlich seine 5 Versuche in der
+    eigenen Zeile. App-, Mail- und Backup-Codes verbraucht nur die Anfrage,
+    deren Statement die Zeile ändert.
+  - Gespeichert werden nur HMACs (Codes, Geräte-Token) und das
+    App-Geheimnis als Chiffrat des Server-Schlüssels; ein neues Geheimnis
+    liegt bis zum ersten richtigen Code nur verschlüsselt in der Session.
+    Der Wechsel der Methode löscht das Geheimnis der anderen.
+  - „Gerät merken" setzt das Cookie `__Host-geraet` (30 Tage, httponly);
+    nicht nach einem Backup-Code. „Alle Geräte vergessen" im Benutzermenü.
+  - Ändern (Methode, neue App, neue Backup-Codes) erst nach Passwort +
+    aktuellem Code, gültig 10 min und einmal; die erste Einrichtung fragt
+    nicht nach. Backup-Codes erscheinen nur einmal, als Antwort auf den
+    POST, der sie erzeugt.
+  - Kein Ausweg per Mail für App-Konten (anders als Vereinsbelege): wer
+    App und Backup-Codes verliert, ist ausgesperrt, bis ein Admin den
+    Faktor zurücksetzen kann (fehlt noch, Folge-Issue).
 - **Brute-Force-Schutz**: Rate-Limit je IP (20) und je Konto (10) im
   15-min-Fenster, atomar vor der Prüfung gezählt, ein Erfolg setzt beide
   Zähler zurück (`App\Service\RateLimiter`); wortgleiche Fehlermeldungen
