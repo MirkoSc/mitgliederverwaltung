@@ -156,6 +156,8 @@ final class InstallFlowTest extends DatabaseTestCase
         self::assertSame(422, $falsch->status);
         self::assertStringContainsString('Die Verbindung ist fehlgeschlagen', $falsch->body);
         self::assertStringNotContainsString('value="falsch"', $falsch->body);
+        // config.php cannot hold an empty password, so step 1 asks for one.
+        self::assertSame(422, $this->post('/install/datenbank', ['db_password' => ''] + $this->dbFelder())->status);
 
         self::assertWeiterleitungNach('/install', $this->post('/install/datenbank', $this->dbFelder()));
         self::assertStringContainsString('Art der Installation', $this->get('/install')->body);
@@ -259,6 +261,24 @@ final class InstallFlowTest extends DatabaseTestCase
         // And the second attempt goes through.
         $this->bisZumAdmin();
         self::assertSame(200, $this->post('/install/admin', $this->adminFelder())->status);
+    }
+
+    /** A mail password saved under the key of an abandoned run must not survive under the new one. */
+    public function testStartingOverAfterTheMailTestLeavesNoPasswordTheNewKeyCannotRead(): void
+    {
+        $this->bisZumAdmin();
+        $this->post('/install/admin', $this->adminFelder());
+        $this->post('/install/schluessel', ['aktion' => 'bestaetigt', 'notiert' => '1']);
+        $this->post('/install/mail', ['aktion' => 'testen'] + $this->mailFelder());
+        $this->post('/install/neu');
+
+        $this->bisZumAdmin();
+        $this->post('/install/admin', $this->adminFelder());
+        $this->post('/install/schluessel', ['aktion' => 'bestaetigt', 'notiert' => '1']);
+        self::assertStringContainsString('Wird verschlüsselt gespeichert', $this->get('/install')->body, 'the old password reads as not set');
+        $this->post('/install/mail', ['aktion' => 'speichern', 'passwort' => ''] + $this->mailFelder());
+
+        self::assertSame('', (string) new SettingRepository($this->pdo())->text('mail_smtp_passwort_enc'));
     }
 
     // ---------------------------------------------------------- restore

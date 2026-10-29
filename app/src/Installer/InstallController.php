@@ -17,12 +17,14 @@ use App\Service\Account\BenutzerRegelVerstoss;
 use App\Service\Account\BenutzerVerwaltung;
 use App\Service\Account\PasswordPolicy;
 use App\Service\Audit\AuditLog;
+use App\Service\Backup\BackupCipher;
 use App\Service\Backup\BackupLaeuftBereits;
 use App\Service\Backup\BackupService;
 use App\Service\Backup\FalscherSchluessel;
 use App\Service\Backup\KeinBackup;
 use App\Service\Backup\RestoreService;
 use App\Service\Backup\Wiederherstellung;
+use App\Service\Crypto\ServerCrypto;
 use App\Service\Mail\MailSettings;
 use App\Service\Mail\MailSettingsRepository;
 use App\Service\Mail\MailTemplates;
@@ -33,6 +35,7 @@ use App\Service\Mail\ServerKeyGeheimnisSchutz;
 use App\Service\Mail\SmtpSecurity;
 use App\Service\Mail\SmtpTransport;
 use App\Service\Migration\Migrator;
+use App\Service\SystemCheck\SystemCheck;
 use App\Service\Update\DenyHtaccess;
 use App\Service\Update\UpdateService;
 use App\View\Area;
@@ -78,9 +81,6 @@ final readonly class InstallController
     public const string SESSION_KEY = 'install';
 
     private const string FALSCHES_TOKEN = 'Dieses Installations-Token stimmt nicht. Bitte den Inhalt der Datei shared/install_token.txt genau übernehmen.';
-
-    /** Name of an uploaded backup while the restore chain reads it. */
-    private const string HOCHGELADEN = 'hochgeladen.zip.enc';
 
     public function __construct(
         private View $view,
@@ -159,8 +159,10 @@ final readonly class InstallController
         ];
         $eingabe = ['db' => [...$db, 'password' => '']];
 
-        if ($db['host'] === '' || $db['name'] === '' || $db['user'] === '') {
-            return $this->seite(InstallSchritt::Datenbank, ['db' => 'Bitte Server, Datenbankname und Benutzer angeben.'], 422, $eingabe);
+        // The password too: config.php cannot hold an empty one
+        // (App\Config\Config), and a database without is no option anyway.
+        if ($db['host'] === '' || $db['name'] === '' || $db['user'] === '' || $db['password'] === '') {
+            return $this->seite(InstallSchritt::Datenbank, ['db' => 'Bitte Server, Datenbankname, Benutzer und Passwort angeben.'], 422, $eingabe);
         }
         if ($db['port'] < 1 || $db['port'] > 65535) {
             return $this->seite(InstallSchritt::Datenbank, ['db' => 'Der Port muss zwischen 1 und 65535 liegen.'], 422, $eingabe);
@@ -294,10 +296,11 @@ final readonly class InstallController
         }
 
         try {
-            $einstellungen = $this->mailEinstellungen($this->pdo());
+            $pdo = $this->pdo();
+            $einstellungen = $this->mailEinstellungen($pdo);
+            $gespeichert = $einstellungen->get();
             if ($fehler !== null || $sicherheit === null) {
                 // What was typed comes back - never the password.
-                $gespeichert = $einstellungen->get();
 
                 return $this->seite(InstallSchritt::Mail, ['mail' => $fehler ?? 'Bitte eine Verschlüsselung auswählen.'], 422, ['mail' => new MailSettings(
                     host: $host,
@@ -319,8 +322,10 @@ final readonly class InstallController
                 port: $port,
                 sicherheit: $sicherheit,
                 benutzer: $request->feld('benutzer'),
-                // Empty keeps a password an earlier test of this step saved.
-                neuesPasswort: $passwort === '' ? null : $passwort,
+                // Empty keeps a password an earlier test of this step saved -
+                // unless what is stored does not open under this run's key
+                // (left by a run that started over): that one goes.
+                neuesPasswort: $passwort !== '' ? $passwort : ($gespeichert->passwortGesetzt ? null : ''),
                 absender: $absender,
                 antwortAn: $antwortAn,
                 vereinsname: $request->feld('vereinsname'),
@@ -331,10 +336,9 @@ final readonly class InstallController
                 return $this->fertigSeite($request);
             }
 
-            $pdo = $this->pdo();
             $ergebnis = new Mailer(
                 new MailQueueRepository($pdo),
-                $this->mailEinstellungen($pdo),
+                $einstellungen,
                 new MailTemplates($this->paths->viewsDir() . '/mail'),
                 $this->mailTransport ?? new SmtpTransport(),
             )->sendeTestmail($empfaenger);
@@ -382,35 +386,36 @@ final readonly class InstallController
         if ($hochgeladen !== null && $auswahl !== '') {
             return $this->seite(InstallSchritt::Wiederherstellung, ['backup' => 'Bitte entweder ein Backup hochladen oder eines aus shared/var/backups/ auswählen, nicht beides.'], 422);
         }
-        if ($hochgeladen !== null) {
-            $datei = $this->arbeitsDir() . '/' . self::HOCHGELADEN;
-            if (!is_dir(dirname($datei)) && !@mkdir(dirname($datei), 0700, true) && !is_dir(dirname($datei))) {
-                return $this->seite(InstallSchritt::Wiederherstellung, ['backup' => 'shared/var/backups/ ist nicht beschreibbar.'], 500);
-            }
-            if (!@copy($hochgeladen, $datei)) {
-                return $this->seite(InstallSchritt::Wiederherstellung, ['backup' => 'Das Backup kann nicht zwischengespeichert werden.'], 500);
-            }
-            @chmod($datei, 0600);
-        } elseif (in_array($auswahl, $this->backupsAufDemServer(), true)) {
-            $datei = $this->paths->backupDir() . '/' . $auswahl;
-        } else {
+        if ($hochgeladen === null && !in_array($auswahl, $this->backupsAufDemServer(), true)) {
             return $this->seite(InstallSchritt::Wiederherstellung, ['backup' => 'Bitte ein Backup hochladen oder eines aus shared/var/backups/ auswählen.'], 422);
         }
+        $datei = $hochgeladen ?? $this->paths->backupDir() . '/' . $auswahl;
 
         try {
+            // File and key first, where they are: a wrong key costs nothing.
+            BackupCipher::pruefen($datei, new ServerCrypto($schluessel));
+            if ($hochgeladen !== null) {
+                // The upload is gone at the end of this request; the chain
+                // reads it for many more. Moved, not copied - it may be
+                // hundreds of megabytes - and under a name of its own, so a
+                // second tab cannot swap the file under a running chain.
+                $datei = $this->arbeitsDir() . '/hochgeladen_' . bin2hex(random_bytes(8)) . '.zip.enc';
+                $this->uploadAblegen($hochgeladen, $datei);
+            }
             Wiederherstellung::fuer($this->paths)->starten($datei, $schluessel);
         } catch (FalscherSchluessel | KeinBackup $e) {
+            return $this->seite(InstallSchritt::Wiederherstellung, [$e instanceof FalscherSchluessel ? 'schluessel' : 'backup' => $e->getMessage()], 422);
+        } catch (\RuntimeException $e) {
+            // Also BackupLaeuftBereits: another tab runs a step right now.
             if ($hochgeladen !== null) {
                 @unlink($datei);
             }
 
-            return $this->seite(InstallSchritt::Wiederherstellung, [$e instanceof FalscherSchluessel ? 'schluessel' : 'backup' => $e->getMessage()], 422);
-        } catch (BackupLaeuftBereits $e) {
-            return $this->seite(InstallSchritt::Wiederherstellung, ['backup' => $e->getMessage()], 409);
+            return $this->seite(InstallSchritt::Wiederherstellung, ['backup' => $e->getMessage()], $e instanceof BackupLaeuftBereits ? 409 : 500);
         }
 
+        $_SESSION[self::SESSION_KEY]['hochgeladen'] = $hochgeladen !== null ? $datei : null;
         $_SESSION[self::SESSION_KEY]['server_key'] = base64_encode($schluessel);
-        $_SESSION[self::SESSION_KEY]['hochgeladen'] = $hochgeladen !== null;
         $this->weiterZu(InstallSchritt::WiederherstellungLaeuft);
 
         return Response::redirect('/install');
@@ -448,9 +453,7 @@ final readonly class InstallController
             return Response::json($antwort);
         }
 
-        if (($_SESSION[self::SESSION_KEY]['hochgeladen'] ?? false) === true) {
-            @unlink($this->arbeitsDir() . '/' . self::HOCHGELADEN);
-        }
+        $this->hochgeladenesLoeschen();
         $fertig = $this->abschliessen($request, AuditAktion::RestoreDurchgefuehrt, [
             'app_version' => (string) ($stand['manifest']['app_version'] ?? ''),
             'migrationen' => (int) $stand['migrationen'],
@@ -489,12 +492,15 @@ final readonly class InstallController
                 // The database is gone: then there is nothing to tidy up.
             }
         }
-        try {
-            Wiederherstellung::fuer($this->paths)->abbrechen();
-        } catch (BackupLaeuftBereits) {
-            // A step is running right now; its work files go with the next start.
+        if (is_dir($this->arbeitsDir())) {
+            try {
+                Wiederherstellung::fuer($this->paths)->abbrechen();
+            } catch (\RuntimeException) {
+                // A step runs right now, or the folder is not writable: its
+                // work files go with the next start or the cron (one hour).
+            }
         }
-        @unlink($this->arbeitsDir() . '/' . self::HOCHGELADEN);
+        $this->hochgeladenesLoeschen();
         unset($_SESSION[self::SESSION_KEY]);
 
         return Response::redirect('/install');
@@ -597,11 +603,11 @@ final readonly class InstallController
     }
 
     /**
-     * @return array{db: array{host: string, port: int, name: string, user: string, password: string}, server_key: string, kanal: string, origin?: string, admin_id?: int, admin_email?: string, hochgeladen?: bool}
+     * @return array{db: array{host: string, port: int, name: string, user: string, password: string}, server_key: string, kanal: string, origin?: string, admin_id?: int, admin_email?: string, hochgeladen?: string|null}
      */
     private function stand(): array
     {
-        /** @var array{db: array{host: string, port: int, name: string, user: string, password: string}, server_key: string, kanal: string, origin?: string, admin_id?: int, admin_email?: string, hochgeladen?: bool} $stand */
+        /** @var array{db: array{host: string, port: int, name: string, user: string, password: string}, server_key: string, kanal: string, origin?: string, admin_id?: int, admin_email?: string, hochgeladen?: string|null} $stand */
         $stand = $_SESSION[self::SESSION_KEY];
 
         return $stand;
@@ -672,6 +678,30 @@ final readonly class InstallController
         $istUpload = $this->istUpload ?? is_uploaded_file(...);
 
         return $pfad !== '' && $istUpload($pfad) ? $pfad : null;
+    }
+
+    private function uploadAblegen(string $hochgeladen, string $ziel): void
+    {
+        $dir = dirname($ziel);
+        if (!is_dir($dir) && !@mkdir($dir, 0700, true) && !is_dir($dir)) {
+            throw new \RuntimeException('shared/var/backups/ ist nicht beschreibbar.');
+        }
+        // Tests hand in plain files (the seam $istUpload); PHP's own move
+        // only takes a real upload.
+        $verschoben = $this->istUpload === null ? @move_uploaded_file($hochgeladen, $ziel) : @rename($hochgeladen, $ziel);
+        if (!$verschoben) {
+            throw new \RuntimeException('Das Backup kann nicht zwischengespeichert werden: shared/var/backups/ ist nicht beschreibbar.');
+        }
+        @chmod($ziel, 0600);
+    }
+
+    /** The upload this run moved into the work folder, if any. */
+    private function hochgeladenesLoeschen(): void
+    {
+        $datei = $_SESSION[self::SESSION_KEY]['hochgeladen'] ?? null;
+        if (is_string($datei) && str_starts_with($datei, $this->arbeitsDir() . '/hochgeladen_')) {
+            @unlink($datei);
+        }
     }
 
     /** @return list<string> names of the backups in shared/var/backups/, newest first */
@@ -780,28 +810,15 @@ final readonly class InstallController
         );
     }
 
-    /** The smaller of upload_max_filesize and post_max_size as PHP writes it, '' if unknown. */
+    /** What one upload may carry: the smaller of upload_max_filesize and post_max_size, '' if unknown. */
     private static function uploadGrenze(): string
     {
-        $werte = array_filter([(string) ini_get('upload_max_filesize'), (string) ini_get('post_max_size')]);
-        if ($werte === []) {
-            return '';
-        }
-        usort($werte, static fn(string $a, string $b): int => self::bytes($a) <=> self::bytes($b));
+        $werte = array_filter(
+            array_map(static fn(string $name): ?int => SystemCheck::parseBytes((string) ini_get($name)), ['upload_max_filesize', 'post_max_size']),
+            static fn(?int $bytes): bool => $bytes !== null && $bytes > 0,
+        );
 
-        return $werte[0];
-    }
-
-    private static function bytes(string $wert): int
-    {
-        $zahl = (int) $wert;
-
-        return match (strtolower(substr(trim($wert), -1))) {
-            'g' => $zahl * 1024 ** 3,
-            'm' => $zahl * 1024 ** 2,
-            'k' => $zahl * 1024,
-            default => $zahl,
-        };
+        return $werte === [] ? '' : SystemCheck::formatBytes(min($werte));
     }
 
     /**

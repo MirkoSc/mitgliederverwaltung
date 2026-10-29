@@ -33,6 +33,19 @@ function statusText(stand) {
     return typeof stand.fortschritt === 'number' ? text + ' (' + stand.fortschritt + ' %)' : text;
 }
 
+/**
+ * The error line for a failed step. A 404 means the route is gone - the
+ * last step did write config.php, only its answer got lost.
+ */
+function fehlerText(meldung, status) {
+    if (status === 404) {
+        return 'Die Installation ist offenbar schon abgeschlossen. Melden Sie sich an; die Cron-Adresse steht dann nicht hier, '
+            + 'sondern als cron_token in shared/config.php (Adresse: /cron?token=…).';
+    }
+
+    return meldung + ' „Schritt wiederholen“ macht dort weiter.';
+}
+
 /** Whether the chain needs another step after this answer. */
 function weiter(stand) {
     return !stand || !stand.fertig;
@@ -93,7 +106,9 @@ function initWiederherstellung() {
             inhalt = {};
         }
         if (!antwort.ok || inhalt.fehler) {
-            throw new Error(inhalt.fehler || 'Der Server antwortet nicht (HTTP ' + antwort.status + ').');
+            const problem = new Error(inhalt.fehler || 'Der Server antwortet nicht (HTTP ' + antwort.status + ').');
+            problem.status = antwort.status;
+            throw problem;
         }
 
         return inhalt;
@@ -125,9 +140,9 @@ function initWiederherstellung() {
             }
         } catch (problem) {
             status.textContent = 'Das Einspielen ist unterbrochen.';
-            fehler.textContent = problem.message + ' „Schritt wiederholen“ macht dort weiter.';
+            fehler.textContent = fehlerText(problem.message, problem.status);
             fehler.hidden = false;
-            wiederholen.hidden = false;
+            wiederholen.hidden = problem.status === 404;
 
             return;
         }
@@ -148,5 +163,5 @@ if (typeof document !== 'undefined') {
 // Node (tests/js) loads the same file for the pure helpers above; browsers
 // ignore this block because `module` does not exist there.
 if (typeof module === 'object' && module.exports) {
-    module.exports = { statusText, weiter, abgelehntText };
+    module.exports = { statusText, weiter, abgelehntText, fehlerText };
 }

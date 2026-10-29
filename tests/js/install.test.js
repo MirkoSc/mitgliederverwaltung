@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { statusText, weiter, abgelehntText } = require('../../public/js/install.js');
+const { statusText, weiter, abgelehntText, fehlerText } = require('../../public/js/install.js');
 
 test('the chain starts without an answer and goes on until the server reports it finished', () => {
     assert.equal(weiter(null), true);
@@ -29,4 +29,9 @@ test('files the backup carried under a foreign name are mentioned, in singular o
     assert.equal(abgelehntText(undefined), '');
     assert.match(abgelehntText(1), /^Eine Datei/);
     assert.match(abgelehntText(3), /^3 Dateien/);
+});
+
+test('a failed step offers the retry, a vanished route says the installation is done', () => {
+    assert.match(fehlerText('Datenbankfehler.', 500), /^Datenbankfehler\. „Schritt wiederholen“/);
+    assert.match(fehlerText('egal', 404), /schon abgeschlossen/);
 });
