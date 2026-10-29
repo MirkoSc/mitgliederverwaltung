@@ -7,7 +7,7 @@ namespace App\Service\Account;
 /**
  * Ten one-time backup codes (docs/spec/02-sicherheit.md section 3), shown
  * once at 2FA setup and whenever they are regenerated
- * (App\Service\Account\ZweiterFaktorEinrichtung). Taken over from
+ * (App\Service\Account\ZweiterFaktor). Taken over from
  * Vereinsbelege.
  *
  * Formatting follows Crockford Base32: no I/L/O/U, so nothing a human

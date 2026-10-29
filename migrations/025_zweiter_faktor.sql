@@ -13,7 +13,7 @@
 -- One authenticator secret per user, server-key ciphertext (it has to be
 -- readable: a TOTP code cannot be checked against a hash of the secret).
 -- Written only once its first code is confirmed - an abandoned setup never
--- touches it (App\Service\Account\ZweiterFaktorEinrichtung).
+-- touches it (App\Service\Account\ZweiterFaktor).
 CREATE TABLE mfa_totp (
     user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
     -- version(1) | nonce(24) | secretbox(20-byte secret + MAC 16) = 61 bytes.

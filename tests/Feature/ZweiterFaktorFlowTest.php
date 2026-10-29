@@ -266,6 +266,23 @@ final class ZweiterFaktorFlowTest extends AppTestCase
         self::assertWeiterleitungNach('/anmelden/bestaetigen', $this->passwort(cookies: ['geraet' => $m[1]]));
     }
 
+    /** The open login waits ten minutes; a resent code gives it ten more. */
+    public function testAResentCodeKeepsTheLoginOpen(): void
+    {
+        Benutzerdaten::anlegen($this->pdo());
+        $this->passwort();
+        $_SESSION['mfa_offen']['seit'] -= 9 * 60;
+
+        $this->post('/anmelden/bestaetigen/code-senden');
+        $_SESSION['mfa_offen']['seit'] -= 2 * 60;
+        self::assertWeiterleitungNach('/app/mitglieder', $this->code($this->codeAusMail()));
+
+        $this->abmelden();
+        $this->passwort();
+        $_SESSION['mfa_offen']['seit'] -= 10 * 60;
+        self::assertWeiterleitungNach('/anmelden', $this->code($this->codeAusMail()), 'too late');
+    }
+
     public function testALockWhileTheCodeIsPendingEndsTheLogin(): void
     {
         $id = Benutzerdaten::anlegen($this->pdo());
@@ -325,7 +342,7 @@ final class ZweiterFaktorFlowTest extends AppTestCase
 
         $this->post('/app/konto/zweiter-faktor/einrichten', ['methode' => 'email']);
         self::assertNull(new BenutzerRepository($this->pdo())->findById($id)?->mfaMethod);
-        self::assertStringContainsString('Bitte wählen Sie', $this->get('/app/konto/zweiter-faktor')->body);
+        self::assertStringContainsString('Der Mailversand ist noch nicht eingerichtet. Deshalb geht im Moment nur die Authenticator-App.', $this->get('/app/konto/zweiter-faktor')->body);
 
         // The app: QR code plus the key as text.
         $this->post('/app/konto/zweiter-faktor/einrichten', ['methode' => 'totp']);
@@ -373,11 +390,41 @@ final class ZweiterFaktorFlowTest extends AppTestCase
         ]));
         self::assertStringContainsString('name="methode"', $this->get('/app/konto/zweiter-faktor')->body);
 
+        // A new factor: remembered devices go with the old one.
+        ZweiterFaktor::aus($this->dienste)->merkeGeraet($id);
+        $this->post('/app/konto/zweiter-faktor/einrichten', ['methode' => 'email']);
+        $this->post('/app/konto/zweiter-faktor/abschliessen', ['code' => $this->codeAusMail()]);
+        self::assertSame(0, ZweiterFaktor::aus($this->dienste)->gemerkteGeraete($id));
+        self::assertStringNotContainsString('name="methode"', $this->get('/app/konto/zweiter-faktor')->body, 'the confirmation is spent');
+
+        $this->post('/app/konto/zweiter-faktor/code-senden');
+        $this->post('/app/konto/zweiter-faktor/bestaetigen', ['passwort' => Benutzerdaten::PASSWORT, 'code' => $this->codeAusMail()]);
         $neu = $this->post('/app/konto/zweiter-faktor/backup-codes');
         self::assertCount(10, self::backupCodesAus($neu));
         self::assertStringContainsString('neue Backup-Codes erzeugt', $this->letzteMail());
-        self::assertStringNotContainsString('name="methode"', $this->get('/app/konto/zweiter-faktor')->body, 'the confirmation is spent');
-        self::assertNull(ZweiterFaktor::aus($this->dienste)->pruefe($id, $codes[2]), 'the old codes are gone');
+        self::assertStringNotContainsString('name="methode"', $this->get('/app/konto/zweiter-faktor')->body);
+        self::assertNull(ZweiterFaktor::aus($this->dienste)->pruefe($id, MfaMethode::Email, $codes[2]), 'the old codes are gone');
+    }
+
+    /** An abandoned switch to the mail leaves no code that would open the app account. */
+    public function testCancellingAMailSetupDropsItsCode(): void
+    {
+        $id = Benutzerdaten::anlegen($this->pdo(), mfa: null);
+        $faktor = ZweiterFaktor::aus($this->dienste);
+        $geheimnis = $faktor->neuesAppGeheimnis();
+        $vorhin = new \DateTimeImmutable('-2 minutes');
+        $codes = (array) $faktor->richteAppEin($id, $geheimnis, Totp::code($geheimnis, $vorhin), $vorhin);
+        $this->passwort();
+        $this->code((string) $codes[0]);
+        $this->post('/app/konto/zweiter-faktor/bestaetigen', ['passwort' => Benutzerdaten::PASSWORT, 'code' => (string) $codes[1]]);
+
+        $this->post('/app/konto/zweiter-faktor/einrichten', ['methode' => 'email']);
+        $this->codeAusMail();
+        self::assertSame(1, (int) $this->pdo()->query('SELECT COUNT(*) FROM mfa_email_code')->fetchColumn());
+        $this->post('/app/konto/zweiter-faktor/abbrechen');
+
+        self::assertSame(0, (int) $this->pdo()->query('SELECT COUNT(*) FROM mfa_email_code')->fetchColumn());
+        self::assertSame(MfaMethode::App, new BenutzerRepository($this->pdo())->findById($id)?->mfaMethod);
     }
 
     public function testAnAppAccountGetsNoMailCodeForTheConfirmation(): void

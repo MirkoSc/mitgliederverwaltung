@@ -116,27 +116,25 @@ final readonly class ZweiterFaktor
     // ------------------------------------------------------------- checks
 
     /**
-     * Checks a code at the login or the re-confirmation: one from the app,
-     * from the last mail, or a backup code. The caller counted the attempt
-     * (versuch()) before.
+     * Checks a code at the login or the re-confirmation: one of the
+     * account's method - from the app or from the last mail - or a backup
+     * code. The caller counted the attempt (versuch()) before.
      *
-     * Six digits are an app or mail code, anything else is tried as a
-     * backup code. Both kinds of six digits are accepted whatever the
-     * method, which is safe because switching methods removes the other
-     * one's secret (richteAppEin(), richteMailEin()).
+     * Six digits are a code of the method, anything else is tried as a
+     * backup code. Only the account's own method counts: a mail code that
+     * lingers from an abandoned switch never opens an app account.
      */
-    public function pruefe(int $userId, #[\SensitiveParameter] string $code, ?\DateTimeImmutable $now = null): ?Nachweis
+    public function pruefe(int $userId, MfaMethode $methode, #[\SensitiveParameter] string $code, ?\DateTimeImmutable $now = null): ?Nachweis
     {
         $now ??= new \DateTimeImmutable();
-        $code = trim($code);
+        $code = self::ohneLeerraum($code);
         if ($code === '') {
             return null;
         }
         if (preg_match('/^\d{6}$/D', $code) === 1) {
-            return match (true) {
-                $this->pruefeApp($userId, $code, $now) => Nachweis::App,
-                $this->pruefeMailCode($userId, $code, $now) => Nachweis::Email,
-                default => null,
+            return match ($methode) {
+                MfaMethode::App => $this->pruefeApp($userId, $code, $now) ? Nachweis::App : null,
+                MfaMethode::Email => $this->pruefeMailCode($userId, $code, $now) ? Nachweis::Email : null,
             };
         }
 
@@ -153,7 +151,7 @@ final readonly class ZweiterFaktor
             return false;
         }
 
-        $schritt = Totp::matchingStep($this->crypto->decrypt($geheimnis), $code, $now, self::APP_TOLERANZ);
+        $schritt = Totp::matchingStep($this->crypto->decrypt($geheimnis), self::ohneLeerraum($code), $now, self::APP_TOLERANZ);
 
         return $schritt !== null && $this->faktoren->verbraucheSchritt($userId, $schritt);
     }
@@ -166,7 +164,7 @@ final readonly class ZweiterFaktor
     {
         $now ??= new \DateTimeImmutable();
         $gespeichert = $this->faktoren->versuchMailCode($userId, self::CODE_VERSUCHE, $now);
-        if ($gespeichert === null || !hash_equals($gespeichert, $this->hash('mail', $userId, trim($code)))) {
+        if ($gespeichert === null || !hash_equals($gespeichert, $this->hash('mail', $userId, self::ohneLeerraum($code)))) {
             return false;
         }
 
@@ -218,8 +216,11 @@ final readonly class ZweiterFaktor
     public function richteAppEin(int $userId, #[\SensitiveParameter] string $geheimnis, #[\SensitiveParameter] string $code, ?\DateTimeImmutable $now = null): ?array
     {
         $now ??= new \DateTimeImmutable();
-        $schritt = Totp::matchingStep($geheimnis, $code, $now, self::APP_TOLERANZ);
-        if ($geheimnis === '' || $schritt === null) {
+        if ($geheimnis === '') {
+            return null;
+        }
+        $schritt = Totp::matchingStep($geheimnis, self::ohneLeerraum($code), $now, self::APP_TOLERANZ);
+        if ($schritt === null) {
             return null;
         }
 
@@ -232,10 +233,9 @@ final readonly class ZweiterFaktor
 
     /**
      * Makes the mail the account's method. The caller proved the mailbox
-     * works (pruefeMailCode()). An app secret from before goes: the login
-     * takes app codes whatever the method, and an app somebody switched
-     * away from - perhaps because the phone is lost - must not keep
-     * opening the account.
+     * works (pruefeMailCode()). An app secret from before goes - an app
+     * somebody switched away from, perhaps because the phone is lost, has
+     * no business staying around.
      *
      * @return list<string> the ten new backup codes
      */
@@ -302,7 +302,7 @@ final readonly class ZweiterFaktor
         if (!$this->versuch($ip, $benutzer->id, $now)) {
             return $zuViele;
         }
-        if ($this->pruefe($benutzer->id, $code, $now) === null) {
+        if ($benutzer->mfaMethod === null || $this->pruefe($benutzer->id, $benutzer->mfaMethod, $code, $now) === null) {
             return 'Der Code ist ungültig oder abgelaufen.';
         }
         $this->erfolg($benutzer->id);
@@ -347,6 +347,18 @@ final readonly class ZweiterFaktor
     public function vergesseGeraete(int $userId): void
     {
         $this->faktoren->vergesseGeraete($userId);
+    }
+
+    /** An abandoned mail setup: its code must not linger. */
+    public function verwirfMailCode(int $userId): void
+    {
+        $this->faktoren->loescheMailCode($userId);
+    }
+
+    /** Apps show "123 456"; people type it like that. */
+    private static function ohneLeerraum(string $code): string
+    {
+        return preg_replace('/\s+/u', '', $code) ?? '';
     }
 
     /**

@@ -72,16 +72,16 @@ final class ZweiterFaktorTest extends DatabaseTestCase
         self::assertSame(MfaMethode::App, $this->methode());
 
         // The code that confirmed the setup is spent already.
-        self::assertNull($this->faktor->pruefe($this->id, Totp::code($geheimnis, $einrichtung), $einrichtung->modify('+10 seconds')));
+        self::assertNull($this->faktor->pruefe($this->id, MfaMethode::App, Totp::code($geheimnis, $einrichtung), $einrichtung->modify('+10 seconds')));
 
         $spaeter = self::am('2026-03-01 10:05:00');
         $code = Totp::code($geheimnis, $spaeter);
-        self::assertSame(Nachweis::App, $this->faktor->pruefe($this->id, $code, $spaeter));
-        self::assertNull($this->faktor->pruefe($this->id, $code, $spaeter), 'each time step once');
-        self::assertNull($this->faktor->pruefe($this->id, $code, $spaeter->modify('+25 seconds')), 'not within the tolerance either');
+        self::assertSame(Nachweis::App, $this->faktor->pruefe($this->id, MfaMethode::App, $code, $spaeter));
+        self::assertNull($this->faktor->pruefe($this->id, MfaMethode::App, $code, $spaeter), 'each time step once');
+        self::assertNull($this->faktor->pruefe($this->id, MfaMethode::App, $code, $spaeter->modify('+25 seconds')), 'not within the tolerance either');
 
         $danach = $spaeter->modify('+30 seconds');
-        self::assertSame(Nachweis::App, $this->faktor->pruefe($this->id, Totp::code($geheimnis, $danach), $danach));
+        self::assertSame(Nachweis::App, $this->faktor->pruefe($this->id, MfaMethode::App, Totp::code($geheimnis, $danach), $danach));
     }
 
     public function testAWrongFirstCodeSetsNothingUp(): void
@@ -102,6 +102,35 @@ final class ZweiterFaktorTest extends DatabaseTestCase
         $gespeichert = (string) $this->repo->appGeheimnis($this->id);
         self::assertStringNotContainsString($geheimnis, $gespeichert);
         self::assertSame($geheimnis, new ServerCrypto(str_repeat('k', 32))->decrypt($gespeichert));
+    }
+
+    public function testAnAppCodeMayBeTypedWithASpace(): void
+    {
+        $am = self::am('2026-03-01 10:00:00');
+        [$geheimnis] = $this->appEinrichten($am);
+        $spaeter = $am->modify('+1 minute');
+        $code = Totp::code($geheimnis, $spaeter);
+
+        self::assertSame(Nachweis::App, $this->faktor->pruefe($this->id, MfaMethode::App, substr($code, 0, 3) . ' ' . substr($code, 3), $spaeter));
+    }
+
+    /** Only the account's own method counts: a lingering mail code opens no app account. */
+    public function testAMailCodeNeverOpensAnAppAccount(): void
+    {
+        $am = self::am('2026-03-01 10:00:00');
+        $this->appEinrichten($am);
+        $code = (string) $this->faktor->neuerMailCode($this->id, $am);
+
+        self::assertNull($this->faktor->pruefe($this->id, MfaMethode::App, $code, $am));
+        self::assertTrue($this->faktor->pruefeMailCode($this->id, $code, $am), 'the code itself was fine');
+    }
+
+    /** A method a newer release wrote never reads as "not set up". */
+    public function testAnUnknownMethodCountsAsTheMailNotAsNone(): void
+    {
+        $this->pdo()->prepare('UPDATE `user` SET mfa_method = ? WHERE id = ?')->execute(['webauthn', $this->id]);
+
+        self::assertSame(MfaMethode::Email, $this->methode());
     }
 
     public function testAMailCodeWorksOnceWithinTenMinutes(): void
@@ -165,13 +194,13 @@ final class ZweiterFaktorTest extends DatabaseTestCase
         self::assertSame(10, $this->faktor->offeneBackupCodes($this->id));
 
         // Typed by hand: lower case, without the dash.
-        self::assertSame(Nachweis::BackupCode, $this->faktor->pruefe($this->id, strtolower(str_replace('-', '', $codes[3])), $am));
-        self::assertNull($this->faktor->pruefe($this->id, $codes[3], $am), 'spent');
+        self::assertSame(Nachweis::BackupCode, $this->faktor->pruefe($this->id, MfaMethode::Email, strtolower(str_replace('-', '', $codes[3])), $am));
+        self::assertNull($this->faktor->pruefe($this->id, MfaMethode::Email, $codes[3], $am), 'spent');
         self::assertSame(9, $this->faktor->offeneBackupCodes($this->id));
 
         $neu = $this->faktor->neueBackupCodes($this->id, $am);
-        self::assertNull($this->faktor->pruefe($this->id, $codes[4], $am), 'the old set is gone');
-        self::assertSame(Nachweis::BackupCode, $this->faktor->pruefe($this->id, $neu[0], $am));
+        self::assertNull($this->faktor->pruefe($this->id, MfaMethode::Email, $codes[4], $am), 'the old set is gone');
+        self::assertSame(Nachweis::BackupCode, $this->faktor->pruefe($this->id, MfaMethode::Email, $neu[0], $am));
     }
 
     public function testBackupCodesBelongToTheirAccount(): void
@@ -179,7 +208,7 @@ final class ZweiterFaktorTest extends DatabaseTestCase
         $codes = $this->faktor->richteMailEin($this->id);
         $andere = Benutzerdaten::anlegen($this->pdo(), 'volker@example.org');
 
-        self::assertNull($this->faktor->pruefe($andere, $codes[0]));
+        self::assertNull($this->faktor->pruefe($andere, MfaMethode::Email, $codes[0]));
     }
 
     /** Switching methods removes the other one's secret: an abandoned app stops working. */
@@ -192,7 +221,7 @@ final class ZweiterFaktorTest extends DatabaseTestCase
 
         self::assertSame(MfaMethode::Email, $this->methode());
         $spaeter = $am->modify('+2 minutes');
-        self::assertNull($this->faktor->pruefe($this->id, Totp::code($geheimnis, $spaeter), $spaeter));
+        self::assertNull($this->faktor->pruefe($this->id, MfaMethode::App, Totp::code($geheimnis, $spaeter), $spaeter));
     }
 
     public function testARememberedDeviceHoldsThirtyDays(): void

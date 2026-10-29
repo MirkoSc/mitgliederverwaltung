@@ -166,10 +166,10 @@ final readonly class BenutzerRepository
             status: BenutzerStatus::tryFrom((string) $row['status']) ?? BenutzerStatus::Gesperrt,
             rolle: Rolle::tryFrom((string) $row['rolle']) ?? Rolle::Vorstand,
             barrierefrei: (bool) $row['modus_barrierefrei'],
-            // An unknown method (a newer release wrote it) counts as "not
-            // set up": the guard then asks for a setup instead of letting
-            // the account past a factor nobody can check.
-            mfaMethod: $row['mfa_method'] === null ? null : MfaMethode::tryFrom((string) $row['mfa_method']),
+            // An unknown method (a newer release wrote it) becomes the mail
+            // code, never "not set up": that would open the account on the
+            // password alone and let it set up a new factor unasked.
+            mfaMethod: $row['mfa_method'] === null ? null : MfaMethode::tryFrom((string) $row['mfa_method']) ?? MfaMethode::Email,
             sessionEpoch: (int) $row['session_epoch'],
             createdAt: new \DateTimeImmutable((string) $row['created_at']),
             lastLoginAt: $row['last_login_at'] === null ? null : new \DateTimeImmutable((string) $row['last_login_at']),

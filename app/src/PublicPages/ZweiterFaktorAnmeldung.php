@@ -110,7 +110,7 @@ final readonly class ZweiterFaktorAnmeldung
         if (!$faktor->versuch($request->ip, $benutzer->id)) {
             return $this->seite($benutzer, fehler: self::ZU_VIELE, status: 429);
         }
-        $nachweis = $faktor->pruefe($benutzer->id, self::roh($request, 'code'));
+        $nachweis = $faktor->pruefe($benutzer->id, $benutzer->mfaMethod, self::roh($request, 'code'));
         if ($nachweis === null) {
             $this->dienste->audit()->protokollieren(AuditAktion::AnmeldungFehlgeschlagen, null, 'user', $benutzer->id, ['schritt' => 'zweiter_faktor'], $request->ip);
 
@@ -157,10 +157,12 @@ final readonly class ZweiterFaktorAnmeldung
         $session = $this->dienste->session;
         $offen = $session->offeneAnmeldung(self::OFFEN_SEKUNDEN);
         $benutzer = $offen === null ? null : $this->benutzer($offen['user_id']);
-        if ($benutzer === null) {
+        if ($offen === null || $benutzer === null) {
             return $this->vonVorn();
         }
         if ($benutzer->mfaMethod === MfaMethode::Email) {
+            // The new code lives ten minutes - the open login as well.
+            $session->merkeOffeneAnmeldung($benutzer->id, $offen['epoch'], $offen['weiter']);
             $this->sendeCode($benutzer);
         }
 
@@ -189,27 +191,12 @@ final readonly class ZweiterFaktorAnmeldung
      */
     private function sendeCode(Benutzer $benutzer): void
     {
-        $session = $this->dienste->session;
-        $code = ZweiterFaktor::aus($this->dienste)->neuerMailCode($benutzer->id);
-        if ($code === null) {
-            $session->flash('Es wurden zu viele Codes angefordert. Bitte warten Sie 15 Minuten. Ein Backup-Code geht sofort.', FlashArt::Warnung);
-
-            return;
-        }
-
-        try {
-            $ergebnis = Kontomails::aus($this->dienste)->code($benutzer->email, $code);
-            $gesendet = $ergebnis->erfolg;
-        } catch (\Throwable $e) {
-            $this->dienste->logger->append(sprintf('second factor code not queued: %s', $e::class));
-            $gesendet = false;
-        }
-        $session->flash(
-            $gesendet
-                ? 'Wir haben Ihnen einen Code per E-Mail geschickt.'
-                : 'Der Code konnte gerade nicht verschickt werden. Versuchen Sie „Code erneut senden“ oder nehmen Sie einen Backup-Code.',
-            $gesendet ? FlashArt::Info : FlashArt::Warnung,
-        );
+        $gesendet = Kontomails::aus($this->dienste)->neuerCode(ZweiterFaktor::aus($this->dienste), $benutzer->id, $benutzer->email);
+        $this->dienste->session->flash(...match ($gesendet) {
+            true => ['Wir haben Ihnen einen Code per E-Mail geschickt.', FlashArt::Info],
+            false => ['Der Code konnte gerade nicht verschickt werden. Versuchen Sie „Code erneut senden“ oder nehmen Sie einen Backup-Code.', FlashArt::Warnung],
+            null => ['Es wurden zu viele Codes angefordert. Bitte warten Sie 15 Minuten. Ein Backup-Code geht sofort.', FlashArt::Warnung],
+        });
     }
 
     /** The account behind an open login - if it may still log in at all. */

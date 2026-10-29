@@ -113,6 +113,28 @@ final readonly class Kontomails
     }
 
     /**
+     * Makes a fresh code of the second factor and mails it - the one place
+     * that does, for the login and the own setup alike.
+     *
+     * @return bool|null true = sent, false = could not be sent (it stays in
+     *                   the queue), null = too many codes asked for
+     */
+    public function neuerCode(ZweiterFaktor $faktor, int $userId, string $email): ?bool
+    {
+        $code = $faktor->neuerMailCode($userId);
+        if ($code === null) {
+            return null;
+        }
+        try {
+            return $this->code($email, $code)->erfolg;
+        } catch (\Throwable $e) {
+            $this->logger->append(sprintf('second factor code not queued: %s', $e::class));
+
+            return false;
+        }
+    }
+
+    /**
      * A security notice to the account itself. Best effort: the change it
      * reports has already happened, a mail problem must not undo or hide
      * it.

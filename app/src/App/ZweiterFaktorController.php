@@ -94,7 +94,10 @@ final readonly class ZweiterFaktorController
 
         $session = $this->dienste->session;
         $methode = MfaMethode::tryFrom($request->feld('methode'));
-        if ($methode === MfaMethode::Email && $this->mailEingerichtet()) {
+        if ($methode === MfaMethode::Email && !$this->mailEingerichtet()) {
+            return $this->zurueck('Der Mailversand ist noch nicht eingerichtet. Deshalb geht im Moment nur die Authenticator-App.', FlashArt::Fehler);
+        }
+        if ($methode === MfaMethode::Email) {
             $session->merkeEinrichtung(['methode' => MfaMethode::Email->value]);
             $this->sendeCode($benutzer);
         } elseif ($methode === MfaMethode::App) {
@@ -141,6 +144,11 @@ final readonly class ZweiterFaktorController
             return $this->einrichtungsSeite($benutzer, $einrichtung, 'Der Code ist ungültig oder abgelaufen.', 422);
         }
         $faktor->erfolg($benutzer->id);
+        if ($benutzer->mfaMethod !== null) {
+            // A new factor - perhaps because the phone is lost: no browser
+            // remembered under the old one skips it.
+            $faktor->vergesseGeraete($benutzer->id);
+        }
 
         $session->merkeEinrichtung(null);
         $session->merkeBestaetigung(null);
@@ -153,6 +161,11 @@ final readonly class ZweiterFaktorController
     public function abbrechen(Request $request): Response
     {
         $this->dienste->session->merkeEinrichtung(null);
+        $benutzer = $this->benutzer();
+        if ($benutzer !== null && $benutzer->mfaMethod !== MfaMethode::Email) {
+            // The code of an abandoned mail setup is no way in.
+            ZweiterFaktor::aus($this->dienste)->verwirfMailCode($benutzer->id);
+        }
 
         return Response::redirect(Navigation::ZWEITER_FAKTOR);
     }
@@ -182,7 +195,8 @@ final readonly class ZweiterFaktorController
     public function codeSenden(Request $request): Response
     {
         $benutzer = $this->benutzer();
-        $mailSetup = ($this->dienste->session->einrichtung()['methode'] ?? null) === MfaMethode::Email->value;
+        $mailSetup = $benutzer !== null && $this->darfAendern($benutzer)
+            && ($this->dienste->session->einrichtung()['methode'] ?? null) === MfaMethode::Email->value;
         if ($benutzer !== null && $this->mailEingerichtet() && ($benutzer->mfaMethod === MfaMethode::Email || $mailSetup)) {
             $this->sendeCode($benutzer);
         }
@@ -240,23 +254,12 @@ final readonly class ZweiterFaktorController
 
     private function sendeCode(Benutzer $benutzer): void
     {
-        $session = $this->dienste->session;
-        $code = ZweiterFaktor::aus($this->dienste)->neuerMailCode($benutzer->id);
-        if ($code === null) {
-            $session->flash('Es wurden zu viele Codes angefordert. Bitte warten Sie 15 Minuten.', FlashArt::Warnung);
-
-            return;
-        }
-        try {
-            $gesendet = Kontomails::aus($this->dienste)->code($benutzer->email, $code)->erfolg;
-        } catch (\Throwable $e) {
-            $this->dienste->logger->append(sprintf('second factor code not queued: %s', $e::class));
-            $gesendet = false;
-        }
-        $session->flash(
-            $gesendet ? 'Wir haben Ihnen einen Code per E-Mail geschickt.' : 'Der Code konnte gerade nicht verschickt werden. Bitte versuchen Sie es gleich noch einmal.',
-            $gesendet ? FlashArt::Info : FlashArt::Warnung,
-        );
+        $gesendet = Kontomails::aus($this->dienste)->neuerCode(ZweiterFaktor::aus($this->dienste), $benutzer->id, $benutzer->email);
+        $this->dienste->session->flash(...match ($gesendet) {
+            true => ['Wir haben Ihnen einen Code per E-Mail geschickt.', FlashArt::Info],
+            false => ['Der Code konnte gerade nicht verschickt werden. Bitte versuchen Sie es gleich noch einmal.', FlashArt::Warnung],
+            null => ['Es wurden zu viele Codes angefordert. Bitte warten Sie 15 Minuten.', FlashArt::Warnung],
+        });
     }
 
     /** @param array{methode: string, geheimnis?: string} $einrichtung */
