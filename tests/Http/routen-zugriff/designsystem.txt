@@ -1,0 +1,4 @@
+# app/routes/designsystem.php - the pattern page of the design system
+# (issue #9): made-up examples only, a tool for whoever builds or checks
+# pages - admin only.
+GET /admin/designsystem -> admin.einstellungen

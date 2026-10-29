@@ -19,6 +19,21 @@ use App\Http\HttpMethod;
  */
 final class View
 {
+    /**
+     * The neutral crest in the header until the club uploads its logo
+     * (docs/spec/11-vereinsdaten.md section 2).
+     */
+    public const string LOGO_PLATZHALTER = '/img/vereinslogo-platzhalter.svg';
+
+    /** URL of the club logo in the header; the placeholder until one is uploaded. */
+    private string $logoUrl = self::LOGO_PLATZHALTER;
+
+    /** Whether setLogo() chose the URL - then the logo source is not asked. */
+    private bool $logoGesetzt = false;
+
+    /** @var (\Closure(): ?int)|null upload time of the club logo, null without one */
+    private ?\Closure $logoQuelle = null;
+
     /** Set once per request by the Kernel, for aria-current in the navigation. */
     private string $currentPath = '/';
 
@@ -37,6 +52,9 @@ final class View
     /** @var (\Closure(): ?Flash)|null */
     private ?\Closure $flashQuelle = null;
 
+    /** @var (\Closure(): ?array{seit: string, grund: string})|null */
+    private ?\Closure $wartungQuelle = null;
+
     /**
      * @param list<string> $stylesheets URLs below the docroot, in order:
      *        the design system first, then the parts in public/css/teile/
@@ -53,6 +71,61 @@ final class View
     public function setCurrentPath(string $path): void
     {
         $this->currentPath = $path;
+    }
+
+    public function setLogo(string $url): void
+    {
+        $this->logoUrl = $url;
+        $this->logoGesetzt = true;
+    }
+
+    /**
+     * Where the uploaded logo's version comes from (App\Service\Verein\
+     * LogoService). Asked when a page is rendered, not before: a request
+     * that renders nothing never touches the database for it, and a page
+     * without a database (tests, the installer) just shows the placeholder.
+     *
+     * @param \Closure(): ?int $logoQuelle
+     */
+    public function setLogoQuelle(\Closure $logoQuelle): void
+    {
+        $this->logoQuelle = $logoQuelle;
+    }
+
+    /**
+     * URLs of the logo in its sizes. With a logo: the routes /logo/<size>
+     * with ?v=<upload time>; without: the placeholder for all of them.
+     *
+     * @return array{kopf: string, anmeldung: string, favicon: string, favicon_typ: string, apple: ?string}
+     */
+    private function logoUrls(): array
+    {
+        $version = null;
+        if (!$this->logoGesetzt && $this->logoQuelle !== null) {
+            try {
+                $version = ($this->logoQuelle)();
+            } catch (\Throwable) {
+                $version = null; // never let the logo break a page
+            }
+        }
+        if ($version !== null) {
+            return [
+                'kopf' => '/logo/kopf?v=' . $version,
+                'anmeldung' => '/logo/anmeldung?v=' . $version,
+                'favicon' => '/logo/favicon?v=' . $version,
+                'favicon_typ' => 'image/png',
+                'apple' => '/logo/apple?v=' . $version,
+            ];
+        }
+        $platzhalter = $this->logoUrl === self::LOGO_PLATZHALTER ? self::LOGO_PLATZHALTER . '?v=' . $this->version : $this->logoUrl;
+
+        return [
+            'kopf' => $platzhalter,
+            'anmeldung' => $platzhalter,
+            'favicon' => $platzhalter,
+            'favicon_typ' => str_contains($platzhalter, '.svg') ? 'image/svg+xml' : 'image/png',
+            'apple' => null,
+        ];
     }
 
     public function setAnmeldung(?Konto $konto, ?string $csrfToken): void
@@ -91,6 +164,18 @@ final class View
     }
 
     /**
+     * Where full pages behind the login learn whether the maintenance flag
+     * is set (App\Service\MaintenanceMode::state()): the banner with the
+     * release button shows on every one of them (04 section 4).
+     *
+     * @param \Closure(): ?array{seit: string, grund: string} $wartungQuelle
+     */
+    public function setWartungQuelle(\Closure $wartungQuelle): void
+    {
+        $this->wartungQuelle = $wartungQuelle;
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public function render(string $template, array $data = [], Area $bereich = Area::Oeffentlich): string
@@ -103,6 +188,8 @@ final class View
             $data['flash'] = ($this->flashQuelle)();
         }
 
+        $logo = $this->logoUrls();
+        $data['logoAnmeldungUrl'] ??= $logo['anmeldung'];
         $content = $this->renderFile($this->viewsDir . '/' . $template . '.php', $data);
 
         return $this->renderFile(
@@ -112,11 +199,18 @@ final class View
                 // After the spread, so a template cannot shadow the frame
                 // it renders into.
                 'konto' => $this->konto,
+                // Only asked for pages with a navigation - the public pages
+                // have no account that could release it.
+                'wartung' => $bereich->mitNavigation() && $this->wartungQuelle !== null ? ($this->wartungQuelle)() : null,
                 'content' => $content,
                 'bereich' => $bereich,
                 'pfad' => $this->currentPath,
                 'version' => $this->version,
                 'appName' => $this->appName,
+                'logoUrl' => $logo['kopf'],
+                'faviconUrl' => $logo['favicon'],
+                'faviconTyp' => $logo['favicon_typ'],
+                'appleIconUrl' => $logo['apple'],
                 'stylesheets' => $this->stylesheets,
                 'routeVorhanden' => $this->routeVorhanden ?? static fn(HttpMethod $methode, string $pfad): bool => false,
                 'partialsDir' => $this->viewsDir . '/partials',

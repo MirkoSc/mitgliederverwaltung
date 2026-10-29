@@ -1,0 +1,42 @@
+/* Legal pages and their admin form (issue #14). */
+
+.rechtstext {
+    max-width: 70ch;
+    line-height: 1.6;
+}
+
+.rechtstext h2,
+.rechtstext h3 {
+    margin-top: var(--abstand-5);
+}
+
+.rechtstext-formular {
+    margin-bottom: var(--abstand-5);
+}
+
+.rechtstext-eingabe {
+    display: block;
+    width: 100%;
+    max-width: 70ch;
+    min-height: 12rem;
+    padding: var(--abstand-3);
+    border: 2px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+    color: inherit;
+    font: inherit;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.rechtstext-eingabe:focus-visible {
+    outline: 3px solid var(--farbe-verein);
+    outline-offset: 2px;
+}
+
+.rechtstext-aktionen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-3) var(--abstand-4);
+}

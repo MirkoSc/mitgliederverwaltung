@@ -10,8 +10,14 @@
  * @var string $partialsDir
  * @var string $appName
  * @var string $version
+ * @var string $faviconUrl
+ * @var string $faviconTyp
+ * @var string|null $appleIconUrl
  * @var list<string> $stylesheets
  * @var \App\Domain\Konto|null $konto
+ * @var array{seit: string, grund: string}|null $wartung maintenance flag, set by App\View\View
+ * @var bool|null $barrierefreiVorschau set by the pattern page only: shows
+ *      the page in the Barrierefrei-Modus without changing the setting
  */
 $seitentitel = ($title ?? '') !== '' ? $title . ' – ' . $appName : $appName;
 // The public pages may have no session, so they have no token - and then
@@ -19,7 +25,8 @@ $seitentitel = ($title ?? '') !== '' ? $title . ' – ' . $appName : $appName;
 $csrfToken = ($bereich !== \App\View\Area::Oeffentlich && ($csrf ?? '') !== '') ? (string) $csrf : null;
 // Barrierefrei-Modus: one class on <html> that overrides the tokens of the
 // design system (06 section 4) - no second layout.
-$htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barrierefrei"' : '';
+$barrierefrei = ($konto ?? null)?->barrierefrei === true || ($barrierefreiVorschau ?? false) === true;
+$htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
 ?>
 <!DOCTYPE html>
 <html lang="de"<?= $htmlKlasse ?>>
@@ -40,7 +47,10 @@ $htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barriere
     <?php foreach ($stylesheets as $stylesheet): ?>
     <link rel="stylesheet" href="<?= e($stylesheet) ?>?v=<?= e($version) ?>">
     <?php endforeach; ?>
-    <link rel="icon" href="/icon.svg?v=<?= e($version) ?>" type="image/svg+xml">
+    <link rel="icon" href="<?= e($faviconUrl) ?>" type="<?= e($faviconTyp) ?>">
+    <?php if ($appleIconUrl !== null): ?>
+    <link rel="apple-touch-icon" href="<?= e($appleIconUrl) ?>">
+    <?php endif; ?>
     <?php /* Only external files (CLAUDE.md section 4); values a script needs
              travel as data-* attributes. */ ?>
     <script src="/js/vendor/htmx.min.js?v=<?= e($version) ?>" defer></script>
@@ -64,6 +74,7 @@ $htmlKlasse = ($konto ?? null)?->barrierefrei === true ? ' class="modus-barriere
 <?php require $partialsDir . '/kopf.php'; ?>
 
 <main id="inhalt" class="inhalt">
+    <?php require $partialsDir . '/wartung.php'; ?>
     <?php require $partialsDir . '/flash.php'; ?>
     <?= $content ?>
 </main>

@@ -1,0 +1,547 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Service\Update;
+
+use App\Config\Paths;
+use App\Dienste;
+use App\Repository\SettingRepository;
+use App\Service\Backup\BackupErstellung;
+use App\Service\MaintenanceMode;
+use App\Service\Migration\MigrationException;
+use App\Service\Migration\Migrator;
+
+/**
+ * Update step chain (docs/spec/04-installation-und-update.md section 3,
+ * taken over from Vereinsbelege): the admin page calls each step
+ * individually, the state lives in shared/update_state.json, every step is
+ * idempotent and stays far below the PHP time limit (CLAUDE.md section 1 -
+ * no single request may run long). After the 'switch' step the FOLLOWING
+ * requests already run on the new release, so these endpoints have to exist
+ * in every version from now on.
+ *
+ * The maintenance flag is set by the switch step and stays until the finish
+ * step has passed its self-test: a migration that fails leaves the instance
+ * closed (and /admin reachable for retry or rollback), never open on a
+ * half-migrated schema.
+ */
+final class UpdateService
+{
+    public const string SETTING_CHANNEL = 'update_kanal';
+
+    /**
+     * Steps in the order the admin page walks them. Kept here rather than
+     * in the JavaScript so the server side owns the chain.
+     */
+    public const array STEPS = ['check', 'download', 'extract', 'backup', 'switch', 'migrate', 'finish'];
+
+    /**
+     * A call of the backup step starts no further chain step after this
+     * many seconds. The step already running finishes on its own budget
+     * (BackupErstellung::DUMP_SEKUNDEN plus one portion), so a call lasts
+     * at most this plus one step - inside max_execution_time = 30.
+     */
+    public const float BACKUP_SEKUNDEN = 5.0;
+
+    public function __construct(
+        private readonly Paths $paths,
+        private readonly string $currentVersion,
+        private readonly SettingRepository $settings,
+        private readonly ReleaseDownloader $downloader,
+        private readonly ReleaseSwitcher $switcher,
+        private readonly Migrator $migrator,
+        private readonly BackupErstellung $backups,
+        private readonly float $backupSekunden = self::BACKUP_SEKUNDEN,
+        /** ReleaseSignatur::PUBLIC_KEY; tests pass their own key pair. */
+        private readonly string $publicKey = ReleaseSignatur::PUBLIC_KEY,
+    ) {
+    }
+
+    public static function aus(Dienste $d): self
+    {
+        return $d->dienst(self::class, static fn(Dienste $d): self => new self(
+            paths: $d->paths,
+            currentVersion: $d->version->value,
+            settings: $d->einstellungen(),
+            downloader: new ReleaseDownloader(),
+            switcher: new ReleaseSwitcher(dirname($d->paths->releaseRoot), MaintenanceMode::aus($d)),
+            migrator: new Migrator($d->pdo(), $d->paths->migrationsDir()),
+            backups: BackupErstellung::aus($d),
+        ));
+    }
+
+    public function channel(): string
+    {
+        return $this->settings->get(self::SETTING_CHANNEL, 'stable') === 'beta' ? 'beta' : 'stable';
+    }
+
+    public function setChannel(string $kanal): void
+    {
+        $this->settings->set(self::SETTING_CHANNEL, $kanal === 'beta' ? 'beta' : 'stable');
+    }
+
+    public function state(): ?UpdateState
+    {
+        $file = $this->stateFile();
+        if (!is_file($file)) {
+            return null;
+        }
+        $json = file_get_contents($file);
+        if ($json === false || trim($json) === '') {
+            return null;
+        }
+
+        return UpdateState::fromArray(json_decode($json, true, flags: JSON_THROW_ON_ERROR));
+    }
+
+    public function reset(): void
+    {
+        $file = $this->stateFile();
+        if (is_file($file)) {
+            unlink($file);
+        }
+    }
+
+    /**
+     * Step 1: query GitHub, compare versions, initialise the state.
+     */
+    public function check(): UpdateState
+    {
+        $release = $this->downloader->findLatestRelease($this->channel());
+
+        if ($release === null || !version_compare($release['version'], $this->currentVersion, '>')) {
+            $state = new UpdateState(
+                aktuelleVersion: $this->currentVersion,
+                fertig: true,
+                meldungen: [$release === null
+                    ? 'Kein Release gefunden.'
+                    : sprintf(
+                        'Version %s ist aktuell (neuestes Release: %s).',
+                        $this->currentVersion,
+                        $release['version'],
+                    )],
+            );
+            $this->save($state);
+
+            return $state;
+        }
+
+        $state = new UpdateState(
+            aktuelleVersion: $this->currentVersion,
+            zielVersion: $release['version'],
+            zipUrl: $release['zip_url'],
+            checksumsUrl: $release['checksums_url'],
+            abgeschlossenerSchritt: 'check',
+            signaturUrl: $release['signatur_url'],
+            meldungen: [sprintf(
+                'Update auf Version %s verfügbar (Kanal %s).',
+                $release['version'],
+                $this->channel(),
+            )],
+        );
+        $this->save($state);
+
+        return $state;
+    }
+
+    /**
+     * Step 2: download ZIP + checksums.txt (+ signature), verify SHA-256 and
+     * authenticity (ReleaseSignatur - a refusal once a public key is
+     * fixed, a warning before).
+     *
+     * List and signature wait next to the ZIP until the extract step puts
+     * them into the release directory - the list belongs to the release, not
+     * to shared/ (docs/spec/01-sicherheit.md section 8).
+     */
+    public function download(): UpdateState
+    {
+        return $this->step('download', function (UpdateState $state): UpdateState {
+            $version = (string) $state->zielVersion;
+            $zipFile = $this->zipFile($version);
+            $this->downloader->downloadTo((string) $state->zipUrl, $zipFile);
+
+            $checksums = $this->downloader->fetchText((string) $state->checksumsUrl);
+            $signatur = $state->signaturUrl === null ? null : $this->downloader->fetchText($state->signaturUrl);
+            $hinweis = $this->pruefeEchtheit($version, $zipFile, $checksums, $signatur);
+
+            $listenDir = $this->listDir($version);
+            if (!is_dir($listenDir)) {
+                mkdir($listenDir, 0775, true);
+            }
+            ReleaseDownloader::speichereListe($listenDir, $checksums, $signatur);
+
+            return $state->mit(meldung: $hinweis === null
+                ? 'Release-ZIP geladen, Prüfsumme und Signatur bestätigt.'
+                : 'Release-ZIP geladen und Prüfsumme bestätigt. ' . $hinweis);
+        });
+    }
+
+    /**
+     * Step 3: unpack into releases/vX.Y.Z (the running version is untouched).
+     *
+     * ZIP and list are checked again first: they waited in shared/var
+     * between two requests, where FTP access could have swapped them.
+     * Afterwards the list and its signature go into the release root, so
+     * they move with every switch and rollback (04 section 5).
+     */
+    public function extract(): UpdateState
+    {
+        return $this->step('extract', function (UpdateState $state): UpdateState {
+            $version = (string) $state->zielVersion;
+            $listFile = $this->listDir($version) . '/' . ReleaseDownloader::LISTE;
+            $signaturFile = $this->listDir($version) . '/' . ReleaseSignatur::ASSET;
+            if (!is_file($listFile)) {
+                throw new \RuntimeException('Prüfsummenliste des Downloads fehlt – bitte den Download wiederholen.');
+            }
+            $checksums = (string) file_get_contents($listFile);
+            $signatur = is_file($signaturFile) ? (string) file_get_contents($signaturFile) : null;
+            $this->pruefeEchtheit($version, $this->zipFile($version), $checksums, $signatur);
+
+            $target = dirname($this->paths->releaseRoot) . '/releases/v' . $version;
+            $this->downloader->extractTo($this->zipFile($version), $target);
+
+            $versionFile = $target . '/VERSION';
+            if (!is_file($versionFile) || trim((string) file_get_contents($versionFile)) !== $version) {
+                throw new \RuntimeException('Entpacktes Release enthält keine passende VERSION-Datei.');
+            }
+            ReleaseDownloader::speichereListe($target, $checksums, $signatur);
+
+            return $state->mit(meldung: 'Release entpackt nach releases/v' . $version . '.');
+        });
+    }
+
+    /**
+     * Step 4: backup right before the only step that changes the
+     * installation (docs/spec/04-installation-und-update.md section 6). It
+     * is encrypted like every backup, and config.php is never part of one.
+     *
+     * Without blob files: an update never touches shared/var/blobs/ - what
+     * it can break is the schema, and that is what the dump brings back.
+     *
+     * The same step chain as "Backup erstellen" (BackupErstellung): a big
+     * database takes many requests. One call runs steps for up to
+     * BACKUP_SEKUNDEN and answers `weiter` while the chain is not through;
+     * the page calls the step again. A small database is done in one call.
+     */
+    public function backup(): UpdateState
+    {
+        return $this->step('backup', function (UpdateState $state): UpdateState {
+            $stand = $this->backups->stand();
+            $eigene = $stand !== null
+                && ($stand['zweck'] ?? null) === BackupErstellung::ZWECK_UPDATE
+                && $this->backups->laeuft();
+            if (!$eigene) {
+                $this->backups->starten(mitBlobs: false, zweck: BackupErstellung::ZWECK_UPDATE);
+            }
+
+            $beginn = hrtime(true);
+            do {
+                $stand = $this->backups->schritt();
+            } while ($stand['phase'] !== BackupErstellung::PHASE_FERTIG
+                && (hrtime(true) - $beginn) / 1e9 < $this->backupSekunden);
+
+            if ($stand['phase'] !== BackupErstellung::PHASE_FERTIG) {
+                return $state->mit(weiter: true);
+            }
+
+            return $state->mit(meldung: 'Backup erstellt: ' . (string) $stand['name']);
+        });
+    }
+
+    /**
+     * Step 5: atomic switch (maintenance flag around the renames).
+     */
+    public function switchRelease(): UpdateState
+    {
+        return $this->step('switch', function (UpdateState $state): UpdateState {
+            // The flag stays until finish() (see the class comment).
+            $this->switcher->switchTo((string) $state->zielVersion, wartungBehalten: true);
+            $this->opcacheLeeren();
+
+            return $state->mit(meldung: 'Auf Version ' . $state->zielVersion . ' umgeschaltet.');
+        });
+    }
+
+    /**
+     * Step 6: apply pending migrations (already running on the new code).
+     */
+    public function migrate(): UpdateState
+    {
+        return $this->step('migrate', function (UpdateState $state): UpdateState {
+            $result = $this->migrator->migrate();
+
+            return $state->mit(meldung: $result->applied === []
+                ? 'Keine Migrationen anzuwenden.'
+                : sprintf(
+                    '%d Migration(en) angewendet, Schema %d → %d.',
+                    count($result->applied),
+                    $result->fromVersion,
+                    $result->toVersion,
+                ));
+        });
+    }
+
+    /**
+     * Step 7: refresh the docroot shim, self-test, clean up, keep the last
+     * two releases.
+     *
+     * The shim refresh happens HERE and not earlier because finish is the
+     * first step running on the new release - check/download/extract and the
+     * switch itself all still execute the outgoing version's code. It runs
+     * BEFORE the self-test on purpose: the self-test fetches '/' through the
+     * web server and therefore exercises the freshly written shim. A broken
+     * shim would take the whole site down including /admin, so if the
+     * self-test fails the previous shim goes back before the error is
+     * reported.
+     *
+     * The maintenance flag comes off right before the self-test (through
+     * the shim, a closed instance would answer 503) and goes back on when
+     * the test fails: a release that does not answer must not stay public.
+     * The admin then rolls back, which ends the maintenance itself.
+     */
+    public function finish(string $baseUrl): UpdateState
+    {
+        return $this->step('finish', function (UpdateState $state) use ($baseUrl): UpdateState {
+            $vorherigerShim = null;
+            $shimMeldung = null;
+            try {
+                $vorherigerShim = $this->switcher->refreshShim();
+                if ($vorherigerShim !== null) {
+                    $shimMeldung = 'Docroot-Shim aktualisiert.';
+                }
+            } catch (\Throwable $e) {
+                // Not fatal: the old shim keeps working, it just misses the
+                // newer maintenance handling. Surfaced as a message so it
+                // does not stay invisible - self-healing is the only way this
+                // installation ever gets the new shim.
+                $shimMeldung = 'Hinweis: Docroot-Shim konnte nicht aktualisiert werden (' . $e->getMessage() . ').';
+            }
+
+            // .htaccess and .user.ini travel with the release too, and a
+            // tightened CSP would otherwise never reach an existing
+            // installation. Hand-edited files are kept and only reported.
+            // shared/, releases/ and current/ get their deny-all .htaccess
+            // here when a directory was created after setup.php ran.
+            $docrootMeldungen = [
+                ...$this->switcher->refreshDocrootFiles(),
+                ...$this->switcher->lockPrivateDirectories(),
+            ];
+
+            $this->switcher->removeMaintenanceFlag();
+            try {
+                $this->selfTest($baseUrl);
+            } catch (\Throwable $e) {
+                if ($vorherigerShim !== null) {
+                    $this->switcher->restoreShim($vorherigerShim);
+                }
+                $this->switcher->setMaintenanceFlag('Selbsttest fehlgeschlagen');
+                throw $e;
+            }
+
+            $this->switcher->cleanupOldReleases();
+
+            $version = (string) $state->zielVersion;
+            $listenDir = $this->listDir($version);
+            foreach ([
+                $this->zipFile($version),
+                $listenDir . '/' . ReleaseDownloader::LISTE,
+                $listenDir . '/' . ReleaseSignatur::ASSET,
+            ] as $datei) {
+                if (is_file($datei)) {
+                    unlink($datei);
+                }
+            }
+            if (is_dir($listenDir)) {
+                @rmdir($listenDir);
+            }
+
+            // One combined line on purpose: the admin page logs only the LAST
+            // message of each step, so a warning in a second message would
+            // never be shown.
+            $teile = ['Selbsttest bestanden, alte Releases aufgeräumt.'];
+            if ($shimMeldung !== null) {
+                $teile[] = $shimMeldung;
+            }
+
+            return $state->mit(
+                meldung: implode(' ', [...$teile, ...$docrootMeldungen]),
+                fertig: true,
+            );
+        });
+    }
+
+    /** Whether releases/_prev exists, i.e. whether a rollback is possible. */
+    public function kannZurueckrollen(): bool
+    {
+        return $this->switcher->hasPreviousRelease();
+    }
+
+    public function rollback(): UpdateState
+    {
+        $state = $this->state() ?? new UpdateState(aktuelleVersion: $this->currentVersion);
+
+        try {
+            $this->switcher->rollback();
+            $this->opcacheLeeren();
+            // The previous release may come back as current/ without its
+            // deny-all .htaccess.
+            $state = $state->mit(
+                meldung: implode(' ', [
+                    'Rollback durchgeführt – vorheriges Release ist wieder aktiv.',
+                    ...$this->switcher->lockPrivateDirectories(),
+                ]),
+                fertig: true,
+            );
+        } catch (\Throwable $e) {
+            $state = $state->mit(fehler: $e->getMessage());
+        }
+
+        $this->save($state);
+
+        return $state;
+    }
+
+    /**
+     * The target is newer than the running release, the list is the list
+     * of exactly that version, the ZIP matches its line, and the list is
+     * authentic. Target and URLs come from shared/update_state.json, which
+     * FTP access can edit - without the first two checks an older, validly
+     * signed release could be slipped in (a downgrade to a known hole).
+     *
+     * @return string|null warning when the authenticity could not be
+     *         checked (no public key fixed yet)
+     */
+    private function pruefeEchtheit(string $version, string $zipFile, string $checksums, ?string $signatur): ?string
+    {
+        if (!version_compare($version, $this->currentVersion, '>')) {
+            throw new \RuntimeException(sprintf(
+                'Version %s ist nicht neuer als die installierte Version %s – kein Update.',
+                $version,
+                $this->currentVersion,
+            ));
+        }
+        if (self::versionDerListe($checksums) !== $version) {
+            throw new \RuntimeException('Die Prüfsummenliste gehört nicht zu Version ' . $version . '.');
+        }
+        $this->downloader->verifyChecksum($zipFile, $checksums);
+
+        return ReleaseSignatur::pruefe($checksums, $signatur, $this->publicKey);
+    }
+
+    /**
+     * The release version the checksums list names: the line of the release
+     * ZIP ("<sha256>  mitgliederverwaltung-vX.Y.Z.zip"). A signed list of
+     * another release does not vouch for this one.
+     */
+    private static function versionDerListe(string $liste): ?string
+    {
+        foreach (preg_split('/\r\n|\n|\r/', $liste) ?: [] as $zeile) {
+            if (preg_match('/^[0-9a-fA-F]{64} [ *]mitgliederverwaltung-v(\d+\.\d+\.\d+[0-9A-Za-z.+-]*)\.zip$/', $zeile, $m) === 1) {
+                return $m[1];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * PHP keeps compiled code of the old release; without this, the next
+     * request after the rename may still run it.
+     */
+    private function opcacheLeeren(): void
+    {
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
+    }
+
+    /**
+     * Fetches the start page through the web server. That exercises the
+     * shim, the release switch and the autoloader of the new version in one
+     * go - the three things a release ZIP can get wrong.
+     */
+    private function selfTest(string $baseUrl): void
+    {
+        try {
+            $this->downloader->fetchSelbsttest(rtrim($baseUrl, '/') . '/');
+        } catch (\RuntimeException $e) {
+            throw new \RuntimeException('Selbsttest fehlgeschlagen für /: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * @param \Closure(UpdateState): UpdateState $work
+     */
+    private function step(string $schritt, \Closure $work): UpdateState
+    {
+        $state = $this->state();
+        if ($state === null || $state->zielVersion === null) {
+            throw new \RuntimeException('Kein Update vorbereitet – zuerst den Versionscheck ausführen.');
+        }
+
+        try {
+            $neu = $work($state);
+            // A step that answers `weiter` is not through: it stays the
+            // open step, so a reload resumes it instead of skipping it.
+            $state = $neu->weiter ? $neu : $neu->mit(abgeschlossenerSchritt: $schritt);
+        } catch (\Throwable $e) {
+            $state = $state->mit(fehler: self::fehlertext($e));
+        }
+
+        $this->save($state);
+
+        return $state;
+    }
+
+    /**
+     * The error text shown in the admin UI. Our own messages say what to do;
+     * a database message may quote row data (CLAUDE.md section 4), so of a
+     * failed migration only its number and statement are kept.
+     */
+    private static function fehlertext(\Throwable $e): string
+    {
+        if ($e instanceof \PDOException) {
+            return 'Datenbankfehler (SQLSTATE ' . (is_string($e->getCode()) ? $e->getCode() : '?') . ').';
+        }
+        if ($e instanceof MigrationException
+            && preg_match('/^Migration (\d+_\w+) failed at statement (\d+)/', $e->getMessage(), $m) === 1) {
+            return sprintf('Migration %s ist bei Anweisung %s fehlgeschlagen.', $m[1], $m[2]);
+        }
+
+        return $e->getMessage();
+    }
+
+    private function save(UpdateState $state): void
+    {
+        $file = $this->stateFile();
+        $dir = dirname($file);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+        file_put_contents(
+            $file,
+            json_encode($state->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            LOCK_EX,
+        );
+    }
+
+    private function stateFile(): string
+    {
+        return $this->paths->updateStateFile();
+    }
+
+    private function zipFile(string $version): string
+    {
+        return $this->paths->updateDir() . '/mitgliederverwaltung-v' . $version . '.zip';
+    }
+
+    /**
+     * checksums.txt and its signature of a download, until the extract step
+     * puts them into the release.
+     */
+    private function listDir(string $version): string
+    {
+        return $this->paths->updateDir() . '/liste-v' . $version;
+    }
+}

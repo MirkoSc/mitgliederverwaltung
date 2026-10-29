@@ -114,7 +114,7 @@ final class Session
             session_regenerate_id(true);
         }
 
-        unset($_SESSION['csrf']);
+        unset($_SESSION['csrf'], $_SESSION['rolle']);
         $zeit = ($now ?? new \DateTimeImmutable())->getTimestamp();
         $_SESSION['user_id'] = $userId;
         $_SESSION['login_at'] = $zeit;
@@ -142,6 +142,48 @@ final class Session
         }
 
         $_SESSION['session_epoch'] = $epoch;
+    }
+
+    /**
+     * Regenerates the session id when the account's role changed since the
+     * last request (02 section 4: "ID-Regeneration bei Login und
+     * Rechtewechsel") - App\Http\LoginGuard calls it on every request with
+     * the role it just read. The first call after the login only records
+     * the role; login() itself regenerated already.
+     */
+    public function rolleAbgleichen(string $rolle): void
+    {
+        $bisher = $_SESSION['rolle'] ?? null;
+        if ($bisher === $rolle) {
+            return;
+        }
+        if (is_string($bisher) && session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+        $_SESSION['rolle'] = $rolle;
+    }
+
+    /**
+     * The token of a one-time link (reset, invitation) while its form is
+     * open: the link's GET moves it from the URL into the session and
+     * redirects to the bare path, so the page and its assets never carry it
+     * in the address bar, the history or a Referer. null forgets it.
+     */
+    public function merkeEinmalLink(string $typ, #[\SensitiveParameter] ?string $token): void
+    {
+        if ($token === null) {
+            unset($_SESSION['einmal_link'][$typ]);
+
+            return;
+        }
+        $_SESSION['einmal_link'][$typ] = $token;
+    }
+
+    public function einmalLink(string $typ): string
+    {
+        $token = $_SESSION['einmal_link'][$typ] ?? '';
+
+        return is_string($token) ? $token : '';
     }
 
     /** The logged-in user's id, or null. */

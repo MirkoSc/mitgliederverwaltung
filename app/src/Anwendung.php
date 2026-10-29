@@ -13,6 +13,8 @@ use App\Http\Routen;
 use App\Http\Router;
 use App\Http\StaticFileHandler;
 use App\Http\Zugriff;
+use App\Service\Verein\LogoService;
+use App\Service\MaintenanceMode;
 use App\Support\FileLogger;
 use App\View\Area;
 use App\View\View;
@@ -43,8 +45,13 @@ final class Anwendung
 
         $view = $dienste->view;
         $view->setRouteVorhanden(static fn(HttpMethod $methode, string $pfad): bool => $router->hat($methode, $pfad));
+        $view->setLogoQuelle(static fn(): ?int => LogoService::aus($dienste)->version());
         $session = $dienste->session;
         $view->setFlashQuelle(static fn() => session_status() === PHP_SESSION_ACTIVE ? $session->pullFlash() : null);
+
+        // Resolved when a page is rendered, not now: no file access per request
+        // for routes that render nothing.
+        $view->setWartungQuelle(static fn() => MaintenanceMode::aus($dienste)->state());
 
         return new Kernel(
             router: $router,
