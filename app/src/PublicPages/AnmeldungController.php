@@ -15,7 +15,6 @@ use App\Service\Account\Kontomails;
 use App\Service\Account\PasswordPolicy;
 use App\Service\Account\PasswortReset;
 use App\View\Area;
-use App\View\Navigation;
 
 /**
  * The way in (docs/spec/02-sicherheit.md section 3, E-F3): login, logout,
@@ -27,8 +26,8 @@ use App\View\Navigation;
  * redirect. Every page here renders in Area::Oeffentlich - somebody who is
  * not logged in has no business seeing the navigation.
  *
- * The second factor (issue #8) hooks in at the marked place in anmelden(),
- * between "password correct" and "session opened".
+ * The second factor takes over in anmelden(), between "password correct"
+ * and "session opened" (App\PublicPages\ZweiterFaktorAnmeldung).
  */
 final readonly class AnmeldungController
 {
@@ -71,15 +70,9 @@ final readonly class AnmeldungController
             // typed, not something the server looked up.
             return $this->anmeldeseite(weiter: $weiter, fehler: $ergebnis->fehler?->meldung(), email: $email, status: 422);
         }
-        $benutzer = $ergebnis->benutzer;
 
-        // Issue #8: the second factor goes here.
-
-        $session = $this->dienste->session;
-        $session->login($benutzer->id, epoch: $benutzer->sessionEpoch);
-        Anmeldung::aus($this->dienste)->abgeschlossen($benutzer->id);
-
-        return Response::redirect($weiter ?? Navigation::startseiteFuer($benutzer->konto()));
+        // The second factor decides how it goes on (ZweiterFaktorAnmeldung).
+        return ZweiterFaktorAnmeldung::aus($this->dienste)->nachPasswort($request, $ergebnis->benutzer, $weiter);
     }
 
     /**

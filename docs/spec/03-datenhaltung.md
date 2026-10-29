@@ -21,10 +21,10 @@
 | `schema_version` | version, applied_at |
 | `setting` | name PK (nicht `key`: reserviertes Wort), value (JSON), updated_at |
 | `user` | email UNIQUE, name, password_hash, status (`eingeladen`/`aktiv`/`gesperrt`), rolle (`admin`/`vorstand`), modus_barrierefrei, mfa_method NULL, session_epoch, created_at, last_login_at |
-| `mfa_totp` | user_id, secret_enc, confirmed_at, last_step NULL, created_at |
+| `mfa_totp` | user_id, secret_enc, last_step NULL, created_at (erst nach dem ersten richtigen Code geschrieben) |
 | `mfa_email_code` | user_id, code_hash, expires_at, attempts, created_at |
 | `mfa_backup_code` | id, user_id, code_hash, used_at NULL, created_at |
-| `trusted_device` | id, user_id, token_hash UNIQUE, label, created_at, last_used_at, expires_at |
+| `trusted_device` | id, user_id, token_hash UNIQUE, created_at, expires_at |
 | `auth_token` | id, user_id, typ (`reset`/`invite`), token_hash UNIQUE, expires_at, used_at NULL, created_at |
 | `rate_limit` | key_hash PK, window_start, count |
 | `audit_log` | id, ts, user_id NULL (kein FK), action, entity NULL, entity_id NULL (Text), ip_hash NULL, details (JSON), prev_hash, hash |
@@ -34,7 +34,10 @@
 | `file_blob_chunk` | blob_id, seq, data |
 
 Entfallen gegenüber Vereinsbelege: `vault`, `vault_grant`, `user_key`,
-`role`/`user_role` (feste Rollen), Blind Indexes, `dek_sealed`.
+`role`/`user_role` (feste Rollen), Blind Indexes, `dek_sealed`. Die
+`*_hash`-Spalten des zweiten Faktors sind HMAC-SHA256 unter einem aus dem
+Server-Schlüssel abgeleiteten Schlüssel (`ServerCrypto::hmac()`), gesalzen
+mit der Benutzer-ID.
 
 ## 3. Blobs
 

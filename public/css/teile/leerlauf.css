@@ -1,0 +1,11 @@
+/* Idle warning (docs/spec/06-oberflaeche.md section 4). */
+.leerlauf-warnung {
+    max-width: 32rem;
+    padding: 1.5em;
+    border: 2px solid currentColor;
+    border-radius: 0.5em;
+}
+
+.leerlauf-warnung::backdrop {
+    background: rgb(0 0 0 / 0.5);
+}

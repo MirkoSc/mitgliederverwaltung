@@ -67,6 +67,33 @@ final readonly class KontoController
         return Response::redirect(Navigation::PASSWORT);
     }
 
+    /** Switches the Barrierefrei-Modus of the own account (06 section 4). */
+    public function barrierefrei(Request $request): Response
+    {
+        $userId = $this->dienste->session->userId();
+        if ($userId === null) {
+            return Response::redirect('/anmelden');
+        }
+
+        $repo = new BenutzerRepository($this->dienste->pdo());
+        $benutzer = $repo->findById($userId);
+        if ($benutzer === null) {
+            return Response::redirect('/anmelden');
+        }
+        $repo->updateBarrierefrei($userId, !$benutzer->barrierefrei);
+
+        return Response::redirect(Navigation::startseiteFuer($benutzer->konto()));
+    }
+
+    /**
+     * The "Weiterarbeiten" button of the idle warning: the guard has already
+     * pushed the idle timeout out by the time this runs.
+     */
+    public function weiterarbeiten(Request $request): Response
+    {
+        return Response::json(['ok' => true]);
+    }
+
     /**
      * @param list<string> $fehler
      */

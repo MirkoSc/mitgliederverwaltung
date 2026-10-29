@@ -28,6 +28,7 @@ final class Navigation
     public const string PASSWORT = '/app/konto/passwort';
     public const string ZWEITER_FAKTOR = '/app/konto/zweiter-faktor';
     public const string BARRIEREFREI = '/app/konto/barrierefrei';
+    public const string WEITERARBEITEN = '/app/konto/weiterarbeiten';
     public const string ABMELDEN = '/abmelden';
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Support;
 
 use App\Domain\BenutzerStatus;
+use App\Domain\MfaMethode;
 use App\Domain\Rolle;
 use App\Repository\BenutzerRepository;
 use App\Service\Account\PasswordHasher;
@@ -24,8 +25,11 @@ final class Benutzerdaten
         BenutzerStatus $status = BenutzerStatus::Aktiv,
         string $passwort = self::PASSWORT,
         string $name = 'Erika Beispiel',
+        // Most accounts have their second factor; null = still to set up.
+        ?MfaMethode $mfa = MfaMethode::Email,
     ): int {
-        return new BenutzerRepository($pdo)->insert(
+        $repo = new BenutzerRepository($pdo);
+        $id = $repo->insert(
             $email,
             $name,
             $status === BenutzerStatus::Eingeladen ? '' : new PasswordHasher()->hash($passwort),
@@ -33,5 +37,8 @@ final class Benutzerdaten
             $rolle,
             new \DateTimeImmutable(),
         );
+        $repo->updateMfaMethode($id, $mfa);
+
+        return $id;
     }
 }

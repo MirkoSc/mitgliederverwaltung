@@ -62,9 +62,23 @@ final class AnmeldungFlowTest extends AppTestCase
         return $this->dienste->pdo();
     }
 
+    /**
+     * The whole login: password and - for an account with the mail as its
+     * second factor - the code from the mail. The code mail is taken off
+     * the list, so the tests count only the mails they are about.
+     */
     private function anmelden(string $email = 'erika@example.org', string $passwort = Benutzerdaten::PASSWORT, array $mehr = []): \App\Http\Response
     {
-        return $this->post('/anmelden', ['email' => $email, 'passwort' => $passwort, ...$mehr]);
+        $antwort = $this->post('/anmelden', ['email' => $email, 'passwort' => $passwort, ...$mehr]);
+        if (($antwort->headers['Location'] ?? null) !== '/anmelden/bestaetigen') {
+            return $antwort;
+        }
+
+        $mail = array_pop($this->transport->gesendet);
+        self::assertNotNull($mail, 'no code was mailed');
+        self::assertSame(1, preg_match('/^(\d{6})$/m', $mail->body, $m), $mail->body);
+
+        return $this->post('/anmelden/bestaetigen', ['code' => $m[1]]);
     }
 
     /** The link of the last mail (a reset or an invitation). */
@@ -309,6 +323,33 @@ final class AnmeldungFlowTest extends AppTestCase
 
         self::assertStringContainsString('Das eigene Konto können Sie nicht sperren.', $this->get('/admin')->body);
         self::assertSame(BenutzerStatus::Aktiv, new BenutzerRepository($this->pdo())->findById($selbst)?->status);
+    }
+
+    public function testTheBarrierefreiModusIsStoredAndSurvivesReloading(): void
+    {
+        $id = Benutzerdaten::anlegen($this->pdo());
+        $this->anmelden();
+
+        self::assertStringNotContainsString('modus-barrierefrei', $this->get('/app/konto/passwort')->body);
+
+        self::assertSame(302, $this->post('/app/konto/barrierefrei')->status);
+        self::assertTrue(new BenutzerRepository($this->pdo())->findById($id)?->barrierefrei);
+
+        $seite = $this->get('/app/konto/passwort')->body;
+        self::assertStringContainsString('class="modus-barrierefrei"', $seite);
+        self::assertStringContainsString('data-leerlauf="3600"', $seite);
+        self::assertStringContainsString('Weiterarbeiten', $seite);
+
+        $this->post('/app/konto/barrierefrei');
+        self::assertStringContainsString('data-leerlauf="1800"', $this->get('/app/konto/passwort')->body);
+    }
+
+    public function testKeepAliveAnswersForALoggedInAccount(): void
+    {
+        Benutzerdaten::anlegen($this->pdo());
+        $this->anmelden();
+
+        self::assertSame(200, $this->post('/app/konto/weiterarbeiten')->status);
     }
 
     public function testTheOwnPasswordChangesAndOtherSessionsEnd(): void
