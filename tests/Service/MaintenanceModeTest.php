@@ -95,4 +95,16 @@ final class MaintenanceModeTest extends TestCase
         self::assertTrue($mode->isActive());
         self::assertNotNull($mode->state());
     }
+
+    public function testStateReadsTheTimestampOfTheFlagAsAnIsoDate(): void
+    {
+        $mode = new MaintenanceMode($this->flag);
+        $mode->enable('Update');
+
+        $state = $mode->state();
+
+        // the banner parses it for display
+        self::assertNotNull($state);
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $state['seit']));
+    }
 }

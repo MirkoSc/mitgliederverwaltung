@@ -4,21 +4,29 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Dienste;
+
 /**
  * The maintenance flag in shared/ (docs/spec/04-installation-und-update.md
  * section 4, taken over from Vereinsbelege). While it exists, the docroot
  * shim answers everything outside /admin, the login and their assets with a
  * 503.
  *
- * Only the ReleaseSwitcher sets it today, around the renames of an update.
- * It can crash mid-way and leave the flag behind, so the admin area shows a
- * banner with a release button whenever it is set (issue #4) - without
- * that, the only way out would be FTP.
+ * The updater sets it from the switch step until its self-test has passed
+ * (ReleaseSwitcher, UpdateService). A crash can leave the flag behind, so
+ * the admin area shows a banner with a release button whenever it is set
+ * (app/views/partials/wartung.php, 04 section 4) - without that, the only
+ * way out would be FTP.
  */
 final readonly class MaintenanceMode
 {
     public function __construct(private string $flagFile)
     {
+    }
+
+    public static function aus(Dienste $d): self
+    {
+        return $d->dienst(self::class, static fn(Dienste $d): self => new self($d->paths->maintenanceFlagFile()));
     }
 
     public function enable(string $grund): void

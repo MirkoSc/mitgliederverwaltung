@@ -1,0 +1,6 @@
+# app/routes/update.php - settings section Update (04 sections 3 and 4): the
+# step chain, the channel, the state, the maintenance flag. admin.system only.
+POST /admin/update/kanal -> admin.system
+POST /admin/update/schritt/{schritt} -> admin.system (api)
+POST /admin/update/zuruecksetzen -> admin.system
+POST /admin/wartung/aufheben -> admin.system

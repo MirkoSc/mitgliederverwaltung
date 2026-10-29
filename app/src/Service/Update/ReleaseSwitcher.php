@@ -114,7 +114,12 @@ final class ReleaseSwitcher
         $this->maintenance = $maintenance ?? new MaintenanceMode($baseDir . '/shared/maintenance.flag');
     }
 
-    public function switchTo(string $version): void
+    /**
+     * @param bool $wartungBehalten leave the maintenance flag set after the
+     *        renames: the updater keeps the instance closed until the
+     *        migrations are in and the self-test has passed (UpdateService)
+     */
+    public function switchTo(string $version, bool $wartungBehalten = false): void
     {
         $current = $this->baseDir . '/current';
         $prev = $this->baseDir . '/releases/_prev';
@@ -122,7 +127,9 @@ final class ReleaseSwitcher
 
         // already switched (repair/idempotency)
         if ($this->currentVersion() === $version) {
-            $this->removeMaintenanceFlag();
+            if (!$wartungBehalten) {
+                $this->removeMaintenanceFlag();
+            }
 
             return;
         }
@@ -149,7 +156,9 @@ final class ReleaseSwitcher
             throw new \RuntimeException('Neues Release kann nicht nach current verschoben werden.');
         }
 
-        $this->removeMaintenanceFlag();
+        if (!$wartungBehalten) {
+            $this->removeMaintenanceFlag();
+        }
     }
 
     /**
