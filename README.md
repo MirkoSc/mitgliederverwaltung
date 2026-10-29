@@ -38,7 +38,9 @@ parallele Projekte und die Arbeit ohne Internet im Container:
 
 ## Release
 
-Ein Tag `vX.Y.Z` auf `main` startet `.github/workflows/release.yml`: ZIP
+Ein Tag `vX.Y.Z` auf `main` startet `.github/workflows/release.yml`
+(alternativ: Workflow „Release" von Hand auf `main` starten und die
+Version ohne `v` angeben – dann wird das Tag automatisch angelegt): ZIP
 `mitgliederverwaltung-vX.Y.Z.zip`, `checksums.txt` (ZIP und jede Datei
 darin), ggf. `setup.php`, veröffentlicht als **Pre-Release** (Kanal
 `beta`). Nach der Prüfung auf der Testinstanz auf GitHub als „latest"
