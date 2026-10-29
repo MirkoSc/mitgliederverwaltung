@@ -33,6 +33,25 @@ gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
   Leerzeichen) und per Prüfziffer geprüft – falsch ⇒ Hinweis, gespeichert
   wird trotzdem.
 
+Umsetzung des Formulars (#19): Reiter **Daten** (`App\App\Mitglied\
+DatenReiter`, erster Reiter) zeigt alle Felder als ein Formular
+(`MitgliedFormular`, Template `mitglied/formular`); „Neues Mitglied" ist
+dasselbe Formular unter `GET /app/mitglieder/neu`. Gespeichert wird per
+`POST /app/mitglieder/neu` bzw. `POST /app/mitglieder/{id}`
+(`App\App\MitgliedController`, Routen `app/routes/mitglied.php`), danach
+Weiterleitung auf `/app/mitglieder?mitglied={id}` mit dem Ergebnis als
+Meldung. Blockiert wird nur bei fehlender/unbrauchbarer Nummer, fehlendem
+Nachnamen, vergebener Nummer, einem unlesbaren Datum (`TT.MM.JJJJ` und
+`JJJJ-MM-TT` werden gelesen) und einer Versionskollision (das Formular
+kommt mit den eigenen Eingaben und der aktuellen Version zurück; erneutes
+Speichern gilt). Familie und Rolle sind keine Felder dieses Formulars, sie
+bleiben beim Speichern erhalten (§3). Abteilungen, Funktionen und
+Beitragsarten bietet das Formular an, wenn sie aktiv sind oder das Mitglied
+sie schon hat. Löschen (Admin): Rückfrage unter
+`GET /app/mitglieder/{id}/loeschen`, dann `POST` derselben Adresse; die
+Dateien der Nachweise werden mitgelöscht, das Audit-Log vermerkt
+`mitglied.geloescht` nur mit ID und Mitgliedsnummer.
+
 ## 2. Abteilungen
 
 Einstellungen: Name, **BLSV-Nummer** (Spartenkennzeichen, Text, z. B.

@@ -1,0 +1,12 @@
+/* Page "Listen" (issue #24): only what the design system lacks. */
+.listen-export {
+    margin-top: var(--abstand-5);
+}
+
+.listen-export-formular {
+    max-width: 28rem;
+}
+
+.listen-export-formular .formular-aktionen {
+    position: static;
+}

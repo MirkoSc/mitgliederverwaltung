@@ -13,15 +13,43 @@ Gesamtexport mit Häkchen „Ehemalige einschließen".
   den Spalten und Filtern der Ansicht.
   - csv: UTF-8 mit BOM, Trennzeichen `;`, Datum `TT.MM.JJJJ` (öffnet in
     deutschem Excel direkt richtig).
-  - xlsx: ein Blatt, erste Zeile Spaltennamen fett, Datum als echtes
-    Excel-Datum. Eigener kleiner Writer in reinem PHP (`ZipArchive` +
-    wenige XML-Dateien) statt einer großen Bibliothek (05 §5).
+  - xlsx: ein Blatt, erste Zeile Spaltennamen fett und fixiert, Datum als
+    echtes Excel-Datum, Beträge und Zahlen als Zahlen, Text als
+    Inline-Strings (nie als Formel). Eigener kleiner Writer in reinem PHP
+    (`App\Service\Export\XlsxWriter` + `ZipWriter`, wenige XML-Dateien)
+    statt einer großen Bibliothek (05 §5). Das ZIP entsteht **im
+    Arbeitsspeicher** statt per `ZipArchive`: das schreibt nur in Dateien,
+    und ein Export liegt nie auf dem Webspace (CLAUDE.md §4).
   - Dateiname ohne Personendaten, z. B. `geburtstage-2027-03.xlsx`.
 - Exporte sind **unverschlüsselt** – darauf weist der Knopf hin
   („Die Datei enthält Mitgliederdaten im Klartext"). Jeder Export wird
   im Audit-Log vermerkt (wer, wann, welche Liste, wie viele Zeilen).
 - Listen filtern und sortieren in SQL; nur Altersberechnungen
   (Geburtstage, Ehrungen) rechnet PHP.
+- Die Seite sortiert zusätzlich per Klick auf die Spaltenüberschrift
+  (in PHP über die gelieferten Zeilen, leere Zellen zuletzt) und blättert
+  in Seiten zu 50. Der Export enthält immer **alle** Zeilen der Auswahl in
+  der angezeigten Reihenfolge.
+- Der Export ist ein `POST` (`/app/listen/<liste>/export`, CSRF-geschützt):
+  er schreibt einen Audit-Eintrag und darf nicht durch einen vorgeladenen
+  Link ausgelöst werden. Format (`xlsx` Standard, `csv`) und die Filter der
+  Ansicht kommen aus dem Formular. Der Audit-Eintrag (`export.erzeugt`,
+  Entität `liste`, ID = Schlüssel der Liste) trägt nur Format und
+  Zeilenzahl.
+
+### Eine Liste hinzufügen
+
+Eine Liste ist eine Klasse `app/src/Listen/<Name>Liste.php`, die `Liste`
+implementiert (05 §6) und nur sagt, **was** sie zeigt: `filter()`
+(`ListenFilter::auswahl/haken/jahr/datum`; Werte kommen immer validiert an),
+`ergebnis($filter, $konto)` mit `Spalte`n (Text, Datum, Zahl, Geld in Cent),
+`ListenZeile`n (Werte nach Spaltenschlüssel, Mitglied-ID für den Klick,
+optional eine Marke wie „rund"), Hinweisen über der Tabelle und optional einer
+`ListenNavigation` (Zurück/Vor durch Zeiträume), sowie `dateiname()` (ohne
+Personendaten). Seite, Sortierung, Blättern und Export sind für alle gleich
+(`ListenController`, `ListenAnsicht`, `ListenExport`). Was eine Rolle nicht
+sehen darf (Beitragsspalten), lässt `ergebnis()` anhand des Kontos weg –
+Ansicht und Export zeigen genau das, was es liefert.
 
 ## 2. Die Listen
 
