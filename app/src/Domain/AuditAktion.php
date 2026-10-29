@@ -20,6 +20,7 @@ enum AuditAktion: string
     case BenutzerGesperrt = 'benutzer.gesperrt';
     case BenutzerGeloescht = 'benutzer.geloescht';
     case RolleGeaendert = 'rolle.geaendert';
+    case ZweiterFaktorGeaendert = 'zweiter_faktor.geaendert';
     case BackupErstellt = 'backup.erstellt';
     case UpdateDurchgefuehrt = 'update.durchgefuehrt';
     case UpdateZurueckgerollt = 'update.zurueckgerollt';
@@ -38,6 +39,7 @@ enum AuditAktion: string
         return match ($this) {
             self::AnmeldungErfolgreich => 'Anmeldung',
             self::AnmeldungFehlgeschlagen => 'Anmeldung fehlgeschlagen',
+            self::ZweiterFaktorGeaendert => 'Zweiter Faktor geändert',
             self::Abmeldung => 'Abmeldung',
             self::BenutzerAngelegt => 'Benutzer angelegt',
             self::BenutzerGeaendert => 'Benutzer geändert',

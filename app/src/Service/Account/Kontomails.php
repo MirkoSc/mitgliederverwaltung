@@ -15,8 +15,9 @@ use App\Support\FileLogger;
 
 /**
  * The mails of the account lifecycle (docs/spec/02-sicherheit.md
- * section 3): invitation link, reset link and the security notices
- * "Passwort geändert/zurückgesetzt". Taken over from Vereinsbelege's Mailer
+ * section 3): invitation link, reset link, the code of the second factor
+ * and the security notices "Passwort geändert/zurückgesetzt", "neues
+ * Gerät", "2FA geändert". Taken over from Vereinsbelege's Mailer
  * methods of the same purpose.
  *
  * All of them are attempted at once (App\Service\Mail\Mailer::sendeSofort())
@@ -31,6 +32,12 @@ final readonly class Kontomails
     public const string PASSWORT_GEAENDERT = 'Das Passwort Ihres Kontos wurde geändert.';
 
     public const string PASSWORT_ZURUECKGESETZT = 'Das Passwort Ihres Kontos wurde über „Passwort vergessen“ neu festgelegt.';
+
+    public const string ZWEITER_FAKTOR_EINGERICHTET = 'Für Ihr Konto wurde der zweite Faktor eingerichtet oder geändert.';
+
+    public const string BACKUP_CODES_NEU = 'Für Ihr Konto wurden neue Backup-Codes erzeugt. Die bisherigen gelten nicht mehr.';
+
+    public const string NEUES_GERAET = 'Ein Gerät wurde gemerkt: Dort fragt die Anmeldung 30 Tage lang nicht nach dem zweiten Faktor.';
 
     public function __construct(
         private Mailer $mailer,
@@ -90,6 +97,18 @@ final readonly class Kontomails
         return $this->mailer->sendeSofort($email, 'Neues Passwort für die Mitgliederverwaltung', $this->mailer->vorlage('passwort-reset', [
             'link' => $basis . AnmeldungController::PASSWORT_NEU . '?token=' . $token,
             'gueltigMinuten' => intdiv(PasswortReset::GUELTIG_SEKUNDEN, 60),
+        ]));
+    }
+
+    /**
+     * The code of the second factor (02 section 3): at the login and when
+     * the mail is set up as the factor. No link, so no base URL is needed.
+     */
+    public function code(string $email, #[\SensitiveParameter] string $code): MailAttemptResult
+    {
+        return $this->mailer->sendeSofort($email, 'Ihr Anmeldecode für die Mitgliederverwaltung', $this->mailer->vorlage('anmeldecode', [
+            'code' => $code,
+            'gueltigMinuten' => intdiv(ZweiterFaktor::CODE_GUELTIG_SEKUNDEN, 60),
         ]));
     }
 

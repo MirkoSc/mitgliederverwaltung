@@ -1,0 +1,14 @@
+# app/routes/zweiter-faktor.php - the second step of the login (public,
+# E-F3, below /anmelden) and the own second factor from the user menu
+# (every logged-in account, no right needed).
+GET /anmelden/bestaetigen -> öffentlich
+POST /anmelden/bestaetigen -> öffentlich
+POST /anmelden/bestaetigen/code-senden -> öffentlich
+GET /app/konto/zweiter-faktor -> angemeldet
+POST /app/konto/zweiter-faktor/einrichten -> angemeldet
+POST /app/konto/zweiter-faktor/abschliessen -> angemeldet
+POST /app/konto/zweiter-faktor/abbrechen -> angemeldet
+POST /app/konto/zweiter-faktor/bestaetigen -> angemeldet
+POST /app/konto/zweiter-faktor/code-senden -> angemeldet
+POST /app/konto/zweiter-faktor/backup-codes -> angemeldet
+POST /app/konto/zweiter-faktor/geraete-vergessen -> angemeldet

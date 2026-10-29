@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Domain\Benutzer;
 use App\Domain\BenutzerStatus;
+use App\Domain\MfaMethode;
 use App\Domain\Rolle;
 
 /**
@@ -131,6 +132,13 @@ final readonly class BenutzerRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /** The second factor (App\Service\Account\ZweiterFaktor); null = not set up. */
+    public function updateMfaMethode(int $id, ?MfaMethode $methode): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE `user` SET mfa_method = ? WHERE id = ?');
+        $stmt->execute([$methode?->value, $id]);
+    }
+
     public function touchLastLogin(int $id, \DateTimeImmutable $now): void
     {
         $stmt = $this->pdo->prepare('UPDATE `user` SET last_login_at = ? WHERE id = ?');
@@ -158,7 +166,10 @@ final readonly class BenutzerRepository
             status: BenutzerStatus::tryFrom((string) $row['status']) ?? BenutzerStatus::Gesperrt,
             rolle: Rolle::tryFrom((string) $row['rolle']) ?? Rolle::Vorstand,
             barrierefrei: (bool) $row['modus_barrierefrei'],
-            mfaMethod: $row['mfa_method'] === null ? null : (string) $row['mfa_method'],
+            // An unknown method (a newer release wrote it) counts as "not
+            // set up": the guard then asks for a setup instead of letting
+            // the account past a factor nobody can check.
+            mfaMethod: $row['mfa_method'] === null ? null : MfaMethode::tryFrom((string) $row['mfa_method']),
             sessionEpoch: (int) $row['session_epoch'],
             createdAt: new \DateTimeImmutable((string) $row['created_at']),
             lastLoginAt: $row['last_login_at'] === null ? null : new \DateTimeImmutable((string) $row['last_login_at']),
