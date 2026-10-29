@@ -46,6 +46,12 @@ final readonly class JahresbeitragRepository
         return $stmt->rowCount() === 1 ? $beitrag->mit(['id' => (int) $this->pdo->lastInsertId()]) : null;
     }
 
+    /** Whether any annual fee exists - from then on the member stock can no longer be emptied (10 section 1). */
+    public function gibtEs(): bool
+    {
+        return $this->pdo->query('SELECT EXISTS(SELECT 1 FROM jahresbeitrag)')?->fetchColumn() == 1;
+    }
+
     public function finde(int $id): ?Jahresbeitrag
     {
         return $this->mehrere('SELECT * FROM jahresbeitrag WHERE id = ?', [$id])[0] ?? null;
