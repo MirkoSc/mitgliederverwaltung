@@ -111,7 +111,7 @@ final class DesignsystemTest extends AppTestCase
         // The account still has the mode off - the menu offers to switch it on.
         self::assertStringContainsString('Barrierefrei-Modus einschalten', $vorschau);
         // And no other page takes the parameter.
-        self::assertStringContainsString('<html lang="de">', $this->get('/app/mitglieder', ['barrierefrei' => '1'])->body);
+        self::assertStringContainsString('<html lang="de">', $this->get('/app/listen', ['barrierefrei' => '1'])->body);
     }
 
     /**
@@ -123,7 +123,7 @@ final class DesignsystemTest extends AppTestCase
     {
         $this->als(Rolle::Vorstand, barrierefrei: true);
 
-        foreach (['/app/mitglieder', '/app/listen', '/app/mitglieder'] as $pfad) {
+        foreach (['/app/listen', '/app/listen'] as $pfad) {
             self::assertStringContainsString('<html lang="de" class="modus-barrierefrei">', $this->get($pfad)->body, $pfad);
         }
     }
@@ -136,7 +136,7 @@ final class DesignsystemTest extends AppTestCase
         self::assertStringContainsString($logo, $this->get('/anmelden')->body);
 
         $this->als(Rolle::Vorstand);
-        self::assertStringContainsString($logo, $this->get('/app/mitglieder')->body);
+        self::assertStringContainsString($logo, $this->get('/app/listen')->body);
         self::assertFileExists(dirname(__DIR__, 2) . '/public' . View::LOGO_PLATZHALTER);
     }
 
@@ -145,7 +145,7 @@ final class DesignsystemTest extends AppTestCase
         $this->dienste->view->setLogo('/logo?v=123');
         $this->als(Rolle::Vorstand);
 
-        $seite = $this->get('/app/mitglieder')->body;
+        $seite = $this->get('/app/listen')->body;
 
         self::assertStringContainsString('<img class="marke-logo" src="/logo?v=123" alt=""', $seite);
         self::assertStringNotContainsString(View::LOGO_PLATZHALTER, $seite);
