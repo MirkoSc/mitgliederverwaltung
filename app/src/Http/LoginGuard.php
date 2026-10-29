@@ -11,7 +11,8 @@ use App\View\View;
 /**
  * The gate in front of everything that is not public: /app and /admin.
  * Taken over from Vereinsbelege, without vault, scopes and the second-factor
- * setup (that comes with issue #8).
+ * setup (that comes with issue #8). The accounts come from the `user` table
+ * (App\Service\Account\Benutzerkonten), read on every request.
  *
  * It answers two questions server side, for the route, not by hiding a link
  * (CLAUDE.md section 4): may this request happen at all, and may THIS
@@ -99,6 +100,8 @@ final readonly class LoginGuard
         if ($request->header(self::HINTERGRUND_HEADER) !== '1') {
             $this->session->touch();
         }
+
+        $this->session->rolleAbgleichen($konto->rolle->value);
 
         // The chrome of every page behind the login: who is signed in, and
         // the token their forms need.

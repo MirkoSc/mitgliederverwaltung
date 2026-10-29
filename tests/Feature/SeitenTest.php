@@ -75,7 +75,7 @@ final class SeitenTest extends AppTestCase
 
         $seite = $this->get('/app/mitglieder')->body;
 
-        self::assertStringContainsString('Passwort ändern <small>(folgt)</small>', $seite);
+        self::assertStringContainsString('<a href="/app/konto/passwort">Passwort ändern</a>', $seite);
         self::assertStringContainsString('Zweiter Faktor <small>(folgt)</small>', $seite);
         self::assertStringContainsString('Barrierefrei-Modus einschalten <small>(folgt)</small>', $seite);
         self::assertMatchesRegularExpression('#<form method="post" action="/abmelden">\s*<input type="hidden" name="_csrf" value="[0-9a-f]{64}">#', $seite);

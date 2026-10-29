@@ -94,7 +94,8 @@ Kein Request darf lange laufen. Muster (übernommen aus Vereinsbelege 06 §4):
 - Der Cron des Hoster-Kontrollpanels ruft `/cron?token=…` per HTTP auf
   (Token aus `config.php`, Vergleich mit `hash_equals`).
 - Aufgaben: Mail-Queue versenden, Aufräumen (abgelaufene Tokens, Rate-Limit-
-  Zeilen, `var/tmp/`, alte Backups), sonst nichts.
+  Zeilen, `var/tmp/`, alte Backups und liegengebliebene Backup-Ketten),
+  sonst nichts.
 - Eine Sperre (DB-Lock `GET_LOCK`, `App\Repository\CronSperre`) verhindert
   überlappende Läufe; sie endet mit dem Lauf bzw. der Verbindung, ein
   abgestürzter Lauf blockiert also nichts. Aufräumarbeiten sind gedrosselt
