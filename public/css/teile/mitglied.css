@@ -1,0 +1,38 @@
+/* The member form (issue #19, tab "Daten" and "Neues Mitglied"). Tokens
+   from app.css only.
+
+   Other parts set .formular and .feldgruppe for their own pages (a width
+   of 32rem, framed groups); the member form is long and two-columned and
+   keeps the look of the design system, so it says so here. */
+
+.formular.mitglied-formular {
+    max-width: 60rem;
+}
+
+.mitglied-formular .feldgruppe {
+    align-self: start;
+    align-content: start;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+}
+
+.mitglied-formular .feldgruppe > legend {
+    padding: 0;
+    font-weight: 650;
+}
+
+.mitglied-formular > h3 {
+    margin: var(--abstand-4) 0 0;
+}
+
+.mitglied-formular > h3:first-of-type {
+    margin-top: 0;
+}
+
+/* Short fields (number, date, gender) keep room for the large font of the
+   Barrierefrei-Modus - the date picker and "nicht angegeben" must not be cut. */
+.modus-barrierefrei .mitglied-formular .feld-kurz :is(input, select) {
+    max-width: 20rem;
+}
