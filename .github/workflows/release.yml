@@ -1,6 +1,6 @@
 # Release build (docs/spec/04-installation-und-update.md section 1, taken
 # over from Vereinsbelege): a tag vX.Y.Z builds the release ZIP, the
-# checksums list and - once it exists - setup.php, signs the list and
+# checksums list and setup.php, signs the list and
 # publishes everything as a pre-release.
 name: Release
 
@@ -51,8 +51,10 @@ jobs:
           zip -r "dist/mitgliederverwaltung-${GITHUB_REF_NAME}.zip" \
             app public vendor bin migrations VERSION docker/web .htaccess
 
-      - name: Stage setup.php (exists once the installer is built)
-        run: if [ -f setup.php ]; then cp setup.php dist/; fi
+      # Rebuilt from the tagged sources rather than trusting the committed
+      # copy (CI checks that the two agree).
+      - name: Stage setup.php
+        run: php bin/build_setup.php && cp setup.php dist/
 
       # First the release assets (what the updater and setup.php check the
       # download against), then one line per file inside the ZIP, its path

@@ -77,6 +77,24 @@ final readonly class Paths
         return $this->sharedDir() . '/maintenance.flag';
     }
 
+    /**
+     * The installation token (docs/spec/04-installation-und-update.md
+     * section 2): written by setup.php, deleted once config.php exists.
+     */
+    public function installTokenFile(): string
+    {
+        return $this->sharedDir() . '/install_token.txt';
+    }
+
+    /**
+     * The release channel chosen in setup.php, handed to the installer -
+     * there is no database yet that could hold the setting.
+     */
+    public function setupChannelFile(): string
+    {
+        return $this->sharedDir() . '/setup_kanal.txt';
+    }
+
     /** State of the update step chain (a file: it must survive the switch). */
     public function updateStateFile(): string
     {
