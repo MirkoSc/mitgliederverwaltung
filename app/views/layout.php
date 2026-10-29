@@ -10,6 +10,9 @@
  * @var string $partialsDir
  * @var string $appName
  * @var string $version
+ * @var string $faviconUrl
+ * @var string $faviconTyp
+ * @var string|null $appleIconUrl
  * @var list<string> $stylesheets
  * @var \App\Domain\Konto|null $konto
  * @var array{seit: string, grund: string}|null $wartung maintenance flag, set by App\View\View
@@ -44,7 +47,10 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
     <?php foreach ($stylesheets as $stylesheet): ?>
     <link rel="stylesheet" href="<?= e($stylesheet) ?>?v=<?= e($version) ?>">
     <?php endforeach; ?>
-    <link rel="icon" href="/icon.svg?v=<?= e($version) ?>" type="image/svg+xml">
+    <link rel="icon" href="<?= e($faviconUrl) ?>" type="<?= e($faviconTyp) ?>">
+    <?php if ($appleIconUrl !== null): ?>
+    <link rel="apple-touch-icon" href="<?= e($appleIconUrl) ?>">
+    <?php endif; ?>
     <?php /* Only external files (CLAUDE.md section 4); values a script needs
              travel as data-* attributes. */ ?>
     <script src="/js/vendor/htmx.min.js?v=<?= e($version) ?>" defer></script>

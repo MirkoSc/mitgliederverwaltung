@@ -17,6 +17,7 @@ use App\Http\StaticFileHandler;
 use App\Http\Zugriff;
 use App\Installer\InstallController;
 use App\Service\Mail\MailTransport;
+use App\Service\Verein\LogoService;
 use App\Service\MaintenanceMode;
 use App\Support\FileLogger;
 use App\View\View;
@@ -47,6 +48,7 @@ final class Anwendung
 
         $view = $dienste->view;
         $view->setRouteVorhanden(static fn(HttpMethod $methode, string $pfad): bool => $router->hat($methode, $pfad));
+        $view->setLogoQuelle(static fn(): ?int => LogoService::aus($dienste)->version());
         $session = $dienste->session;
         $view->setFlashQuelle(static fn() => session_status() === PHP_SESSION_ACTIVE ? $session->pullFlash() : null);
 

@@ -44,7 +44,7 @@ abstract class AppTestCase extends TestCase
     {
         $_SESSION = [];
         $this->konten = new TestKonten();
-        $this->dienste = self::baueDienste($this->konten, $this->pdoFabrik());
+        $this->dienste = self::baueDienste($this->konten, $this->pdoFabrik(), $this->paths());
         $this->kernel = Anwendung::kernel($this->dienste);
     }
 
@@ -82,9 +82,18 @@ abstract class AppTestCase extends TestCase
         return static fn(): \PDO => $pdo;
     }
 
-    public static function baueDienste(TestKonten $konten, ?\Closure $pdoFabrik = null): Dienste
+    /**
+     * Other paths than the repository's own, for a test that writes below
+     * shared/ (see Feature\VereinTest); null = the repository's.
+     */
+    protected function paths(): ?Paths
     {
-        $paths = new Paths(dirname(__DIR__, 2));
+        return null;
+    }
+
+    public static function baueDienste(TestKonten $konten, ?\Closure $pdoFabrik = null, ?Paths $paths = null): Dienste
+    {
+        $paths ??= new Paths(dirname(__DIR__, 2));
         $version = new Version('0.0.0-test');
 
         return new Dienste(

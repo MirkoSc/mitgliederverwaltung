@@ -45,7 +45,7 @@ final class RoutenZugriffTest extends TestCase
      * everything below it (password reset, invitation), logging out, the
      * legal pages, and "/" which only redirects.
      */
-    private const array OEFFENTLICH_GENAU = ['/', '/abmelden', '/impressum', '/datenschutz'];
+    private const array OEFFENTLICH_GENAU = ['/', '/abmelden', '/impressum', '/datenschutz', '/logo/{groesse}'];
 
     private const string OEFFENTLICH_BEREICH = '/anmelden';
 

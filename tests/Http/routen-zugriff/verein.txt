@@ -1,0 +1,6 @@
+# app/routes/verein.php - section Verein (admin only) and the public logo route.
+POST /admin/verein -> admin.einstellungen
+POST /admin/verein/verbaende -> admin.einstellungen
+POST /admin/verein/logo -> admin.einstellungen
+POST /admin/verein/logo/entfernen -> admin.einstellungen
+GET /logo/{groesse} -> öffentlich
