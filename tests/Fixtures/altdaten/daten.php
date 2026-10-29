@@ -142,6 +142,13 @@ $mitglieder = [
     $zeile(['Adressnummer' => 1028, 'Vorname' => 'Greta', 'Nachname' => 'Gemeinsam', 'Geschlecht' => 'w', 'GebDatum' => '01.01.2018',
         'Konto1Iban' => 'DE89 3704 0044 0532 0130 00', 'Abteilungsnummer (alle aktuell)(1)' => 34, 'Abteilungsname (alle aktuell)(1)' => 'Turnen',
         'Beitragsname (alle aktuell)(1)' => 'Beitragsfrei FK']),
+    // Lkz empty, country written out (as in the real export) or something unexpected.
+    $zeile(['Adressnummer' => 1029, 'Vorname' => 'Lena', 'Nachname' => 'Landlos', 'Geschlecht' => 'w', 'GebDatum' => '02.02.1992',
+        'Lkz' => null, 'Land' => 'Deutschland', 'Plz' => 4109, 'Ort' => 'Leipzighausen', 'Konto1Iban' => 'DE89 3704 0044 0532 0130 00',
+        'Abteilungsnummer (alle aktuell)(1)' => 1, 'Abteilungsname (alle aktuell)(1)' => 'Badminton', 'Beitragsname (alle aktuell)(1)' => 'Erwachsene']),
+    $zeile(['Adressnummer' => 1030, 'Vorname' => 'Ulf', 'Nachname' => 'Unterwegs', 'Geschlecht' => 'm', 'GebDatum' => '03.03.1973',
+        'Lkz' => null, 'Land' => 'Atlantis', 'Konto1Iban' => 'DE89 3704 0044 0532 0130 00',
+        'Abteilungsnummer (alle aktuell)(1)' => 1, 'Abteilungsname (alle aktuell)(1)' => 'Badminton', 'Beitragsname (alle aktuell)(1)' => 'Erwachsene']),
 ];
 
 $familien = [

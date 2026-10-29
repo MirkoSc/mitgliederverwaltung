@@ -4,22 +4,32 @@ declare(strict_types=1);
 
 namespace App\Tests\Tools;
 
+use App\Tests\Support\XlsxLeser;
 use App\Tests\Support\XlsxSchreiber;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Tools\Altdaten\Kommandozeile;
-use Tools\Altdaten\Umwandler;
-use Tools\Altdaten\XlsxLeser;
-
-require_once dirname(__DIR__, 2) . '/tools/altdaten-umwandeln.php';
 
 /**
- * tools/altdaten-umwandeln.php against the INVENTED sample export in
- * tests/Fixtures/altdaten/ (docs/spec/10-import.md, mandatory tests).
+ * The expected output of tools/altdaten-umwandeln.ps1 for the INVENTED
+ * sample export in tests/Fixtures/altdaten/ (docs/spec/10-import.md,
+ * mandatory tests). The CI job "altdaten" runs the PowerShell script on
+ * Windows PowerShell 5.1 and PowerShell 7 and requires byte-identical
+ * output to erwartet-import.csv / erwartet-zusammenfassung.txt - so every
+ * assertion here holds for the script.
  */
 final class AltdatenUmwandelnTest extends TestCase
 {
     private const string FIXTURES = __DIR__ . '/../Fixtures/altdaten';
+
+    /** Columns of import.csv in file order (spec 10 section 2). */
+    private const array SPALTEN = [
+        'mitgliedsnummer', 'anrede', 'titel', 'vorname', 'nachname', 'namenszusatz', 'geschlecht',
+        'geburtsdatum', 'eintrittsdatum', 'austrittsdatum', 'austrittsgrund',
+        'strasse', 'plz', 'ort', 'land', 'telefon', 'handy', 'email',
+        'aktiv', 'abteilungen', 'beitragsart', 'zahlart', 'iban', 'bic', 'kontoinhaber',
+        'mandatsreferenz', 'mandatsdatum', 'familie', 'familie_name', 'familie_rolle',
+        'funktionen', 'lizenznummer', 'bemerkung',
+    ];
 
     /** @var array<string, array<string, string>>|null Mitgliedsnummer => row */
     private static ?array $zeilen = null;
@@ -32,16 +42,17 @@ final class AltdatenUmwandelnTest extends TestCase
     private static function zeilen(): array
     {
         if (self::$zeilen === null) {
-            $ergebnis = (new Umwandler(new \DateTimeImmutable('2026-10-01')))->umwandeln(
-                XlsxLeser::lesen(self::FIXTURES . '/mitglieder.xlsx'),
-                XlsxLeser::lesen(self::FIXTURES . '/familien.xlsx'),
-            );
+            self::$csv = (string) file_get_contents(self::FIXTURES . '/erwartet-import.csv');
+            self::$summary = (string) file_get_contents(self::FIXTURES . '/erwartet-zusammenfassung.txt');
+            $stream = fopen('php://memory', 'w+');
+            fwrite($stream, self::$csv);
+            rewind($stream);
+            $kopf = fgetcsv($stream, null, ';', '"', '');
             self::$zeilen = [];
-            foreach ($ergebnis->zeilen as $zeile) {
-                self::$zeilen[$zeile['mitgliedsnummer']] = $zeile;
+            while (($feld = fgetcsv($stream, null, ';', '"', '')) !== false) {
+                self::$zeilen[$feld[0]] = array_combine($kopf, $feld);
             }
-            self::$summary = $ergebnis->zusammenfassung();
-            self::$csv = $ergebnis->csv();
+            fclose($stream);
         }
 
         return self::$zeilen;
@@ -78,7 +89,7 @@ final class AltdatenUmwandelnTest extends TestCase
     {
         self::assertArrayNotHasKey('1013', self::zeilen());
         self::assertArrayNotHasKey('1023', self::zeilen());
-        self::assertCount(25, self::zeilen());
+        self::assertCount(27, self::zeilen());
     }
 
     public function testPayerWithoutMembershipBecomesAccountHolder(): void
@@ -122,15 +133,9 @@ final class AltdatenUmwandelnTest extends TestCase
 
     public function testAgeLimitIsMeasuredOnTheReferenceDay(): void
     {
-        // Pia is born 23.12.2012: 12 on 01.10.2026, but 18 on 01.01.2031.
-        $spaeter = (new Umwandler(new \DateTimeImmutable('2031-01-01')))->umwandeln(
-            XlsxLeser::lesen(self::FIXTURES . '/mitglieder.xlsx'),
-            XlsxLeser::lesen(self::FIXTURES . '/familien.xlsx'),
-        );
-        $rollen = array_column($spaeter->zeilen, 'familie_rolle', 'mitgliedsnummer');
-
+        // Pia is born 23.12.2012: 12 on the reference day 01.10.2026. That
+        // she is "elternteil" with -Stichtag 01.01.2031 checks the CI job.
         self::assertSame('kind', self::zeilen()['1009']['familie_rolle']);
-        self::assertSame('elternteil', $rollen['1009']);
     }
 
     public function testTrainerGetsFunctionAndLicence(): void
@@ -227,7 +232,7 @@ final class AltdatenUmwandelnTest extends TestCase
             }
         }
         fclose($stream);
-        self::assertSame(Umwandler::SPALTEN, $kopf);
+        self::assertSame(self::SPALTEN, $kopf);
         self::assertSame("Zeile eins\nZeile zwei; mit \"Zitat\"\nWirtschaftshelfer", $gefunden['bemerkung'] ?? null);
     }
 
@@ -239,38 +244,23 @@ final class AltdatenUmwandelnTest extends TestCase
         foreach (['Beispiel', 'Erika', 'Zahlerin', 'Musterweg', 'DE89', 'example.org', 'Fantasie', 'Ehrenwert'] as $verboten) {
             self::assertStringNotContainsString($verboten, $text);
         }
-        self::assertMatchesRegularExpression('/als Mitglied übernommen:\s+25$/m', $text);
+        self::assertMatchesRegularExpression('/als Mitglied übernommen:\s+27$/m', $text);
         self::assertMatchesRegularExpression('/keine Mitgliedschaft:\s+2$/m', $text);
         self::assertMatchesRegularExpression('/Elternteile.*:\s+2$/m', $text);
         self::assertMatchesRegularExpression('/Übungsleiter \(mit Lizenznummer\):\s+1$/m', $text);
     }
 
-    public function testCommandLineWritesCsvToStdoutAndSummaryToStderr(): void
+    public function testCountryWrittenOutBecomesTheCodeAndAnythingElseGoesToTheNote(): void
     {
-        $aus = fopen('php://memory', 'w+');
-        $fehler = fopen('php://memory', 'w+');
+        $zeilen = self::zeilen();
 
-        $code = Kommandozeile::ausfuehren([self::FIXTURES . '/mitglieder.xlsx', self::FIXTURES . '/familien.xlsx', '--stichtag=01.10.2026'], $aus, $fehler);
-        rewind($aus);
-        rewind($fehler);
-
-        self::assertSame(0, $code);
-        self::assertSame(self::$csv, stream_get_contents($aus));
-        self::assertStringContainsString('Umwandlung der Altdaten', (string) stream_get_contents($fehler));
-    }
-
-    public function testCommandLineRejectsWrongArgumentsAndWrongFiles(): void
-    {
-        $aus = fopen('php://memory', 'w+');
-        $fehler = fopen('php://memory', 'w+');
-
-        self::assertSame(2, Kommandozeile::ausfuehren(['nur-eine.xlsx'], $aus, $fehler));
-        self::assertSame(2, Kommandozeile::ausfuehren(['a.xlsx', 'b.xlsx', '--stichtag=gestern'], $aus, $fehler));
-        // Swapped files: the family file is no member file.
-        self::assertSame(1, Kommandozeile::ausfuehren([self::FIXTURES . '/familien.xlsx', self::FIXTURES . '/mitglieder.xlsx'], $aus, $fehler));
-        self::assertSame(1, Kommandozeile::ausfuehren([self::FIXTURES . '/gibt-es-nicht.xlsx', self::FIXTURES . '/familien.xlsx'], $aus, $fehler));
-        rewind($aus);
-        self::assertSame('', stream_get_contents($aus), 'nothing on STDOUT when it fails');
+        self::assertSame(['D', '04109'], [$zeilen['1029']['land'], $zeilen['1029']['plz']], 'Lkz empty, Land "Deutschland"');
+        self::assertSame('', $zeilen['1030']['land']);
+        self::assertSame('Land laut Altdaten: Atlantis', $zeilen['1030']['bemerkung']);
+        self::assertStringContainsString('Land nicht erkannt, in die Bemerkung übernommen "Atlantis": 1', (string) self::$summary);
+        foreach ($zeilen as $zeile) {
+            self::assertLessThanOrEqual(3, mb_strlen($zeile['land']), 'the import takes at most 3 characters');
+        }
     }
 
     public function testFixtureFilesMatchTheirSource(): void

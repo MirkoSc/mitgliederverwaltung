@@ -1,0 +1,30 @@
+mitgliedsnummer;anrede;titel;vorname;nachname;namenszusatz;geschlecht;geburtsdatum;eintrittsdatum;austrittsdatum;austrittsgrund;strasse;plz;ort;land;telefon;handy;email;aktiv;abteilungen;beitragsart;zahlart;iban;bic;kontoinhaber;mandatsreferenz;mandatsdatum;familie;familie_name;familie_rolle;funktionen;lizenznummer;bemerkung
+1001;Herr;;Erika;Beispiel;;w;12.03.1980;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;erika@example.org;1;09;Aktiv;lastschrift;DE89370400440532013000;COBADEFFXXX;;;;;;;;;
+1002;Herr;;Fritz;Fantasie;;m;05.11.1975;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;01;Passiv;lastschrift;DE02120300000000202051;;;;;;;;;;
+1003;Herr;;Kai;Kleinfeld;;m;20.06.2015;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;09;Jugend/Schüler/Studenten/Azubis;lastschrift;DE02120300000000202051;;;;;;;;;;
+1004;Herr;;Jana;Jugendlich;;w;02.02.2009;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;09;Jugend/Schüler/Studenten/Azubis;lastschrift;DE02120300000000202051;;;;;;;;;;
+1005;Herr;;Rudi;Ruhestand;;m;30.09.1950;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;16;"Rentner aktiv";lastschrift;DE89370400440532013000;;;;;;;;;;
+1006;Herr;;Rosa;Ruhestand;;w;14.01.1948;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;16;"Rentner passiv";lastschrift;DE89370400440532013000;;;;;;;;;;
+1007;Herr;;Paula;Familie;;w;08.08.1982;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;34;Familie;lastschrift;DE02120300000000202051;;;;;501;"Familie Familie";zahler;;;"Gymnastik aktiv"
+1008;Herr;;Peter;Familie;;m;17.04.1980;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;34;;lastschrift;DE02120300000000202051;;;;;501;"Familie Familie";elternteil;;;Gymnastik-Passiv
+1009;Herr;;Pia;Familie;;w;23.12.2012;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;09;;lastschrift;DE02120300000000202051;;;;;501;"Familie Familie";kind;;;Fußball-Aktiv
+1010;Herr;;Mia;Minimal;;w;01.07.1990;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;09;Mindestbeitrag;lastschrift;DE89370400440532013000;;;;;;;;;;
+1011;Herr;;Max;Minimal;;m;09.09.1988;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;16;Mindestbeitrag;lastschrift;DE89370400440532013000;;;;;;;;;;
+1012;Herr;Dr.;Ehrenfried;Ehrenwert;;m;03.03.1955;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;16;Beitragsfrei;lastschrift;DE89370400440532013000;;;;;;;;;;Ehrenmitglied
+1014;Herr;;Tom;Zahlerin;;m;04.05.2008;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;01;Jugend/Schüler/Studenten/Azubis;lastschrift;DE02120300000000202051;;"Zora Zahlerin";;;;;;;;
+1015;Herr;;Dora;Doppelt;;w;19.02.1985;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;"0711 123456";"0170 1234567";;0;09,34;Passiv;lastschrift;DE89370400440532013000;;;;;;;;;;
+1016;Herr;;Uwe;Uebungsleiter;;m;27.07.1972;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;16;Aktiv;selbst;;;;;;;;;Übungsleiter;C-00815;"Übungsleiter Kegeln"
+1017;Herr;;Paul;Platzhalter;;m;;;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;01;Passiv;lastschrift;DE89370400440532013000;;;;;;;;;;
+1018;Herr;;Egon;Beispiel;;m;21.10.1978;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;09;Passiv;lastschrift;DE89370400440532013000;;"Erika Beispiel";;;;;;;;
+1019;Herr;;Fiona;Ohnefamilie;;w;06.06.1983;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;09;Familie;lastschrift;DE89370400440532013000;;;;;;;;;;Fußball-Passiv
+1020;Herr;;Finn;Ohnefamilie;;m;15.05.2011;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;09;;lastschrift;DE89370400440532013000;;;;;;;;;;"inaktiv seit Jahren"
+1021;Herr;;Anton;Ausgetreten;;m;28.08.1965;01.04.2010;31.12.2025;Umzug;"Musterweg 1";80331;Beispielstadt;D;;;;0;01;Passiv;lastschrift;DE89370400440532013000;;;;;;;;;;
+1022;Herr;;Nora;Notiz;;w;10.10.1991;01.04.2010;;;"Musterweg 1";01067;Dresdenhausen;D;;;;0;34;Passiv;lastschrift;DE89370400440532013000;;"Zeno Zahler";;;;;;;;"Zeile eins
+Zeile zwei; mit ""Zitat""
+Wirtschaftshelfer"
+1024;Herr;;Sven;Sondertarif;;m;12.12.1969;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;16;;lastschrift;DE89370400440532013000;;;;;;;;;;
+1026;Herr;;Gerda;Gemeinsam;;w;13.03.1979;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;1;09;Familie;lastschrift;DE89370400440532013000;;;;;502;"Familie Gemeinsam";zahler;;;Fußball-Aktiv
+1027;Herr;;Gustav;Gemeinsam;;m;14.04.1977;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;34;;lastschrift;DE89370400440532013000;;;;;502;"Familie Gemeinsam";elternteil;;;Gymnastik
+1028;Herr;;Greta;Gemeinsam;;w;01.01.2018;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;D;;;;0;34;;lastschrift;DE89370400440532013000;;;;;502;"Familie Gemeinsam";kind;;;
+1029;Herr;;Lena;Landlos;;w;02.02.1992;01.04.2010;;;"Musterweg 1";04109;Leipzighausen;D;;;;0;01;Passiv;lastschrift;DE89370400440532013000;;;;;;;;;;
+1030;Herr;;Ulf;Unterwegs;;m;03.03.1973;01.04.2010;;;"Musterweg 1";80331;Beispielstadt;;;;;0;01;Passiv;lastschrift;DE89370400440532013000;;;;;;;;;;"Land laut Altdaten: Atlantis"

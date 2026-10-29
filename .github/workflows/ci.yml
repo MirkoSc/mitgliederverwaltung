@@ -83,3 +83,62 @@ jobs:
       # while tests/js/ has no test file.
       - name: JavaScript tests
         run: node --test 'tests/js/**/*.test.js'
+
+  # tools/altdaten-umwandeln.ps1 (docs/spec/10-import.md section 3) runs once
+  # on a Windows PC. Its output must be byte-identical to the expected files
+  # the PHPUnit tests check - on Windows PowerShell 5.1 (what Windows ships)
+  # and on PowerShell 7.
+  altdaten:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, ps: powershell }
+          - { os: windows-latest, ps: pwsh }
+          - { os: ubuntu-latest, ps: pwsh }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Convert the invented sample export
+        run: |
+          ordner=ausgabe/altdaten
+          mkdir -p "$ordner"
+          cp tests/Fixtures/altdaten/mitglieder.xlsx tests/Fixtures/altdaten/familien.xlsx "$ordner/"
+          ${{ matrix.ps }} -NoProfile -ExecutionPolicy Bypass -File tools/altdaten-umwandeln.ps1 -Ordner "$ordner" -Stichtag 01.10.2026
+
+      - name: Output equals the expected files
+        run: |
+          ordner=ausgabe/altdaten
+          diff -u tests/Fixtures/altdaten/erwartet-import.csv "$ordner/import.csv"
+          diff -u tests/Fixtures/altdaten/erwartet-zusammenfassung.txt "$ordner/zusammenfassung.txt"
+          cmp tests/Fixtures/altdaten/erwartet-import.csv "$ordner/import.csv"
+          cmp tests/Fixtures/altdaten/erwartet-zusammenfassung.txt "$ordner/zusammenfassung.txt"
+
+      # Pia (1009, born 23.12.2012) is a child on 01.10.2026 but an adult
+      # family member on 01.01.2031.
+      - name: The reference day decides child or adult
+        run: |
+          ${{ matrix.ps }} -NoProfile -ExecutionPolicy Bypass -File tools/altdaten-umwandeln.ps1 \
+            -Mitglieder tests/Fixtures/altdaten/mitglieder.xlsx -Familien tests/Fixtures/altdaten/familien.xlsx \
+            -Ausgabe ausgabe/spaeter.csv -Stichtag 01.01.2031
+          grep -q '^1009;.*;elternteil;' ausgabe/spaeter.csv
+
+      - name: Wrong files and arguments stop with an error
+        run: |
+          set +e
+          ${{ matrix.ps }} -NoProfile -ExecutionPolicy Bypass -File tools/altdaten-umwandeln.ps1 \
+            -Mitglieder tests/Fixtures/altdaten/familien.xlsx -Familien tests/Fixtures/altdaten/mitglieder.xlsx -Ausgabe ausgabe/falsch.csv
+          [ $? -eq 1 ] || { echo "swapped files must fail"; exit 1; }
+          [ ! -e ausgabe/falsch.csv ] || { echo "no output on failure"; exit 1; }
+          ${{ matrix.ps }} -NoProfile -ExecutionPolicy Bypass -File tools/altdaten-umwandeln.ps1 -Ordner ausgabe/gibt-es-nicht
+          [ $? -eq 1 ] || { echo "missing files must fail"; exit 1; }
+          ${{ matrix.ps }} -NoProfile -ExecutionPolicy Bypass -File tools/altdaten-umwandeln.ps1 -Ordner ausgabe/altdaten -Stichtag gestern
+          [ $? -eq 1 ] || { echo "bad reference day must fail"; exit 1; }
+          exit 0
