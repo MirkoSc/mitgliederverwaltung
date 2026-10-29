@@ -94,9 +94,13 @@ final class ErweiterungsSeitenTest extends AppTestCase
             declare(strict_types=1);
             namespace App\\Listen;
             use App\\Dienste;
+            use App\\Domain\\Konto;
             use App\\Domain\\Permission;
             final class {$klasse} implements Liste
             {
+                public function filter(): array { return []; }
+                public function ergebnis(array \$filter, Konto \$konto): ListenErgebnis { return new ListenErgebnis([Spalte::text('name', 'Name')], []); }
+                public function dateiname(array \$filter): string { return 'testlauf'; }
                 public static function erzeugen(Dienste \$dienste): self { return new self(); }
                 public function schluessel(): string { return 'testlauf-{$kennung}'; }
                 public function titel(): string { return 'Testlauf-Liste'; }

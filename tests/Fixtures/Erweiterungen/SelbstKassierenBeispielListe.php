@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Fixtures\Erweiterungen;
 
 use App\Dienste;
+use App\Domain\Konto;
 use App\Domain\Permission;
 use App\Listen\Liste;
+use App\Listen\ListenErgebnis;
+use App\Listen\Spalte;
 
 /** A list as an issue would add it - for ErweiterungenTest. */
 final class SelbstKassierenBeispielListe implements Liste
@@ -39,5 +42,20 @@ final class SelbstKassierenBeispielListe implements Liste
     public function recht(): Permission
     {
         return Permission::BeitraegeVerwalten;
+    }
+
+    public function filter(): array
+    {
+        return [];
+    }
+
+    public function ergebnis(array $filter, Konto $konto): ListenErgebnis
+    {
+        return new ListenErgebnis([Spalte::text('name', 'Name')], []);
+    }
+
+    public function dateiname(array $filter): string
+    {
+        return $this->schluessel();
     }
 }
