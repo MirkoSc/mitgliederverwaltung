@@ -22,10 +22,7 @@ use App\Service\Import\Abgleich;
 use App\Service\Import\ErstImport;
 use App\Service\Storage\BlobService;
 use App\Tests\Support\AppTestCase;
-use Tools\Altdaten\Umwandler;
-use Tools\Altdaten\XlsxLeser;
 
-require_once dirname(__DIR__, 2) . '/tools/altdaten-umwandeln.php';
 
 /**
  * The first import through the whole application (docs/spec/10-import.md
@@ -467,15 +464,13 @@ final class ErstImportTest extends AppTestCase
     public function testTheOutputOfTheConversionScriptImportsWithoutErrors(): void
     {
         $this->als(Rolle::Admin);
-        $fixtures = dirname(__DIR__) . '/Fixtures/altdaten';
-        $ergebnis = new Umwandler(new \DateTimeImmutable('2026-10-01'))->umwandeln(
-            XlsxLeser::lesen($fixtures . '/mitglieder.xlsx'),
-            XlsxLeser::lesen($fixtures . '/familien.xlsx'),
-        );
+        // Expected output of tools/altdaten-umwandeln.ps1 (the CI job
+        // "altdaten" keeps it byte-identical to what the script writes).
+        $csv = (string) file_get_contents(dirname(__DIR__) . '/Fixtures/altdaten/erwartet-import.csv');
 
-        $this->ganzImportieren($ergebnis->csv());
+        $this->ganzImportieren($csv);
 
-        self::assertSame(count($ergebnis->zeilen), $this->anzahlZeilen('mitglied'));
+        self::assertSame(27, $this->anzahlZeilen('mitglied'));
         self::assertGreaterThan(0, $this->anzahlZeilen('familie'));
     }
 }

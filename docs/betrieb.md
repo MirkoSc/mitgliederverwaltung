@@ -275,7 +275,11 @@ selbst.
 1. Aus der alten Software die Mitglieder- und die Familiendatei als
    Excel-Datei exportieren.
 2. Mit dem Umwandlungsskript eine `import.csv` erzeugen. Das Skript läuft
-   auf dem eigenen Rechner; die Dateien verlassen ihn nicht.
+   auf dem eigenen Windows-Rechner in PowerShell; die Dateien verlassen ihn
+   nicht. Beide Exporte als `mitglieder.xlsx` und `familien.xlsx` in einen
+   Ordner legen, dann im entpackten Repository:
+   `powershell -ExecutionPolicy Bypass -File tools\altdaten-umwandeln.ps1 -Ordner C:\temp\mitgliederdaten`.
+   `import.csv` und `zusammenfassung.txt` liegen danach in diesem Ordner.
 3. Einstellungen → Import → `import.csv` hochladen.
 4. **Vorschau** prüfen: Anzahl Mitglieder, Familien und Abteilungen sowie
    die Zeilen mit Hinweisen und Fehlern. Fehler (z. B. doppelte

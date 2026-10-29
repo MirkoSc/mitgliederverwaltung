@@ -23,7 +23,7 @@ final class ReleaseWorkflowTest extends TestCase
 
     public function testTheZipNameMatchesWhatTheDownloaderLooksFor(): void
     {
-        self::assertStringContainsString('"dist/mitgliederverwaltung-${GITHUB_REF_NAME}.zip"', self::workflow());
+        self::assertStringContainsString('"dist/mitgliederverwaltung-${RELEASE_TAG}.zip"', self::workflow());
         self::assertSame(1, preg_match(ReleaseDownloader::ZIP_PATTERN, 'mitgliederverwaltung-v1.2.3.zip'));
         self::assertSame(0, preg_match(ReleaseDownloader::ZIP_PATTERN, 'vereinsbelege-v1.2.3.zip'));
     }
@@ -47,7 +47,7 @@ final class ReleaseWorkflowTest extends TestCase
     public function testDependenciesAreInstalledWithoutDevPackages(): void
     {
         self::assertStringContainsString('composer install --no-dev --optimize-autoloader', self::workflow());
-        self::assertStringContainsString('echo "${GITHUB_REF_NAME#v}" > VERSION', self::workflow());
+        self::assertStringContainsString('echo "${RELEASE_TAG#v}" > VERSION', self::workflow());
     }
 
     /**
@@ -73,5 +73,23 @@ final class ReleaseWorkflowTest extends TestCase
         self::assertMatchesRegularExpression("#tags: \\['v\\*\\.\\*\\.\\*'\\]#", self::workflow());
         self::assertStringContainsString('prerelease: true', self::workflow());
         self::assertStringNotContainsString('make_latest', self::workflow());
+    }
+
+    /**
+     * Manual start on main with a version (sessions cannot push tags): the
+     * input reaches the shell only through env, is checked, and the publish
+     * step creates the tag on the built commit.
+     */
+    public function testAManualRunBuildsTheGivenVersionFromMain(): void
+    {
+        $workflow = self::workflow();
+
+        self::assertStringContainsString('workflow_dispatch:', $workflow);
+        self::assertStringContainsString('INPUT_VERSION: ${{ inputs.version }}', $workflow);
+        self::assertStringNotContainsString('run: echo "${{ inputs.version', $workflow);
+        self::assertStringContainsString('if [ "$REF" != "refs/heads/main" ]; then', $workflow);
+        self::assertStringContainsString("grep -Eq '^v[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.]+)?$'", $workflow);
+        self::assertStringContainsString('tag_name: ${{ needs.build.outputs.tag }}', $workflow);
+        self::assertStringContainsString('target_commitish: ${{ github.sha }}', $workflow);
     }
 }

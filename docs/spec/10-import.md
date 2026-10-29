@@ -99,12 +99,17 @@ leere Zelle = kein Wert. Eine Zeile je Mitglied.
 
 ## 3. Umwandlungsskript (alte Software → `import.csv`)
 
-`tools/altdaten-umwandeln.php` – **nicht** im Release (CLAUDE.md §2),
-läuft lokal per Docker:
+`tools/altdaten-umwandeln.ps1` – **nicht** im Release (CLAUDE.md §2),
+läuft einmalig lokal unter Windows, ohne Docker und ohne PHP (Windows
+PowerShell 5.1 oder PowerShell 7):
 
-```bash
-docker compose run --rm app php tools/altdaten-umwandeln.php import-daten/mitglieder.xlsx import-daten/familien.xlsx > import-daten/import.csv
 ```
+powershell -ExecutionPolicy Bypass -File tools\altdaten-umwandeln.ps1 -Ordner C:\temp\mitgliederdaten
+```
+
+Erwartet im Ordner `mitglieder.xlsx` und `familien.xlsx` und schreibt
+dorthin `import.csv` und `zusammenfassung.txt`. Statt `-Ordner` gehen auch
+`-Mitglieder`, `-Familien`, `-Ausgabe`.
 
 - `import-daten/` steht in `.gitignore` – echte Daten kommen nie ins Repo.
 - Liest xlsx mit einem kleinen eigenen Leser (nur Text und Zahlen des
@@ -124,14 +129,15 @@ docker compose run --rm app php tools/altdaten-umwandeln.php import-daten/mitgli
   - Platzhalterdatum `01.01.1901` → leer (unbekannt).
   - IBAN ohne Leerzeichen; Notizen (`AdrNotizen`, `MitNotizen`)
     zusammengefügt in `bemerkung`.
-- Schreibt zusätzlich eine kurze Zusammenfassung nach STDERR (Anzahl je
-  Beitragsart, Familien, nicht zuordenbare Zeilen) – ohne Namen.
-- Optional `--stichtag=TT.MM.JJJJ`: Tag, an dem „unter 18" gemessen wird
+- Schreibt zusätzlich eine kurze Zusammenfassung (Bildschirm und
+  `zusammenfassung.txt`: Anzahl je Beitragsart, Familien, nicht
+  zuordenbare Zeilen) – ohne Namen.
+- Optional `-Stichtag TT.MM.JJJJ`: Tag, an dem „unter 18" gemessen wird
   (Default heute); macht Läufe und Tests reproduzierbar.
-- Aufbau: `tools/altdaten-umwandeln.php` (Einstieg) und
-  `tools/altdaten/` (`XlsxLeser`, `Umwandler`, `Ergebnis`, `Zaehler`,
-  `Kommandozeile`; Namespace `Tools\Altdaten`, nicht im Autoloader, nicht
-  im Release).
+- Eine Datei, nur ASCII im Quelltext (Umlaute als Zeichencodes), damit
+  Windows PowerShell 5.1 sie ohne BOM gleich liest. Bis #33 gab es eine
+  PHP-Fassung per Docker; sie wurde ersetzt, weil die Umwandlung nur
+  einmal auf Mirkos Windows-Rechner läuft.
 - Spaltennamen der Altdatei wie in `docs/fachlichkeit.md` §8; verglichen
   wird ohne Groß-/Kleinschreibung und Satzzeichen. Pflicht sind
   `Adressnummer` und `Nachname` (sonst Abbruch mit Hinweis, „falsche
@@ -150,7 +156,10 @@ docker compose run --rm app php tools/altdaten-umwandeln.php import-daten/mitgli
   Nummer: Zahlername ≠ eigener Name). `kontoinhaber` = `ZahlerVorname
   ZahlerNachname`, sonst Name der Zeile mit dieser Adressnummer; `iban` =
   `MitZahlerIban`, sonst `Konto1Iban`, sonst IBAN der Zahlerzeile.
-- `land` = `Lkz`, sonst `Land`. Datumswerte werden auf `TT.MM.JJJJ`
+- `land` = `Lkz`, sonst `Land`; „Deutschland" → `D`. Ein anderer Wert
+  über 3 Zeichen (mehr nimmt der Import nicht) wird leer und steht als
+  „Land laut Altdaten: …" in der `bemerkung` und in der Zusammenfassung.
+  Datumswerte werden auf `TT.MM.JJJJ`
   gebracht (auch `JJJJ-MM-TT` und Excel-Seriennummern); Platzhalter
   `01.01.1901` und nicht lesbare Daten werden leer (Zähler in der
   Zusammenfassung). Zahlart „Lastschriftzahler" → `lastschrift`,
@@ -248,6 +257,13 @@ Version mit Anlass `abgleich`, ein zweiter Abgleich mit derselben Datei
 findet nichts mehr. Umwandlungsskript gegen
 eine **erfundene** Beispiel-Altdatei unter `tests/Fixtures/altdaten/`
 (gleiche Spaltennamen wie die echte, Fantasiedaten; `erzeugen.php` baut die
-xlsx aus `daten.php`): alle 12
-Beitragskombinationen, Familie, abweichender Zahler, Übungsleiter,
-Platzhalterdatum.
+xlsx aus `daten.php`): die erwartete Ausgabe steht in
+`erwartet-import.csv` und `erwartet-zusammenfassung.txt`; der CI-Job
+`altdaten` lässt das Skript unter Windows PowerShell 5.1 und PowerShell 7
+(Windows und Linux) laufen und verlangt byte-gleiche Ausgabe,
+`AltdatenUmwandelnTest` prüft an dieser Ausgabe alle 12
+Beitragskombinationen, Familie, abweichenden Zahler, Übungsleiter,
+Platzhalterdatum und Land, `ErstImportTest` importiert sie fehlerfrei.
+Ändert sich das Skript oder `daten.php`, wird die erwartete Ausgabe mit
+`pwsh tools/altdaten-umwandeln.ps1 -Ordner <kopie> -Stichtag 01.10.2026`
+neu erzeugt und der Diff bewusst geprüft.

@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tools\Altdaten;
+namespace App\Tests\Support;
 
 /**
- * A deliberately small xlsx reader for the one-off legacy conversion
- * (docs/spec/10-import.md section 3): text and numbers of the FIRST sheet,
+ * A deliberately small xlsx reader, used by the tests to read the legacy
+ * fixtures (the conversion itself is tools/altdaten-umwandeln.ps1):
+ * text and numbers of the FIRST sheet,
  * nothing else - no styles, no formulas, no dates (the old software exports
  * dates as text). Pure PHP on ext-zip and ext-dom.
  */
