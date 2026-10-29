@@ -1,0 +1,43 @@
+/* The tab "Verlauf" of a member (issue #22). Tokens from app.css only. */
+
+.verlauf {
+    display: grid;
+    gap: var(--abstand-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.verlauf-eintrag {
+    display: grid;
+    gap: var(--abstand-2);
+    padding-bottom: var(--abstand-4);
+    border-bottom: 1px solid var(--farbe-rand);
+}
+
+.verlauf-eintrag h3 {
+    margin: 0;
+}
+
+.verlauf-anlass,
+.verlauf-wann {
+    color: var(--farbe-gedaempft);
+    font-weight: 400;
+}
+
+.verlauf-wann {
+    margin: 0;
+}
+
+.verlauf-aenderungen {
+    margin: 0;
+    padding-left: var(--abstand-4);
+}
+
+.verlauf-alt {
+    text-decoration: line-through;
+}
+
+.verlauf-eintrag form {
+    justify-self: start;
+}

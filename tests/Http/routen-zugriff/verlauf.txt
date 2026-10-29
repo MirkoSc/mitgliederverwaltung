@@ -1,0 +1,2 @@
+# app/routes/verlauf.php - bring back a member version: both roles (07 section 9).
+POST /app/mitglieder/{id:[0-9]+}/verlauf/{nr:[0-9]+}/zurueckholen -> mitglieder.bearbeiten
