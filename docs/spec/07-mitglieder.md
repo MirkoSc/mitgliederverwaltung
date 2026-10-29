@@ -109,6 +109,32 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 | Eintrittsdatum unbekannt | Eintrittsdatum fehlt |
 | Pflichtangaben für BLSV fehlen | Geschlecht oder Geburtsdatum fehlt |
 
+Umsetzung (#21): `App\Service\Mitglied\Hinweise::fuer(Mitglied,
+HinweisKontext): list<Hinweis>` liest nichts und speichert nichts; der
+`HinweisKontext` trägt Stichtag, die Personen der Familie (das übergebene
+Mitglied ersetzt das gespeicherte, so zählen auch ungespeicherte Änderungen),
+die Nachweise und alle Beitragsarten. `HinweisLader` holt den Kontext aus den
+Repositories. Jede Zeile der Tabelle ist eine `HinweisArt` (Reihenfolge der
+Tabelle = Reihenfolge der Hinweise; die Liste „Auffälligkeiten" filtert
+danach). Anzeige: `HinweiseAbschnitt` (gefundener Abschnitt am Mitglied, immer
+der aktuelle Stand); nach dem Speichern sagt die Meldung nur, *dass* es
+Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
+
+- „Aktiv/passiv" vergleicht das Häkchen mit `aktiv_art` der Beitragsart
+  (`aktiv`/`passiv`; `egal` passt zu beidem).
+- Alter und „gültig bis" zählen tageweise: genau 18 bzw. 67 zählt als 18
+  bzw. 67, ein Nachweis „gültig bis heute" ist heute noch gültig.
+- „Nachweis abgelaufen": ein Hinweis je abgelaufenem Nachweis, auch wenn ein
+  anderer gültig ist.
+- „Andere Anschrift" vergleicht Straße und PLZ (ohne Groß-/Kleinschreibung
+  und Leerzeichen am Rand) mit dem ersten Zahler der Familie; für den Zahler
+  selbst und in Familien ohne Zahler entfällt er.
+- „Lastschrift ohne gültige IBAN" gilt nicht für Elternteil/Kind *ohne* eigene
+  Beitragsart und *ohne* IBAN (sie zahlen über den Zahler); eine falsche IBAN
+  wird immer gemeldet.
+- Ehemalige: nur „Kein Beitrag" nimmt sie aus; die übrigen Regeln gelten
+  unverändert.
+
 ## 7. Versionen
 
 - Jedes Speichern eines Mitglieds, bei dem sich etwas ändert, erzeugt eine

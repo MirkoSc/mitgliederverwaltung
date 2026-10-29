@@ -17,6 +17,7 @@ use App\Repository\FamilieRepository;
 use App\Repository\MitgliedRepository;
 use App\Repository\MitgliedsnummerVergebenException;
 use App\Repository\VersionKonfliktException;
+use App\Service\Mitglied\HinweisLader;
 use App\Service\Storage\BlobService;
 use App\View\Area;
 use App\View\FlashArt;
@@ -231,10 +232,16 @@ final readonly class MitgliedController
 
     private function fertig(Mitglied $mitglied, string $meldung): Response
     {
-        $hinweise = MitgliedFormular::hinweise($mitglied);
+        // The hints themselves stand at the top of the opened member (07
+        // section 6, HinweiseAbschnitt); the message only says there are some.
+        $anzahl = count(HinweisLader::aus($this->dienste->pdo())->fuer($mitglied));
         $this->dienste->session->flash(
-            implode(' ', [$meldung, ...$hinweise]),
-            $hinweise === [] ? FlashArt::Ok : FlashArt::Warnung,
+            $anzahl === 0 ? $meldung : sprintf(
+                '%s %s',
+                $meldung,
+                $anzahl === 1 ? 'Es gibt einen Hinweis – er steht oben im Mitglied.' : sprintf('Es gibt %d Hinweise – sie stehen oben im Mitglied.', $anzahl),
+            ),
+            $anzahl === 0 ? FlashArt::Ok : FlashArt::Warnung,
         );
 
         return Response::redirect(self::adresse((int) $mitglied->id));
