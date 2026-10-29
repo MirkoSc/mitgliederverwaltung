@@ -30,6 +30,9 @@ final readonly class Jahresbeitraege
     /** Years the page offers - wide enough for old open fees and the next year. */
     public const int ERSTES_JAHR = 2000;
 
+    /** A note longer than this is cut - the forms allow 500 characters of own text. */
+    public const int MAX_VERMERK = 600;
+
     public function __construct(
         private \PDO $pdo,
         private JahresbeitragRepository $beitraege,
@@ -206,7 +209,7 @@ final readonly class Jahresbeitraege
 
     private static function vermerk(?int $von, string $text): Vermerk
     {
-        return new Vermerk($von, new \DateTimeImmutable('now', new \DateTimeZone(Datum::ZEITZONE)), $text);
+        return new Vermerk($von, new \DateTimeImmutable('now', new \DateTimeZone(Datum::ZEITZONE)), mb_substr($text, 0, self::MAX_VERMERK));
     }
 
     private static function mitZusatz(string $was, string $zusatz): string
