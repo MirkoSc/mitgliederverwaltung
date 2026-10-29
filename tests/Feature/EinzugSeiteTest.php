@@ -188,7 +188,7 @@ final class EinzugSeiteTest extends AppTestCase
         self::assertStringContainsString('2 offene Beiträge lassen sich nicht per Lastschrift einziehen', $seite);
         self::assertStringContainsString('zahlt selbst', $seite);
         self::assertStringContainsString('keine IBAN', $seite);
-        self::assertStringContainsString('unter „Selbst kassieren“', $seite);
+        self::assertStringContainsString('<a href="/app/listen/selbst-kassieren">„Selbst kassieren“</a>', $seite);
         self::assertSame(1, substr_count($seite, 'name="beitrag[]"'), 'only the collectable fee has a checkbox');
         self::assertStringContainsString('Noch kein Einzug erzeugt.', $seite);
         // The tick list arrives complete only with the field after it.

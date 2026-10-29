@@ -115,11 +115,10 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
   nie umgeschrieben, weil die Bank sie mit dem unterschriebenen Mandat
   abgleicht; ein Mandatsdatum, das nicht in der Zukunft liegt). Die
   übrigen stehen aufklappbar daneben, je mit Grund; bei Zahlart `selbst`
-  und fehlender/falscher IBAN verweist der Text auf „Selbst kassieren"
-  (Seite Listen). Die Häkchen gehen als
-  `beitrag[]`, danach ein verstecktes Feld `auswahl_vollstaendig` – fehlt
-  es (der Server schneidet über `max_input_vars` stillschweigend ab), wird
-  nichts erzeugt.
+  und fehlender/falscher IBAN verweist der Text auf die Liste „Selbst
+  kassieren" (09). Die Häkchen gehen als `beitrag[]`, danach ein
+  verstecktes Feld `auswahl_vollstaendig` – fehlt es (der Server schneidet
+  über `max_input_vars` stillschweigend ab), wird nichts erzeugt.
 - **Fälligkeit**: Vorschlag = nächster Bankarbeitstag + 1 Bankarbeitstag
   im TARGET-Kalender (Sa/So, 1.1., Karfreitag, Ostermontag, 1.5., 25./26.12.;
   `App\Service\Beitraege\Bankarbeitstage`). Ein früheres Datum als der

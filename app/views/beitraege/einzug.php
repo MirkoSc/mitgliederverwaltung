@@ -111,8 +111,8 @@ $einzugJahre = $einzugAuswahl->jahre();
             <summary><?= $einzugOhne === 1 ? '1 offener Beitrag lässt' : e($einzugOhne) . ' offene Beiträge lassen' ?> sich nicht per Lastschrift einziehen</summary>
             <p class="einzug-text">
                 <?php if ($einzugSelbst > 0): ?>
-                    Selbstzahler und Beiträge ohne gültige IBAN kassieren Sie selbst – sie stehen auch auf der Seite
-                    <a href="<?= e(Navigation::LISTEN) ?>">Listen</a> unter „Selbst kassieren“.
+                    Selbstzahler und Beiträge ohne gültige IBAN kassieren Sie selbst – sie stehen in der Liste
+                    <a href="<?= e(Navigation::LISTEN) ?>/selbst-kassieren">„Selbst kassieren“</a>.
                 <?php endif; ?>
                 <?php if ($einzugSelbst < $einzugOhne): ?>
                     Fehlt eine Angabe zum Mandat, ergänzen Sie sie am Mitglied; danach lässt sich der Beitrag einziehen.
