@@ -657,7 +657,15 @@ final class CodeIntegritaetTest extends TestCase
 
     private function pruefung(int $portionDateien = CodeIntegritaet::PORTION_DATEIEN): CodeIntegritaet
     {
-        return new CodeIntegritaet($this->release, $this->liste, $this->var, portionDateien: $portionDateien);
+        // No signing key, independent of ReleaseSignatur::PUBLIC_KEY; the
+        // signature cases use pruefungMit() with their own key pair.
+        return new CodeIntegritaet(
+            $this->release,
+            $this->liste,
+            $this->var,
+            portionDateien: $portionDateien,
+            publicKey: '',
+        );
     }
 
     /**

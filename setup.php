@@ -685,7 +685,7 @@ final class ReleaseSignatur
      * pair yet: signatures are not enforced. Set by the maintainer with
      * `php tools/release-signatur.php schluessel <datei>`.
      */
-    public const string PUBLIC_KEY = '';
+    public const string PUBLIC_KEY = '0a0cxg2wflUqZSkY91OnehUSwdbe66I2W0l1TdQCumY=';
 
     /** Asset name of the signature next to checksums.txt. */
     public const string ASSET = 'checksums.txt.sig';
