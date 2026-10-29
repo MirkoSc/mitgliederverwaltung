@@ -311,6 +311,33 @@ final class AnmeldungFlowTest extends AppTestCase
         self::assertSame(BenutzerStatus::Aktiv, new BenutzerRepository($this->pdo())->findById($selbst)?->status);
     }
 
+    public function testTheBarrierefreiModusIsStoredAndSurvivesReloading(): void
+    {
+        $id = Benutzerdaten::anlegen($this->pdo());
+        $this->anmelden();
+
+        self::assertStringNotContainsString('modus-barrierefrei', $this->get('/app/konto/passwort')->body);
+
+        self::assertSame(302, $this->post('/app/konto/barrierefrei')->status);
+        self::assertTrue(new BenutzerRepository($this->pdo())->findById($id)?->barrierefrei);
+
+        $seite = $this->get('/app/konto/passwort')->body;
+        self::assertStringContainsString('class="modus-barrierefrei"', $seite);
+        self::assertStringContainsString('data-leerlauf="3600"', $seite);
+        self::assertStringContainsString('Weiterarbeiten', $seite);
+
+        $this->post('/app/konto/barrierefrei');
+        self::assertStringContainsString('data-leerlauf="1800"', $this->get('/app/konto/passwort')->body);
+    }
+
+    public function testKeepAliveAnswersForALoggedInAccount(): void
+    {
+        Benutzerdaten::anlegen($this->pdo());
+        $this->anmelden();
+
+        self::assertSame(200, $this->post('/app/konto/weiterarbeiten')->status);
+    }
+
     public function testTheOwnPasswordChangesAndOtherSessionsEnd(): void
     {
         $id = Benutzerdaten::anlegen($this->pdo());

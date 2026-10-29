@@ -109,6 +109,12 @@ final readonly class BenutzerRepository
         $stmt->execute([$status->value, $id]);
     }
 
+    public function updateBarrierefrei(int $id, bool $an): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE `user` SET modus_barrierefrei = ? WHERE id = ?');
+        $stmt->execute([$an ? 1 : 0, $id]);
+    }
+
     public function updateRolle(int $id, Rolle $rolle): void
     {
         $stmt = $this->pdo->prepare('UPDATE `user` SET rolle = ? WHERE id = ?');
