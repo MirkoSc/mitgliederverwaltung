@@ -95,6 +95,16 @@ final class Session
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_regenerate_id(true);
             session_destroy();
+            // A start() in the same request (the flash on the login page
+            // after logout, reset or invitation) would otherwise read the id
+            // from the request's cookie again - the old one, while the
+            // browser already holds the regenerated one, and the flash went
+            // nowhere (issue #36). A preset id is taken as it is and sent as
+            // a cookie.
+            $neu = session_create_id();
+            if (is_string($neu)) {
+                session_id($neu);
+            }
         }
     }
 
