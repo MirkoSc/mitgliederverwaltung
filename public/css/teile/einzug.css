@@ -1,0 +1,104 @@
+/* Direct debit on the page "Beiträge" and the page of one run (issue #30).
+   Tokens from app.css only. */
+
+.einzug-text {
+    max-width: var(--text-breite);
+}
+
+.einzug h3 {
+    margin-top: var(--abstand-5);
+}
+
+/* A list that folds away: the long checkbox list and the fees that cannot
+   go into a run. A <details>, so it works without a script. */
+.einzug-klappe {
+    margin: 0 0 var(--abstand-4);
+}
+
+.einzug-klappe > summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-3);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius-klein);
+    background: var(--farbe-flaeche-2);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.einzug-klappe[open] > summary {
+    margin-bottom: var(--abstand-3);
+}
+
+.modus-barrierefrei .einzug-klappe > summary {
+    border: 2px solid var(--farbe-text);
+}
+
+/* A run that waits for the bank, marked by the colour of its status. */
+.einzug-karte {
+    margin-top: var(--abstand-4);
+    padding: var(--abstand-4);
+    border: 1px solid var(--farbe-rand);
+    border-left: 4px solid var(--farbe-info);
+    border-radius: var(--radius);
+    scroll-margin-top: var(--abstand-4);
+}
+
+.einzug-karte h4 {
+    margin: 0 0 var(--abstand-2);
+    font-size: var(--schrift-h3);
+}
+
+/* Download, confirm, discard - in this order, side by side on a wide
+   screen, one below the other on the phone and in the Barrierefrei-Modus. */
+.einzug-schritte {
+    display: grid;
+    gap: var(--abstand-4);
+    margin-top: var(--abstand-4);
+}
+
+.einzug-datei,
+.einzug-entscheidung {
+    display: grid;
+    align-content: start;
+    gap: var(--abstand-2);
+}
+
+.einzug-schritte p {
+    margin: 0;
+}
+
+.einzug-entscheidung {
+    padding-top: var(--abstand-4);
+    border-top: 1px solid var(--farbe-rand);
+}
+
+@media (min-width: 64rem) {
+    .einzug-schritte {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .einzug-entscheidung {
+        padding-top: 0;
+        padding-left: var(--abstand-4);
+        border-top: 0;
+        border-left: 1px solid var(--farbe-rand);
+    }
+
+    .modus-barrierefrei .einzug-schritte {
+        grid-template-columns: 1fr;
+    }
+
+    .modus-barrierefrei .einzug-entscheidung {
+        padding-top: var(--abstand-4);
+        padding-left: 0;
+        border-top: 1px solid var(--farbe-rand);
+        border-left: 0;
+    }
+}
+
+.einzug-archiv,
+.einzug-posten {
+    margin-top: var(--abstand-6);
+}

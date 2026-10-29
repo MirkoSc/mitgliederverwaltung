@@ -1,10 +1,13 @@
 <?php
 
 /**
- * The page "Beiträge" (docs/spec/08-beitraege.md section 2, 06 section 2):
- * the fee year from top to bottom - create the year's fees, then the fees
- * of the year, by default the open ones, each with "bezahlt" right there.
- * Markup as in the pattern page /admin/designsystem.
+ * The page "Beiträge" (docs/spec/08-beitraege.md sections 2 and 3, 06
+ * section 2): the fee year from top to bottom - create the year's fees,
+ * collect the open ones by direct debit (beitraege/einzug.php), then the
+ * fees of the year, by default the open ones, each with "bezahlt" right
+ * there, and the archive of every direct debit at the bottom
+ * (beitraege/einzug-archiv.php). Markup as in the pattern page
+ * /admin/designsystem.
  *
  * @var int $jahr
  * @var int|null $vorjahr
@@ -20,6 +23,11 @@
  * @var string $hier
  * @var \Closure(array<string, string|null>): string $link
  * @var list<\App\Domain\Zahlweise> $zahlweisen
+ * @var \App\Service\Beitraege\EinzugAuswahl $einzugAuswahl
+ * @var list<\App\Domain\Einzug> $einzuegeOffen
+ * @var list<\App\Domain\Einzug> $einzuegeAlle
+ * @var array<int, string|null> $einzugNamen
+ * @var string $selbstKassierenAdresse
  * @var string|null $csrf
  */
 
@@ -31,7 +39,7 @@ $statusEtikett = require __DIR__ . '/status-etikett.php';
 ?>
 <div class="seitenkopf">
     <h1>Beiträge</h1>
-    <p>Das Beitragsjahr: Jahresbeiträge erzeugen, dann offene Beiträge einziehen oder als bezahlt vermerken.</p>
+    <p>Das Beitragsjahr: Jahresbeiträge erzeugen, offene Beiträge per Lastschrift einziehen oder als bezahlt vermerken.</p>
 </div>
 
 <nav class="blaettern" aria-label="Beitragsjahr">
@@ -73,6 +81,8 @@ $statusEtikett = require __DIR__ . '/status-etikett.php';
         <button type="submit" class="knopf knopf-haupt" aria-describedby="erzeugen-hilfe">Beiträge für <?= e($jahr) ?> erzeugen</button>
     </form>
 </section>
+
+<?php require __DIR__ . '/einzug.php'; ?>
 
 <section class="beitraege-liste" aria-labelledby="liste-titel">
     <h2 id="liste-titel">Beiträge <?= e($jahr) ?></h2>
@@ -168,3 +178,5 @@ $statusEtikett = require __DIR__ . '/status-etikett.php';
         <?php endif; ?>
     <?php endif; ?>
 </section>
+
+<?php require __DIR__ . '/einzug-archiv.php'; ?>

@@ -24,7 +24,8 @@ use App\View\Navigation;
 /**
  * The page "Beiträge" (docs/spec/08-beitraege.md section 2, 06 section 2):
  * the year's annual fees - create them, the open ones with "bezahlt" -
- * and the page of one fee with everything that can happen to it. Admin
+ * and the page of one fee with everything that can happen to it. The
+ * direct debit on the same page comes from EinzugController (#30). Admin
  * only; every route declares BeitraegeVerwalten (app/routes/beitraege.php).
  *
  * Every action answers with a redirect and a message. Where to: the
@@ -108,6 +109,8 @@ final readonly class BeitraegeController
                 static fn(?string $wert): bool => $wert !== null,
             )),
             'zahlweisen' => Zahlweise::cases(),
+            // The direct debit and its archive (#30) live on this page too.
+            ...EinzugController::aus($this->dienste)->seitenDaten(),
         ], Area::App));
     }
 

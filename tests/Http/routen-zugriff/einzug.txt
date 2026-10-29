@@ -1,0 +1,6 @@
+# app/routes/einzug.php - direct debit and its file: admin only (08).
+POST /app/beitraege/einzug -> beitraege.verwalten
+GET /app/beitraege/einzuege/{id:[0-9]+} -> beitraege.verwalten
+GET /app/beitraege/einzuege/{id:[0-9]+}/datei -> beitraege.verwalten
+POST /app/beitraege/einzuege/{id:[0-9]+}/bestaetigen -> beitraege.verwalten
+POST /app/beitraege/einzuege/{id:[0-9]+}/verwerfen -> beitraege.verwalten
