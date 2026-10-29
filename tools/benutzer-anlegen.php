@@ -2,8 +2,8 @@
 
 /**
  * Development helper, not part of a release: creates an active admin in the
- * database of config.php - the way into a fresh docker environment until the
- * installer (issue #3) creates the first admin.
+ * database of config.php - the way into the docker environment, whose
+ * docker/shared/config.php means the installer (/install) never runs there.
  *
  *   docker compose exec app php bin/migrate.php
  *   docker compose exec app php tools/benutzer-anlegen.php admin@example.org "Erika Beispiel"
