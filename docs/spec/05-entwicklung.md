@@ -129,7 +129,7 @@ Bis zu neun Issues werden gleichzeitig von getrennten Agenten bearbeitet
   | Rechte | `Permission`-Enum ist in #1 **vollständig** angelegt (Tabelle in 02 §6) – nicht erweitern, nur nutzen; fehlt wirklich eins, im PR begründen |
   | Navigation | in #1 vollständig (`App\View\Navigation`: Mitglieder `/app/mitglieder`, Listen `/app/listen`, Beiträge `/app/beitraege`, Einstellungen `/admin`, Benutzermenü). Ein Eintrag erscheint inaktiv, bis seine Route existiert – wer die Route anlegt, schaltet ihn frei |
   | Einstellungs-Abschnitte | eigene Klasse `app/src/Admin/Einstellungen/<Name>Abschnitt.php` (implementiert `Abschnitt`) + Template, automatisch gefunden; Formulare posten an Routen der eigenen Routen-Datei |
-  | Listen | eigene Klasse `app/src/Listen/<Name>Liste.php` (implementiert `Liste`), automatisch gefunden, erreichbar unter `/app/listen/<schluessel>` |
+  | Listen | eigene Klasse `app/src/Listen/<Name>Liste.php` (implementiert `Liste`: Filter, Spalten, Zeilen – Seite, Sortierung und csv/xlsx-Export liefert #24, siehe 09 §1), automatisch gefunden, erreichbar unter `/app/listen/<schluessel>` |
   | Reiter/Abschnitte am Mitglied | eigene Klasse `app/src/App/Mitglied/<Name>Reiter.php` bzw. `…Abschnitt.php` (implementiert `Reiter` bzw. `Abschnitt`), automatisch gefunden |
   | Cron-Aufgaben | eigene Klasse `app/src/Service/Cron/<Name>Task.php` (implementiert `CronTask`), automatisch gefunden (01 §5) |
   | Dienste | was ein Bereich braucht, baut er selbst aus `App\Dienste` (`pdo()`, `einstellungen()`, `jobs()`, `view`, `session` …) und teilt es je Request über `$dienste->dienst(Klasse::class, fn)` – keine zentrale Verdrahtung |
