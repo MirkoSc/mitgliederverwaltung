@@ -93,6 +93,12 @@ Je Mitglied 0..n Nachweise: Art (`rente`/`studium`/`ausbildung`/
 und **am** – automatisch gesetzt, nicht änderbar. Nachweise werden nicht
 versioniert (sie sind selbst ein Verlauf); löschen nur Admin.
 
+Die Datei (PDF, JPEG, PNG, WebP, höchstens 10 MB; der Typ wird am Inhalt
+erkannt) kommt mit dem Formular (multipart), nicht als Chunk-Upload: ein Scan
+ist klein, das Formular geht ohne JavaScript. Der Download ist ein gestreamter
+Anhang (`Cache-Control: no-store`). Gelöscht wird die Datei mit dem Nachweis
+und mit dem Mitglied.
+
 ## 6. Hinweise
 
 Hinweise sind **berechnet**, nie gespeichert: eine reine Funktion
