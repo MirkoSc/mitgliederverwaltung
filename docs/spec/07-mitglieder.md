@@ -121,6 +121,15 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 - **Zurückholen**: übernimmt die Werte der gewählten Version als **neue**
   Version hinten. Gibt es die Familie nicht mehr, bleibt die Familie leer
   (Hinweis); dasselbe für gelöschte Abteilungen/Funktionen.
+- Umsetzung (#22): `VerlaufReiter` (Reiter `verlauf`, Template
+  `mitglied/verlauf`) zeigt die Versionen mit „alt → neu" je geändertem
+  Feld (`VerlaufAenderungen`, Namen aus den Versionen selbst; die erste
+  Version zeigt keine Änderungen). „Zurückholen" ist
+  `POST /app/mitglieder/{id}/verlauf/{nr}/zurueckholen`
+  (`mitglieder.bearbeiten`, `VerlaufController`), ruft
+  `MitgliedRepository::wiederherstellen()`, schreibt einen Audit-Eintrag
+  (nur ID/Nummern) und zeigt die Hinweise als Meldung.
+
 - Nicht versioniert: Jahresbeiträge/Einzüge (08), Nachweise (§5),
   Ehrungs-Vermerke (09).
 
