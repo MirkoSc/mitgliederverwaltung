@@ -8,7 +8,7 @@ use App\Support\Erweiterung;
 
 /**
  * One tab of an opened member (docs/spec/06-oberflaeche.md section 2):
- * Daten, Beiträge (admin), Verlauf.
+ * Daten, Familie, Beiträge (admin), Nachweise, Verlauf.
  *
  * An issue adds its tab as `app/src/App/Mitglied/<Name>Reiter.php`, and the
  * member page (issue #19) finds it (App\App\Mitglied\MitgliedErweiterungen).

@@ -114,4 +114,20 @@ final class MitgliederFilterTest extends TestCase
         $absteigend = MitgliederFilter::aus(['sortierung' => 'name-ab']);
         self::assertSame('name', $absteigend->sortierungNach(MitgliederSortierung::Name), 'descending: back to ascending');
     }
+
+    public function testPageSizeIsOneOfTheOfferedValues(): void
+    {
+        self::assertSame(50, MitgliederFilter::aus([])->anzahl);
+        self::assertSame(100, MitgliederFilter::aus(['anzahl' => '100'])->anzahl);
+        self::assertSame(200, MitgliederFilter::aus(['anzahl' => '200'])->anzahl);
+        self::assertSame(0, MitgliederFilter::aus(['anzahl' => 'alle'])->anzahl, '0 = all');
+        self::assertSame(50, MitgliederFilter::aus(['anzahl' => '75'])->anzahl, 'not offered: default');
+        self::assertSame(50, MitgliederFilter::aus(['anzahl' => '0'])->anzahl, '"all" is the word, not 0');
+        self::assertSame(50, MitgliederFilter::aus(['anzahl' => 'x'])->anzahl);
+
+        self::assertArrayNotHasKey('anzahl', MitgliederFilter::aus([])->parameter(), 'the default stays out of the URL');
+        self::assertSame('alle', MitgliederFilter::aus(['anzahl' => 'alle'])->parameter()['anzahl']);
+        $filter = MitgliederFilter::aus(['anzahl' => '200', 'seite' => '2']);
+        self::assertEquals($filter, MitgliederFilter::aus($filter->parameter()));
+    }
 }

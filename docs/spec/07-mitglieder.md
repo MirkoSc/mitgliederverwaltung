@@ -65,8 +65,8 @@ Mitglieder, sonst deaktivieren.
 - Gepflegt im Mitglied: „Familie wählen" (Suche) oder „neue Familie",
   Rolle wählen. Die Familie zeigt im Mitglied ihre übrigen Personen.
 - Eine Familie ohne Personen wird automatisch gelöscht.
-- Umsetzung (#20): Abschnitt **Familie** am Mitglied
-  (`App\App\Mitglied\FamilieAbschnitt`, Template `mitglied/familie`) zeigt
+- Umsetzung (#20): Reiter **Familie** am Mitglied, direkt nach „Daten"
+  (`App\App\Mitglied\FamilieReiter`, Template `mitglied/familie`) zeigt
   Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
   anlegen" führt zu `GET /app/mitglieder/{id}/familie?q=` (Suche nach Name,
   Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
@@ -97,7 +97,8 @@ Die Datei (PDF, JPEG, PNG, WebP, höchstens 10 MB; der Typ wird am Inhalt
 erkannt) kommt mit dem Formular (multipart), nicht als Chunk-Upload: ein Scan
 ist klein, das Formular geht ohne JavaScript. Der Download ist ein gestreamter
 Anhang (`Cache-Control: no-store`). Gelöscht wird die Datei mit dem Nachweis
-und mit dem Mitglied.
+und mit dem Mitglied. Angezeigt im Reiter **Nachweise** direkt nach
+„Beiträge" (`App\App\Mitglied\NachweiseReiter`, Template `mitglied/nachweise`).
 
 ## 6. Hinweise
 
@@ -145,7 +146,11 @@ Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
   anderer gültig ist.
 - „Andere Anschrift" vergleicht Straße und PLZ (ohne Groß-/Kleinschreibung
   und Leerzeichen am Rand) mit dem ersten Zahler der Familie; für den Zahler
-  selbst und in Familien ohne Zahler entfällt er.
+  selbst und in Familien ohne Zahler entfällt er. Am Mitglied steht dazu die
+  Anschrift des Zahlers; „Anschrift des Zahlers übernehmen" trägt Straße,
+  PLZ, Ort und Land ins Formular „Daten" ein (`public/js/anschrift.js`),
+  gespeichert wird erst mit dem Formular. Auf einem anderen Reiter führt ein
+  Link zu „Daten".
 - „Lastschrift ohne gültige IBAN" gilt nicht für Elternteil/Kind *ohne* eigene
   Beitragsart und *ohne* IBAN (sie zahlen über den Zahler); eine falsche IBAN
   wird immer gemeldet.

@@ -36,3 +36,19 @@
 .modus-barrierefrei .mitglied-formular .feld-kurz :is(input, select) {
     max-width: 20rem;
 }
+
+/* The payer's address under the hint "Andere Anschrift als die Familie"
+   (app/views/mitglied/hinweise.php), with the button that copies it into
+   the form. */
+.zahler-anschrift {
+    margin: var(--abstand-2) 0 var(--abstand-3);
+}
+
+.zahler-anschrift p {
+    margin: 0 0 var(--abstand-2);
+}
+
+.zahler-anschrift .anschrift-stand {
+    margin: var(--abstand-2) 0 0;
+    font-weight: 650;
+}

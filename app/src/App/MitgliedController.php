@@ -49,9 +49,10 @@ final readonly class MitgliedController
     }
 
     /** Where a member opens: the members page with that member beside the list. */
-    public static function adresse(int $id): string
+    /** The member opened on the list page, on the tab $reiter (default: Daten). */
+    public static function adresse(int $id, ?string $reiter = null): string
     {
-        return self::PFAD_LISTE . '?mitglied=' . $id;
+        return self::PFAD_LISTE . '?mitglied=' . $id . ($reiter === null ? '' : '&reiter=' . rawurlencode($reiter));
     }
 
     public static function speicherAdresse(int $id): string

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Feature;
 
-use App\App\Mitglied\FamilieAbschnitt;
+use App\App\Mitglied\FamilieReiter;
 use App\Domain\FamilienRolle;
 use App\Domain\Mitglied;
 use App\Domain\Rolle;
@@ -90,7 +90,7 @@ final class FamilieTest extends AppTestCase
         $bNeu = $this->repo()->finde((int) $b->id);
         self::assertSame($familieId, $bNeu?->familieId);
         self::assertSame(FamilienRolle::Kind, $bNeu?->familieRolle);
-        $daten = new FamilieAbschnitt($this->dienste)->daten((int) $b->id);
+        $daten = new FamilieReiter($this->dienste)->daten((int) $b->id);
         self::assertSame([(int) $a->id], array_map(static fn(Mitglied $p): ?int => $p->id, $daten['andere']));
         self::assertSame(1, $this->anzahlFamilien());
     }
@@ -169,10 +169,10 @@ final class FamilieTest extends AppTestCase
     {
         $this->als(Rolle::Vorstand);
         $m = $this->mitglied(1);
-        self::assertNull(new FamilieAbschnitt($this->dienste)->daten((int) $m->id)['familie']);
+        self::assertNull(new FamilieReiter($this->dienste)->daten((int) $m->id)['familie']);
         $this->neu((int) $m->id);
 
-        $html = $this->dienste->view->fragment('mitglied/familie', new FamilieAbschnitt($this->dienste)->daten((int) $m->id));
+        $html = $this->dienste->view->fragment('mitglied/familie', new FamilieReiter($this->dienste)->daten((int) $m->id));
 
         self::assertStringContainsString('Familie Muster', $html);
         self::assertStringContainsString('Aus der Familie nehmen', $html);

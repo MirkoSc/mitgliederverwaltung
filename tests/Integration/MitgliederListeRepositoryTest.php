@@ -261,4 +261,25 @@ final class MitgliederListeRepositoryTest extends DatabaseTestCase
         self::assertSame(1, $seite->seite);
         self::assertSame('Kein Mitglied gefunden.', $seite->stand());
     }
+
+    public function testThePageSizeCanBeChosenUpToAll(): void
+    {
+        for ($i = 1; $i <= 120; $i++) {
+            $this->anlegen(new Mitglied($i, sprintf('Test%03d', $i)));
+        }
+
+        $hundert = $this->liste->seite(MitgliederFilter::aus(['anzahl' => '100']), $this->heute);
+        self::assertCount(100, $hundert->zeilen);
+        self::assertSame(2, $hundert->seiten());
+
+        $zweite = $this->liste->seite(MitgliederFilter::aus(['anzahl' => '100', 'seite' => '2']), $this->heute);
+        self::assertCount(20, $zweite->zeilen);
+        self::assertSame('Test101', $zweite->zeilen[0]->nachname);
+
+        $alle = $this->liste->seite(MitgliederFilter::aus(['anzahl' => 'alle', 'seite' => '3']), $this->heute);
+        self::assertCount(120, $alle->zeilen);
+        self::assertSame(1, $alle->seiten());
+        self::assertSame(1, $alle->seite, 'all on one page');
+        self::assertFalse($alle->hatNaechste());
+    }
 }

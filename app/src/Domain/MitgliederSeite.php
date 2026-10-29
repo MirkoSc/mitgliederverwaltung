@@ -13,17 +13,19 @@ final readonly class MitgliederSeite
      * @param list<MitgliedZeile> $zeilen
      * @param int $gesamt members matching the filter, all pages together
      * @param int $seite the page shown (1 based, never beyond the last)
+     * @param int $proSeite members per page; 0 = all on one page
      */
     public function __construct(
         public array $zeilen,
         public int $gesamt,
         public int $seite,
+        public int $proSeite = MitgliederFilter::SEITENGROESSE,
     ) {
     }
 
     public function seiten(): int
     {
-        return max(1, (int) ceil($this->gesamt / MitgliederFilter::SEITENGROESSE));
+        return $this->proSeite === 0 ? 1 : max(1, (int) ceil($this->gesamt / $this->proSeite));
     }
 
     public function hatVorherige(): bool

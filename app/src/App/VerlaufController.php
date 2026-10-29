@@ -67,6 +67,6 @@ final readonly class VerlaufController
             $ergebnis->hinweise === [] ? FlashArt::Ok : FlashArt::Warnung,
         );
 
-        return Response::redirect(MitgliedController::adresse($id) . '&reiter=verlauf');
+        return Response::redirect(MitgliedController::adresse($id, 'verlauf'));
     }
 }

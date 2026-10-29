@@ -66,7 +66,8 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
             <tbody>
                 <?php foreach ($ergebnis->zeilen as $zeile): ?>
                     <tr>
-                        <td class="liste-titel"><a <?= $bereichLink($url(['mitglied' => $zeile->id, 'reiter' => null])) ?><?= $mitglied?->id === $zeile->id ? ' aria-current="true"' : '' ?>><?= e($zeile->name()) ?></a></td>
+                        <?php /* A second click on the open member closes it again. */ ?>
+                        <td class="liste-titel"><a <?= $bereichLink($url(['mitglied' => $mitglied?->id === $zeile->id ? null : $zeile->id, 'reiter' => null])) ?><?= $mitglied?->id === $zeile->id ? ' aria-current="true"' : '' ?>><?= e($zeile->name()) ?></a></td>
                         <td data-label="Nr."><span class="nummer"><?= e($zeile->mitgliedsnummer) ?></span></td>
                         <td data-label="Ort" class="nebenspalte"><?= e($zeile->ortAnzeige()) ?></td>
                         <td data-label="Abteilung"><?= e(implode(', ', $zeile->abteilungen)) ?></td>
@@ -85,7 +86,7 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
             <?php else: ?>
                 <span class="knopf" aria-disabled="true">Vorherige Seite</span>
             <?php endif; ?>
-            <p class="blaettern-stand">Seite <?= e($ergebnis->seite) ?> von <?= e($ergebnis->seiten()) ?>, je Seite <?= e(\App\Domain\MitgliederFilter::SEITENGROESSE) ?> Mitglieder</p>
+            <p class="blaettern-stand">Seite <?= e($ergebnis->seite) ?> von <?= e($ergebnis->seiten()) ?>, je Seite <?= e($filter->anzahl) ?> Mitglieder</p>
             <?php if ($ergebnis->hatNaechste()): ?>
                 <a class="knopf" <?= $ergebnisLink($url(['seite' => $ergebnis->seite + 1]), 'innerHTML show:top') ?>>Nächste Seite</a>
             <?php else: ?>

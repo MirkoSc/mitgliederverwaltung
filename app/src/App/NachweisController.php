@@ -216,7 +216,7 @@ final readonly class NachweisController
     {
         $this->dienste->session->flash($meldung, $art);
 
-        return Response::redirect(MitgliedController::adresse($mitgliedId));
+        return Response::redirect(MitgliedController::adresse($mitgliedId, 'nachweise'));
     }
 
     private function gibtEsNicht(): Response

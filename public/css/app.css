@@ -1386,18 +1386,30 @@ textarea:disabled {
     margin: 0;
 }
 
+/* "Schließen" in the head of the opened member: on the PC the list stays
+   beside it, so this - not "Zurück zur Liste" - closes the member. */
+.detail-schliessen {
+    display: none;
+}
+
 @media (min-width: 64rem) {
-    :root:not(.modus-barrierefrei) .geteilt {
+    /* Side by side only while a member is open; without one the list has
+       the whole width. */
+    :root:not(.modus-barrierefrei) .geteilt-mit-detail {
         grid-template-columns: minmax(22rem, 2fr) minmax(0, 3fr);
     }
 
-    :root:not(.modus-barrierefrei) .geteilt-mit-detail .geteilt-liste,
-    :root:not(.modus-barrierefrei) .geteilt:not(.geteilt-mit-detail) .geteilt-detail {
+    :root:not(.modus-barrierefrei) .geteilt-mit-detail .geteilt-liste {
         display: block;
     }
 
     :root:not(.modus-barrierefrei) .geteilt .zurueck {
         display: none;
+    }
+
+    :root:not(.modus-barrierefrei) .detail-schliessen {
+        display: inline-flex;
+        margin-left: auto;
     }
 
     /* Next to the detail the list is narrow: only its main columns. */

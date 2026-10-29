@@ -38,18 +38,18 @@ final readonly class MitgliederListeRepository
         $stmt->execute($werte);
         $gesamt = (int) $stmt->fetchColumn();
 
-        $seiten = max(1, (int) ceil($gesamt / MitgliederFilter::SEITENGROESSE));
+        $proSeite = $filter->anzahl; // 0 = all on one page
+        $seiten = $proSeite === 0 ? 1 : max(1, (int) ceil($gesamt / $proSeite));
         $seite = min($filter->seite, $seiten);
 
         $stmt = $this->pdo->prepare(sprintf(
             'SELECT m.id, m.mitgliedsnummer, m.nachname, m.vorname, m.plz, m.ort, m.aktiv, m.austrittsdatum,
                     COALESCE(b.name, \'\') AS beitragsart
              FROM mitglied m LEFT JOIN beitragsart b ON b.id = m.beitragsart_id%s
-             ORDER BY %s LIMIT %d OFFSET %d',
+             ORDER BY %s%s',
             $bedingung,
             self::reihenfolge($filter),
-            MitgliederFilter::SEITENGROESSE,
-            ($seite - 1) * MitgliederFilter::SEITENGROESSE,
+            $proSeite === 0 ? '' : sprintf(' LIMIT %d OFFSET %d', $proSeite, ($seite - 1) * $proSeite),
         ));
         $stmt->execute($werte);
         $zeilen = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -75,6 +75,7 @@ final readonly class MitgliederListeRepository
             ),
             $gesamt,
             $seite,
+            $proSeite,
         );
     }
 

@@ -32,7 +32,7 @@
         <form class="suche" id="mitglieder-form" method="post" action="<?= e($formUrl) ?>" role="search"
               hx-post="<?= e($formUrl) ?>" hx-target="#mitglieder-ergebnis" hx-swap="innerHTML"
               hx-indicator="#suche-laedt" hx-sync="this:replace"
-              hx-trigger="input changed delay:300ms from:#suche-text, change from:#filter-abteilung, change from:#filter-status, change from:#filter-beitragsart, change from:#filter-ehemalige, submit">
+              hx-trigger="input changed delay:300ms from:#suche-text, change from:#filter-abteilung, change from:#filter-status, change from:#filter-beitragsart, change from:#filter-ehemalige, change from:#filter-anzahl, submit">
             <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
             <div class="feld suche-feld">
                 <label for="suche-text">Mitglied suchen</label>
@@ -63,6 +63,14 @@
                         <option value="">Alle Beitragsarten</option>
                         <?php foreach ($beitragsarten as $beitragsart): ?>
                             <option value="<?= e($beitragsart->id) ?>"<?= $beitragsart->id === $filter->beitragsartId ? ' selected' : '' ?>><?= e($beitragsart->name . ($beitragsart->aktiv ? '' : ' (nicht mehr aktiv)')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="feld">
+                    <label for="filter-anzahl">Je Seite</label>
+                    <select id="filter-anzahl" name="anzahl">
+                        <?php foreach (\App\Domain\MitgliederFilter::ANZAHLEN as $anzahl): ?>
+                            <option value="<?= e($anzahl === 0 ? 'alle' : $anzahl) ?>"<?= $anzahl === $filter->anzahl ? ' selected' : '' ?>><?= e($anzahl === 0 ? 'Alle' : $anzahl) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

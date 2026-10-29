@@ -1,8 +1,8 @@
 <?php
 
 /**
- * The section "Familie" of an opened member (App\App\Mitglied\
- * FamilieAbschnitt, docs/spec/07-mitglieder.md section 3).
+ * The tab "Familie" of an opened member (App\App\Mitglied\
+ * FamilieReiter, docs/spec/07-mitglieder.md section 3).
  *
  * @var \App\Domain\Mitglied|null $mitglied
  * @var \App\Domain\Familie|null $familie
@@ -22,7 +22,7 @@ $id = (int) $mitglied->id;
 $rolleAktuell = $mitglied->familieRolle;
 ?>
 <section class="familie" aria-labelledby="familie-titel">
-    <h2 id="familie-titel">Familie</h2>
+    <h2 id="familie-titel" class="nur-lesehilfe">Familie</h2>
     <?php if ($familie === null): ?>
         <p>Keine Familie.</p>
         <?php if ($darfPflegen): ?>

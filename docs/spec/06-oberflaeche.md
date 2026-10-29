@@ -39,13 +39,19 @@ liegt auf **einer** Seite und wird dort umgeschaltet statt verlinkt.
 1. **Mitglieder** (Startseite)
    - Suchfeld (Name, Mitgliedsnummer, Ort) mit Live-Ergebnis, darunter
      die Liste; einfache Filter (Abteilung, aktiv/passiv, Beitragsart,
-     Ehemalige anzeigen).
+     Ehemalige anzeigen) und „Je Seite" (50, 100, 200, Alle).
    - Klick auf ein Mitglied öffnet es **auf derselben Seite** (am PC
      rechts neben der Liste, am Handy als eigene Ansicht mit „Zurück").
-   - Mitglied mit Reitern: **Daten** (alle Felder, ein Formular),
-     **Beiträge** (Jahresbeiträge, Status – Admin), **Verlauf**
-     (Versionen, zurückholen). Hinweise („Rentner unter 67") stehen oben
-     im Mitglied.
+     Ohne geöffnetes Mitglied hat die Liste am PC die ganze Breite; am PC
+     schließen „Schließen" im Kopf des Mitglieds oder ein zweiter Klick
+     auf seinen Namen in der Liste es wieder.
+   - Mitglied mit Reitern in dieser Reihenfolge: **Daten** (alle Felder,
+     ein Formular), **Familie**, **Beiträge** (Jahresbeiträge, Status –
+     Admin), **Nachweise**, **Verlauf** (Versionen, zurückholen).
+     Hinweise („Rentner unter 67") stehen oben im Mitglied, über den
+     Reitern; beim Hinweis „Andere Anschrift" steht die Anschrift des
+     Zahlers daneben, und ein Knopf trägt sie ins Formular „Daten" ein
+     (gespeichert erst mit dem Formular).
    - „Neues Mitglied" öffnet dasselbe Formular leer.
    - Familien werden im Mitglied gepflegt (Familie wählen/anlegen, Rolle).
 2. **Listen** – eine Seite, oben eine Auswahl:
@@ -71,7 +77,8 @@ abgelehnt (02 §6).
 
 - Listen: Tabelle am PC, Karten untereinander am Handy; Sortierung durch
   Klick auf die Spaltenüberschrift; bei 700 Mitgliedern genügt Blättern
-  in Seiten zu 50.
+  in Seiten zu 50; die Mitgliederliste bietet dazu „Je Seite" bis „Alle"
+  (Parameter `anzahl`, `alle` = eine Seite).
 - Formulare: einspaltig am Handy, zweispaltig am PC; Speichern-Knopf
   immer sichtbar; Hinweise erscheinen nach dem Speichern oben, blockieren
   nie.

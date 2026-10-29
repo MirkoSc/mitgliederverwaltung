@@ -194,7 +194,7 @@ final class MitgliederSeiteTest extends AppTestCase
 
         $antwort = $this->htmx(['text' => 'muster', 'ehemalige' => '0'], 'mitglieder-bereich', ['mitglied' => (string) $id]);
 
-        self::assertStringContainsString('hx-push-url="/app/mitglieder?mitglied=' . $id . '"', $antwort->body);
+        self::assertStringContainsString('hx-push-url="/app/mitglieder?mitglied=' . $id . '&amp;reiter=familie"', $antwort->body);
         self::assertStringNotContainsString('hx-push-url="/app/mitglieder?mitglied=' . $id . '&amp;text', $antwort->body);
         self::assertStringNotContainsString('text=muster', $antwort->body);
     }
@@ -277,5 +277,94 @@ final class MitgliederSeiteTest extends AppTestCase
 
         self::assertStringContainsString('<html lang="de" class="modus-barrierefrei">', $seite);
         self::assertStringContainsString('class="nebenspalte"', $seite, 'the side columns are marked; the stylesheet drops them');
+    }
+
+    public function testWithoutAMemberTheListHasTheWholeWidth(): void
+    {
+        $this->als(Rolle::Vorstand);
+
+        $seite = $this->get('/app/mitglieder')->body;
+
+        self::assertStringContainsString('<div class="geteilt" id="mitglieder-bereich">', $seite);
+        self::assertStringNotContainsString('class="detail-kopf"', $seite, 'no empty detail beside the list');
+    }
+
+    public function testTheOpenMemberCanBeClosedAgain(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $id = $this->idVon(1001);
+
+        $seite = $this->get('/app/mitglieder', ['mitglied' => (string) $id])->body;
+
+        // "Schließen" in the head, and a second click on the marked row.
+        self::assertMatchesRegularExpression('#class="knopf knopf-still detail-schliessen" href="/app/mitglieder"[^>]*>Schließen</a>#', $seite);
+        self::assertMatchesRegularExpression('#<a href="/app/mitglieder"[^>]*aria-current="true">Mustermann, Erika</a>#', $seite);
+        self::assertMatchesRegularExpression('#<a href="/app/mitglieder\?mitglied=' . $this->idVon(1002) . '"[^>]*>Beispiel, Karl</a>#', $seite, 'the others still open');
+    }
+
+    public function testTheTabsAreDatenFamilieBeitraegeNachweiseVerlauf(): void
+    {
+        $id = (string) $this->idVon(1001);
+        $reiter = static function (string $seite): array {
+            preg_match('#<nav class="reiter".*?</nav>#s', $seite, $nav);
+            preg_match_all('#>([^<>]+)</a></li>#', $nav[0] ?? '', $titel);
+
+            return $titel[1];
+        };
+
+        $this->als(Rolle::Admin);
+        self::assertSame(['Daten', 'Familie', 'Beiträge', 'Nachweise', 'Verlauf'], $reiter($this->get('/app/mitglieder', ['mitglied' => $id])->body));
+
+        $this->als(Rolle::Vorstand);
+        $seite = $this->get('/app/mitglieder', ['mitglied' => $id])->body;
+        self::assertSame(['Daten', 'Familie', 'Nachweise', 'Verlauf'], $reiter($seite));
+        self::assertStringNotContainsString('id="familie-titel"', $seite, 'the family is no longer above the tabs');
+
+        $familie = $this->get('/app/mitglieder', ['mitglied' => $id, 'reiter' => 'familie'])->body;
+        self::assertStringContainsString('id="familie-titel"', $familie);
+        self::assertStringContainsString('Keine Familie.', $familie);
+        self::assertStringContainsString('id="nachweise-titel"', $this->get('/app/mitglieder', ['mitglied' => $id, 'reiter' => 'nachweise'])->body);
+    }
+
+    public function testTheAddressHintShowsThePayersAddressAndOffersToCopyIt(): void
+    {
+        $repo = new MitgliedRepository($this->pdo);
+        $familie = new \App\Repository\FamilieRepository($this->pdo)->anlegen('Familie Mustermann');
+        $zahler = $repo->speichern(new Mitglied(1010, 'Mustermann', vorname: 'Max', strasse: 'Hauptstraße 5', plz: '54321', ort: 'Zahlerdorf',
+            familieId: $familie->id, familieRolle: \App\Domain\FamilienRolle::Zahler), VersionsAnlass::angelegt(), 1)->mitglied;
+        $kind = $repo->speichern(new Mitglied(1011, 'Mustermann', vorname: 'Mia', strasse: 'Nebenweg 2', plz: '12345', ort: 'Anderswo',
+            familieId: $familie->id, familieRolle: \App\Domain\FamilienRolle::Kind), VersionsAnlass::angelegt(), 1)->mitglied;
+        self::assertNotNull($zahler->id);
+        $this->als(Rolle::Vorstand);
+
+        $daten = $this->get('/app/mitglieder', ['mitglied' => (string) $kind->id])->body;
+        self::assertStringContainsString('Anschrift des Zahlers (Max Mustermann):', $daten);
+        self::assertStringContainsString('Hauptstraße 5', $daten);
+        self::assertStringContainsString('54321 Zahlerdorf', $daten);
+        self::assertMatchesRegularExpression('#data-anschrift-uebernehmen\s+data-strasse="Hauptstraße 5" data-plz="54321"\s+data-ort="Zahlerdorf" data-land="D"#', $daten);
+        self::assertStringContainsString('src="/js/anschrift.js', $daten);
+        self::assertSame('Nebenweg 2', $repo->finde((int) $kind->id)?->strasse, 'nothing is saved by showing it');
+
+        // On another tab the form is not there: the button leads to "Daten".
+        $familieReiter = $this->get('/app/mitglieder', ['mitglied' => (string) $kind->id, 'reiter' => 'familie'])->body;
+        self::assertStringNotContainsString('data-anschrift-uebernehmen', $familieReiter);
+        self::assertStringContainsString('reiter=daten"', $familieReiter);
+        self::assertStringContainsString('Zu den Daten, um die Anschrift zu übernehmen', $familieReiter);
+
+        // The payer gets no such hint about himself.
+        self::assertStringNotContainsString('Anschrift des Zahlers', $this->get('/app/mitglieder', ['mitglied' => (string) $zahler->id])->body);
+    }
+
+    public function testThePageSizeIsADropdownAndKeptInTheLinks(): void
+    {
+        $this->als(Rolle::Vorstand);
+
+        $seite = $this->get('/app/mitglieder', ['anzahl' => 'alle'])->body;
+
+        self::assertStringContainsString('<select id="filter-anzahl" name="anzahl">', $seite);
+        self::assertStringContainsString('<option value="alle" selected>Alle</option>', $seite);
+        self::assertStringContainsString('<option value="50">50</option>', $seite);
+        self::assertStringContainsString('change from:#filter-anzahl', $seite);
+        self::assertStringContainsString('href="/app/mitglieder?anzahl=alle&amp;mitglied=' . $this->idVon(1001) . '"', $seite, 'opening a member keeps the size');
     }
 }

@@ -64,4 +64,4 @@ $rollenwahl = static function (string $feldId) use ($rollen): string {
     <button type="submit" class="knopf knopf-haupt">Familie anlegen</button>
 </form>
 
-<p><a class="knopf knopf-still" href="<?= e(MitgliedController::adresse($id)) ?>">Zurück zum Mitglied</a></p>
+<p><a class="knopf knopf-still" href="<?= e(MitgliedController::adresse($id, 'familie')) ?>">Zurück zum Mitglied</a></p>
