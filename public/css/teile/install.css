@@ -1,0 +1,158 @@
+/* The installer /install (issue #3, docs/spec/04-installation-und-update.md
+   section 2). Tokens from app.css only.
+
+   One column like the login, a numbered list of the steps (they are a
+   sequence), and one element that stands out on purpose: the card with the
+   Sicherungsschlüssel, which is the thing to print and keep. */
+
+.install {
+    max-width: 40rem;
+}
+
+.install-kopf h1 {
+    margin-top: 0;
+}
+
+.install-marke {
+    margin: 0 0 var(--abstand-1);
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+/* ------------------------------------------------------ Where the run is */
+
+.install-schritte {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--abstand-2) var(--abstand-4);
+    margin: 0 0 var(--abstand-5);
+    padding: 0;
+    list-style: none;
+    counter-reset: install-schritt;
+    font-size: var(--schrift-klein);
+    color: var(--farbe-gedaempft);
+}
+
+.install-schritte li {
+    display: flex;
+    align-items: center;
+    gap: var(--abstand-2);
+    counter-increment: install-schritt;
+}
+
+.install-schritte li::before {
+    content: counter(install-schritt);
+    display: inline-grid;
+    place-items: center;
+    width: 1.75em;
+    height: 1.75em;
+    border: 1px solid var(--farbe-rand-feld);
+    border-radius: 50%;
+    font-variant-numeric: tabular-nums;
+}
+
+.install-schritte .install-schritt-erledigt::before {
+    content: "✓";
+    border-color: var(--farbe-ok);
+    color: var(--farbe-ok);
+}
+
+.install-schritte .install-schritt-aktuell {
+    color: var(--farbe-text);
+    font-weight: 650;
+}
+
+.install-schritte .install-schritt-aktuell::before {
+    border-color: var(--farbe-haupt);
+    background: var(--farbe-haupt);
+    color: var(--farbe-haupt-text);
+}
+
+.modus-barrierefrei .install-schritte li::before {
+    border-width: 2px;
+}
+
+/* Choice between fresh install and restore: each option a full line. */
+.install-wahl .feld-haken {
+    align-items: flex-start;
+    padding: var(--abstand-2) 0;
+}
+
+.install-wahl input {
+    margin-top: 0.2em;
+}
+
+.install-neu,
+.install-ueberspringen {
+    margin-top: var(--abstand-3);
+}
+
+/* ------------------------------------------------- The Sicherungsschlüssel */
+
+.sicherungskarte {
+    margin: var(--abstand-5) 0;
+    padding: var(--abstand-4) var(--abstand-5) var(--abstand-5);
+    border: 2px solid var(--farbe-text);
+    border-top: 0.5rem solid var(--farbe-markierung);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+}
+
+.sicherungskarte figcaption {
+    font-weight: 650;
+}
+
+.sicherungskarte-datum {
+    font-weight: 400;
+    color: var(--farbe-gedaempft);
+}
+
+/* Large enough to copy by hand without a slip: Atkinson Hyperlegible tells
+   Il1 and 0O apart, groups of four keep the place while copying. */
+.sicherungskarte-schluessel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--abstand-2) var(--abstand-4);
+    margin: var(--abstand-4) 0;
+    font-size: 1.5em;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums slashed-zero;
+    overflow-wrap: anywhere;
+}
+
+.sicherungskarte-hinweis {
+    margin: 0;
+    font-size: var(--schrift-klein);
+}
+
+.install-cron-url code {
+    display: block;
+    padding: var(--abstand-3);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius-klein);
+    background: var(--farbe-flaeche-2);
+    overflow-wrap: anywhere;
+}
+
+/* Progress of the restore chain. */
+.install-verlauf progress {
+    display: block;
+    width: 100%;
+    height: 0.75rem;
+    margin-bottom: var(--abstand-2);
+    accent-color: var(--farbe-haupt);
+}
+
+.modus-barrierefrei .install-verlauf progress {
+    height: 1.5rem;
+}
+
+/* Printing the key page prints the card and nothing else. */
+@media print {
+    body:has(.sicherungskarte) > :not(main),
+    body:has(.sicherungskarte) main > :not(.install),
+    .install:has(.sicherungskarte) > :not(.sicherungskarte) {
+        display: none !important;
+    }
+}

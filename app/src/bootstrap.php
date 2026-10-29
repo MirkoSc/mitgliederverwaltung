@@ -59,4 +59,4 @@ $configFile = getenv('APP_CONFIG_FILE') ?: $paths->configFile();
 
 return is_file($configFile)
     ? Anwendung::kernel(new Dienste($paths, Config::fromFile($configFile), $version, $view, new Session(), $logger))
-    : Anwendung::ohneKonfiguration($paths->publicDir(), $view, $logger);
+    : Anwendung::installation($paths, $view, $logger);

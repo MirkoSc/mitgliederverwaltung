@@ -65,16 +65,16 @@ final class BootstrapTest extends TestCase
         self::assertSame('0', ini_get('zend.exception_string_param_max_len'));
     }
 
-    /** No config.php = not installed: nothing but a notice (01 section 3). */
-    public function testWithoutConfigEveryPageSaysItIsNotSetUp(): void
+    /** No config.php = not installed: every address leads to the installer (01 section 3). */
+    public function testWithoutConfigEveryPageLeadsToTheInstaller(): void
     {
         putenv('APP_CONFIG_FILE=' . $this->config . '-fehlt');
 
         $antwort = $this->bootstrap()->handle(new Request(HttpMethod::Get, '/app/mitglieder'));
 
         self::assertInstanceOf(Response::class, $antwort);
-        self::assertSame(503, $antwort->status);
-        self::assertStringContainsString('Noch nicht eingerichtet', $antwort->body);
+        self::assertSame(302, $antwort->status);
+        self::assertSame('/install', $antwort->headers['Location'] ?? null);
     }
 
     public function testWithConfigTheApplicationAnswers(): void
