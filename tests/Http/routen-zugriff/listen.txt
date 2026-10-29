@@ -2,3 +2,4 @@
 # declares its own right inside (App\Listen\Liste::recht()).
 GET /app/listen -> listen.sehen
 GET /app/listen/{liste:[a-z0-9-]+} -> listen.sehen
+POST /app/listen/{liste:[a-z0-9-]+}/export -> listen.sehen
