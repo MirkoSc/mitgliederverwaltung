@@ -1,0 +1,6 @@
+/* Settings sections with row lists: Abteilungen, Funktionen, Beitragsarten,
+   runde Geburtstage, Ehrungsstufen (issue #17). Tokens from app.css only. */
+
+.formular-liste {
+    max-width: 32rem;
+}
