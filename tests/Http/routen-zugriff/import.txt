@@ -1,9 +1,13 @@
 # app/routes/import.php - settings section Import (10 section 1): upload,
-# preview, step chain, cancel, empty the stock. admin.import only; the chain
+# preview, step chain, cancel, empty the stock; the reconciliation (10
+# section 4) with its own chain. admin.import only; the chain
 # is JSON.
 POST /admin/import/hochladen -> admin.import
 POST /admin/import/starten -> admin.import (api)
 POST /admin/import/schritt -> admin.import (api)
 POST /admin/import/verwerfen -> admin.import
+POST /admin/import/abgleich/starten -> admin.import (api)
+POST /admin/import/abgleich/schritt -> admin.import (api)
+POST /admin/import/abgleich/verwerfen -> admin.import
 GET /admin/import/leeren -> admin.import
 POST /admin/import/leeren -> admin.import

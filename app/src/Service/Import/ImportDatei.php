@@ -16,12 +16,14 @@ final readonly class ImportDatei
      * @param list<ImportFehler> $fehler
      * @param array<string, string> $familien family key => name
      * @param list<string> $unbekannteSpalten columns the format does not know (ignored)
+     * @param list<string> $spalten the columns of the format the file has; [] = not known
      */
     public function __construct(
         public array $eintraege,
         public array $fehler,
         public array $familien,
         public array $unbekannteSpalten = [],
+        public array $spalten = [],
     ) {
     }
 

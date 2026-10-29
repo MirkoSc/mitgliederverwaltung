@@ -189,7 +189,8 @@ Append-only `audit_log` mit Hash-Kette (`prev_hash`, `hash`), IP nur als
 HMAC unter dem Server-Schlüssel. Protokolliert: Anmeldungen, Benutzer- und
 Rollenänderungen, Backup, Update, Restore, Export, Import, Einzug
 erzeugt/bestätigt/verworfen, Version zurückgeholt, Mitglied gelöscht,
-Mitgliederbestand geleert (Probelauf des Imports, 10 §1).
+Mitgliederbestand geleert (Probelauf des Imports, 10 §1), Abgleich
+durchgeführt (10 §4).
 Ansicht im Admin (Seite `/admin/audit`, verlinkt aus den Einstellungen) mit
 Kettenprüfung bei jedem Aufruf. Schnittstelle für alle Bereiche:
 `$dienste->audit()->protokollieren(AuditAktion::…, $userId, …)`. Nicht

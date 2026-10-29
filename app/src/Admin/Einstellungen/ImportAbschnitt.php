@@ -7,29 +7,34 @@ namespace App\Admin\Einstellungen;
 use App\Dienste;
 use App\Domain\JobStatus;
 use App\Domain\Permission;
+use App\Service\Import\Abgleich;
 use App\Service\Import\ErstImport;
 
 /**
- * Settings section Import (docs/spec/10-import.md section 1). Four states,
- * told apart here so the template only shows:
+ * Settings section Import (docs/spec/10-import.md sections 1 and 4). The
+ * states, told apart here so the template only shows:
  *  - `hochladen`: the stock is empty and nothing is uploaded - the upload form;
  *  - `vorschau`: a file is uploaded - the preview with errors and hints;
  *  - `laeuft`: the chain was started - progress, "fortsetzen" after an interruption;
- *  - `bestand`: members exist - what the last import did, "Bestand leeren".
- * The forms post to app/routes/import.php; the step chain runs in
- * public/js/import.js.
+ *  - `bestand`: members exist - the upload form for a reconciliation, what
+ *    the last import and reconciliation did, "Bestand leeren";
+ *  - `abgleich`: a file for a reconciliation is uploaded - the merge view;
+ *  - `abgleich-laeuft`: the reconciliation chain was started.
+ * The forms post to app/routes/import.php; the step chains run in
+ * public/js/import.js and public/js/abgleich.js.
  */
 final readonly class ImportAbschnitt implements Abschnitt
 {
     public function __construct(
         private ErstImport $import,
+        private Abgleich $abgleich,
         private string $version,
     ) {
     }
 
     public static function erzeugen(Dienste $dienste): self
     {
-        return new self(ErstImport::aus($dienste), $dienste->version->value);
+        return new self(ErstImport::aus($dienste), Abgleich::aus($dienste), $dienste->version->value);
     }
 
     public function schluessel(): string
@@ -77,7 +82,7 @@ final readonly class ImportAbschnitt implements Abschnitt
             return [...$grund, 'zustand' => 'laeuft'];
         }
         if (!$this->import->bestandIstLeer()) {
-            return [...$grund, 'zustand' => 'bestand'];
+            return $this->abgleichDaten($grund);
         }
         if ($phase === 'vorschau') {
             $vorschau = $this->import->vorschau();
@@ -85,6 +90,39 @@ final readonly class ImportAbschnitt implements Abschnitt
                 return [...$grund, 'zustand' => 'vorschau', 'vorschau' => $vorschau];
             }
             // The file is gone: the upload form with an explanation.
+            return [...$grund, 'dateiFehlt' => true];
+        }
+
+        return $grund;
+    }
+
+    /**
+     * The states of a stock that is not empty: the reconciliation.
+     *
+     * @param array<string, mixed> $grund
+     * @return array<string, mixed>
+     */
+    private function abgleichDaten(array $grund): array
+    {
+        $job = $this->abgleich->aktuellerJob();
+        $phase = (string) ($job?->state['phase'] ?? '');
+        $grund = [
+            ...$grund,
+            'zustand' => 'bestand',
+            'abgleichStand' => $job?->state ?? [],
+            'abgleichZuletzt' => $job !== null && $job->status === JobStatus::Fertig ? $job : null,
+            'abgleichVorschau' => null,
+        ];
+
+        if ($phase === 'abgleich') {
+            return [...$grund, 'zustand' => 'abgleich-laeuft'];
+        }
+        if ($phase === 'vorschau') {
+            $vorschau = $this->abgleich->vorschau();
+            if ($vorschau !== null) {
+                return [...$grund, 'zustand' => 'abgleich', 'abgleichVorschau' => $vorschau, 'heute' => new \DateTimeImmutable('today')];
+            }
+
             return [...$grund, 'dateiFehlt' => true];
         }
 

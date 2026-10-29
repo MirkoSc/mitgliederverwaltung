@@ -18,6 +18,7 @@ use App\Repository\FamilieRepository;
 use App\Repository\JahresbeitragRepository;
 use App\Repository\JobRepository;
 use App\Repository\MitgliedRepository;
+use App\Service\Import\Abgleich;
 use App\Service\Import\ErstImport;
 use App\Service\Storage\BlobService;
 use App\Tests\Support\AppTestCase;
@@ -355,13 +356,16 @@ final class ErstImportTest extends AppTestCase
     {
         $this->als(Rolle::Admin);
         $this->repo()->speichern(new Mitglied(1, 'Vorhanden'), VersionsAnlass::angelegt(), null);
+        self::assertStringContainsString('nicht leer', $this->get('/admin')->body);
 
         $antwort = $this->hochladen($this->csv(3));
 
+        // The file goes to the reconciliation (10 section 4) instead.
         self::assertWeiterleitungNach('/admin#import', $antwort);
-        self::assertNull($this->import()->aktuellerJob(), 'no upload is kept');
+        self::assertNull($this->import()->aktuellerJob(), 'no first import is started');
+        self::assertNotNull(Abgleich::aus($this->dienste)->aktuellerJob());
         self::assertSame(1, $this->anzahlZeilen('mitglied'));
-        self::assertStringContainsString('nicht leer', $this->get('/admin')->body);
+        self::assertSame(409, $this->post('/admin/import/starten')->status);
     }
 
     public function testAMemberEnteredAfterTheUploadStopsTheStart(): void
