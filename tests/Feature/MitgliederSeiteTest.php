@@ -209,9 +209,11 @@ final class MitgliederSeiteTest extends AppTestCase
         self::assertStringContainsString('class="geteilt geteilt-mit-detail"', $seite);
         self::assertStringContainsString('<h2>Erika Mustermann</h2>', $seite);
         self::assertStringContainsString('Nr. 1001', $seite);
-        self::assertStringContainsString('Beispielweg 1, 12345 Beispielstadt', $seite);
+        self::assertStringContainsString('aria-current="page">Daten<', $seite, 'the tab "Daten" is open');
+        self::assertStringContainsString('id="mitglied-formular"', $seite);
         self::assertStringContainsString('aria-current="true"', $seite, 'the list marks the opened member');
         self::assertStringContainsString('Zurück zur Liste', $seite);
+        self::assertStringContainsString('hx-push-url="/app/mitglieder"', $seite, 'back to the list leaves the member out of the history address');
     }
 
     public function testAClickOnAMemberSwapsTheWholeArea(): void

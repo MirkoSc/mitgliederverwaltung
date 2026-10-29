@@ -21,12 +21,10 @@
 
 use App\Domain\MitgliederSortierung;
 
-// Attributes of a link that swaps the result list, or the whole area.
+// Attributes of a link that swaps the result list only (paging).
 $ergebnisLink = static fn(string $ziel, string $swap = 'innerHTML'): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
     . '" hx-include="#mitglieder-form" hx-target="#mitglieder-ergebnis" hx-swap="' . $swap . '"';
-// The address in the history is the GET one: it never holds the search text.
-$bereichLink = static fn(string $ziel, string $swap = 'outerHTML show:window:top'): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
-    . '" hx-include="#mitglieder-form" hx-target="#mitglieder-bereich" hx-swap="' . $swap . '" hx-push-url="' . e($ziel) . '"';
+$bereichLink = require __DIR__ . '/bereich-link.php';
 
 $kopf = static function (MitgliederSortierung $spalte, string $titel, string $klasse = '') use ($filter, $url, $bereichLink): string {
     $sortiert = $filter->sortierung === $spalte;

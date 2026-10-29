@@ -4,15 +4,12 @@
  * The opened member beside the list (design system "Liste neben
  * Mitglied"). Hints and sections on top, then the tabs - all of them
  * extensions found by file name (App\App\Mitglied\Reiter, ...Abschnitt),
- * which issue #19 and the issues after it fill.
- *
- * As long as no tab exists, a short read-only summary stands in its place.
+ * which issue #19 and the issues after it fill. The "Daten" tab always
+ * exists, so there is no tab-less fallback.
  *
  * @var \App\Domain\Mitglied|null $mitglied
  * @var \Closure $url
- * @var list<\App\Domain\Abteilung> $abteilungen
- * @var list<\App\Domain\Beitragsart> $beitragsarten
- * @var list<\App\App\Mitglied\Reiter>|null $reiter
+ * @var list<\App\App\Mitglied\Reiter> $reiter
  * @var string|null $gewaehlterReiter
  * @var string|null $reiterInhalt
  * @var list<string>|null $abschnitte
@@ -20,8 +17,7 @@
  * @var string|null $statusKlasse
  */
 
-$bereichLink = static fn(string $ziel): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
-    . '" hx-include="#mitglieder-form" hx-target="#mitglieder-bereich" hx-swap="outerHTML show:window:top"';
+$bereichLink = require __DIR__ . '/bereich-link.php';
 ?>
 <div class="geteilt-detail">
     <?php if ($mitglied === null): ?>
@@ -40,47 +36,13 @@ $bereichLink = static fn(string $ziel): string => 'href="' . e($ziel) . '" hx-po
             <?= $abschnitt ?>
         <?php endforeach; ?>
 
-        <?php if ($reiter !== []): ?>
-            <nav class="reiter" aria-label="Bereiche des Mitglieds">
-                <ul>
-                    <?php foreach ($reiter as $eintrag): ?>
-                        <li><a <?= $bereichLink($url(['reiter' => $eintrag->schluessel()])) ?><?= $eintrag->schluessel() === $gewaehlterReiter ? ' aria-current="page"' : '' ?>><?= e($eintrag->titel()) ?></a></li>
-                    <?php endforeach; ?>
-                </ul>
-            </nav>
-            <?= $reiterInhalt ?>
-        <?php else: ?>
-            <?php
-            $namen = static function (array $liste, array $ids): string {
-                $treffer = [];
-                foreach ($liste as $eintrag) {
-                    if (in_array($eintrag->id, $ids, true)) {
-                        $treffer[] = $eintrag->name;
-                    }
-                }
-
-                return implode(', ', $treffer);
-            };
-            $anschrift = trim($mitglied->strasse . ', ' . trim($mitglied->plz . ' ' . $mitglied->ort), ', ');
-            $kontakt = implode(', ', array_filter([$mitglied->telefon, $mitglied->handy, $mitglied->email], static fn(string $w): bool => $w !== ''));
-            $angaben = [
-                'Anschrift' => $anschrift,
-                'Geburtsdatum' => datum($mitglied->geburtsdatum),
-                'Kontakt' => $kontakt,
-                'Abteilung' => $namen($abteilungen, $mitglied->abteilungIds),
-                'Beitragsart' => $namen($beitragsarten, $mitglied->beitragsartId === null ? [] : [$mitglied->beitragsartId]),
-                'Eintritt' => datum($mitglied->eintrittsdatum),
-                'Austritt' => datum($mitglied->austrittsdatum),
-            ];
-            ?>
-            <dl class="angaben">
-                <?php foreach ($angaben as $name => $wert): ?>
-                    <?php if ($wert !== ''): ?>
-                        <dt><?= e($name) ?></dt>
-                        <dd><?= e($wert) ?></dd>
-                    <?php endif; ?>
+        <nav class="reiter" aria-label="Bereiche des Mitglieds">
+            <ul>
+                <?php foreach ($reiter as $eintrag): ?>
+                    <li><a <?= $bereichLink($url(['reiter' => $eintrag->schluessel()])) ?><?= $eintrag->schluessel() === $gewaehlterReiter ? ' aria-current="page"' : '' ?>><?= e($eintrag->titel()) ?></a></li>
                 <?php endforeach; ?>
-            </dl>
-        <?php endif; ?>
+            </ul>
+        </nav>
+        <?= $reiterInhalt ?>
     <?php endif; ?>
 </div>
