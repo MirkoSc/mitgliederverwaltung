@@ -134,7 +134,7 @@ Bis zu neun Issues werden gleichzeitig von getrennten Agenten bearbeitet
   | Cron-Aufgaben | eigene Klasse `app/src/Service/Cron/<Name>Task.php` (implementiert `CronTask`), automatisch gefunden (01 §5) |
   | Dienste | was ein Bereich braucht, baut er selbst aus `App\Dienste` (`pdo()`, `einstellungen()`, `jobs()`, `view`, `session` …) und teilt es je Request über `$dienste->dienst(Klasse::class, fn)` – keine zentrale Verdrahtung |
   | CSS | Designsystem `public/css/app.css` gehört #9; Ergänzungen als eigene Datei `public/css/teile/<name>.css` (automatisch eingebunden, nach `app.css`) |
-  | JS | eigene Datei `public/js/<name>.js`; Seiten binden sie über `scripts` im Render-Aufruf ein |
+  | JS | eigene Datei `public/js/<name>.js`; Seiten binden sie über `scripts` im Render-Aufruf ein. Alle Deklarationen in **einer Funktion** (`(function () { … })();`) – die Einstellungsseite lädt mehrere Skripte nebeneinander, ein doppeltes `const` auf oberster Ebene bricht das zweite ab (`tests/js/skripte-nebeneinander.test.js`) |
   | Migrationen | nur im zugewiesenen Nummernbereich des Issues (`docs/ARBEITSPLAN.md`); ohne Bereich `1NN` mit NN = Issue-Nummer. Der Runner sortiert numerisch, erlaubt Lücken und holt später gemergte kleinere Nummern nach (03 §4). |
 
   Alle Erweiterungen (Abschnitt, Liste, Reiter) teilen
