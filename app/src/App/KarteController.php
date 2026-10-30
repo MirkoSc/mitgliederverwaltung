@@ -75,6 +75,8 @@ final readonly class KarteController
             'darfErmitteln' => $konto?->rolle->darf(Permission::AdminSystem) === true,
             'kachelUrl' => self::PFAD_KACHEL . '/{z}/{x}/{y}.png',
             'mitgliedPfad' => Navigation::MITGLIEDER,
+            // "Auf der großen Karte zeigen" at a member (issue #106): its place is centred.
+            'fokusMitglied' => self::id($request->query['mitglied'] ?? null),
             'scripts' => ['/js/vendor/leaflet/leaflet.js', '/js/karte.js'],
             'styles' => ['/js/vendor/leaflet/leaflet.css'],
         ], Area::App));

@@ -11,7 +11,9 @@ namespace App\Service\Karte;
  *
  * A structured query (street/postalcode/city/countrycodes) with limit 1,
  * the town only up to its first minus (Anschrift::ortFuerSuche()):
- * the first hit is good enough for a dot on a club's map. The User-Agent
+ * the first hit is good enough for a dot on a club's map. A search address
+ * given by hand (issue #106) goes as typed ($wortgetreu): whoever typed a
+ * minus there meant it. The User-Agent
  * names the installation, as the usage policy of Nominatim demands.
  */
 final readonly class Geocoder
@@ -36,7 +38,7 @@ final readonly class Geocoder
     {
     }
 
-    public function url(Anschrift $anschrift): string
+    public function url(Anschrift $anschrift, bool $wortgetreu = false): string
     {
         $abfrage = ['format' => 'jsonv2', 'limit' => '1'];
         if ($anschrift->strasse !== '') {
@@ -46,7 +48,7 @@ final readonly class Geocoder
             $abfrage['postalcode'] = $anschrift->plz;
         }
         if ($anschrift->ort !== '') {
-            $abfrage['city'] = $anschrift->ortFuerSuche();
+            $abfrage['city'] = $wortgetreu ? $anschrift->ort : $anschrift->ortFuerSuche();
         }
         $code = self::LAENDER[$anschrift->land] ?? null;
         if ($code !== null) {
@@ -58,9 +60,9 @@ final readonly class Geocoder
         return self::URL . '?' . http_build_query($abfrage, '', '&', PHP_QUERY_RFC3986);
     }
 
-    public function suchen(Anschrift $anschrift): GeoErgebnis
+    public function suchen(Anschrift $anschrift, bool $wortgetreu = false): GeoErgebnis
     {
-        $antwort = $this->http->holen($this->url($anschrift), $this->userAgent);
+        $antwort = $this->http->holen($this->url($anschrift, $wortgetreu), $this->userAgent);
         if (!$antwort->ok()) {
             return GeoErgebnis::fehler($antwort->status === 0 ? 'keine Antwort' : 'HTTP ' . $antwort->status);
         }

@@ -28,7 +28,7 @@ final readonly class KartenAnsicht
 
     /**
      * @param list<KartenMitglied> $mitglieder
-     * @param array<string, array{status: GeoStatus, lat: ?float, lon: ?float}> $koordinaten by address hash
+     * @param array<string, array{status: ?GeoStatus, lat: ?float, lon: ?float, korrektur?: ?array{strasse: string, plz: string, ort: string}}> $koordinaten by address hash
      */
     public static function aus(array $mitglieder, array $koordinaten): self
     {

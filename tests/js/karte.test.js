@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { punktText, punktGroesse, punktTitel, orteAus, statusText, weiter } = require('../../public/js/karte.js');
+const { punktText, punktGroesse, punktTitel, orteAus, wohnortAus, statusText, weiter } = require('../../public/js/karte.js');
 
 test('a marker shows how many members live at the address', () => {
     assert.equal(punktText(1), '1');
@@ -45,4 +45,20 @@ test('the status line says what happens', () => {
     assert.equal(statusText({ offen: 4, pause_bis: '12:30' }), 'Der Kartendienst antwortet gerade nicht. Neuer Versuch ab 12:30 Uhr.');
     assert.equal(statusText({ offen: 4, laeuft_bereits: true }), 'Die Ermittlung läuft gerade im Hintergrund – einen Moment …');
     assert.equal(statusText(null), '');
+});
+
+test('the small map at a member has one place, or none with broken coordinates (issue #106)', () => {
+    const ort = wohnortAus({ lat: '48.137154', lon: '11.576124', titel: 'Hauptstraße 1, 12345 Musterstadt' });
+    assert.deepEqual([ort.lat, ort.lon, ort.anschrift, ort.anzahl], [48.137154, 11.576124, 'Hauptstraße 1, 12345 Musterstadt', 1]);
+    assert.equal(punktTitel(ort.anschrift, ort.anzahl), 'Hauptstraße 1, 12345 Musterstadt: 1 Mitglied');
+    assert.equal(wohnortAus({ lat: '', lon: '11.5', titel: 'x' }), null);
+    assert.equal(wohnortAus({ lat: '48.1', lon: '200', titel: 'x' }), null);
+});
+
+test('a row marked for focus keeps the mark (issue #106)', () => {
+    const orte = orteAus([
+        { lat: '48.1', lon: '11.5', anschrift: 'A', anzahl: '1' },
+        { lat: '48.2', lon: '11.6', anschrift: 'B', anzahl: '1', fokus: true },
+    ]);
+    assert.deepEqual(orte.map((o) => o.fokus), [false, true]);
 });

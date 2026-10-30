@@ -9,6 +9,7 @@
  * @var \App\Domain\Mitglied $mitglied
  * @var \App\Domain\Familie|null $familie
  * @var \App\App\Mitglied\Auswahllisten $listen
+ * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (issue #106), without buttons
  */
 
 /** Names of the chosen entries, in the order of the settings. */
@@ -84,6 +85,9 @@ $gruppen = [
                     <dd<?= $bezeichnung === 'Bemerkung' ? ' class="mehrzeilig"' : '' ?>><?= e($wert) ?></dd>
                 <?php endforeach; ?>
             </dl>
+        <?php endif; ?>
+        <?php if ($gruppe === 'Anschrift' && isset($wohnort)): ?>
+            <?php $wohnortFormular = null; require __DIR__ . '/wohnort.php'; ?>
         <?php endif; ?>
     <?php endforeach; ?>
 </div>

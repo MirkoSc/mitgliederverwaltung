@@ -16,12 +16,14 @@
  * @var string $aktion
  * @var bool $darfLoeschen
  * @var \App\App\Mitglied\Einbettung|null $einbettung the page the member is shown on (MitgliedAnsicht)
+ * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (tab "Daten" only, issue #106)
  * @var string|null $csrf
  */
 
 use App\App\Mitglied\Einbettung;
 use App\App\Mitglied\MitgliedFormular;
 use App\App\MitgliedController;
+use App\App\WohnortController;
 use App\Domain\Geschlecht;
 use App\Domain\Zahlart;
 use App\Support\Iban;
@@ -128,6 +130,9 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?= $text('plz', 'PLZ', 'feld-kurz', null, 'inputmode="numeric"') ?>
     <?= $text('ort', 'Ort') ?>
     <?= $text('land', 'Land', 'feld-kurz', 'Leer lassen für Deutschland (D).') ?>
+    <?php if (isset($wohnort) && !$neu): ?>
+        <?php $wohnortFormular = 'wohnort-formular'; require __DIR__ . '/wohnort.php'; ?>
+    <?php endif; ?>
 
     <h3>Kontakt</h3>
     <?= $text('telefon', 'Telefon', '', null, 'inputmode="tel"') ?>
@@ -210,6 +215,17 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
         <a class="knopf knopf-still" href="<?= e($abbrechen) ?>"><?= $neu ? 'Abbrechen' : 'Änderungen verwerfen' ?></a>
     </div>
 </form>
+
+<?php if (isset($wohnort) && !$neu): ?>
+    <?php /* The form of the block "Wohnort auf der Karte" (issue #106): its
+             fields stand at the address inside the member form above and
+             belong to this one through their attribute form=…, because a
+             form must not hold another. */ ?>
+    <form id="wohnort-formular" method="post" action="<?= e(WohnortController::adresse((int) $mitglied->id)) ?>">
+        <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
+        <?= $einbettung->feld() ?>
+    </form>
+<?php endif; ?>
 
 <?php if ($darfLoeschen && $loeschAdresse !== null): ?>
     <p class="knopfreihe">

@@ -8,8 +8,12 @@ use App\Service\Karte\GeoStatus;
 
 /**
  * Table geo_anschrift (migration 191, issue #91): coordinates per address
- * hash. Holds no address text - App\Service\Karte\Anschrift::hash() is the
- * key.
+ * hash - App\Service\Karte\Anschrift::hash() is the key. Holds no name
+ * and, as a rule, no address text; the one exception is a search address
+ * somebody gave by hand for the map (such_*, migration 193, issue #106).
+ *
+ * A row is "not asked yet" without a status: that only happens with a
+ * search address that could not be asked right away.
  *
  * Also the lock of the geocoding (GET_LOCK, like App\Repository\CronSperre):
  * the cron and the admin's step chain must not both send requests at the
@@ -23,25 +27,60 @@ final class GeoAnschriftRepository
     {
     }
 
+    private const string SPALTEN = 'anschrift_hash, status, lat, lon, such_strasse, such_plz, such_ort';
+
     /**
-     * @return array<string, array{status: GeoStatus, lat: ?float, lon: ?float}> by hash
+     * Every row; status null = not asked yet (a search address waits).
+     *
+     * @return array<string, array{status: ?GeoStatus, lat: ?float, lon: ?float, korrektur: ?array{strasse: string, plz: string, ort: string}}> by hash
      */
     public function alle(): array
     {
         $ergebnis = [];
-        foreach ($this->pdo->query('SELECT anschrift_hash, status, lat, lon FROM geo_anschrift')->fetchAll(\PDO::FETCH_ASSOC) as $zeile) {
-            $status = GeoStatus::tryFrom((string) $zeile['status']);
-            if ($status === null) {
-                continue;
-            }
-            $ergebnis[(string) $zeile['anschrift_hash']] = [
-                'status' => $status,
-                'lat' => $zeile['lat'] === null ? null : (float) $zeile['lat'],
-                'lon' => $zeile['lon'] === null ? null : (float) $zeile['lon'],
-            ];
+        foreach ($this->pdo->query('SELECT ' . self::SPALTEN . ' FROM geo_anschrift')->fetchAll(\PDO::FETCH_ASSOC) as $zeile) {
+            $ergebnis[(string) $zeile['anschrift_hash']] = self::eintragAus($zeile);
         }
 
         return $ergebnis;
+    }
+
+    /**
+     * The row of one address, null when it was never asked (issue #106).
+     *
+     * @return array{status: ?GeoStatus, lat: ?float, lon: ?float, korrektur: ?array{strasse: string, plz: string, ort: string}}|null
+     */
+    public function eintrag(string $hash): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT ' . self::SPALTEN . ' FROM geo_anschrift WHERE anschrift_hash = ?');
+        $stmt->execute([$hash]);
+        $zeile = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return is_array($zeile) ? self::eintragAus($zeile) : null;
+    }
+
+    /**
+     * Remembers a search address for the map (issue #106) and forgets what
+     * the geocoder said so far: the address counts as not asked until it is
+     * asked with the search address.
+     */
+    public function korrekturSetzen(string $hash, string $strasse, string $plz, string $ort, \DateTimeImmutable $zeitpunkt): void
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO geo_anschrift (anschrift_hash, status, lat, lon, geprueft_am, such_strasse, such_plz, such_ort)
+             VALUES (?, NULL, NULL, NULL, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE status = NULL, lat = NULL, lon = NULL, geprueft_am = VALUES(geprueft_am),
+                 such_strasse = VALUES(such_strasse), such_plz = VALUES(such_plz), such_ort = VALUES(such_ort)',
+        );
+        $stmt->execute([$hash, $zeitpunkt->format('Y-m-d H:i:s'), $strasse, $plz, $ort]);
+    }
+
+    /**
+     * Forgets the search address and with it the result found with it:
+     * the address is looked up with itself again (issue #106).
+     */
+    public function vergessen(string $hash): void
+    {
+        $this->pdo->prepare('DELETE FROM geo_anschrift WHERE anschrift_hash = ?')->execute([$hash]);
     }
 
     public function speichern(string $hash, GeoStatus $status, ?float $lat, ?float $lon, \DateTimeImmutable $zeitpunkt): void
@@ -85,6 +124,29 @@ final class GeoAnschriftRepository
         }
 
         return $anzahl;
+    }
+
+    /**
+     * @param array<string, mixed> $zeile
+     * @return array{status: ?GeoStatus, lat: ?float, lon: ?float, korrektur: ?array{strasse: string, plz: string, ort: string}}
+     */
+    private static function eintragAus(array $zeile): array
+    {
+        $korrektur = null;
+        if ($zeile['such_strasse'] !== null || $zeile['such_plz'] !== null || $zeile['such_ort'] !== null) {
+            $korrektur = [
+                'strasse' => (string) $zeile['such_strasse'],
+                'plz' => (string) $zeile['such_plz'],
+                'ort' => (string) $zeile['such_ort'],
+            ];
+        }
+
+        return [
+            'status' => GeoStatus::tryFrom((string) $zeile['status']),
+            'lat' => $zeile['lat'] === null ? null : (float) $zeile['lat'],
+            'lon' => $zeile['lon'] === null ? null : (float) $zeile['lon'],
+            'korrektur' => $korrektur,
+        ];
     }
 
     /** Takes the geocoding lock without waiting; false when another request holds it. */

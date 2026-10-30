@@ -93,6 +93,10 @@ umgeschaltet statt verlinkt.
    Seite ohne Karte und im Barrierefrei-Modus vollständig nutzbar.
    Hinweis „© OpenStreetMap-Mitwirkende" auf der Karte. Keine Änderung an
    der Datenschutzerklärung (mit Mirko abgestimmt).
+   Mit `?mitglied=<id>` (Link „Auf der großen Karte zeigen" am Mitglied,
+   #106) zentriert die Karte dessen Anschrift und öffnet ihren Marker; die
+   Links unter „Nicht gefundene Anschriften" führen direkt in den Reiter
+   „Daten" des Mitglieds, zum Block „Wohnort auf der Karte".
 5. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
@@ -247,6 +251,10 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
   Zurück-Link mit diesem Text auch am PC zurück (statt „Schließen"); er
   fragt mit `fokus=zurueck` nach dem Fokus, den die Seite auf ihre eigene
   Überschrift legt.
+- **Skripte:** Eine einbettende Seite lädt `MitgliedAnsicht::SKRIPTE`
+  und `::STILE` (Anschrift übernehmen, Leaflet + `karte.js` für die kleine
+  Karte im Reiter „Daten", #106); was das Mitglied per htmx neu bringt,
+  bauen die Skripte nach `htmx:afterSettle` auf.
 - **Barrierefrei-Modus (PC):** Wie am Handy ersetzt das geöffnete
   Mitglied die Liste und nutzt die ganze Breite; „Zurück zur Liste" führt
   zurück (mit Suche, Filter und Seite). Das gilt überall, wo der Baustein
