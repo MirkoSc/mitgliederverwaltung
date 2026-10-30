@@ -15,15 +15,15 @@
  * @var list<\App\Domain\Abteilung> $abteilungen
  * @var list<\App\Domain\Beitragsart> $beitragsarten
  * @var \App\Domain\Mitglied|null $mitglied
- * @var bool $mitgliedUnbekannt
+ * @var \App\App\Mitglied\GeoeffnetesMitglied $ansicht the opened member (building block, 06 section 5)
  * @var \Closure $url
  * @var string $formUrl
  * @var string|null $csrf
  */
 ?>
-<div class="geteilt<?= $mitglied !== null ? ' geteilt-mit-detail' : '' ?>" id="mitglieder-bereich">
+<div class="geteilt<?= $ansicht->klasse() ?>" id="mitglieder-bereich">
     <div class="geteilt-liste">
-        <?php if ($mitgliedUnbekannt): ?>
+        <?php if ($ansicht->unbekannt): ?>
             <p class="hinweis hinweis-warnung">Dieses Mitglied gibt es nicht mehr. Möglicherweise wurde es gelöscht.</p>
         <?php endif; ?>
 
@@ -92,5 +92,5 @@
         </div>
     </div>
 
-    <?php require __DIR__ . '/detail.php'; ?>
+    <?= $ansicht->html ?>
 </div>

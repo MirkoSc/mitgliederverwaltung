@@ -3,6 +3,7 @@
 POST /admin/benutzer -> admin.benutzer
 POST /admin/benutzer/{id:[0-9]+}/einladung -> admin.benutzer
 POST /admin/benutzer/{id:[0-9]+}/rolle -> admin.benutzer
+POST /admin/benutzer/{id:[0-9]+}/barrierefrei -> admin.benutzer
 POST /admin/benutzer/{id:[0-9]+}/sperren -> admin.benutzer
 POST /admin/benutzer/{id:[0-9]+}/entsperren -> admin.benutzer
 POST /admin/benutzer/{id:[0-9]+}/loeschen -> admin.benutzer

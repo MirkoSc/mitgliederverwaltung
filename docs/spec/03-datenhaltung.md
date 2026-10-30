@@ -34,6 +34,7 @@
 | `job` | id, typ, status (`offen`/`laeuft`/`fertig`/`fehler`), user_id NULL, state (JSON), progress (0–100), last_error NULL (nur Exception-Klasse), locked_until, created_at, updated_at |
 | `file_blob` | id, storage (`fs`/`db`), fs_name NULL, size, cipher_sha256 NULL, key_enc, header, mime, original_name, created_at |
 | `file_blob_chunk` | blob_id, seq, data |
+| `geo_anschrift` | anschrift_hash PK (SHA-256 der normalisierten Anschrift, `App\Service\Karte\Anschrift`), status (`gefunden`/`nicht_gefunden`), lat NULL, lon NULL, geprueft_am – Koordinaten für die Karte (#91), je Anschrift statt je Mitglied, ohne Anschriftstext; Zeilen, die kein aktuelles Mitglied mehr nutzt, entfernt die nächste Ermittlung |
 
 Entfallen gegenüber Vereinsbelege: `vault`, `vault_grant`, `user_key`,
 `role`/`user_role` (feste Rollen), Blind Indexes, `dek_sealed`. Die

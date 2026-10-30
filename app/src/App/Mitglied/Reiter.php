@@ -11,7 +11,8 @@ use App\Support\Erweiterung;
  * Daten, Familie, Beiträge (admin), Nachweise, Verlauf.
  *
  * An issue adds its tab as `app/src/App/Mitglied/<Name>Reiter.php`, and the
- * member page (issue #19) finds it (App\App\Mitglied\MitgliedErweiterungen).
+ * member view (MitgliedAnsicht, issue #86) finds it
+ * (App\App\Mitglied\MitgliedErweiterungen).
  */
 interface Reiter extends Erweiterung
 {
@@ -19,7 +20,10 @@ interface Reiter extends Erweiterung
     public function template(): string;
 
     /**
-     * What the template gets as variables, for one member.
+     * What the template gets as variables, for one member. MitgliedAnsicht
+     * adds `$einbettung` (the page the member is shown on - build links and
+     * forms with it, never with fixed addresses), `$mitgliedId` and
+     * `$offenerReiter` (docs/spec/06-oberflaeche.md section 5).
      *
      * @return array<string, mixed>
      */

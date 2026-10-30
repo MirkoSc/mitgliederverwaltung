@@ -142,8 +142,9 @@ Dateien verloren.
 
 ## 4. Cron (regelmäßige Aufgaben)
 
-Die Anwendung braucht einen regelmäßigen Aufruf, damit Mails verschickt
-und alte Daten aufgeräumt werden.
+Die Anwendung braucht einen regelmäßigen Aufruf, damit Mails verschickt,
+die Koordinaten für die Karte nach und nach ermittelt und alte Daten
+aufgeräumt werden.
 
 **Einrichten im Kontrollpanel des Hosters:**
 
@@ -172,6 +173,15 @@ Hinweise:
   in der Warteschlange, bis er wieder läuft. Anmeldecodes und
   Passwort-Reset gehen **sofort** raus und hängen nicht am Cron. Kommen
   sie nicht an, liegt es an der Mail-Einstellung (Abschnitt 5).
+- **Karte:** Der Cron ermittelt je Lauf die Koordinaten von bis zu zehn
+  Anschriften bei OpenStreetMap (höchstens eine Anfrage pro Sekunde). Bei
+  etwa 700 Mitgliedern ist das in einem Tag durch; schneller geht es mit
+  **Karte → „Jetzt Koordinaten ermitteln"** (Admin). Damit OpenStreetMap
+  die Installation erkennt, sollte unter **Einstellungen → Mail** die
+  **öffentliche Adresse** eingetragen sein – sie steht im User-Agent der
+  Anfragen. Antwortet der Dienst nicht, pausiert die Ermittlung 15 Minuten
+  und die Karte zeigt einen Hinweis. Kartenkacheln liegen zwischengespeichert
+  unter `shared/var/kacheln/` (höchstens 100 MB, gehören nicht ins Backup).
 
 ---
 
@@ -193,21 +203,25 @@ Hinweise:
 
 ## 6. Benutzer und Anmeldung
 
-**Zwei feste Rollen** (kein Rollen-Editor):
+**Drei feste Rollen** (kein Rollen-Editor):
 
 - **Admin**: alles, inkl. Einstellungen, Benutzer, Backup, Update,
   Audit-Log.
 - **Vorstand**: Mitglieder suchen, ansehen, anlegen und bearbeiten;
-  Listen, Beiträge und Einzug je nach Recht.
+  Listen und Exporte. Keine Beiträge, kein Einzug, kein Adminbereich.
+- **Nur lesen**: Mitglieder, Familien, Nachweise und Listen ansehen und
+  exportieren, dazu sehen, ob ein Mitglied bezahlt hat. Ändert nichts,
+  keine Seite „Beiträge", kein Einzug, kein Adminbereich.
 
 **Benutzer einladen** (Einstellungen → Benutzer):
 
-1. E-Mail-Adresse und Rolle eintragen → die Person bekommt einen Link
-   per Mail. Der Link ist **72 Stunden** gültig und nur **einmal**
+1. E-Mail-Adresse und Rolle eintragen, bei Bedarf das Häkchen
+   „Barrierefrei-Modus von Anfang an einschalten" setzen → die Person
+   bekommt einen Link per Mail. Der Link ist **72 Stunden** gültig und nur **einmal**
    nutzbar.
 2. Die Person setzt ihr Passwort und richtet den **zweiten Faktor** ein.
-3. Sperren, entsperren, Rolle ändern oder löschen geht ebenfalls unter
-   „Benutzer". Man kann sich nicht selbst löschen oder herabstufen, und
+3. Sperren, entsperren, Rolle ändern, Barrierefrei-Modus ein- oder
+   ausschalten oder löschen geht ebenfalls unter „Benutzer". Man kann sich nicht selbst löschen oder herabstufen, und
    der letzte aktive Admin bleibt Admin.
 
 **Zweiter Faktor** (Pflicht für alle Konten). Jeder wählt:

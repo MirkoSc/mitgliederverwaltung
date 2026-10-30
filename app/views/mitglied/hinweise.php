@@ -14,12 +14,11 @@
  * @var \App\Domain\Mitglied|null $zahler the payer, only with the address hint
  * @var bool $darfBearbeiten
  * @var string|null $offenerReiter
- * @var \Closure $url
+ * @var int $mitgliedId
+ * @var \App\App\Mitglied\Einbettung $einbettung the page the member is shown on
  */
 
 use App\Service\Mitglied\HinweisArt;
-
-$bereichLink = require __DIR__ . '/../mitglieder/bereich-link.php';
 ?>
 <?php if ($hinweise !== []): ?>
     <div class="hinweis hinweis-warnung" id="mitglied-hinweise">
@@ -41,7 +40,7 @@ $bereichLink = require __DIR__ . '/../mitglieder/bereich-link.php';
                                         data-ort="<?= e($zahler->ort) ?>" data-land="<?= e($zahler->land) ?>">Anschrift des Zahlers übernehmen</button>
                                 <p class="anschrift-stand" role="status"></p>
                             <?php elseif ($darfBearbeiten): ?>
-                                <p><a <?= $bereichLink($url(['reiter' => 'daten'])) ?>>Zu den Daten, um die Anschrift zu übernehmen</a></p>
+                                <p><a <?= $einbettung->link($einbettung->adresse($mitgliedId, 'daten'), 'reiter') ?>>Zu den Daten, um die Anschrift zu übernehmen</a></p>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>

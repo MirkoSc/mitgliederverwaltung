@@ -52,3 +52,17 @@
     margin: var(--abstand-2) 0 0;
     font-weight: 650;
 }
+
+/* The tab "Daten" read only (role "Nur lesen", issue #87): the groups of
+   the form as "angaben"; the remark keeps its line breaks. */
+.mitglied-daten-lesen {
+    max-width: 60rem;
+}
+
+.mitglied-daten-lesen > h3 {
+    margin: var(--abstand-4) 0 var(--abstand-2);
+}
+
+.mitglied-daten-lesen .mehrzeilig {
+    white-space: pre-line;
+}

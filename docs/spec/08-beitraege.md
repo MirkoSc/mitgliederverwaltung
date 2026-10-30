@@ -1,7 +1,10 @@
 # 08 – Beiträge und Einzug
 
 Quelle: `docs/fachlichkeit.md` §5. Alles in dieser Datei ist **nur für
-den Admin** (Rolle Vorstand: kein Zugriff, serverseitig geprüft).
+den Admin** (Rolle Vorstand: kein Zugriff, serverseitig geprüft). Einzige
+Ausnahme: die Rolle „Nur lesen“ sieht mit `beitraege.sehen` den Reiter
+„Beiträge“ und die Beitragsspalten der Listen, ändert aber nichts (#87,
+02 §6).
 
 ## 1. Beitragsarten
 
@@ -63,7 +66,9 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
     `ruecklastschrift`, `mitBetrag`); ein unzulässiger wirft
     `BeitragNichtAenderbar` mit einer Meldung für den Benutzer.
 - Vermerke bilden eine Liste (wer, wann, was).
-- Reiter „Beiträge" am Mitglied: alle Jahre mit Status und Vermerken.
+- Reiter „Beiträge" am Mitglied: alle Jahre mit Status und Vermerken
+  (`beitraege.sehen`; die Links auf die Beitragsseiten nur mit
+  `beitraege.verwalten`).
 - Seite **Beiträge** (`/app/beitraege?jahr=`): Jahr wählen, Stand des
   Jahres (offen / im Einzug / bezahlt mit Anzahl und Summe), Knopf
   „Beiträge für <Jahr> erzeugen", darunter die Beiträge des Jahres

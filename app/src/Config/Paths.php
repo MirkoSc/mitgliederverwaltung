@@ -134,6 +134,15 @@ final readonly class Paths
         return $this->varDir() . '/logo';
     }
 
+    /**
+     * Cache of the map tiles (issue #91): public OpenStreetMap images, no
+     * member data; expiry and size cap by the cleanup.
+     */
+    public function kachelDir(): string
+    {
+        return $this->varDir() . '/kacheln';
+    }
+
     /** Download area of the updater. */
     public function updateDir(): string
     {

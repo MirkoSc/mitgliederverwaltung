@@ -87,6 +87,7 @@ final readonly class EhrungenListe implements Liste
         $jahr = (int) ($filter['jahr'] ?? ($this->heute)()->format('Y'));
         $nurOffene = (bool) ($filter['nur_offene'] ?? false);
         $stufen = $this->stufen();
+        $darfVermerken = $konto->darf(Permission::MitgliederBearbeiten);
 
         $geehrt = [];
         foreach ($stufen as $stufe) {
@@ -115,9 +116,12 @@ final readonly class EhrungenListe implements Liste
                 ],
                 $m['id'],
                 null,
-                $vermerk === null
-                    ? new ListenAktion('Geehrt', self::PFAD_VERMERK, $felder + ['aktion' => 'geehrt'])
-                    : new ListenAktion('Zurücknehmen', self::PFAD_VERMERK, $felder + ['aktion' => 'zurueck'], true),
+                match (true) {
+                    // "Nur lesen" sees the list without the buttons (issue #87).
+                    !$darfVermerken => null,
+                    $vermerk === null => new ListenAktion('Geehrt', self::PFAD_VERMERK, $felder + ['aktion' => 'geehrt']),
+                    default => new ListenAktion('Zurücknehmen', self::PFAD_VERMERK, $felder + ['aktion' => 'zurueck'], true),
+                },
             );
         }
 
