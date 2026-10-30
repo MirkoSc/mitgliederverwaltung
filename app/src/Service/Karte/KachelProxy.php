@@ -38,6 +38,7 @@ final readonly class KachelProxy
         private string $verzeichnis,
         private HttpAbruf $http,
         private string $userAgent,
+        private int $maxBytes = self::MAX_BYTES,
     ) {
     }
 
@@ -96,7 +97,7 @@ final readonly class KachelProxy
 
     /**
      * Removes expired tiles, then the oldest ones until the cache is below
-     * 80 % of MAX_BYTES.
+     * 80 % of its cap.
      *
      * @return int files removed
      */
@@ -130,10 +131,10 @@ final readonly class KachelProxy
             $summe += $eintrag->getSize();
         }
 
-        if ($summe > self::MAX_BYTES) {
+        if ($summe > $this->maxBytes) {
             usort($dateien, static fn(array $a, array $b): int => $a[1] <=> $b[1]);
             foreach ($dateien as [$pfad, , $groesse]) {
-                if ($summe <= (int) (self::MAX_BYTES * 0.8)) {
+                if ($summe <= intdiv($this->maxBytes * 4, 5)) {
                     break;
                 }
                 if (@unlink($pfad)) {
