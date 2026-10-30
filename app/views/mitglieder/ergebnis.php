@@ -16,6 +16,7 @@
  * @var \App\Domain\MitgliederSeite $ergebnis
  * @var \App\Domain\Mitglied|null $mitglied
  * @var \Closure $url
+ * @var \App\App\Mitglied\Einbettung $einbettung swaps the whole area (list and member)
  * @var bool $nurErgebnis the answer to htmx: add the screen reader sentence
  */
 
@@ -24,12 +25,11 @@ use App\Domain\MitgliederSortierung;
 // Attributes of a link that swaps the result list only (paging).
 $ergebnisLink = static fn(string $ziel, string $swap = 'innerHTML'): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
     . '" hx-include="#mitglieder-form" hx-target="#mitglieder-ergebnis" hx-swap="' . $swap . '"';
-$bereichLink = require __DIR__ . '/bereich-link.php';
 
-$kopf = static function (MitgliederSortierung $spalte, string $titel, string $klasse = '') use ($filter, $url, $bereichLink): string {
+$kopf = static function (MitgliederSortierung $spalte, string $titel, string $klasse = '') use ($filter, $url, $einbettung): string {
     $sortiert = $filter->sortierung === $spalte;
     $aria = $sortiert ? ' aria-sort="' . ($filter->absteigend ? 'descending' : 'ascending') . '"' : '';
-    $link = $bereichLink($url(['sortierung' => $filter->sortierungNach($spalte), 'seite' => null]), 'outerHTML');
+    $link = $einbettung->link($url(['sortierung' => $filter->sortierungNach($spalte), 'seite' => null]), swap: 'outerHTML');
 
     return '<th scope="col"' . ($klasse === '' ? '' : ' class="' . $klasse . '"') . $aria . '><a ' . $link . '>' . e($titel) . '</a></th>';
 };
@@ -67,7 +67,7 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
                 <?php foreach ($ergebnis->zeilen as $zeile): ?>
                     <tr>
                         <?php /* A second click on the open member closes it again. */ ?>
-                        <td class="liste-titel"><a <?= $bereichLink($url(['mitglied' => $mitglied?->id === $zeile->id ? null : $zeile->id, 'reiter' => null])) ?><?= $mitglied?->id === $zeile->id ? ' aria-current="true"' : '' ?>><?= e($zeile->name()) ?></a></td>
+                        <td class="liste-titel"><a <?= $mitglied?->id === $zeile->id ? $einbettung->link($url(['mitglied' => null, 'reiter' => null])) : $einbettung->link($url(['mitglied' => $zeile->id, 'reiter' => null]), 'mitglied') ?><?= $mitglied?->id === $zeile->id ? ' aria-current="true"' : '' ?>><?= e($zeile->name()) ?></a><?php if ($zeile->familienHinweis() !== ''): ?> <span class="klein gedaempft"><?= e($zeile->familienHinweis()) ?></span><?php endif; ?></td>
                         <td data-label="Nr."><span class="nummer"><?= e($zeile->mitgliedsnummer) ?></span></td>
                         <td data-label="Ort" class="nebenspalte"><?= e($zeile->ortAnzeige()) ?></td>
                         <td data-label="Abteilung"><?= e(implode(', ', $zeile->abteilungen)) ?></td>
@@ -79,14 +79,29 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
         </table>
     </div>
 
-    <?php if ($ergebnis->seiten() > 1): ?>
+    <?php /* Also with one page when a larger size was chosen: "Je Seite" is here, and
+             without it nobody could go back from "Alle". */ ?>
+    <?php if ($ergebnis->seiten() > 1 || $filter->anzahl !== \App\Domain\MitgliederFilter::SEITENGROESSE): ?>
         <nav class="blaettern" aria-label="Seiten der Liste">
             <?php if ($ergebnis->hatVorherige()): ?>
                 <a class="knopf" <?= $ergebnisLink($url(['seite' => $ergebnis->seite - 1 > 1 ? $ergebnis->seite - 1 : null]), 'innerHTML show:top') ?>>Vorherige Seite</a>
             <?php else: ?>
                 <span class="knopf" aria-disabled="true">Vorherige Seite</span>
             <?php endif; ?>
-            <p class="blaettern-stand">Seite <?= e($ergebnis->seite) ?> von <?= e($ergebnis->seiten()) ?>, je Seite <?= e($filter->anzahl) ?> Mitglieder</p>
+            <div class="blaettern-mitte">
+                <p class="blaettern-stand">Seite <?= e($ergebnis->seite) ?> von <?= e($ergebnis->seiten()) ?></p>
+                <?php /* Belongs to the search form (form attribute): without a script
+                         "Übernehmen" posts it, with htmx the change does. */ ?>
+                <div class="feld blaettern-anzahl">
+                    <label for="filter-anzahl">Je Seite</label>
+                    <select id="filter-anzahl" name="anzahl" form="mitglieder-form">
+                        <?php foreach (\App\Domain\MitgliederFilter::ANZAHLEN as $anzahl): ?>
+                            <option value="<?= e($anzahl === 0 ? 'alle' : $anzahl) ?>"<?= $anzahl === $filter->anzahl ? ' selected' : '' ?>><?= e($anzahl === 0 ? 'Alle' : $anzahl) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" form="mitglieder-form" class="knopf knopf-still">Übernehmen</button>
+                </div>
+            </div>
             <?php if ($ergebnis->hatNaechste()): ?>
                 <a class="knopf" <?= $ergebnisLink($url(['seite' => $ergebnis->seite + 1]), 'innerHTML show:top') ?>>Nächste Seite</a>
             <?php else: ?>

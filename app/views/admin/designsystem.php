@@ -267,7 +267,18 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
 
     <nav class="blaettern" aria-label="Seiten der Liste">
         <a class="knopf" href="<?= e($link(['seite' => '1'], 'muster-liste')) ?>">Vorherige Seite</a>
-        <p class="blaettern-stand">Seite 2 von 14, je Seite 50 Mitglieder</p>
+        <div class="blaettern-mitte">
+            <p class="blaettern-stand">Seite 2 von 14</p>
+            <div class="feld blaettern-anzahl">
+                <label for="muster-je-seite">Je Seite</label>
+                <select id="muster-je-seite" name="anzahl">
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="alle">Alle</option>
+                </select>
+            </div>
+        </div>
         <a class="knopf" href="<?= e($link(['seite' => '3'], 'muster-liste')) ?>">Nächste Seite</a>
     </nav>
 
@@ -284,9 +295,10 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
 <section class="muster" id="muster-geteilt" aria-labelledby="titel-geteilt">
     <h2 id="titel-geteilt">Liste neben Mitglied</h2>
     <p>Ein Klick auf ein Mitglied öffnet es auf derselben Seite: am PC rechts neben der Liste (ohne geöffnetes
-        Mitglied hat die Liste die ganze Breite), am Handy und im Barrierefrei-Modus als eigene Ansicht mit
+        Mitglied hat die Liste die ganze Breite), im Barrierefrei-Modus darunter, am Handy als eigene Ansicht mit
         „Zurück zur Liste“. Am PC schließen „Schließen“ oder ein zweiter Klick auf das Mitglied. Der Server setzt
-        dafür <code>geteilt-mit-detail</code> – ohne Skript.</p>
+        dafür <code>geteilt-mit-detail</code> – ohne Skript. Echte Seiten betten das Mitglied als Baustein ein
+        (<code>MitgliedAnsicht</code>); seine Überschrift bekommt nach dem Öffnen den Fokus.</p>
 
     <div class="geteilt<?= $detail !== null ? ' geteilt-mit-detail' : '' ?>">
         <div class="geteilt-liste">
@@ -317,7 +329,7 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
             <?php if ($detail !== null): ?>
                 <a class="zurueck" href="<?= e($link([], 'muster-geteilt')) ?>">Zurück zur Liste</a>
                 <div class="detail-kopf">
-                    <h3><?= e($detail['name']) ?></h3>
+                    <h3 tabindex="-1"><?= e($detail['name']) ?></h3>
                     <span class="nummer">Nr. <?= e($detail['nummer']) ?></span>
                     <span class="etikett <?= e($detail['status'][1]) ?>"><?= e($detail['status'][0]) ?></span>
                     <a class="knopf knopf-still detail-schliessen" href="<?= e($link([], 'muster-geteilt')) ?>">Schließen</a>
@@ -410,6 +422,19 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
             <p>Wer in diesem Jahr für 25, 40 oder 50 Jahre geehrt wird.</p>
         </li>
     </ul>
+
+    <h3>Inhaltsverzeichnis</h3>
+    <p>Auf langen Seiten mit Abschnitten (Einstellungen): <code>mit-verzeichnis</code> um
+        <code>verzeichnis</code> (<code>nav</code> mit Anker-Links, <code>data-inhaltsverzeichnis</code>) und
+        <code>verzeichnis-inhalt</code>. Es klebt beim Scrollen, am PC links, am Handy als wischbare Leiste oben;
+        <code>/js/inhaltsverzeichnis.js</code> markiert den aktuellen Abschnitt mit <code>aria-current="true"</code>.</p>
+    <nav class="verzeichnis" aria-label="Beispiel-Verzeichnis">
+        <ul>
+            <li><a href="<?= e($link([], 'muster-weiteres')) ?>" aria-current="true">Verein</a></li>
+            <li><a href="<?= e($link([], 'muster-weiteres')) ?>">Abteilungen</a></li>
+            <li><a href="<?= e($link([], 'muster-weiteres')) ?>">Beitragsarten</a></li>
+        </ul>
+    </nav>
 
     <h3>Ladeanzeige</h3>
     <p>htmx blendet Elemente mit <code>htmx-indicator</code> ein, solange eine Anfrage läuft. Zur Ansicht hier

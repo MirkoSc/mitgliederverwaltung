@@ -27,7 +27,7 @@ aktuelle Issue verlinkt**, nicht alle.
 | Spec | Inhalt |
 |---|---|
 | `docs/spec/01-plattform.md` | Hosting-Constraints, Verzeichnislayout, Request-Modell, Schrittketten, Cron, Mail, Logging |
-| `docs/spec/02-sicherheit.md` | Bedrohungsmodell, Anmeldung + 2FA, zwei feste Rollen, Datei-/Backup-Verschlüsselung, CSRF/CSP, Audit-Log |
+| `docs/spec/02-sicherheit.md` | Bedrohungsmodell, Anmeldung + 2FA, drei feste Rollen, Datei-/Backup-Verschlüsselung, CSRF/CSP, Audit-Log |
 | `docs/spec/03-datenhaltung.md` | DB-Konventionen, technische Tabellen, Blobs, Migrationen |
 | `docs/spec/04-installation-und-update.md` | setup.php, Installer, Self-Updater (Kanäle stable/beta), Release, Wartungsmodus, Backup/Restore, Systemcheck |
 | `docs/spec/05-entwicklung.md` | Docker, Tests, CI, Übernahme aus den Schwesterprojekten, Fremdbibliotheken |
@@ -99,12 +99,12 @@ Teil eines Releases sind.
 - **Öffentlich**: Anmeldung, „Passwort vergessen", `/impressum`,
   `/datenschutz` – sonst nichts (E-F3).
 - **Anwenderseite** (`/app/...`): alles Fachliche, je nach Recht.
-- **Adminseite** (`/admin/...`): Benutzer (zwei feste Rollen Admin/
-  Vorstand), Mail, Rechtstexte, Einstellungen, Backup,
-  Update, Systemcheck, Audit-Log.
+- **Adminseite** (`/admin/...`): Benutzer (drei feste Rollen Admin/
+  Vorstand/Nur lesen), Mail, Rechtstexte, Einstellungen, Backup,
+  Update, Systemcheck, Audit-Log. Nur der Admin hat einen Adminbereich.
 
 **Oberfläche (06-oberflaeche.md):** so wenige Seiten wie möglich –
-Mitglieder, Listen, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
+Mitglieder, Familien, Listen, Karte, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
 und PC. Barrierearmut als solide Grundlage, kein Vollstandard; dazu ein
 **Barrierefrei-Modus** je Benutzer (PC: große Schrift, hoher Kontrast,
 große Flächen, nur Tastatur möglich) als CSS-Klasse, kein zweites Layout.
@@ -139,7 +139,8 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
   localStorage/IndexedDB/Service-Worker-Cache); `Cache-Control: no-store`.
 - Rechte **serverseitig pro Aktion** (`Permission`-Enum). Jede Route
   deklariert ihren Zugriff (`App\Http\Zugriff`, Pflichtargument von
-  `Router::get/post`). Zwei feste Rollen Admin/Vorstand (02 §6).
+  `Router::get/post`). Drei feste Rollen Admin/Vorstand/Nur lesen (02 §6);
+  Vorstand und Nur lesen haben keinen Adminbereich, Nur lesen ändert nichts.
 
 ## 5. Datenhaltung (Details: 03-datenhaltung.md)
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\App;
 
-use App\App\Mitglied\MitgliedErweiterungen;
+use App\App\Mitglied\Einbettung;
+use App\App\Mitglied\MitgliedAnsicht;
 use App\Dienste;
-use App\Domain\Mitglied;
 use App\Domain\MitgliederFilter;
 use App\Domain\Permission;
 use App\Http\Request;
@@ -14,7 +14,6 @@ use App\Http\Response;
 use App\Repository\AbteilungRepository;
 use App\Repository\BeitragsartRepository;
 use App\Repository\MitgliederListeRepository;
-use App\Repository\MitgliedRepository;
 use App\View\Area;
 
 /**
@@ -57,35 +56,30 @@ final readonly class MitgliederController
         $filter = MitgliederFilter::aus($daten);
 
         $pdo = $this->dienste->pdo();
-        $heute = new \DateTimeImmutable('today');
-        $ergebnis = new MitgliederListeRepository($pdo)->seite($filter, $heute);
+        $ergebnis = new MitgliederListeRepository($pdo)->seite($filter, new \DateTimeImmutable('today'));
         $filter = $filter->mit(['seite' => $ergebnis->seite]);
 
-        $mitgliedId = self::id($daten['mitglied'] ?? null);
-        $mitglied = $mitgliedId === null ? null : new MitgliedRepository($pdo)->finde($mitgliedId);
-        $reiterWunsch = is_string($daten['reiter'] ?? null) ? $daten['reiter'] : '';
-
-        $abteilungen = new AbteilungRepository($pdo)->alle();
-        $beitragsarten = new BeitragsartRepository($pdo)->alle();
+        // The opened member is the building block every list page embeds
+        // (MitgliedAnsicht, 06 section 5); here it swaps the whole area and
+        // posts the search form along, so the search text stays in the body.
+        $einbettung = new Einbettung(self::PFAD, $filter->parameter())->mitHtmx(self::ZIEL_BEREICH, '#mitglieder-form');
+        $ansicht = MitgliedAnsicht::aus($this->dienste)->oeffnen($r, $einbettung);
 
         $daten = [
             'title' => 'Mitglieder',
             'filter' => $filter,
             'ergebnis' => $ergebnis,
-            'abteilungen' => $abteilungen,
-            'beitragsarten' => $beitragsarten,
-            'mitglied' => $mitglied,
-            // An unknown member is not an error page: the list stays usable.
-            'mitgliedUnbekannt' => $mitgliedId !== null && $mitglied === null,
-            'url' => self::urlBauer($filter, $mitglied?->id, null),
-            'formUrl' => self::formUrl($filter, $mitglied?->id, null),
+            'abteilungen' => new AbteilungRepository($pdo)->alle(),
+            'beitragsarten' => new BeitragsartRepository($pdo)->alle(),
+            'mitglied' => $ansicht->mitglied,
+            'ansicht' => $ansicht,
+            'einbettung' => $einbettung,
+            'url' => self::urlBauer($filter, $ansicht->id(), $ansicht->reiter),
+            'formUrl' => self::formUrl($filter, $ansicht->id(), $ansicht->reiter),
             'nurErgebnis' => false,
-            'darfAnlegen' => $this->dienste->view->konto()?->darf(Permission::MitgliederBearbeiten) === true,
+            'darfAnlegen' => $view->konto()?->darf(Permission::MitgliederBearbeiten) === true,
             'scripts' => ['/js/anschrift.js'],
         ];
-        if ($mitglied !== null) {
-            $daten = [...$daten, ...$this->detail($mitglied, $reiterWunsch, $filter, $heute, $daten)];
-        }
 
         $htmx = $r->istHtmx() && $r->header('hx-history-restore-request') !== 'true';
 
@@ -97,57 +91,6 @@ final readonly class MitgliederController
             $htmx && $r->header('hx-target') === self::ZIEL_BEREICH => Response::html($view->fragment('mitglieder/bereich', $daten)),
             default => Response::html($view->render('mitglieder/seite', $daten, Area::App)),
         };
-    }
-
-    /**
-     * What the opened member shows: sections on top, then its tabs with the
-     * chosen one (found by file name, 05 section 6). Nobody has written a
-     * tab yet while this page is built - the template then shows a short
-     * read-only summary instead.
-     *
-     * @param array<string, mixed> $seite
-     * @return array<string, mixed>
-     */
-    private function detail(Mitglied $mitglied, string $reiterWunsch, MitgliederFilter $filter, \DateTimeImmutable $heute, array $seite): array
-    {
-        $konto = $this->dienste->view->konto();
-        $id = (int) $mitglied->id;
-
-        $reiter = MitgliedErweiterungen::reiter()->alle($this->dienste, $konto);
-        $gewaehlt = null;
-        foreach ($reiter as $kandidat) {
-            if ($kandidat->schluessel() === $reiterWunsch) {
-                $gewaehlt = $kandidat;
-            }
-        }
-        $gewaehlt ??= $reiter[0] ?? null;
-
-        // A section may point into a tab (the address hint into "Daten"):
-        // it gets the open tab and the address of each tab.
-        $tabUrl = self::urlBauer($filter, $id, $gewaehlt?->schluessel());
-        $abschnitte = [];
-        foreach (MitgliedErweiterungen::abschnitte()->alle($this->dienste, $konto) as $abschnitt) {
-            $abschnitte[] = $this->dienste->view->fragment($abschnitt->template(), [
-                ...$abschnitt->daten($id),
-                'offenerReiter' => $gewaehlt?->schluessel(),
-                'url' => $tabUrl,
-            ]);
-        }
-
-        $ehemalig = $mitglied->istEhemalig($heute);
-
-        return [
-            'reiter' => $reiter,
-            'gewaehlterReiter' => $gewaehlt?->schluessel(),
-            'reiterInhalt' => $gewaehlt === null
-                ? null
-                : $this->dienste->view->fragment($gewaehlt->template(), $gewaehlt->daten($id)),
-            'abschnitte' => $abschnitte,
-            'statusText' => $ehemalig ? 'ehemalig' : ($mitglied->aktiv ? 'aktiv' : 'passiv'),
-            'statusKlasse' => $ehemalig ? 'etikett-fehler' : ($mitglied->aktiv ? 'etikett-ok' : ''),
-            'url' => self::urlBauer($filter, $id, $gewaehlt?->schluessel()),
-            'formUrl' => self::formUrl($filter, $id, $gewaehlt?->schluessel()),
-        ];
     }
 
     /**
@@ -195,10 +138,5 @@ final readonly class MitgliederController
         }
 
         return self::PFAD . ($parameter === [] ? '' : '?' . http_build_query($parameter));
-    }
-
-    private static function id(mixed $wert): ?int
-    {
-        return is_string($wert) && preg_match('/^[1-9][0-9]{0,17}$/D', $wert) === 1 ? (int) $wert : null;
     }
 }

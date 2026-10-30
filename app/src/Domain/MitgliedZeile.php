@@ -25,6 +25,12 @@ final readonly class MitgliedZeile
         public string $beitragsart,
         /** @var list<string> names of the departments, in the order of the settings */
         public array $abteilungen,
+        /**
+         * Name of the family when the member is in the list only because the
+         * payer of this family has the fee type filtered by (07 section 8);
+         * '' otherwise.
+         */
+        public string $ueberFamilie = '',
     ) {
     }
 
@@ -38,6 +44,16 @@ final readonly class MitgliedZeile
     public function ortAnzeige(): string
     {
         return trim($this->plz . ' ' . $this->ort);
+    }
+
+    /** "über Familie Muster" next to the name, '' for a member found by their own data. */
+    public function familienHinweis(): string
+    {
+        if ($this->ueberFamilie === '') {
+            return '';
+        }
+
+        return 'über ' . (stripos($this->ueberFamilie, 'Familie') === 0 ? '' : 'Familie ') . $this->ueberFamilie;
     }
 
     /** The word on the label: ehemalig, aktiv or passiv. */

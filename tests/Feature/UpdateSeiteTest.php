@@ -74,7 +74,7 @@ final class UpdateSeiteTest extends AppTestCase
 
         $seite = $this->get('/admin')->body;
 
-        self::assertStringContainsString('<h2 id="titel-update">Update</h2>', $seite);
+        self::assertStringContainsString('<h2 id="titel-update" tabindex="-1">Update</h2>', $seite);
         self::assertStringContainsString('id="update-suchen"', $seite);
         self::assertStringContainsString('data-schritte="check,download,extract,backup,switch,migrate,finish"', $seite);
         self::assertStringContainsString('<script src="/js/update.js?v=0.0.0-test" defer></script>', $seite);

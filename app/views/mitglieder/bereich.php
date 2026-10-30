@@ -15,29 +15,33 @@
  * @var list<\App\Domain\Abteilung> $abteilungen
  * @var list<\App\Domain\Beitragsart> $beitragsarten
  * @var \App\Domain\Mitglied|null $mitglied
- * @var bool $mitgliedUnbekannt
+ * @var \App\App\Mitglied\GeoeffnetesMitglied $ansicht the opened member (building block, 06 section 5)
  * @var \Closure $url
  * @var string $formUrl
  * @var string|null $csrf
  */
 ?>
-<div class="geteilt<?= $mitglied !== null ? ' geteilt-mit-detail' : '' ?>" id="mitglieder-bereich">
+<div class="geteilt<?= $ansicht->klasse() ?>" id="mitglieder-bereich">
     <div class="geteilt-liste">
-        <?php if ($mitgliedUnbekannt): ?>
+        <?php if ($ansicht->unbekannt): ?>
             <p class="hinweis hinweis-warnung">Dieses Mitglied gibt es nicht mehr. Möglicherweise wurde es gelöscht.</p>
         <?php endif; ?>
 
         <?php /* Typing waits for a pause (delay), a change of a filter does not.
-                 hx-sync drops the answer of a request a newer one has replaced. */ ?>
+                 hx-sync drops the answer of a request a newer one has replaced.
+                 "Je Seite" sits in the pager inside the result (ergebnis.php), tied
+                 to this form by its form attribute; the result is swapped but not
+                 replaced, so a change event from it is listened for there. */ ?>
         <form class="suche" id="mitglieder-form" method="post" action="<?= e($formUrl) ?>" role="search"
               hx-post="<?= e($formUrl) ?>" hx-target="#mitglieder-ergebnis" hx-swap="innerHTML"
               hx-indicator="#suche-laedt" hx-sync="this:replace"
-              hx-trigger="input changed delay:300ms from:#suche-text, change from:#filter-abteilung, change from:#filter-status, change from:#filter-beitragsart, change from:#filter-ehemalige, change from:#filter-anzahl, submit">
+              hx-trigger="input changed delay:300ms from:#suche-text, change from:#filter-abteilung, change from:#filter-status, change from:#filter-beitragsart, change from:#filter-ehemalige, change from:#mitglieder-ergebnis, submit">
             <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
             <div class="feld suche-feld">
                 <label for="suche-text">Mitglied suchen</label>
                 <input id="suche-text" name="text" type="search" value="<?= e($filter->text) ?>"
-                       placeholder="Name, Mitgliedsnummer, Ort oder E-Mail" autocomplete="off">
+                       placeholder="z. B. Müller 1980" autocomplete="off" aria-describedby="suche-hilfe">
+                <p class="feld-hinweis" id="suche-hilfe">Sucht in Name, Mitgliedsnummer, Anschrift, E-Mail, Telefon, Kontoinhaber, IBAN, Geburtsdatum und Bemerkung. Jedes Wort muss passen, die Reihenfolge ist egal, zum Beispiel „Hauptstr 12 Musterort“ oder „Anna 01.02.1980“.</p>
             </div>
             <div class="filter">
                 <div class="feld">
@@ -66,14 +70,6 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="feld">
-                    <label for="filter-anzahl">Je Seite</label>
-                    <select id="filter-anzahl" name="anzahl">
-                        <?php foreach (\App\Domain\MitgliederFilter::ANZAHLEN as $anzahl): ?>
-                            <option value="<?= e($anzahl === 0 ? 'alle' : $anzahl) ?>"<?= $anzahl === $filter->anzahl ? ' selected' : '' ?>><?= e($anzahl === 0 ? 'Alle' : $anzahl) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
                 <?php /* An unticked box sends nothing; the hidden 0 keeps "unticked"
                          from falling back to a stale value in the address. */ ?>
                 <input type="hidden" name="ehemalige" value="0">
@@ -92,5 +88,5 @@
         </div>
     </div>
 
-    <?php require __DIR__ . '/detail.php'; ?>
+    <?= $ansicht->html ?>
 </div>

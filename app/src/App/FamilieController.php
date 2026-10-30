@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\App;
 
+use App\App\Mitglied\Einbettung;
 use App\Dienste;
 use App\Domain\FamilienRolle;
 use App\Domain\Mitglied;
-use App\Domain\VersionsAnlass;
 use App\Http\Request;
 use App\Http\Response;
 use App\Repository\FamilieRepository;
 use App\Repository\MitgliedRepository;
 use App\Repository\VersionKonfliktException;
+use App\Service\Mitglied\FamilienPflege;
 use App\View\Area;
 use App\View\FlashArt;
 
@@ -21,7 +22,9 @@ use App\View\FlashArt;
  * choose a family, create one, change the role, leave. Every change is a
  * normal save of the member (a new version, 07 section 7); a family that
  * loses its last person is deleted by MitgliedRepository. Both roles may do
- * this (07 section 9). Answers with a redirect to the member and a message.
+ * this (07 section 9). Answers with a redirect to the member - on the page
+ * it was opened on (field `zurueck`, App\App\Mitglied\Einbettung) - and a
+ * message.
  */
 final readonly class FamilieController
 {
@@ -69,6 +72,7 @@ final readonly class FamilieController
             'treffer' => $this->familien->suche($suche),
             'vorschlag' => 'Familie ' . $mitglied->nachname,
             'rollen' => FamilienRolle::cases(),
+            'einbettung' => Einbettung::ausAnfrage($r),
         ], Area::App));
     }
 
@@ -81,10 +85,10 @@ final readonly class FamilieController
         }
         $familie = $this->familien->finde((int) $r->feld('familie_id'));
         if ($familie === null) {
-            return $this->zurueck($mitglied, 'Diese Familie gibt es nicht mehr. Bitte neu suchen.', FlashArt::Warnung);
+            return $this->zurueck($r, $mitglied, 'Diese Familie gibt es nicht mehr. Bitte neu suchen.', FlashArt::Warnung);
         }
 
-        return $this->setzen($mitglied, $familie->id, $this->leseRolle($r), 'Der Familie beigetreten.');
+        return $this->setzen($r, $mitglied, $familie->id, $this->leseRolle($r), 'Der Familie beigetreten.');
     }
 
     /** @param array<string, string> $params */
@@ -100,7 +104,7 @@ final readonly class FamilieController
         }
 
         $familie = $this->familien->anlegen(mb_substr($name, 0, 200));
-        $antwort = $this->setzen($mitglied, $familie->id, $this->leseRolle($r), 'Neue Familie angelegt.');
+        $antwort = $this->setzen($r, $mitglied, $familie->id, $this->leseRolle($r), 'Neue Familie angelegt.');
         // The save did not happen (somebody else was faster): no empty family stays behind.
         $this->familien->loeschenWennLeer($familie->id);
 
@@ -120,10 +124,10 @@ final readonly class FamilieController
             return $this->gibtEsNicht();
         }
         if ($mitglied->familieId === null) {
-            return $this->zurueck($mitglied, 'Das Mitglied ist in keiner Familie.', FlashArt::Warnung);
+            return $this->zurueck($r, $mitglied, 'Das Mitglied ist in keiner Familie.', FlashArt::Warnung);
         }
 
-        return $this->setzen($mitglied, $mitglied->familieId, $this->leseRolle($r), 'Rolle geändert.');
+        return $this->setzen($r, $mitglied, $mitglied->familieId, $this->leseRolle($r), 'Rolle geändert.');
     }
 
     /** @param array<string, string> $params */
@@ -135,11 +139,11 @@ final readonly class FamilieController
         }
         $name = trim($r->feld('name'));
         if ($mitglied->familieId === null || $name === '') {
-            return $this->zurueck($mitglied, 'Bitte einen Namen für die Familie eintragen.', FlashArt::Warnung);
+            return $this->zurueck($r, $mitglied, 'Bitte einen Namen für die Familie eintragen.', FlashArt::Warnung);
         }
         $this->familien->umbenennen($mitglied->familieId, mb_substr($name, 0, 200));
 
-        return $this->zurueck($mitglied, 'Familie umbenannt.');
+        return $this->zurueck($r, $mitglied, 'Familie umbenannt.');
     }
 
     /** @param array<string, string> $params */
@@ -150,29 +154,25 @@ final readonly class FamilieController
             return $this->gibtEsNicht();
         }
 
-        return $this->setzen($mitglied, null, null, 'Das Mitglied ist nicht mehr in der Familie.');
+        return $this->setzen($r, $mitglied, null, null, 'Das Mitglied ist nicht mehr in der Familie.');
     }
 
-    private function setzen(Mitglied $mitglied, ?int $familieId, ?FamilienRolle $rolle, string $meldung): Response
+    private function setzen(Request $r, Mitglied $mitglied, ?int $familieId, ?FamilienRolle $rolle, string $meldung): Response
     {
         try {
-            $ergebnis = $this->mitglieder->speichern(
-                $mitglied->mit(['familieId' => $familieId, 'familieRolle' => $rolle]),
-                VersionsAnlass::geaendert(),
-                $this->dienste->session->userId(),
-            );
+            $ergebnis = FamilienPflege::aus($this->dienste)->setzen($mitglied, $familieId, $rolle);
         } catch (VersionKonfliktException) {
-            return $this->zurueck($mitglied, 'Jemand anderes hat dieses Mitglied gerade gespeichert. Bitte noch einmal versuchen.', FlashArt::Warnung);
+            return $this->zurueck($r, $mitglied, 'Jemand anderes hat dieses Mitglied gerade gespeichert. Bitte noch einmal versuchen.', FlashArt::Warnung);
         }
 
-        return $this->zurueck($ergebnis->mitglied, $meldung);
+        return $this->zurueck($r, $ergebnis->mitglied, $meldung);
     }
 
-    private function zurueck(Mitglied $mitglied, string $meldung, FlashArt $art = FlashArt::Ok): Response
+    private function zurueck(Request $r, Mitglied $mitglied, string $meldung, FlashArt $art = FlashArt::Ok): Response
     {
         $this->dienste->session->flash($meldung, $art);
 
-        return Response::redirect(MitgliedController::adresse((int) $mitglied->id, 'familie'));
+        return Response::redirect(Einbettung::ausAnfrage($r)->adresse((int) $mitglied->id, 'familie'));
     }
 
     private function gibtEsNicht(): Response

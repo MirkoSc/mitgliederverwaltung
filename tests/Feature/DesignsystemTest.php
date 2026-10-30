@@ -55,6 +55,9 @@ final class DesignsystemTest extends AppTestCase
     {
         $vorlage = (string) file_get_contents(dirname(__DIR__, 2) . '/app/views/admin/designsystem.php');
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/css/app.css');
+        foreach (glob(dirname(__DIR__, 2) . '/public/css/teile/*.css') ?: [] as $teil) {
+            $css .= "\n" . (string) file_get_contents($teil);
+        }
         preg_match_all('/class="([^"<]+)"/', $vorlage, $treffer);
 
         $fehlend = [];
@@ -112,7 +115,7 @@ final class DesignsystemTest extends AppTestCase
         // The account still has the mode off - the menu offers to switch it on.
         self::assertStringContainsString('Barrierefrei-Modus einschalten', $vorschau);
         // And no other page takes the parameter.
-        self::assertStringContainsString('<html lang="de">', $this->get('/app/listen', ['barrierefrei' => '1'])->body);
+        self::assertStringContainsString('<html lang="de">', $this->get('/app/konto/passwort', ['barrierefrei' => '1'])->body);
     }
 
     /**
@@ -124,7 +127,7 @@ final class DesignsystemTest extends AppTestCase
     {
         $this->als(Rolle::Vorstand, barrierefrei: true);
 
-        self::assertStringContainsString('<html lang="de" class="modus-barrierefrei">', $this->get('/app/listen')->body);
+        self::assertStringContainsString('<html lang="de" class="modus-barrierefrei">', $this->get('/app/konto/passwort')->body);
     }
 
     /** 11 section 2: without an uploaded logo the header shows a placeholder. */
@@ -135,7 +138,7 @@ final class DesignsystemTest extends AppTestCase
         self::assertStringContainsString($logo, $this->get('/anmelden')->body);
 
         $this->als(Rolle::Vorstand);
-        self::assertStringContainsString($logo, $this->get('/app/listen')->body);
+        self::assertStringContainsString($logo, $this->get('/app/konto/passwort')->body);
         self::assertFileExists(dirname(__DIR__, 2) . '/public' . View::LOGO_PLATZHALTER);
     }
 
@@ -144,7 +147,7 @@ final class DesignsystemTest extends AppTestCase
         $this->dienste->view->setLogo('/logo?v=123');
         $this->als(Rolle::Vorstand);
 
-        $seite = $this->get('/app/listen')->body;
+        $seite = $this->get('/app/konto/passwort')->body;
 
         self::assertStringContainsString('<img class="marke-logo" src="/logo?v=123" alt=""', $seite);
         self::assertStringNotContainsString(View::LOGO_PLATZHALTER, $seite);

@@ -1,14 +1,24 @@
 # 09 – Listen und Exporte
 
 Quelle: `docs/fachlichkeit.md` §6–8. Alle Listen liegen auf **einer**
-Seite „Listen" (06 §2) mit einer Auswahl oben, wenigen Filtern und einem
-Export-Knopf. Ehemalige sind überall ausgeblendet, außer beim
+Seite „Listen" (06 §2) mit den Listen als Reitern oben, wenigen Filtern
+und einem Export-Knopf. `/app/listen` zeigt sofort die Geburtstage (hat
+das Konto diese Liste nicht, die erste, die es sehen darf); eine eigene
+Übersichtsseite gibt es nicht. Ehemalige sind überall ausgeblendet, außer beim
 Gesamtexport mit Häkchen „Ehemalige einschließen".
 
 ## 1. Gemeinsame Regeln
 
 - Jede Liste: Tabelle am PC, Karten am Handy, Klick auf eine Zeile
-  öffnet das Mitglied.
+  öffnet das Mitglied **in der Listenseite selbst** (Baustein aus 06 §5:
+  links die Liste, rechts die Person mit allen Reitern und „Schließen";
+  am Handy als eigene Ansicht, im Barrierefrei-Modus unter der Liste).
+  Adresse: `/app/listen/<liste>?<Filter>&mitglied=<id>&reiter=<reiter>` –
+  Filter, Zeitraum, Sortierung und Seite bleiben beim Öffnen, Sortieren,
+  Blättern und nach dem Speichern erhalten; die Formulare der Person
+  leiten mit `zurueck` auf diese Adresse zurück. Kein Wechsel auf die
+  Mitglieder-Seite. Wer `mitglieder.sehen` nicht hat, sieht die Namen ohne
+  Link.
 - **Export** jeder Liste wahlweise als **xlsx** oder **csv**, mit genau
   den Spalten und Filtern der Ansicht.
   - csv: UTF-8 mit BOM, Trennzeichen `;`, Datum `TT.MM.JJJJ` (öffnet in
@@ -55,13 +65,13 @@ Ansicht und Export zeigen genau das, was es liefert.
 
 | Liste | Inhalt | Filter | Rolle |
 |---|---|---|---|
-| **Geburtstage** | Name, Geburtstag, neues Alter, Abteilungen; runde Geburtstage markiert | Zeitraum: Woche / Monat / Jahr (mit Vor/Zurück), „nur runde" | beide |
-| **Ehrungen** | Name, Eintrittsdatum, Jahre, Stufe, Abteilungen, geehrt am | Jahr, „nur offene" | beide |
-| **Funktionen** | Name, Funktion, Lizenznummer, Abteilungen, Kontakt | Funktion | beide |
-| **Selbst kassieren** | offene Jahresbeiträge mit Zahlart `selbst` oder ohne gültige IBAN: Name, Jahr, Betrag, Kontakt | Jahr | Admin |
-| **Auffälligkeiten** | alle Hinweise aller Mitglieder (07 §6): Name, Hinweis | Art des Hinweises | beide |
-| **BLSV-Meldung** | §4 | Stichtag | beide |
-| **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | beide (Beitragsspalten nur Admin) |
+| **Geburtstage** | Name, Geburtstag, neues Alter, Abteilungen; runde Geburtstage markiert | Zeitraum: Woche / Monat / Jahr (mit Vor/Zurück), „nur runde" | alle |
+| **Ehrungen** | Name, Eintrittsdatum, Jahre, Stufe, Abteilungen, geehrt am | Jahr, „nur offene" | alle |
+| **Funktionen** | Name, Funktion, Lizenznummer, Abteilungen, Kontakt | Funktion | alle |
+| **Selbst kassieren** | offene Jahresbeiträge mit Zahlart `selbst` oder ohne gültige IBAN: Name, Jahr, Betrag, Kontakt | Jahr | Admin, Nur lesen |
+| **Auffälligkeiten** | alle Hinweise aller Mitglieder (07 §6): Name, Hinweis | Art des Hinweises | alle |
+| **BLSV-Meldung** | §4 | Stichtag | alle |
+| **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | alle (Beitragsspalten nur Admin und Nur lesen) |
 
 ### Geburtstage
 
@@ -82,7 +92,8 @@ Ansicht und Export zeigen genau das, was es liefert.
   Jahres ausgetreten ist, steht nicht in der Liste. Mitglieder ohne
   Eintrittsdatum zählt ein Hinweis über der Tabelle (ohne Namen). Der Knopf
   ist eine `ListenAktion` an der Zeile (nur in der Ansicht, nicht im Export);
-  er postet an `/app/listen/ehrungen/vermerk` (beide Rollen).
+  er postet an `/app/listen/ehrungen/vermerk` (Admin und Vorstand; „Nur
+  lesen“ sieht die Liste ohne Knöpfe).
 
 ## 3. Einstellungen dazu
 
@@ -123,7 +134,7 @@ Jahresbeitrags. Nachweis-Dateien und Versionen sind nicht enthalten (dafür
 gibt es das Backup).
 
 Umsetzung `AlleMitgliederListe`. Als **Beitragsspalten** (nur mit dem Recht
-`beitraege.verwalten`, also Admin) gelten Beitragsart, Zahlart, IBAN, BIC,
+`beitraege.sehen`, also Admin und Nur lesen) gelten Beitragsart, Zahlart, IBAN, BIC,
 Kontoinhaber, Mandatsreferenz, Mandatsdatum sowie Betrag und Status des
 Jahresbeitrags des laufenden Jahres; der Vorstand bekommt alle übrigen Felder.
 
@@ -142,4 +153,8 @@ csv mit BOM, `;` und Feldern mit Semikolon/Anführungszeichen/Zeilenumbruch;
 xlsx öffnet sich (gültiges ZIP, Inhalt per Rücklesen geprüft), Datum als
 Datumszelle; BLSV-Export hat exakt die Spalten der Vorlage in der
 Reihenfolge; Vorstand sieht „Selbst kassieren" nicht und bekommt keine
-Beitragsspalten; jeder Export erzeugt einen Audit-Eintrag.
+Beitragsspalten, Nur lesen sieht beides, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.
+`/app/listen` liefert die Geburtstagsliste; Personen-Links zeigen auf die
+Listenseite mit `mitglied=<id>`, Sortieren und Filter behalten die Person,
+Speichern in der geöffneten Person bleibt auf der Liste, htmx tauscht nur
+den Bereich `listen-bereich` – `ListenMitgliedTest`.

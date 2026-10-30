@@ -64,7 +64,9 @@ Mitglieder, sonst deaktivieren.
 - Familie = Name (z. B. „Familie Muster") + Mitglieder mit Rolle.
 - Gepflegt im Mitglied: „Familie wählen" (Suche) oder „neue Familie",
   Rolle wählen. Die Familie zeigt im Mitglied ihre übrigen Personen.
-- Eine Familie ohne Personen wird automatisch gelöscht.
+- Eine Familie, aus der die letzte Person geht, wird automatisch gelöscht.
+  Auf der Seite „Familien" (#92) angelegte Familien sind leer, bis jemand
+  hinzukommt; eine leere Familie lässt sich dort löschen.
 - Umsetzung (#20): Reiter **Familie** am Mitglied, direkt nach „Daten"
   (`App\App\Mitglied\FamilieReiter`, Template `mitglied/familie`) zeigt
   Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
@@ -73,10 +75,33 @@ Mitglieder, sonst deaktivieren.
   Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
   dazu `POST …/familie/{beitreten,neu,rolle,umbenennen,verlassen}`
   (`App\App\FamilieController`, `app/routes/familie.php`, Recht
-  `mitglieder.bearbeiten`, also beide Rollen). Jede Änderung ist ein
+  `mitglieder.bearbeiten`, also Admin und Vorstand). Jede Änderung ist ein
   normales Speichern des Mitglieds (neue Version, Anlass `geaendert`); die
   Rolle ohne Angabe ist `elternteil`. Das Formular „Daten" enthält Familie
   und Rolle nicht, sie bleiben beim Speichern erhalten.
+- Seite **Familien** (#92, 06 §2): `GET/POST /app/familien`
+  (`App\App\FamilienController`, `app/routes/familien.php`; Liste aus
+  `FamilienListeRepository`). Änderungen `POST /app/familien/neu` und
+  `/app/familien/{id}/{umbenennen,loeschen,hinzufuegen,rolle,zahler,entfernen,anschrift}`
+  mit `mitglieder.bearbeiten`; jede Person muss zur Familie der Route
+  gehören. Personen ändert nur `App\Service\Mitglied\FamilienPflege` –
+  dieselbe Stelle nutzt der Reiter „Familie" –, jede Änderung ein normales
+  Speichern (neue Version, Anlass `geaendert`).
+  - **Zahler wechseln**: die gewählte Person wird Zahler, bisherige Zahler
+    werden Elternteil; die Beitragsart bleibt (Hinweise melden, was nicht
+    passt).
+  - **Anschriften vereinheitlichen** (erscheint, wenn die Anschriften
+    abweichen): Quelle wählbar, vorgewählt der (erste) Zahler, sonst die
+    erste Person. Verglichen werden Straße, PLZ, Ort und Land ohne
+    Groß-/Kleinschreibung und Leerzeichen am Rand (`App\Domain\Wohnanschrift`)
+    – genau die Felder, die übernommen werden; vorab angehakt ist, wer von
+    der Quelle abweicht. „Anschrift übernehmen (n)" schreibt je geänderter
+    Person eine Version und einen Audit-Eintrag
+    `familie.anschrift_uebernommen` (Familie, Quelle, IDs der Geänderten –
+    keine Anschrift). Wer die Anschrift schon hat, bleibt unverändert. Ein
+    Hinweis davor, keine Rückfrage, keine Sperre.
+  - Der Hinweis „Andere Anschrift" am Mitglied (§6) vergleicht weiter nur
+    Straße und PLZ mit dem Zahler.
 - Beitrag: der **Zahler** hat die Beitragsart „Familie"; Elternteile und
   Kinder haben normalerweise **keine** eigene Beitragsart (08 §1).
 
@@ -199,9 +224,27 @@ SQL.
 | `funktion` | id, name, mit_lizenz, sortierung, aktiv |
 
 - „Ehemalig" ist berechnet: `austrittsdatum <= heute`.
-- **Suche**: ein Suchfeld über Nachname, Vorname, Mitgliedsnummer, Ort,
-  E-Mail per SQL `LIKE`, live über htmx. Jedes Wort der Eingabe muss in
-  einem der Felder vorkommen („max muster" findet Max Mustermann).
+- **Suche** (#88): ein Suchfeld, live über htmx, in SQL (`LIKE`, Prepared
+  Statements, kein Volltextindex). Die Eingabe wird in Wörter zerlegt
+  (Leerzeichen, Komma); **jedes Wort muss in irgendeinem Feld passen**,
+  die Reihenfolge ist egal („Hauptstr 12 Musterort", „Müller 1980").
+  Groß-/Kleinschreibung egal; ein Punkt am Wortende entfällt
+  („Hauptstr." findet „Hauptstraße"). Felder: Nachname, Vorname,
+  Mitgliedsnummer, Straße, PLZ, Ort, E-Mail, Telefon, Handy,
+  Kontoinhaber, Bemerkung sowie
+  - **IBAN**: ohne Leerzeichen und ohne Groß-/Kleinschreibung verglichen,
+    ein Teilstück genügt; gilt für Wörter aus mindestens vier Buchstaben/
+    Ziffern (kürzere Stücke träfen fast jede IBAN),
+  - **Geburtsdatum**: ein Wort, das ein gültiges Datum ist (`1.2.1980`,
+    `01.02.1980`, `1980-02-01`, `1.2.80`), vergleicht exakt; zwei Ziffern
+    für das Jahr zählen zum laufenden Jahrhundert, außer das läge in der
+    Zukunft. Eine vierstellige Zahl passt zusätzlich auf das Geburtsjahr.
+  Die Suche ist mit allen Filtern kombinierbar.
+- **Filter Beitragsart**: „X" findet die Mitglieder mit der Beitragsart X
+  **und** die Mitglieder der Familien, deren Zahler (Rolle `zahler`) X hat
+  (sie zahlen ja darüber, §3). Wer nur über die Familie gefunden wird,
+  trägt in der Trefferliste den Vermerk „über Familie <Name>"
+  (`MitgliedZeile::$ueberFamilie`); wer selbst X hat, trägt keinen.
 
 Umsetzung der Mitglieder-Seite (#18): `GET/POST /app/mitglieder`
 (`App\App\MitgliederController`, Liste in `MitgliederListeRepository`,
@@ -244,13 +287,19 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
 
 ## 9. Rechte
 
-| Aktion | Admin | Vorstand |
-|---|:-:|:-:|
-| Mitglieder suchen, ansehen, anlegen, bearbeiten, Version zurückholen | ✓ | ✓ |
-| Nachweis vermerken | ✓ | ✓ |
-| Nachweis löschen, Mitglied löschen | ✓ | – |
-| Familien pflegen | ✓ | ✓ |
-| Reiter „Beiträge" | ✓ | – |
+| Aktion | Admin | Vorstand | Nur lesen |
+|---|:-:|:-:|:-:|
+| Mitglieder suchen, ansehen, Verlauf, Familie und Nachweise ansehen/herunterladen | ✓ | ✓ | ✓ |
+| Mitglieder anlegen, bearbeiten, Version zurückholen | ✓ | ✓ | – |
+| Nachweis vermerken | ✓ | ✓ | – |
+| Nachweis löschen, Mitglied löschen | ✓ | – | – |
+| Familien pflegen | ✓ | ✓ | – |
+| Reiter „Beiträge" (lesen) | ✓ | – | ✓ |
+
+„Nur lesen“ (#87) sieht den Reiter „Daten“ als reine Ansicht
+(`mitglied/daten-lesen.php`: die Gruppen des Formulars als Angaben, leere
+Felder weggelassen) statt als Formular; die übrigen Reiter blenden ihre
+Formulare über dieselben Rechte aus wie beim Vorstand das Löschen.
 
 ## Pflicht-Tests
 
@@ -259,4 +308,7 @@ Hinweis-Funktion: jede Zeile der Tabelle §6 positiv und negativ, Grenzfälle
 Änderung erzeugt keine Version; Zurückholen hängt eine neue Version an und
 lässt alte unverändert; Zurückholen bei gelöschter Familie. Mitgliedsnummer
 eindeutig, nächste freie Nummer. IBAN-Prüfziffer. Suche findet über alle
-Suchfelder, Groß-/Kleinschreibung egal. Rechte-Matrix §9 serverseitig.
+Suchfelder, Groß-/Kleinschreibung egal; Geburtsdatum in mehreren
+Schreibweisen, IBAN mit/ohne Leerzeichen und als Teilstück, Adresse mit Name,
+Bemerkung, Wort ohne Treffer; Filter Beitragsart findet Zahler und
+Familienmitglieder. Rechte-Matrix §9 serverseitig.

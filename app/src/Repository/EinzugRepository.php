@@ -8,8 +8,9 @@ use App\Domain\Einzug;
 use App\Domain\EinzugStatus;
 
 /**
- * Direct debit runs (docs/spec/08-beitraege.md sections 3 and 6). Never
- * deleted - there is deliberately no method for it.
+ * Direct debit runs (docs/spec/08-beitraege.md sections 3 and 6). Deleted
+ * only together with the fees of their year (loeschen(), #90) - never with
+ * a member, never on their own.
  */
 final readonly class EinzugRepository
 {
@@ -73,6 +74,19 @@ final readonly class EinzugRepository
             'UPDATE einzug SET status = ?, bestaetigt_am = ?, bestaetigt_von = ? WHERE id = ? AND status = ?',
         );
         $stmt->execute([$status->value, Zeilen::fuerZeitpunkt($jetzt), $userId, $id, EinzugStatus::Erzeugt->value]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Removes a run for good - only for deleting the fees of a year
+     * (App\Service\Beitraege\BeitragsjahrLoeschen, #90), after its fees
+     * are gone (they point here). Its file is the caller's business.
+     */
+    public function loeschen(int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM einzug WHERE id = ?');
+        $stmt->execute([$id]);
 
         return $stmt->rowCount() === 1;
     }

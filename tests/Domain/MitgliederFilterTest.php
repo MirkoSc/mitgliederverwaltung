@@ -78,6 +78,12 @@ final class MitgliederFilterTest extends TestCase
         self::assertSame([], MitgliederFilter::aus(['text' => ' , '])->woerter());
     }
 
+    public function testAFullStopAtTheEndOfAWordIsIgnored(): void
+    {
+        self::assertSame(['Hauptstr', '12', '1.2.1980'], MitgliederFilter::aus(['text' => 'Hauptstr. 12 1.2.1980.'])->woerter());
+        self::assertSame([], MitgliederFilter::aus(['text' => ' . .. '])->woerter());
+    }
+
     /** CLAUDE.md section 4: no member data in a URL - the text is not part of the parameters. */
     public function testTheSearchTextNeverBecomesAUrlParameter(): void
     {

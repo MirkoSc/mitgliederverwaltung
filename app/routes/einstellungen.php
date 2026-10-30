@@ -32,6 +32,7 @@ return static function (Routen $routen): void {
         return Response::html($dienste->view->render('admin/einstellungen', [
             'title' => 'Einstellungen',
             'abschnitte' => $abschnitte,
+            'scripts' => ['/js/inhaltsverzeichnis.js'],
         ], Area::Admin));
     });
 };

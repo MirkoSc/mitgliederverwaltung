@@ -37,8 +37,11 @@ enum AuditAktion: string
     case EinzugBestaetigt = 'einzug.bestaetigt';
     case EinzugVerworfen = 'einzug.verworfen';
     case EinzugDateiHeruntergeladen = 'einzug.datei_heruntergeladen';
+    case BeitraegeBezahlt = 'beitraege.bezahlt';
+    case BeitraegeJahrGeloescht = 'beitraege.jahr_geloescht';
     case VersionZurueckgeholt = 'mitglied.version_zurueckgeholt';
     case MitgliedGeloescht = 'mitglied.geloescht';
+    case AnschriftUebernommen = 'familie.anschrift_uebernommen';
     case SchluesselwechselBegonnen = 'server_schluessel.wechsel_begonnen';
     case SchluesselGewechselt = 'server_schluessel.gewechselt';
 
@@ -70,8 +73,11 @@ enum AuditAktion: string
             self::EinzugBestaetigt => 'Einzug bestätigt',
             self::EinzugVerworfen => 'Einzug verworfen',
             self::EinzugDateiHeruntergeladen => 'Lastschriftdatei heruntergeladen',
+            self::BeitraegeBezahlt => 'Beiträge als bezahlt markiert',
+            self::BeitraegeJahrGeloescht => 'Beiträge eines Jahres gelöscht',
             self::VersionZurueckgeholt => 'Version zurückgeholt',
             self::MitgliedGeloescht => 'Mitglied gelöscht',
+            self::AnschriftUebernommen => 'Anschrift in der Familie übernommen',
             self::SchluesselwechselBegonnen => 'Server-Schlüssel: Wechsel begonnen',
             self::SchluesselGewechselt => 'Server-Schlüssel gewechselt',
         };

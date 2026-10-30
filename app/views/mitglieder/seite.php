@@ -8,12 +8,13 @@
  * Beside the heading: "Neues Mitglied" for whoever may edit members.
  *
  * @var bool $darfAnlegen
+ * @var \App\App\Mitglied\Einbettung $einbettung the filtered list stays after saving
  */
 ?>
 <div class="seitenkopf">
     <h1>Mitglieder</h1>
     <?php if ($darfAnlegen ?? false) : ?>
-        <a class="knopf knopf-haupt" href="<?= e(\App\App\MitgliedController::PFAD_NEU) ?>">Neues Mitglied</a>
+        <a class="knopf knopf-haupt" href="<?= e($einbettung->mitRueckweg(\App\App\MitgliedController::PFAD_NEU)) ?>">Neues Mitglied</a>
     <?php endif; ?>
 </div>
 
