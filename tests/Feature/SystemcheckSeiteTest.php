@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Feature;
 
 use App\Domain\Rolle;
+use App\Service\SystemCheck\HeaderProbe;
 use App\Service\SystemCheck\StatusProbe;
 use App\Tests\Support\AppTestCase;
 
@@ -24,11 +25,19 @@ final class SystemcheckSeiteTest extends AppTestCase
                 return 403;
             }
         });
+        $this->dienste->dienst(HeaderProbe::class, static fn(): HeaderProbe => new class implements HeaderProbe {
+            public function __invoke(string $url): ?array
+            {
+                return ['status' => 200, 'headers' => ['x-frame-options' => 'DENY']];
+            }
+        });
         $this->als(Rolle::Admin);
 
         $antwort = $this->get('/admin/systemcheck', headers: ['host' => 'verein.example.org']);
 
         self::assertSame(200, $antwort->status);
         self::assertStringContainsString('von außen gesperrt', $antwort->body);
+        self::assertStringContainsString('Sicherheits-Header am Server', $antwort->body);
+        self::assertStringContainsString('Content-Security-Policy fehlt', $antwort->body);
     }
 }
