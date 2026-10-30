@@ -3,9 +3,12 @@
 /**
  * The tab "Beiträge" of an opened member (App\App\Mitglied\BeitraegeReiter,
  * docs/spec/08-beitraege.md section 2): every year with amount, status and
- * notes, newest first. A year opens the page of that fee, where it can be
- * changed. Markup as the pattern "Jahresbeiträge" of /admin/designsystem.
+ * notes, newest first. With $darfVerwalten a year opens the page of that
+ * fee, where it can be changed; "Nur lesen" sees the same table without
+ * links (issue #87). Markup as the pattern "Jahresbeiträge" of
+ * /admin/designsystem.
  *
+ * @var bool $darfVerwalten
  * @var list<\App\Domain\Jahresbeitrag> $beitraege
  * @var array<int, string|null> $namen
  * @var int $mitgliedId
@@ -24,7 +27,9 @@ $statusEtikett = require dirname(__DIR__) . '/beitraege/status-etikett.php';
 <?php if ($beitraege === []): ?>
     <div class="leer">
         <p>Noch keine Jahresbeiträge. Sie entstehen auf der Seite Beiträge mit „Beiträge für … erzeugen“.</p>
-        <p class="knopfreihe"><a class="knopf" href="<?= e($seitenAdresse) ?>">Zur Seite Beiträge</a></p>
+        <?php if ($darfVerwalten): ?>
+            <p class="knopfreihe"><a class="knopf" href="<?= e($seitenAdresse) ?>">Zur Seite Beiträge</a></p>
+        <?php endif; ?>
     </div>
 <?php else: ?>
     <div class="tabelle-rahmen">
@@ -41,7 +46,7 @@ $statusEtikett = require dirname(__DIR__) . '/beitraege/status-etikett.php';
             <tbody>
                 <?php foreach ($beitraege as $beitrag): ?>
                     <tr>
-                        <td class="liste-titel"><a href="<?= e(BeitraegeController::adresse((int) $beitrag->id, $zurueck)) ?>" aria-label="Jahresbeitrag <?= e($beitrag->jahr) ?> öffnen"><?= e($beitrag->jahr) ?></a></td>
+                        <td class="liste-titel"><?php if ($darfVerwalten): ?><a href="<?= e(BeitraegeController::adresse((int) $beitrag->id, $zurueck)) ?>" aria-label="Jahresbeitrag <?= e($beitrag->jahr) ?> öffnen"><?= e($beitrag->jahr) ?></a><?php else: ?><?= e($beitrag->jahr) ?><?php endif; ?></td>
                         <td data-label="Betrag" class="zahl"><?= e(geld($beitrag->betragCent)) ?></td>
                         <td data-label="Status">
                             <?= $statusEtikett($beitrag->status) ?>

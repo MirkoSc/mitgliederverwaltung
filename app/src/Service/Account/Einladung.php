@@ -15,7 +15,8 @@ use App\Repository\BenutzerRepository;
  * Inviting an account (docs/spec/02-sicherheit.md section 5). Taken over
  * from Vereinsbelege, without key pair and vault grant:
  *
- *   admin enters name, address, role -> invitation mail (link, 72 h)
+ *   admin enters name, address, role (and whether the account starts in
+ *   the Barrierefrei-Modus, issue #87) -> invitation mail (link, 72 h)
  *   -> the invited person sets a password -> account active.
  *
  * The row exists from the invitation on, with status `eingeladen` and no
@@ -45,12 +46,14 @@ final readonly class Einladung
     }
 
     /**
-     * Creates the invited account and issues its link.
+     * Creates the invited account and issues its link. $barrierefrei: the
+     * account is in the Barrierefrei-Modus from its first login on (it can
+     * switch it off itself, 06 section 4).
      *
      * @return array{userId: int, token: string, email: string}
      * @throws BenutzerRegelVerstoss
      */
-    public function einladen(string $email, string $name, Rolle $rolle, ?\DateTimeImmutable $now = null): array
+    public function einladen(string $email, string $name, Rolle $rolle, ?\DateTimeImmutable $now = null, bool $barrierefrei = false): array
     {
         $now ??= new \DateTimeImmutable();
         $email = self::pruefeEmail($email);
@@ -63,7 +66,7 @@ final readonly class Einladung
         }
 
         try {
-            $userId = $this->benutzer()->insert($email, $name, '', BenutzerStatus::Eingeladen, $rolle, $now);
+            $userId = $this->benutzer()->insert($email, $name, '', BenutzerStatus::Eingeladen, $rolle, $now, $barrierefrei);
         } catch (\PDOException $e) {
             // Two admins inviting the same address at the same moment: the
             // UNIQUE key decides.

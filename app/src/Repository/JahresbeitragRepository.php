@@ -197,6 +197,58 @@ final readonly class JahresbeitragRepository
     }
 
     /**
+     * The fees of a year in figures, the rows locked until the transaction
+     * ends when $zumAendern (call inside one) - for deleting the year (#90).
+     *
+     * @return array{anzahl: int, bezahlt: int, summe_cent: int}
+     */
+    public function umfangImJahr(int $jahr, bool $zumAendern = false): array
+    {
+        $stmt = $this->pdo->prepare('SELECT status, betrag_cent FROM jahresbeitrag WHERE jahr = ?' . ($zumAendern ? ' FOR UPDATE' : ''));
+        $stmt->execute([$jahr]);
+        $umfang = ['anzahl' => 0, 'bezahlt' => 0, 'summe_cent' => 0];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $z) {
+            $umfang['anzahl']++;
+            $umfang['summe_cent'] += (int) $z['betrag_cent'];
+            if ($z['status'] === JahresbeitragStatus::Bezahlt->value) {
+                $umfang['bezahlt']++;
+            }
+        }
+
+        return $umfang;
+    }
+
+    /**
+     * The years of the fees that point to a direct debit, by run id - with
+     * the copies in `einzug.daten`, what tells whether a run belongs to
+     * one year only (#90).
+     *
+     * @return array<int, list<int>>
+     */
+    public function jahreJeEinzug(): array
+    {
+        $jahre = [];
+        $zeilen = $this->pdo->query('SELECT DISTINCT einzug_id, jahr FROM jahresbeitrag WHERE einzug_id IS NOT NULL')?->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        foreach ($zeilen as $z) {
+            $jahre[(int) $z['einzug_id']][] = (int) $z['jahr'];
+        }
+
+        return $jahre;
+    }
+
+    /**
+     * Deletes every fee of a year with its status and notes (#90); the
+     * number of rows gone.
+     */
+    public function loescheJahr(int $jahr): int
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM jahresbeitrag WHERE jahr = ?');
+        $stmt->execute([$jahr]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
      * Writes amount, status, direct debit, payment and notes of an existing
      * fee. Which transition is allowed (amount only while `offen`, 08
      * section 2) is decided by the service that changes it; this only stores.

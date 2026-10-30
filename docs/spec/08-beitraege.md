@@ -1,7 +1,10 @@
 # 08 – Beiträge und Einzug
 
 Quelle: `docs/fachlichkeit.md` §5. Alles in dieser Datei ist **nur für
-den Admin** (Rolle Vorstand: kein Zugriff, serverseitig geprüft).
+den Admin** (Rolle Vorstand: kein Zugriff, serverseitig geprüft). Einzige
+Ausnahme: die Rolle „Nur lesen“ sieht mit `beitraege.sehen` den Reiter
+„Beiträge“ und die Beitragsspalten der Listen, ändert aber nichts (#87,
+02 §6).
 
 ## 1. Beitragsarten
 
@@ -63,13 +66,56 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
     `ruecklastschrift`, `mitBetrag`); ein unzulässiger wirft
     `BeitragNichtAenderbar` mit einer Meldung für den Benutzer.
 - Vermerke bilden eine Liste (wer, wann, was).
-- Reiter „Beiträge" am Mitglied: alle Jahre mit Status und Vermerken.
+- Reiter „Beiträge" am Mitglied: alle Jahre mit Status und Vermerken
+  (`beitraege.sehen`; die Links auf die Beitragsseiten nur mit
+  `beitraege.verwalten`).
 - Seite **Beiträge** (`/app/beitraege?jahr=`): Jahr wählen, Stand des
   Jahres (offen / im Einzug / bezahlt mit Anzahl und Summe), Knopf
   „Beiträge für <Jahr> erzeugen", darunter die Beiträge des Jahres
   (Vorgabe: offene, je mit „Heute bezahlt" samt Zahlweise). Jeder Beitrag
   hat eine eigene Seite (`/app/beitraege/<id>`) für Betrag, bezahlt,
   Rücklastschrift und Vermerke; Reiter und Liste verlinken dorthin.
+
+## 2a. Mehrere bezahlt, Jahr löschen (#90)
+
+- **Ausgewählte als bezahlt markieren**: In der Liste des Jahres hat jede
+  offene Zeile links ein Häkchen; darüber stehen dieselben Angaben wie
+  beim einzelnen Beitrag (Zahlweise, Datum mit heute vorbelegt, Vermerk)
+  und der Knopf. Ohne JS ein normales Formular – die Häkchen gehören über
+  `form="mehrfach-bezahlt"` dazu, weil die Zeilen eigene Formulare
+  („Heute bezahlt") haben. Mit JS (`public/js/beitraege-auswahl.js`)
+  kommen „Alle auswählen" (die Zeilen der Seite), der Zähler „n
+  ausgewählt" (`role="status"`) und der **Shift-Bereich** dazu: Klick oder
+  Leertaste mit gedrückter Umschalttaste gibt allen Häkchen zwischen dem
+  zuletzt angeklickten und diesem dessen Zustand, die übrigen bleiben;
+  Bereichslogik als reine Funktion `bereich()`.
+  `POST /app/beitraege/bezahlt` (`App\App\BeitragsjahrController`,
+  Routen `app/routes/beitraege-jahr.php`) → `Jahresbeitraege::
+  mehrereBezahltVonHand()`: eine Transaktion, jede ID gesperrt und
+  geprüft – fehlt eine oder ist sie nicht mehr offen, ändert sich nichts.
+  Vermerk je Beitrag wie beim einzelnen, Audit `beitraege.bezahlt` mit
+  Anzahl, Summe, Zahlweise und Beitrags-IDs. Wie beim Einzug folgt den
+  Häkchen das Feld `auswahl_vollstaendig`.
+- **Beiträge <Jahr> löschen**: Link im Abschnitt „Jahresbeiträge", sobald
+  das Jahr Beiträge hat. Geht in **jedem** Zustand (festgesetzt, bezahlt,
+  Einzug erzeugt oder bestätigt). Die Rückfrage
+  (`GET /app/beitraege/jahr-loeschen?jahr=`) nennt Anzahl, davon bezahlt,
+  Summe und die Einzüge mit Nummer, Fälligkeit und Status; gibt es eine
+  Lastschriftdatei, zusätzlich „Die Bank hat die Datei eventuell schon
+  erhalten." Gelöscht wird erst, wenn im Feld „LÖSCHEN" steht (serverseitig,
+  Groß-/Kleinschreibung und Leerzeichen außen egal).
+  `App\Service\Beitraege\BeitragsjahrLoeschen::loeschen()` löscht in einer
+  Transaktion alle Jahresbeiträge des Jahres (mit Status und Vermerken),
+  die Einzüge des Jahres mit Posten (`daten`) und die Zeilen ihrer
+  Dateien; die verschlüsselten Dateien im Dateisystem gehen nach dem
+  Commit. Danach lässt sich das Jahr neu erzeugen; ist kein Jahresbeitrag
+  mehr übrig, ist „Bestand leeren" wieder möglich (10 §1).
+  **Einzug des Jahres** = alle Beiträge, die er nennt (seine Kopie in
+  `daten` und die Beiträge, die auf ihn zeigen), sind aus diesem Jahr. Ein
+  Einzug, der auch Beiträge eines anderen Jahres enthält, bleibt im Archiv
+  (die Rückfrage sagt das); die gelöschten Beiträge stehen dort als
+  „gelöscht". Audit `beitraege.jahr_geloescht` mit Jahr, Anzahlen, Summe,
+  Einzug-IDs und Zahl der Dateien.
 
 ## 3. Einzug
 
@@ -100,7 +146,8 @@ bestätigter Einzug ist abgeschlossen (Rücklastschriften laufen je Beitrag,
 auch verworfene – mit Datum, Fälligkeit, Status, Anzahl, Summe, wer
 erzeugt/bestätigt hat; je Einzug die gespeicherte Datei zum Herunterladen
 und die Liste der enthaltenen Beiträge. Einzüge und ihre Dateien werden
-nie gelöscht, auch nicht beim Löschen eines Mitglieds.
+nie einzeln gelöscht, auch nicht beim Löschen eines Mitglieds – nur
+zusammen mit den Beiträgen ihres Jahres (§2a).
 
 Umsetzung (#30): Abschnitt **„Einzug per Lastschrift"** auf
 `/app/beitraege` zwischen „Jahresbeiträge" und der Liste des Jahres, das
@@ -228,3 +275,9 @@ Umlauten; Kontrollsumme und Anzahl stimmen; die Datei wird beim Erzeugen
 verschlüsselt gespeichert, jeder Download liefert byte-gleich dieselbe
 Datei, auch nachdem sich Mitgliedsdaten geändert haben; Archiv zeigt
 verworfene Einzüge; Vorstand bekommt auf jeder Route dieser Datei 403.
+Zu §2a: Löschen mit falschem Bestätigungswort scheitert; Löschen eines
+bezahlten Jahres mit Einzug entfernt alles des Jahres (Beiträge, Einzüge,
+Dateien) und nichts anderer Jahre, ein Einzug mit mehreren Jahren bleibt;
+Audit-Eintrag; danach ist „Bestand leeren" wieder möglich. Mehrfach-bezahlt
+setzt genau die gewählten, ein nicht mehr offener ändert nichts;
+Bereichslogik in `tests/js/beitraege-auswahl.test.js`.

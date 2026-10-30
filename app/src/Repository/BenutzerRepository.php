@@ -31,11 +31,12 @@ final readonly class BenutzerRepository
         BenutzerStatus $status,
         Rolle $rolle,
         \DateTimeImmutable $now,
+        bool $barrierefrei = false,
     ): int {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO `user` (email, name, password_hash, status, rolle, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO `user` (email, name, password_hash, status, rolle, created_at, modus_barrierefrei) VALUES (?, ?, ?, ?, ?, ?, ?)',
         );
-        $stmt->execute([$email, $name, $passwordHash, $status->value, $rolle->value, $now->format(self::FORMAT)]);
+        $stmt->execute([$email, $name, $passwordHash, $status->value, $rolle->value, $now->format(self::FORMAT), $barrierefrei ? 1 : 0]);
 
         return (int) $this->pdo->lastInsertId();
     }
@@ -170,7 +171,8 @@ final readonly class BenutzerRepository
             // An unknown value (a newer release wrote it) locks the account
             // rather than guessing what it may do.
             status: BenutzerStatus::tryFrom((string) $row['status']) ?? BenutzerStatus::Gesperrt,
-            rolle: Rolle::tryFrom((string) $row['rolle']) ?? Rolle::Vorstand,
+            // An unknown role gets the fewest rights: read only (issue #87).
+            rolle: Rolle::tryFrom((string) $row['rolle']) ?? Rolle::Lesend,
             barrierefrei: (bool) $row['modus_barrierefrei'],
             // An unknown method (a newer release wrote it) becomes the mail
             // code, never "not set up": that would open the account on the

@@ -7,6 +7,7 @@ namespace App\Service\Beitraege;
 use App\Domain\BeitragNichtAenderbar;
 use App\Domain\Beitragsart;
 use App\Domain\Jahresbeitrag;
+use App\Domain\JahresbeitragStatus;
 use App\Domain\Mitglied;
 use App\Domain\Vermerk;
 use App\Domain\Zahlweise;
@@ -114,6 +115,43 @@ final readonly class Jahresbeitraege
             $was = sprintf('Bezahlt (%s) am %s', $zahlweise->bezeichnung(), Datum::anzeigen($am));
 
             return $b->bezahltVonHand($zahlweise, $am, self::vermerk($von, self::mitZusatz($was, $text)));
+        });
+    }
+
+    /**
+     * Several fees paid by hand at once (#90): the same payment details as
+     * for one fee. All or nothing - in one transaction, every id checked
+     * after locking its row; if one does not exist or is no longer open,
+     * no fee changes.
+     *
+     * @param list<int> $ids
+     * @return list<Jahresbeitrag> the paid fees, in the order of $ids
+     * @throws BeitragNichtAenderbar
+     */
+    public function mehrereBezahltVonHand(array $ids, Zahlweise $zahlweise, \DateTimeImmutable $am, string $text, ?int $von): array
+    {
+        $ids = array_values(array_unique(array_filter($ids, static fn(int $id): bool => $id > 0)));
+        if ($ids === []) {
+            throw new BeitragNichtAenderbar('Bitte wählen Sie mindestens einen Beitrag aus.');
+        }
+
+        return Zeilen::transaktion($this->pdo, function () use ($ids, $zahlweise, $am, $text, $von): array {
+            $gefunden = $this->beitraege->mitIds($ids, zumAendern: true);
+            $was = sprintf('Bezahlt (%s) am %s', $zahlweise->bezeichnung(), Datum::anzeigen($am));
+            $vermerk = self::vermerk($von, self::mitZusatz($was, $text));
+            $bezahlt = [];
+            foreach ($ids as $id) {
+                $beitrag = $gefunden[$id] ?? null;
+                if ($beitrag === null || $beitrag->status !== JahresbeitragStatus::Offen) {
+                    throw new BeitragNichtAenderbar('Mindestens ein gewählter Beitrag ist inzwischen nicht mehr offen oder gelöscht. '
+                        . 'Es wurde nichts geändert – die Liste ist jetzt wieder aktuell, bitte wählen Sie erneut.');
+                }
+                $neu = $beitrag->bezahltVonHand($zahlweise, $am, $vermerk);
+                $this->beitraege->speichern($neu);
+                $bezahlt[] = $neu;
+            }
+
+            return $bezahlt;
         });
     }
 

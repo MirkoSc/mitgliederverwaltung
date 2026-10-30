@@ -4,7 +4,8 @@
  * Settings section Benutzer (docs/spec/02-sicherheit.md section 5): one
  * entry per account - opened, it shows what can be done with it - and the
  * invitation form below. No script: the entries are <details>, deleting
- * asks for a tick first.
+ * asks for a tick first. The Barrierefrei-Modus can be set for an account
+ * at the invitation and switched later (issue #87).
  *
  * @var list<array{benutzer: \App\Domain\Benutzer, selbst: bool, einladungBis: \DateTimeImmutable|null}> $zeilen
  * @var list<\App\Domain\Rolle> $rollen
@@ -21,7 +22,9 @@ $etikett = static fn(BenutzerStatus $status): string => match ($status) {
 };
 ?>
 <p>Admins dürfen alles. Der Vorstand sucht, sieht und bearbeitet Mitglieder und nutzt die Listen –
-    Beiträge, Einzug, Einstellungen und Benutzer bleiben dem Admin vorbehalten.</p>
+    Beiträge, Einzug, Einstellungen und Benutzer bleiben dem Admin vorbehalten.
+    „Nur lesen“ sieht Mitglieder, Familien, Nachweise und Listen samt Exporten und, ob ein Mitglied bezahlt hat –
+    ändern kann diese Rolle nichts.</p>
 
 <ul class="benutzer-liste">
     <?php foreach ($zeilen as $zeile): $b = $zeile['benutzer']; $id = 'benutzer-' . $b->id; ?>
@@ -45,6 +48,8 @@ $etikett = static fn(BenutzerStatus $status): string => match ($status) {
                             <dt>Letzte Anmeldung</dt>
                             <dd><?= $b->lastLoginAt !== null ? e($b->lastLoginAt->format('d.m.Y, H:i')) . ' Uhr' : 'noch nie' ?></dd>
                         <?php endif; ?>
+                        <dt>Barrierefrei-Modus</dt>
+                        <dd><?= $b->barrierefrei ? 'an' : 'aus' ?></dd>
                     </dl>
 
                     <?php if ($zeile['selbst']): ?>
@@ -64,6 +69,11 @@ $etikett = static fn(BenutzerStatus $status): string => match ($status) {
                         </form>
 
                         <div class="knopfreihe">
+                            <form method="post" action="/admin/benutzer/<?= e($b->id) ?>/barrierefrei">
+                                <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
+                                <input type="hidden" name="an" value="<?= $b->barrierefrei ? '0' : '1' ?>">
+                                <button type="submit" class="knopf"><?= $b->barrierefrei ? 'Barrierefrei-Modus ausschalten' : 'Barrierefrei-Modus einschalten' ?></button>
+                            </form>
                             <?php if ($b->status === BenutzerStatus::Eingeladen): ?>
                                 <form method="post" action="/admin/benutzer/<?= e($b->id) ?>/einladung">
                                     <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
@@ -113,6 +123,10 @@ $etikett = static fn(BenutzerStatus $status): string => match ($status) {
                 <option value="<?= e($rolle->value) ?>"<?= $rolle === \App\Domain\Rolle::Vorstand ? ' selected' : '' ?>><?= e($rolle->bezeichnung()) ?></option>
             <?php endforeach; ?>
         </select>
+    </div>
+    <div class="feld">
+        <label class="feld-haken"><input type="checkbox" name="barrierefrei" value="1" aria-describedby="einladen-barrierefrei-hilfe"> Barrierefrei-Modus von Anfang an einschalten</label>
+        <p class="feld-hinweis" id="einladen-barrierefrei-hilfe">Große Schrift, hoher Kontrast, große Knöpfe. Die Person kann ihn im Benutzermenü selbst wieder ausschalten.</p>
     </div>
     <button type="submit" class="knopf knopf-haupt">Einladung senden</button>
 </form>

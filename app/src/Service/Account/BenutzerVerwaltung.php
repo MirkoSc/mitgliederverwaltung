@@ -94,6 +94,22 @@ final readonly class BenutzerVerwaltung
     /**
      * @throws BenutzerRegelVerstoss
      */
+    /**
+     * Switches the Barrierefrei-Modus of an account for it (issue #87) - the
+     * same setting the account switches itself in the user menu. Takes
+     * effect with its next request (App\Http\LoginGuard reads the account
+     * anew each time).
+     *
+     * @throws BenutzerRegelVerstoss
+     */
+    public function barrierefreiSetzen(int $userId, bool $an): Benutzer
+    {
+        $benutzer = $this->finde($userId);
+        $this->repo()->updateBarrierefrei($userId, $an);
+
+        return $benutzer;
+    }
+
     public function loeschen(int $adminId, int $userId): Benutzer
     {
         $benutzer = $this->finde($userId);

@@ -38,6 +38,13 @@ final class NavigationTest extends TestCase
         self::assertSame(['Mitglieder', 'Listen', 'Karte', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt(), new Konto(1, 'A', Rolle::Admin)));
     }
 
+    /** Issue #87: "Nur lesen" has neither the page "Beiträge" nor the admin area. */
+    public function testReadOnlySeesNeitherFeesPageNorSettings(): void
+    {
+        self::assertSame(['Mitglieder', 'Listen', 'Karte'], self::labels(Navigation::haupt(), new Konto(1, 'L', Rolle::Lesend)));
+        self::assertSame('/app/mitglieder', Navigation::startseiteFuer(new Konto(1, 'L', Rolle::Lesend)));
+    }
+
     public function testTheUserMenuOffersWhatEveryAccountDoesForItself(): void
     {
         $menue = Navigation::benutzermenue(new Konto(1, 'V', Rolle::Vorstand));

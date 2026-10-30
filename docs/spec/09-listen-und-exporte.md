@@ -55,13 +55,13 @@ Ansicht und Export zeigen genau das, was es liefert.
 
 | Liste | Inhalt | Filter | Rolle |
 |---|---|---|---|
-| **Geburtstage** | Name, Geburtstag, neues Alter, Abteilungen; runde Geburtstage markiert | Zeitraum: Woche / Monat / Jahr (mit Vor/Zurück), „nur runde" | beide |
-| **Ehrungen** | Name, Eintrittsdatum, Jahre, Stufe, Abteilungen, geehrt am | Jahr, „nur offene" | beide |
-| **Funktionen** | Name, Funktion, Lizenznummer, Abteilungen, Kontakt | Funktion | beide |
-| **Selbst kassieren** | offene Jahresbeiträge mit Zahlart `selbst` oder ohne gültige IBAN: Name, Jahr, Betrag, Kontakt | Jahr | Admin |
-| **Auffälligkeiten** | alle Hinweise aller Mitglieder (07 §6): Name, Hinweis | Art des Hinweises | beide |
-| **BLSV-Meldung** | §4 | Stichtag | beide |
-| **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | beide (Beitragsspalten nur Admin) |
+| **Geburtstage** | Name, Geburtstag, neues Alter, Abteilungen; runde Geburtstage markiert | Zeitraum: Woche / Monat / Jahr (mit Vor/Zurück), „nur runde" | alle |
+| **Ehrungen** | Name, Eintrittsdatum, Jahre, Stufe, Abteilungen, geehrt am | Jahr, „nur offene" | alle |
+| **Funktionen** | Name, Funktion, Lizenznummer, Abteilungen, Kontakt | Funktion | alle |
+| **Selbst kassieren** | offene Jahresbeiträge mit Zahlart `selbst` oder ohne gültige IBAN: Name, Jahr, Betrag, Kontakt | Jahr | Admin, Nur lesen |
+| **Auffälligkeiten** | alle Hinweise aller Mitglieder (07 §6): Name, Hinweis | Art des Hinweises | alle |
+| **BLSV-Meldung** | §4 | Stichtag | alle |
+| **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | alle (Beitragsspalten nur Admin und Nur lesen) |
 
 ### Geburtstage
 
@@ -82,7 +82,8 @@ Ansicht und Export zeigen genau das, was es liefert.
   Jahres ausgetreten ist, steht nicht in der Liste. Mitglieder ohne
   Eintrittsdatum zählt ein Hinweis über der Tabelle (ohne Namen). Der Knopf
   ist eine `ListenAktion` an der Zeile (nur in der Ansicht, nicht im Export);
-  er postet an `/app/listen/ehrungen/vermerk` (beide Rollen).
+  er postet an `/app/listen/ehrungen/vermerk` (Admin und Vorstand; „Nur
+  lesen“ sieht die Liste ohne Knöpfe).
 
 ## 3. Einstellungen dazu
 
@@ -123,7 +124,7 @@ Jahresbeitrags. Nachweis-Dateien und Versionen sind nicht enthalten (dafür
 gibt es das Backup).
 
 Umsetzung `AlleMitgliederListe`. Als **Beitragsspalten** (nur mit dem Recht
-`beitraege.verwalten`, also Admin) gelten Beitragsart, Zahlart, IBAN, BIC,
+`beitraege.sehen`, also Admin und Nur lesen) gelten Beitragsart, Zahlart, IBAN, BIC,
 Kontoinhaber, Mandatsreferenz, Mandatsdatum sowie Betrag und Status des
 Jahresbeitrags des laufenden Jahres; der Vorstand bekommt alle übrigen Felder.
 
@@ -142,4 +143,4 @@ csv mit BOM, `;` und Feldern mit Semikolon/Anführungszeichen/Zeilenumbruch;
 xlsx öffnet sich (gültiges ZIP, Inhalt per Rücklesen geprüft), Datum als
 Datumszelle; BLSV-Export hat exakt die Spalten der Vorlage in der
 Reihenfolge; Vorstand sieht „Selbst kassieren" nicht und bekommt keine
-Beitragsspalten; jeder Export erzeugt einen Audit-Eintrag.
+Beitragsspalten, Nur lesen sieht beides, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.

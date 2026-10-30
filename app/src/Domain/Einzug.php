@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Domain;
 
 /**
- * One direct debit run (docs/spec/08-beitraege.md section 3). Never deleted,
- * not even with a member: `daten` keeps its own copy of the transactions and
+ * One direct debit run (docs/spec/08-beitraege.md section 3). Never deleted
+ * with a member, only together with the fees of its year (section 2a): `daten` keeps its own copy of the transactions and
  * the file that went to the bank is an encrypted blob that is never
  * regenerated.
  */

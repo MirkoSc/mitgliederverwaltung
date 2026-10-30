@@ -40,8 +40,8 @@ use App\Support\Iban;
  *
  * The stored file is the archive of what went to the bank: it is never
  * made again and never changed, every download is the same bytes, whatever
- * happens to the members afterwards. Runs and their files are never
- * deleted.
+ * happens to the members afterwards. Runs and their files are deleted
+ * only together with the fees of their year (BeitragsjahrLoeschen, #90).
  */
 final readonly class Einzuege
 {

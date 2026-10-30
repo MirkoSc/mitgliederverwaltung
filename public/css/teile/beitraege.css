@@ -62,3 +62,111 @@
 .beitrag-aktionen .formular {
     max-width: 32rem;
 }
+
+/* Several fees paid at once (#90): the details above the list, the
+   checkboxes in the list's first column (they belong to this form through
+   form="…"). */
+.mehrfach-bezahlt {
+    margin: 0 0 var(--abstand-4);
+    padding: var(--abstand-4);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche-2);
+}
+
+.mehrfach-felder {
+    display: grid;
+    gap: var(--abstand-3);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.mehrfach-felder > legend {
+    padding: 0;
+    font-size: var(--schrift-h3);
+    font-weight: 650;
+}
+
+.mehrfach-felder .feld-hinweis {
+    max-width: var(--text-breite);
+}
+
+.mehrfach-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-2) var(--abstand-5);
+}
+
+.mehrfach-kopf[hidden] {
+    display: none;
+}
+
+.mehrfach-zaehler {
+    margin: 0;
+    font-weight: 650;
+}
+
+/* Side by side on a wide screen, one below the other on the phone. */
+.mehrfach-angaben {
+    display: grid;
+    gap: var(--abstand-3);
+    align-items: end;
+}
+
+.mehrfach-angaben .knopf {
+    justify-self: start;
+}
+
+@media (min-width: 48rem) {
+    :root:not(.modus-barrierefrei) .mehrfach-angaben {
+        grid-template-columns: auto auto minmax(10rem, 1fr) auto;
+    }
+}
+
+.modus-barrierefrei .mehrfach-bezahlt {
+    border: 2px solid var(--farbe-text);
+}
+
+/* The checkbox column: narrow, a large target, no text selected by a
+   Shift click. */
+.liste .beitrag-auswahl {
+    width: 1%;
+    user-select: none;
+}
+
+.liste .beitrag-auswahl .feld-haken {
+    justify-content: center;
+    min-width: var(--tippflaeche);
+}
+
+.modus-barrierefrei .liste .beitrag-auswahl input[type="checkbox"] {
+    width: 1.75em;
+    height: 1.75em;
+}
+
+/* Phone: the card's link covers the card - the checkbox stays on top. */
+@media (max-width: 47.99rem) {
+    .liste .beitrag-auswahl {
+        width: auto;
+    }
+
+    .liste .beitrag-auswahl .feld-haken {
+        position: relative;
+        z-index: 1;
+        justify-content: flex-start;
+    }
+}
+
+/* The question before deleting a year. */
+.jahr-loeschen-umfang {
+    margin: 0 0 var(--abstand-3);
+    padding-left: var(--abstand-5);
+}
+
+.jahr-loeschen-text,
+.jahr-loeschen-formular {
+    max-width: var(--text-breite);
+}

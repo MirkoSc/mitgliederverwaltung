@@ -39,6 +39,40 @@ final class BenutzerVerwaltungTest extends DatabaseTestCase
         $this->admin = Benutzerdaten::anlegen($this->pdo(), 'admin@example.org', Rolle::Admin, name: 'Anna Admin');
     }
 
+    /** Issue #87: "Nur lesen" is a role like the others, stored as `lesend`. */
+    public function testTheRoleCanBecomeReadOnly(): void
+    {
+        $id = Benutzerdaten::anlegen($this->pdo());
+
+        $this->verwaltung->rolleAendern($this->admin, $id, Rolle::Lesend);
+
+        self::assertSame(Rolle::Lesend, $this->repo->findById($id)?->rolle);
+        self::assertSame('lesend', $this->pdo()->query('SELECT rolle FROM `user` WHERE id = ' . $id)->fetchColumn());
+    }
+
+    /** An unknown role in the database gets the fewest rights (fail closed). */
+    public function testAnUnknownRoleReadsAsReadOnly(): void
+    {
+        $id = Benutzerdaten::anlegen($this->pdo());
+        $this->pdo()->exec("UPDATE `user` SET rolle = 'kassierer' WHERE id = " . $id);
+
+        self::assertSame(Rolle::Lesend, $this->repo->findById($id)?->rolle);
+    }
+
+    public function testTheAdminSwitchesTheBarrierefreiModus(): void
+    {
+        $id = Benutzerdaten::anlegen($this->pdo());
+
+        $this->verwaltung->barrierefreiSetzen($id, true);
+        self::assertTrue($this->repo->findById($id)?->barrierefrei);
+
+        $this->verwaltung->barrierefreiSetzen($id, false);
+        self::assertFalse($this->repo->findById($id)?->barrierefrei);
+
+        $this->expectException(BenutzerRegelVerstoss::class);
+        $this->verwaltung->barrierefreiSetzen(99999, true);
+    }
+
     public function testTheRoleChanges(): void
     {
         $id = Benutzerdaten::anlegen($this->pdo());
