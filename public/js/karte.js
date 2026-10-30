@@ -150,13 +150,16 @@
 
                 return inhalt;
             });
-            punkt.addTo(karte);
             // Leaflet makes the marker a focusable button; its name is the
-            // address, not just the number inside.
-            const element = punkt.getElement();
-            if (element) {
-                element.setAttribute('aria-label', titel);
-            }
+            // address, not just the number inside. Set once Leaflet has
+            // drawn it (only after the map has its view).
+            punkt.on('add', () => {
+                const element = punkt.getElement();
+                if (element) {
+                    element.setAttribute('aria-label', titel);
+                }
+            });
+            punkt.addTo(karte);
             grenzen.push([ort.lat, ort.lon]);
         }
 

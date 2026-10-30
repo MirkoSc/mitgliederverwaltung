@@ -104,7 +104,7 @@ Teil eines Releases sind.
   Update, Systemcheck, Audit-Log.
 
 **Oberfläche (06-oberflaeche.md):** so wenige Seiten wie möglich –
-Mitglieder, Listen, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
+Mitglieder, Listen, Karte, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
 und PC. Barrierearmut als solide Grundlage, kein Vollstandard; dazu ein
 **Barrierefrei-Modus** je Benutzer (PC: große Schrift, hoher Kontrast,
 große Flächen, nur Tastatur möglich) als CSS-Klasse, kein zweites Layout.

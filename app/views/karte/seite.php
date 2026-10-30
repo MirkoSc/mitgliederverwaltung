@@ -48,7 +48,7 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
         <form id="karte-ermitteln" class="karte-ermitteln" method="post" action="<?= e(KarteController::PFAD_ERMITTELN) ?>" data-csrf="<?= e((string) $csrf) ?>">
             <input type="hidden" name="_csrf" value="<?= e((string) $csrf) ?>">
             <button type="submit" class="knopf">Jetzt Koordinaten ermitteln</button>
-            <span class="laedt" id="karte-ermitteln-status" hidden></span>
+            <span id="karte-ermitteln-status" role="status" hidden></span>
         </form>
     <?php endif; ?>
 </div>

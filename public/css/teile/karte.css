@@ -84,6 +84,18 @@
     color: var(--farbe-link);
 }
 
+/* Leaflet's controls in the page's colours (also dark mode). */
+.karte-flaeche .leaflet-bar a,
+.karte-flaeche .leaflet-control-attribution {
+    background: var(--farbe-flaeche);
+    color: var(--farbe-text);
+}
+
+.karte-flaeche .leaflet-bar a:hover,
+.karte-flaeche .leaflet-bar a:focus-visible {
+    background: var(--farbe-flaeche-2);
+}
+
 .karte-flaeche .leaflet-control-attribution {
     font-size: 0.75rem;
 }
