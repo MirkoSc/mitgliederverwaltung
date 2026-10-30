@@ -125,4 +125,15 @@ final class EinbettungTest extends TestCase
         $link = $post->link('/app/mitglieder', swap: 'outerHTML');
         self::assertSame('href="/app/mitglieder" hx-post="/app/mitglieder" hx-include="#mitglieder-form" hx-target="#mitglieder-bereich" hx-swap="outerHTML" hx-push-url="/app/mitglieder"', $link);
     }
+
+    public function testAWayBackOfItsOwnSurvivesHtmx(): void
+    {
+        self::assertNull($this->liste()->zurueckText);
+
+        $familie = new Einbettung('/app/familien', ['familie' => '5'])->mitZurueck('Zurück zur Familie')->mitHtmx('familien-bereich', '#familien-form');
+
+        self::assertSame('Zurück zur Familie', $familie->zurueckText);
+        self::assertSame('/app/familien?familie=5', $familie->rueckweg());
+        self::assertSame('/app/familien?familie=5&mitglied=7', $familie->adresse(7));
+    }
 }

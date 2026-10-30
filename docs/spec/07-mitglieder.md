@@ -64,7 +64,9 @@ Mitglieder, sonst deaktivieren.
 - Familie = Name (z. B. „Familie Muster") + Mitglieder mit Rolle.
 - Gepflegt im Mitglied: „Familie wählen" (Suche) oder „neue Familie",
   Rolle wählen. Die Familie zeigt im Mitglied ihre übrigen Personen.
-- Eine Familie ohne Personen wird automatisch gelöscht.
+- Eine Familie, aus der die letzte Person geht, wird automatisch gelöscht.
+  Auf der Seite „Familien" (#92) angelegte Familien sind leer, bis jemand
+  hinzukommt; eine leere Familie lässt sich dort löschen.
 - Umsetzung (#20): Reiter **Familie** am Mitglied, direkt nach „Daten"
   (`App\App\Mitglied\FamilieReiter`, Template `mitglied/familie`) zeigt
   Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
@@ -77,6 +79,29 @@ Mitglieder, sonst deaktivieren.
   normales Speichern des Mitglieds (neue Version, Anlass `geaendert`); die
   Rolle ohne Angabe ist `elternteil`. Das Formular „Daten" enthält Familie
   und Rolle nicht, sie bleiben beim Speichern erhalten.
+- Seite **Familien** (#92, 06 §2): `GET/POST /app/familien`
+  (`App\App\FamilienController`, `app/routes/familien.php`; Liste aus
+  `FamilienListeRepository`). Änderungen `POST /app/familien/neu` und
+  `/app/familien/{id}/{umbenennen,loeschen,hinzufuegen,rolle,zahler,entfernen,anschrift}`
+  mit `mitglieder.bearbeiten`; jede Person muss zur Familie der Route
+  gehören. Personen ändert nur `App\Service\Mitglied\FamilienPflege` –
+  dieselbe Stelle nutzt der Reiter „Familie" –, jede Änderung ein normales
+  Speichern (neue Version, Anlass `geaendert`).
+  - **Zahler wechseln**: die gewählte Person wird Zahler, bisherige Zahler
+    werden Elternteil; die Beitragsart bleibt (Hinweise melden, was nicht
+    passt).
+  - **Anschriften vereinheitlichen** (erscheint, wenn die Anschriften
+    abweichen): Quelle wählbar, vorgewählt der (erste) Zahler, sonst die
+    erste Person. Verglichen werden Straße, PLZ, Ort und Land ohne
+    Groß-/Kleinschreibung und Leerzeichen am Rand (`App\Domain\Wohnanschrift`)
+    – genau die Felder, die übernommen werden; vorab angehakt ist, wer von
+    der Quelle abweicht. „Anschrift übernehmen (n)" schreibt je geänderter
+    Person eine Version und einen Audit-Eintrag
+    `familie.anschrift_uebernommen` (Familie, Quelle, IDs der Geänderten –
+    keine Anschrift). Wer die Anschrift schon hat, bleibt unverändert. Ein
+    Hinweis davor, keine Rückfrage, keine Sperre.
+  - Der Hinweis „Andere Anschrift" am Mitglied (§6) vergleicht weiter nur
+    Straße und PLZ mit dem Zahler.
 - Beitrag: der **Zahler** hat die Beitragsart „Familie"; Elternteile und
   Kinder haben normalerweise **keine** eigene Beitragsart (08 §1).
 

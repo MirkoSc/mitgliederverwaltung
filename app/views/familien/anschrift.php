@@ -57,7 +57,7 @@ $vorgewaehlt = count(array_filter($andere, static fn($p): bool => in_array((int)
 
         <p class="hinweis hinweis-info">Straße, PLZ, Ort und Land der Angehakten werden überschrieben. Jede geänderte Person bekommt eine neue Version im Verlauf – dort lässt sich die alte Anschrift zurückholen.</p>
         <div class="knopfreihe">
-            <button type="submit" class="knopf knopf-haupt">Anschrift übernehmen (<span data-anschrift-anzahl><?= e($vorgewaehlt) ?></span>)</button>
+            <button type="submit" class="knopf knopf-haupt"><span>Anschrift übernehmen (<span data-anschrift-anzahl><?= e($vorgewaehlt) ?></span>)</span></button>
         </div>
     </form>
 </section>

@@ -32,12 +32,21 @@
     margin-top: 0;
 }
 
-.familie-personen .nummer {
+.familie-tabelle .nummer {
     display: block;
 }
 
 .familie-aendern form {
     margin: 0 0 var(--abstand-2);
+}
+
+/* Role and its button on one line where the column allows it. */
+.familie-aendern .knopfreihe {
+    gap: var(--abstand-2);
+}
+
+.familie-aendern select {
+    width: auto;
 }
 
 .familie-aendern form:last-child {

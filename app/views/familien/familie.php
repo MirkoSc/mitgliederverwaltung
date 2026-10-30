@@ -50,7 +50,7 @@ $csrfFeld = '<input type="hidden" name="_csrf" value="' . e($csrf ?? '') . '">';
         <?php endif; ?>
 
         <div class="tabelle-rahmen">
-            <table class="liste familie-personen">
+            <table class="liste familie-tabelle">
                 <caption>Personen der Familie</caption>
                 <thead>
                     <tr>

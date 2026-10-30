@@ -26,7 +26,7 @@
 <div class="geteilt<?= $offen ? ' geteilt-mit-detail' : '' ?>" id="familien-bereich">
     <div class="geteilt-liste">
         <?php if ($familieUnbekannt || $ansicht->unbekannt): ?>
-            <p class="hinweis hinweis-warnung"><?= $ansicht->unbekannt ? 'Dieses Mitglied gibt es nicht mehr.' : 'Diese Familie gibt es nicht mehr.' ?> Möglicherweise wurde es inzwischen gelöscht.</p>
+            <p class="hinweis hinweis-warnung"><?= $ansicht->unbekannt ? 'Dieses Mitglied gibt es nicht mehr. Möglicherweise wurde es inzwischen gelöscht.' : 'Diese Familie gibt es nicht mehr. Möglicherweise wurde sie inzwischen gelöscht oder hatte niemanden mehr.' ?></p>
         <?php endif; ?>
 
         <form class="suche" id="familien-form" method="post" action="<?= e($formUrl) ?>" role="search"
