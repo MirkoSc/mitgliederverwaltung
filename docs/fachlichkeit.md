@@ -304,7 +304,7 @@ vorkommen (über alle Abteilungen eines Mitglieds zusammengefasst):
 
 | alt (Grundbeitrag + Zuschlag) | Anzahl | neue Beitragsart | Aktiv-Häkchen |
 |---|---:|---|---|
-| Erwachsene + aktiv | 110 | Aktiv (85 €) | aktiv |
+| Erwachsene + aktiv | 110 | Aktiv (85 €); **ab 67: Rentner aktiv (50 €)**² | aktiv |
 | Erwachsene | 134 | Passiv (50 €) | passiv |
 | Kinder | 140 | Jugend/Schüler/Studenten/Azubis (45 €) | aktiv |
 | Jugendliche | 17 | Jugend/Schüler/Studenten/Azubis (45 €) | aktiv |
@@ -317,8 +317,21 @@ vorkommen (über alle Abteilungen eines Mitglieds zusammengefasst):
 | Beitragsfrei | 4 | Beitragsfrei, Grund aus der Notiz | aktiv |
 | (keine Mitgliedschaft) | 2 | kein Mitglied – nur Kontoinhaber der Mitglieder, für die gezahlt wird | – |
 
-¹ „aktiv", wenn die Notiz „aktiv" enthält, sonst passiv; Mirko prüft die
-Liste nach dem Import.
+¹ **aktiv**, außer die Notiz enthält „passiv" (und nicht zugleich
+„aktiv"); der Zuschlag „aktiv" macht immer aktiv. Neben dem Zahler der
+Familienkarte liefen alle Familienmitglieder als „Beitragsfrei FK" über
+ihn mit und sind meist aktiv – „passiv" steht dann immer in der Notiz
+(geklärt 30.10.2026, ersetzt die frühere Regel „passiv ohne Notiz").
+
+² Alter am Tag der Umwandlung, Grenze 67 wie bei den Rentner-Beitragsarten
+(geklärt 30.10.2026).
+
+**Vorrang (geklärt 30.10.2026):** Die in der alten Software eingestellte
+Beitragsart entscheidet; die Notiz wird nur für aktiv/passiv herangezogen.
+Hinweise in der Notiz wie „Mindestbeitrag" oder „Student" ändern die
+Beitragsart beim Import **nicht** – solche Fälle korrigiert der Verein von
+Hand. Korrekturen kommen durch Leeren des Bestands und erneuten Erstimport,
+nicht durch eine Migration.
 
 - Ein **befristeter Rabatt** (4 Mitglieder, 50 %) wird nicht übernommen
   (BT8 ✅): voller Beitrag der neuen Beitragsart.
