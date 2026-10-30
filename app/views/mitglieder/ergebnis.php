@@ -90,8 +90,8 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
             <?php endif; ?>
             <div class="blaettern-mitte">
                 <p class="blaettern-stand">Seite <?= e($ergebnis->seite) ?> von <?= e($ergebnis->seiten()) ?></p>
-                <?php /* Belongs to the search form (form attribute): without a script
-                         "Übernehmen" posts it, with htmx the change does. */ ?>
+                <?php /* Belongs to the search form (form attribute): with htmx the change
+                         applies it at once, without a script "Suchen" sends it along. */ ?>
                 <div class="feld blaettern-anzahl">
                     <label for="filter-anzahl">Je Seite</label>
                     <select id="filter-anzahl" name="anzahl" form="mitglieder-form">
@@ -99,7 +99,6 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
                             <option value="<?= e($anzahl === 0 ? 'alle' : $anzahl) ?>"<?= $anzahl === $filter->anzahl ? ' selected' : '' ?>><?= e($anzahl === 0 ? 'Alle' : $anzahl) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <button type="submit" form="mitglieder-form" class="knopf knopf-still">Übernehmen</button>
                 </div>
             </div>
             <?php if ($ergebnis->hatNaechste()): ?>

@@ -4,8 +4,8 @@
  * List of the families beside the opened family - or, in its place, a
  * person of it (the member building block, docs/spec/06-oberflaeche.md
  * section 5). The server marks an opened detail with geteilt-mit-detail;
- * on a phone that hides the list (one view after the other), in the
- * Barrierefrei-Modus the detail follows below the list.
+ * on a phone and in the Barrierefrei-Modus that hides the list (one view
+ * after the other).
  *
  * The search posts to the page itself, so a family name never travels in
  * a URL; htmx swaps only the result list while somebody types.

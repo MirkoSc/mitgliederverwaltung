@@ -1362,10 +1362,10 @@ textarea:disabled {
 }
 
 /* List next to detail (06 section 2): on the PC the opened record stands
-   right of the list, in the Barrierefrei-Modus below it (the heading takes
-   the focus, 06 section 5); on a phone it is a view of its own with
-   "Zurück". The server marks an opened record with .geteilt-mit-detail -
-   nothing here needs a script. */
+   right of the list; on a phone and in the Barrierefrei-Modus it is a view
+   of its own over the whole width with "Zurück zur Liste" (the heading
+   takes the focus, 06 section 5). The server marks an opened record with
+   .geteilt-mit-detail - nothing here needs a script. */
 .geteilt {
     display: grid;
     gap: var(--abstand-5);
@@ -1420,17 +1420,19 @@ textarea:disabled {
         grid-template-columns: minmax(22rem, 2fr) minmax(0, 3fr);
     }
 
-    /* Also in the Barrierefrei-Modus: the list stays (the record follows
-       below it, see there), "Schließen" closes the record. */
-    .geteilt-mit-detail .geteilt-liste {
+    /* Not in the Barrierefrei-Modus: there the record keeps the whole
+       width and "Zurück zur Liste", as on a phone. :where() keeps these as
+       weak as before, so a page can still show its own way back
+       (.zurueck-immer, the families). */
+    :where(:root:not(.modus-barrierefrei)) .geteilt-mit-detail .geteilt-liste {
         display: block;
     }
 
-    .geteilt .zurueck {
+    :where(:root:not(.modus-barrierefrei)) .geteilt .zurueck {
         display: none;
     }
 
-    .detail-schliessen {
+    :where(:root:not(.modus-barrierefrei)) .detail-schliessen {
         display: inline-flex;
         margin-left: auto;
     }
@@ -1449,15 +1451,6 @@ textarea:disabled {
         border: 1px solid var(--farbe-rand);
         border-radius: var(--radius);
         background: var(--farbe-flaeche);
-    }
-}
-
-/* Barrierefrei-Modus on the PC: one column, the opened record follows
-   below the list behind a strong rule. */
-@media (min-width: 64rem) {
-    :root.modus-barrierefrei .geteilt-mit-detail .geteilt-detail {
-        padding-top: var(--abstand-5);
-        border-top: 4px solid var(--farbe-text);
     }
 }
 
