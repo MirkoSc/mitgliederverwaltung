@@ -72,11 +72,15 @@ umgeschaltet statt verlinkt.
    Familie** als Baustein (§5) mit „Zurück zur Familie". URL:
    `/app/familien?familie=…&mitglied=…&reiter=…`. Am Handy nacheinander
    Liste → Familie → Mitglied, je mit Zurück-Link.
-3. **Listen** – eine Seite, oben eine Auswahl:
+3. **Listen** – eine Seite, die sofort mit den Geburtstagen öffnet; oben
+   die Listen als Reiter (echte Links, `aria-current`):
    Geburtstage · Ehrungen · Funktionen · Selbst kassieren ·
-   Auffälligkeiten · BLSV-Meldung · Alle Mitglieder (Gesamtexport).
-   Jede Liste hat ihre wenigen Filter (z. B. Woche/Monat/Jahr, nur runde)
-   und **einen** Export-Knopf (xlsx oder csv).
+   Auffälligkeiten · BLSV-Meldung · Alle Mitglieder (Gesamtexport), je
+   nach Recht. Jede Liste hat ihre wenigen Filter (z. B.
+   Woche/Monat/Jahr, nur runde) und **einen** Export-Knopf (xlsx oder csv).
+   Klick auf eine Person öffnet sie **in der Listenseite selbst** (Baustein
+   aus §5, am PC rechts neben der Liste); Filter und Zeitraum bleiben in
+   der URL, es gibt keinen Wechsel auf die Mitglieder-Seite.
 4. **Karte** (#91, beide Rollen, `mitglieder.sehen`) – die Wohnorte der
    aktuellen Mitglieder auf einer OpenStreetMap-Karte (Leaflet, vendored).
    Oben der Stand („x von y Anschriften gefunden"), für den Admin der Knopf
@@ -173,8 +177,9 @@ Ein geöffnetes Mitglied (Kopf mit Name, Nummer, Status und „Schließen",
 Hinweise, Reiter) ist **ein** Baustein: `App\App\Mitglied\MitgliedAnsicht`
 mit dem Template `app/views/mitglied/ansicht.php`. Eine Seite mit einer
 Personenliste bettet ihn rechts neben ihrer Liste ein (Muster „Liste neben
-Mitglied", `geteilt`). Das tun die Mitglieder-Seite und die Familien
-(#92); Listen (#93) folgen auf demselben Weg. Was im Mitglied auf eine eigene
+Mitglied", `geteilt`). Heute tun das die Mitglieder-Seite, die Familien
+(#92) und die Listen (#93, `ListenController`, Template
+`app/views/listen/bereich.php`). Was im Mitglied auf eine eigene
 Seite führt (Familie wählen, Löschen-Rückfrage, ein Jahresbeitrag), führt
 von dort auf die einbettende Seite zurück, nie auf die Mitglieder-Seite.
 
@@ -247,7 +252,8 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
 inkl. „Vorstand sieht keine Beiträge", Barrierefrei-Modus wird aus der
 Benutzereinstellung gesetzt und überlebt das Neuladen; Mitglied als
 Baustein mit einer zweiten einbettenden Seite (Reiter, Speichern-
-Weiterleitung, Schließen, Löschen zeigen auf diese Seite; unsicheres
+Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite
+öffnet Personen selbst – `ListenMitgliedTest`; unsicheres
 `zurueck` fällt auf die Mitglieder-Seite zurück; Fokus) –
 `MitgliedAnsichtTest`, `EinbettungTest`; Familien-Seite (#92) mit dem
 Mitglied an Stelle der Familie, „Zurück zur Familie", Fokus –

@@ -112,10 +112,12 @@ final class ListenSeiteTest extends AppTestCase
         self::assertStringContainsString('<option value="b">Gruppe B</option>', $seite);
         self::assertStringContainsString('name="nur_gerade" value="1"', $seite);
         self::assertStringContainsString('name="jahr" value="2027"', $seite);
-        self::assertStringContainsString('<th scope="col"><a href="/app/listen/' . $this->schluessel . '?sortierung=name">Name</a></th>', $seite);
+        self::assertStringContainsString('<th scope="col"><a href="/app/listen/' . $this->schluessel . '?sortierung=name" hx-get="', $seite);
+        self::assertStringContainsString('>Name</a></th>', $seite);
         self::assertStringContainsString('<th scope="col" class="nebenspalte"><a ', $seite);
         self::assertStringContainsString('120 Einträge', $seite);
-        self::assertStringContainsString('<a href="/app/mitglieder?mitglied=1">Person 001</a>', $seite, 'a row opens the member');
+        self::assertStringContainsString('<a href="/app/listen/' . $this->schluessel . '?mitglied=1" hx-get="', $seite, 'a row opens the member on this page');
+        self::assertStringNotContainsString('/app/mitglieder?mitglied=', $seite, 'no change to the members page any more');
         self::assertStringContainsString('<td data-label="Geburtstag"', $seite);
         self::assertStringContainsString('<span class="etikett etikett-info">rund</span>', $seite);
         self::assertStringContainsString('Die Datei enthält Mitgliederdaten im Klartext.', $seite);
