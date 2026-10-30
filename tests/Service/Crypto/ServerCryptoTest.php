@@ -91,6 +91,44 @@ final class ServerCryptoTest extends TestCase
         new ServerCrypto('zu kurz');
     }
 
+    public function testDuringAKeyChangeBothKeysDecryptButOnlyTheNewOneEncrypts(): void
+    {
+        $alt = random_bytes(ServerCrypto::KEY_BYTES);
+        $neu = random_bytes(ServerCrypto::KEY_BYTES);
+        $unterAlt = new ServerCrypto($alt)->encrypt(self::PLAINTEXT);
+        $ring = new ServerCrypto($neu, $alt);
+
+        self::assertTrue($ring->wechselLaeuft());
+        self::assertFalse(new ServerCrypto($neu)->wechselLaeuft());
+        self::assertSame(self::PLAINTEXT, $ring->decrypt($unterAlt));
+        self::assertFalse($ring->mitAktuellemSchluessel($unterAlt));
+
+        $unterNeu = $ring->encrypt(self::PLAINTEXT);
+        self::assertTrue($ring->mitAktuellemSchluessel($unterNeu));
+        self::assertSame(self::PLAINTEXT, new ServerCrypto($neu)->decrypt($unterNeu));
+
+        $this->expectException(CryptoException::class);
+        new ServerCrypto($alt)->decrypt($unterNeu);
+    }
+
+    public function testNeitherKeyOpensAForeignValue(): void
+    {
+        $fremd = self::crypto()->encrypt(self::PLAINTEXT);
+        $ring = new ServerCrypto(random_bytes(ServerCrypto::KEY_BYTES), random_bytes(ServerCrypto::KEY_BYTES));
+
+        self::assertFalse($ring->mitAktuellemSchluessel($fremd));
+        self::assertFalse($ring->mitAktuellemSchluessel('kaputt'));
+        $this->expectException(CryptoException::class);
+        $ring->decrypt($fremd);
+    }
+
+    public function testThePreviousKeyOfTheWrongLengthIsRejected(): void
+    {
+        $this->expectException(CryptoException::class);
+
+        new ServerCrypto(random_bytes(ServerCrypto::KEY_BYTES), 'zu kurz');
+    }
+
     public function testDebugOutputHidesTheKey(): void
     {
         $key = random_bytes(ServerCrypto::KEY_BYTES);
