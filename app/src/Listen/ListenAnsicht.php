@@ -73,6 +73,42 @@ final readonly class ListenAnsicht
         return min(max(1, $nummer), $this->seitenzahl());
     }
 
+    /**
+     * The state of this view as address parameters: the filters that differ
+     * from their default, the sort order and the page - nothing else, so the
+     * address stays short and a person opened beside the list (06 section 5)
+     * is added by whoever embeds the list. $aenderungen changes values
+     * (null removes one); a changed value that equals its default is left
+     * out as well.
+     *
+     * @param array<string, string|int|bool|null> $aenderungen
+     * @param int|null $seite the page to carry, null or 1 = none
+     * @return array<string, string>
+     */
+    public function parameter(array $aenderungen = [], ?int $seite = null): array
+    {
+        $standards = [];
+        foreach ($this->liste->filter() as $f) {
+            $standards[$f->name] = $f->standard;
+        }
+        $werte = [
+            ...$this->filter,
+            'sortierung' => $this->sortierung,
+            'richtung' => $this->absteigend ? 'ab' : null,
+            'seite' => $seite !== null && $seite > 1 ? $seite : null,
+            ...$aenderungen,
+        ];
+        $abfrage = [];
+        foreach ($werte as $name => $wert) {
+            if ($wert === null || $wert === false || $wert === '' || $wert === ($standards[$name] ?? null)) {
+                continue;
+            }
+            $abfrage[$name] = $wert === true ? '1' : (string) $wert;
+        }
+
+        return $abfrage;
+    }
+
     /** @return list<ListenZeile> */
     public function zeilenAufSeite(int $seite): array
     {

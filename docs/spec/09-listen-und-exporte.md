@@ -1,14 +1,24 @@
 # 09 – Listen und Exporte
 
 Quelle: `docs/fachlichkeit.md` §6–8. Alle Listen liegen auf **einer**
-Seite „Listen" (06 §2) mit einer Auswahl oben, wenigen Filtern und einem
-Export-Knopf. Ehemalige sind überall ausgeblendet, außer beim
+Seite „Listen" (06 §2) mit den Listen als Reitern oben, wenigen Filtern
+und einem Export-Knopf. `/app/listen` zeigt sofort die Geburtstage (hat
+das Konto diese Liste nicht, die erste, die es sehen darf); eine eigene
+Übersichtsseite gibt es nicht. Ehemalige sind überall ausgeblendet, außer beim
 Gesamtexport mit Häkchen „Ehemalige einschließen".
 
 ## 1. Gemeinsame Regeln
 
 - Jede Liste: Tabelle am PC, Karten am Handy, Klick auf eine Zeile
-  öffnet das Mitglied.
+  öffnet das Mitglied **in der Listenseite selbst** (Baustein aus 06 §5:
+  links die Liste, rechts die Person mit allen Reitern und „Schließen";
+  am Handy als eigene Ansicht, im Barrierefrei-Modus unter der Liste).
+  Adresse: `/app/listen/<liste>?<Filter>&mitglied=<id>&reiter=<reiter>` –
+  Filter, Zeitraum, Sortierung und Seite bleiben beim Öffnen, Sortieren,
+  Blättern und nach dem Speichern erhalten; die Formulare der Person
+  leiten mit `zurueck` auf diese Adresse zurück. Kein Wechsel auf die
+  Mitglieder-Seite. Wer `mitglieder.sehen` nicht hat, sieht die Namen ohne
+  Link.
 - **Export** jeder Liste wahlweise als **xlsx** oder **csv**, mit genau
   den Spalten und Filtern der Ansicht.
   - csv: UTF-8 mit BOM, Trennzeichen `;`, Datum `TT.MM.JJJJ` (öffnet in
@@ -144,3 +154,7 @@ xlsx öffnet sich (gültiges ZIP, Inhalt per Rücklesen geprüft), Datum als
 Datumszelle; BLSV-Export hat exakt die Spalten der Vorlage in der
 Reihenfolge; Vorstand sieht „Selbst kassieren" nicht und bekommt keine
 Beitragsspalten, Nur lesen sieht beides, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.
+`/app/listen` liefert die Geburtstagsliste; Personen-Links zeigen auf die
+Listenseite mit `mitglied=<id>`, Sortieren und Filter behalten die Person,
+Speichern in der geöffneten Person bleibt auf der Liste, htmx tauscht nur
+den Bereich `listen-bereich` – `ListenMitgliedTest`.

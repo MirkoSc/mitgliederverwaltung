@@ -269,7 +269,8 @@ Passwort geändert/zurückgesetzt, zweiter Faktor geändert, Benutzer
 eingeladen/geändert/gesperrt/gelöscht und Rollenänderungen (betroffene
 Benutzer nur mit ID), Backup erstellt und heruntergeladen, Update, Restore,
 Export, Import, Einzug erzeugt/bestätigt/verworfen, Lastschriftdatei
-heruntergeladen, Version zurückgeholt, Mitglied gelöscht,
+heruntergeladen, mehrere Beiträge auf einmal bezahlt, Beiträge eines
+Jahres gelöscht (08 §2a; Jahr und Anzahlen, keine Mitgliederdaten), Version zurückgeholt, Mitglied gelöscht,
 Mitgliederbestand geleert (Probelauf des Imports, 10 §1), Abgleich
 durchgeführt (10 §4), Server-Schlüssel: Wechsel begonnen und
 abgeschlossen (§2). Prüfliste und letzter Sicherheits-Durchlauf:

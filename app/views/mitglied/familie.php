@@ -14,6 +14,7 @@
  */
 
 use App\App\FamilieController;
+use App\App\FamilienController;
 use App\App\Mitglied\Einbettung;
 
 if ($mitglied === null) {
@@ -32,6 +33,10 @@ $rolleAktuell = $mitglied->familieRolle;
         <?php endif; ?>
     <?php else: ?>
         <p><strong><?= e($familie->name) ?></strong><?= $rolleAktuell !== null ? ', Rolle: ' . e($rolleAktuell->bezeichnung()) : '' ?></p>
+        <?php if ($einbettung->pfad !== FamilienController::PFAD): ?>
+            <?php /* The whole family - all persons, their addresses, the changes - on the families page (#92). */ ?>
+            <p><a href="<?= e(FamilienController::adresse($familie->id)) ?>">In Familien öffnen</a></p>
+        <?php endif; ?>
         <?php if ($andere === []): ?>
             <p>Sonst ist niemand in dieser Familie.</p>
         <?php else: ?>
