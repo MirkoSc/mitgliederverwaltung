@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\App\Mitglied;
 
 use App\App\BeitraegeController;
-use App\App\MitgliedController;
 use App\Dienste;
 use App\Domain\Permission;
 use App\Repository\BenutzerRepository;
@@ -70,7 +69,7 @@ final readonly class BeitraegeReiter implements Reiter
         return [
             'beitraege' => $beitraege,
             'namen' => $namen,
-            'zurueck' => MitgliedController::adresse($mitgliedId, $this->schluessel()),
+            'mitgliedId' => $mitgliedId,
             'seitenAdresse' => BeitraegeController::seitenAdresse((int) new \DateTimeImmutable('today')->format('Y')),
         ];
     }

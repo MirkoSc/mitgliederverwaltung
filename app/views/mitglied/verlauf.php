@@ -9,10 +9,14 @@
  * @var list<array{version: \App\Domain\MitgliedVersion, aenderungen: list<array{feld: string, alt: string, neu: string}>, wer: ?string, aktuell: bool}> $eintraege
  * @var bool $darfZurueckholen
  * @var string|null $csrf
+ * @var \App\App\Mitglied\Einbettung|null $einbettung the page the member is shown on (MitgliedAnsicht)
  */
 
+use App\App\Mitglied\Einbettung;
 use App\App\VerlaufController;
 use App\Support\Datum;
+
+$einbettung ??= Einbettung::mitgliederSeite();
 ?>
 <?php if ($eintraege === []): ?>
     <p class="leer">Zu diesem Mitglied gibt es noch keine Versionen.</p>
@@ -42,6 +46,7 @@ use App\Support\Datum;
                 <?php if ($darfZurueckholen && !$eintrag['aktuell']): ?>
                     <form method="post" action="<?= e(VerlaufController::adresse($mitgliedId, $version->nr)) ?>">
                         <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
+                        <?= $einbettung->feld() ?>
                         <button type="submit" class="knopf knopf-still">Diese Version zurückholen</button>
                     </form>
                 <?php endif; ?>

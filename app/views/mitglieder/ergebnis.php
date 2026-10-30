@@ -16,6 +16,7 @@
  * @var \App\Domain\MitgliederSeite $ergebnis
  * @var \App\Domain\Mitglied|null $mitglied
  * @var \Closure $url
+ * @var \App\App\Mitglied\Einbettung $einbettung swaps the whole area (list and member)
  * @var bool $nurErgebnis the answer to htmx: add the screen reader sentence
  */
 
@@ -24,12 +25,11 @@ use App\Domain\MitgliederSortierung;
 // Attributes of a link that swaps the result list only (paging).
 $ergebnisLink = static fn(string $ziel, string $swap = 'innerHTML'): string => 'href="' . e($ziel) . '" hx-post="' . e($ziel)
     . '" hx-include="#mitglieder-form" hx-target="#mitglieder-ergebnis" hx-swap="' . $swap . '"';
-$bereichLink = require __DIR__ . '/bereich-link.php';
 
-$kopf = static function (MitgliederSortierung $spalte, string $titel, string $klasse = '') use ($filter, $url, $bereichLink): string {
+$kopf = static function (MitgliederSortierung $spalte, string $titel, string $klasse = '') use ($filter, $url, $einbettung): string {
     $sortiert = $filter->sortierung === $spalte;
     $aria = $sortiert ? ' aria-sort="' . ($filter->absteigend ? 'descending' : 'ascending') . '"' : '';
-    $link = $bereichLink($url(['sortierung' => $filter->sortierungNach($spalte), 'seite' => null]), 'outerHTML');
+    $link = $einbettung->link($url(['sortierung' => $filter->sortierungNach($spalte), 'seite' => null]), swap: 'outerHTML');
 
     return '<th scope="col"' . ($klasse === '' ? '' : ' class="' . $klasse . '"') . $aria . '><a ' . $link . '>' . e($titel) . '</a></th>';
 };
@@ -67,7 +67,7 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
                 <?php foreach ($ergebnis->zeilen as $zeile): ?>
                     <tr>
                         <?php /* A second click on the open member closes it again. */ ?>
-                        <td class="liste-titel"><a <?= $bereichLink($url(['mitglied' => $mitglied?->id === $zeile->id ? null : $zeile->id, 'reiter' => null])) ?><?= $mitglied?->id === $zeile->id ? ' aria-current="true"' : '' ?>><?= e($zeile->name()) ?></a></td>
+                        <td class="liste-titel"><a <?= $mitglied?->id === $zeile->id ? $einbettung->link($url(['mitglied' => null, 'reiter' => null])) : $einbettung->link($url(['mitglied' => $zeile->id, 'reiter' => null]), 'mitglied') ?><?= $mitglied?->id === $zeile->id ? ' aria-current="true"' : '' ?>><?= e($zeile->name()) ?></a></td>
                         <td data-label="Nr."><span class="nummer"><?= e($zeile->mitgliedsnummer) ?></span></td>
                         <td data-label="Ort" class="nebenspalte"><?= e($zeile->ortAnzeige()) ?></td>
                         <td data-label="Abteilung"><?= e(implode(', ', $zeile->abteilungen)) ?></td>

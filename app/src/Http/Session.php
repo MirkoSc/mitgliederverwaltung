@@ -364,6 +364,12 @@ final class Session
         $_SESSION['flash'] = ['text' => $message, 'art' => $art->value];
     }
 
+    /** Whether a message waits for this request, without taking it. */
+    public function hatFlash(): bool
+    {
+        return is_array($_SESSION['flash'] ?? null);
+    }
+
     public function pullFlash(): ?Flash
     {
         $gespeichert = $_SESSION['flash'] ?? null;

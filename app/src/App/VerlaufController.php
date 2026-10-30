@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\App;
 
+use App\App\Mitglied\Einbettung;
 use App\Dienste;
 use App\Domain\AuditAktion;
 use App\Http\Request;
@@ -67,6 +68,6 @@ final readonly class VerlaufController
             $ergebnis->hinweise === [] ? FlashArt::Ok : FlashArt::Warnung,
         );
 
-        return Response::redirect(MitgliedController::adresse($id, 'verlauf'));
+        return Response::redirect(Einbettung::ausAnfrage($r)->adresse($id, 'verlauf'));
     }
 }

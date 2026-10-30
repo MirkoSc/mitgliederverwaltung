@@ -21,9 +21,9 @@ return static function (Routen $routen): void {
     $loeschen = Zugriff::recht(Permission::MitgliederLoeschen);
     $controller = static fn(): MitgliedController => MitgliedController::aus($routen->dienste());
 
-    $routen->get(MitgliedController::PFAD_NEU, $bearbeiten, static fn(Request $r): Response => $controller()->neu());
+    $routen->get(MitgliedController::PFAD_NEU, $bearbeiten, static fn(Request $r): Response => $controller()->neu($r));
     $routen->post(MitgliedController::PFAD_NEU, $bearbeiten, static fn(Request $r): Response => $controller()->anlegen($r));
     $routen->post('/app/mitglieder/{id:[0-9]+}', $bearbeiten, static fn(Request $r, array $p): Response => $controller()->speichern($r, $p));
-    $routen->get('/app/mitglieder/{id:[0-9]+}/loeschen', $loeschen, static fn(Request $r, array $p): Response => $controller()->loeschenFragen($p));
+    $routen->get('/app/mitglieder/{id:[0-9]+}/loeschen', $loeschen, static fn(Request $r, array $p): Response => $controller()->loeschenFragen($r, $p));
     $routen->post('/app/mitglieder/{id:[0-9]+}/loeschen', $loeschen, static fn(Request $r, array $p): Response => $controller()->loeschen($r, $p));
 };

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\App;
 
+use App\App\Mitglied\Einbettung;
 use App\Dienste;
 use App\Domain\BeitragNichtAenderbar;
 use App\Domain\JahresbeitragStatus;
@@ -29,8 +30,9 @@ use App\View\Navigation;
  * only; every route declares BeitraegeVerwalten (app/routes/beitraege.php).
  *
  * Every action answers with a redirect and a message. Where to: the
- * `zurueck` field, but only an address of this application's fees or
- * members (no open redirect), else the page of the fee.
+ * `zurueck` field, but only a page below /app of this application (no
+ * open redirect, App\App\Mitglied\Einbettung::istSicher()), else the
+ * page of the fee.
  */
 final readonly class BeitraegeController
 {
@@ -153,7 +155,7 @@ final readonly class BeitraegeController
             'mitglied' => $mitglied,
             'namen' => $namen,
             'zurueck' => $zurueck,
-            'zurueckText' => str_starts_with($zurueck, MitgliedController::PFAD_LISTE) ? 'Zurück zum Mitglied' : 'Zurück zu den Beiträgen',
+            'zurueckText' => preg_match('/[?&]mitglied=/', $zurueck) === 1 ? 'Zurück zum Mitglied' : 'Zurück zu den Beiträgen',
             'hier' => self::adresse((int) $beitrag->id, $zurueck),
             'zahlweisen' => Zahlweise::cases(),
             'heute' => self::heute(),
@@ -211,7 +213,9 @@ final readonly class BeitraegeController
      */
     public static function sichereAdresse(string $adresse): ?string
     {
-        return preg_match('#^/app/(beitraege(/[0-9]+)?|mitglieder)(\?[A-Za-z0-9_=&%.\-]*)?$#D', $adresse) === 1 ? $adresse : null;
+        // Any page of this application - a member may be opened on the
+        // members page, a list or the families (Einbettung, 06 section 5).
+        return Einbettung::istSicher($adresse) ? $adresse : null;
     }
 
     /**
