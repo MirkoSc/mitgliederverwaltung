@@ -45,11 +45,12 @@ final class SelbstKassierenTest extends TestCase
         self::assertSame('Lehmann', $zeilen[1]->werte['name'], 'No stray comma for a missing first name.');
     }
 
-    public function testNurDerAdminDarfDieListeSehen(): void
+    public function testAdminUndNurLesenSehenDieListeDerVorstandNicht(): void
     {
         $recht = (new \ReflectionClass(SelbstKassierenListe::class))->newInstanceWithoutConstructor()->recht();
-        self::assertSame(Permission::BeitraegeVerwalten, $recht);
+        self::assertSame(Permission::BeitraegeSehen, $recht);
         self::assertTrue(Rolle::Admin->darf($recht));
+        self::assertTrue(Rolle::Lesend->darf($recht));
         self::assertFalse(Rolle::Vorstand->darf($recht));
     }
 

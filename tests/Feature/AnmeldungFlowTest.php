@@ -289,6 +289,68 @@ final class AnmeldungFlowTest extends AppTestCase
         self::assertWeiterleitungNach('/app/mitglieder', $this->anmelden('volker@example.org', $passwort));
     }
 
+    /** Issue #87: the tick in the invitation form - the account starts in the Barrierefrei-Modus. */
+    public function testAnInvitationWithTheTickStartsInTheBarrierefreiModus(): void
+    {
+        Benutzerdaten::anlegen($this->pdo(), 'admin@example.org', Rolle::Admin, name: 'Anna Admin');
+        $this->anmelden('admin@example.org');
+
+        $einstellungen = $this->get('/admin')->body;
+        self::assertStringContainsString('Barrierefrei-Modus von Anfang an einschalten', $einstellungen);
+        self::assertStringContainsString('<option value="lesend">Nur lesen</option>', $einstellungen, 'the role is offered');
+
+        $this->post('/admin/benutzer', ['name' => 'Lena Lesend', 'email' => 'lena@example.org', 'rolle' => 'lesend', 'barrierefrei' => '1']);
+        $neu = new BenutzerRepository($this->pdo())->findByEmail('lena@example.org');
+        self::assertNotNull($neu);
+        self::assertTrue($neu->barrierefrei);
+        self::assertSame(Rolle::Lesend, $neu->rolle);
+        $link = $this->linkAusLetzterMail();
+        $this->post('/abmelden');
+
+        $this->holen($link);
+        $passwort = 'lenas-eigene-lange-parole';
+        $this->post('/anmelden/einladung', ['passwort' => $passwort, 'passwort_wiederholung' => $passwort]);
+        self::assertWeiterleitungNach('/app/mitglieder', $this->anmelden('lena@example.org', $passwort));
+
+        // The first page after the first login: setting up the second factor.
+        self::assertWeiterleitungNach('/app/konto/zweiter-faktor', $this->get('/app/mitglieder'));
+        $seite = $this->get('/app/konto/zweiter-faktor')->body;
+        self::assertStringContainsString('class="modus-barrierefrei"', $seite, 'on from the first login');
+        self::assertStringContainsString('Barrierefrei-Modus ausschalten', $seite, 'and it can be switched off');
+        self::assertStringNotContainsString('href="/admin"', $seite, 'no admin area for "Nur lesen"');
+    }
+
+    public function testAnInvitationWithoutTheTickStartsWithoutTheModus(): void
+    {
+        Benutzerdaten::anlegen($this->pdo(), 'admin@example.org', Rolle::Admin);
+        $this->anmelden('admin@example.org');
+
+        $this->post('/admin/benutzer', ['name' => 'Volker Muster', 'email' => 'volker@example.org', 'rolle' => 'vorstand']);
+
+        self::assertFalse(new BenutzerRepository($this->pdo())->findByEmail('volker@example.org')?->barrierefrei);
+    }
+
+    /** Issue #87: the admin switches the modus of an existing account. */
+    public function testTheAdminSwitchesTheBarrierefreiModusOfAnAccount(): void
+    {
+        Benutzerdaten::anlegen($this->pdo(), 'admin@example.org', Rolle::Admin);
+        $id = Benutzerdaten::anlegen($this->pdo(), name: 'Erika Beispiel');
+        $this->anmelden('admin@example.org');
+        $repo = new BenutzerRepository($this->pdo());
+
+        self::assertStringContainsString('/admin/benutzer/' . $id . '/barrierefrei', $this->get('/admin')->body);
+
+        $this->post('/admin/benutzer/' . $id . '/barrierefrei', ['an' => '1']);
+        self::assertTrue($repo->findById($id)?->barrierefrei);
+        self::assertStringContainsString('Erika Beispiel arbeitet ab der nächsten Seite im Barrierefrei-Modus.', $this->get('/admin')->body);
+
+        $this->post('/admin/benutzer/' . $id . '/barrierefrei', ['an' => '0']);
+        self::assertFalse($repo->findById($id)?->barrierefrei);
+
+        $audit = $this->pdo()->query("SELECT details FROM audit_log WHERE action = 'benutzer.geaendert' ORDER BY id DESC LIMIT 1")->fetchColumn();
+        self::assertStringContainsString('barrierefrei', (string) $audit);
+    }
+
     public function testTheAdminLocksChangesTheRoleAndDeletes(): void
     {
         Benutzerdaten::anlegen($this->pdo(), 'admin@example.org', Rolle::Admin, name: 'Anna Admin');
