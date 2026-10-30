@@ -7,8 +7,8 @@
  * fees of the year, by default the open ones, each with "bezahlt" right
  * there and a checkbox for marking several as paid at once (#90; the
  * checkboxes belong to the form above the table through form="…", because
- * the rows hold forms of their own), and the archive of every direct debit at the bottom
- * (beitraege/einzug-archiv.php). Markup as in the pattern page
+ * the rows hold forms of their own), and the archive of every direct
+ * debit at the bottom (beitraege/einzug-archiv.php). Markup as in the pattern page
  * /admin/designsystem.
  *
  * @var int $jahr
@@ -131,12 +131,12 @@ $statusEtikett = require __DIR__ . '/status-etikett.php';
                 <input type="hidden" name="zurueck" value="<?= e($hier) ?>">
                 <fieldset class="mehrfach-felder">
                     <legend>Ausgewählte als bezahlt markieren</legend>
-                    <p class="feld-hinweis" id="mehrfach-hilfe">Setzen Sie in der Liste ein Häkchen bei jedem offenen Beitrag, der bezahlt ist.
-                        Mit gedrückter Umschalttaste (auch Umschalt + Leertaste) wählen Sie alle Beiträge zwischen dem zuletzt
-                        angeklickten und diesem.</p>
+                    <p class="feld-hinweis" id="mehrfach-hilfe">Setzen Sie in der Liste ein Häkchen bei jedem offenen Beitrag, der bezahlt ist.</p>
                     <div class="mehrfach-kopf" data-mehrfach-kopf hidden>
                         <label class="feld-haken"><input type="checkbox" data-mehrfach-alle> Alle auswählen</label>
                         <p class="mehrfach-zaehler" role="status" data-mehrfach-zaehler>0 ausgewählt</p>
+                        <p class="feld-hinweis">Mit gedrückter Umschalttaste (auch Umschalt + Leertaste) wählen Sie alle Beiträge
+                            zwischen dem zuletzt angeklickten und diesem.</p>
                     </div>
                     <div class="mehrfach-angaben">
                         <div class="feld">
@@ -182,7 +182,7 @@ $statusEtikett = require __DIR__ . '/status-etikett.php';
                             <?php if ($offenAufSeite > 0): ?>
                                 <td class="beitrag-auswahl">
                                     <?php if ($b->status === JahresbeitragStatus::Offen): ?>
-                                        <label class="feld-haken"><input type="checkbox" name="beitrag[]" value="<?= e($b->id) ?>" form="mehrfach-bezahlt" data-mehrfach-haken>
+                                        <label class="feld-haken"><input type="checkbox" name="bezahlt[]" value="<?= e($b->id) ?>" form="mehrfach-bezahlt" data-mehrfach-haken>
                                             <span class="nur-lesehilfe"><?= e($zeile->name()) ?> auswählen</span></label>
                                     <?php endif; ?>
                                 </td>

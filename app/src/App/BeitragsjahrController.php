@@ -92,7 +92,7 @@ final readonly class BeitragsjahrController
     {
         $session = $this->dienste->session;
         $ziel = BeitraegeController::sichereAdresse($r->feld('zurueck')) ?? Navigation::BEITRAEGE;
-        $auswahl = $r->post['beitrag'] ?? [];
+        $auswahl = $r->post['bezahlt'] ?? [];
         $ids = is_array($auswahl) ? array_values(array_map(intval(...), array_filter($auswahl, is_string(...)))) : [];
         $zahlweise = Zahlweise::tryFrom($r->feld('zahlweise'));
         $am = $r->feld('bezahlt_am') === '' ? self::heute() : Datum::ausEingabe($r->feld('bezahlt_am'));
