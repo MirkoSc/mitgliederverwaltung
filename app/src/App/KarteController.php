@@ -92,6 +92,9 @@ final readonly class KarteController
             return new Response(404, ['Content-Type' => 'text/plain; charset=utf-8'], 'Diese Kachel gibt es nicht.');
         }
 
+        // The browser asks for many tiles at once; holding the session lock
+        // would line them all up behind each other.
+        $this->dienste->session->schliessen();
         $png = KachelProxy::aus($this->dienste)->kachel((int) $z, (int) $x, (int) $y, $this->jetzt());
         if ($png === null) {
             return new Response(503, ['Content-Type' => 'text/plain; charset=utf-8', 'Cache-Control' => 'no-store'], 'Der Kartendienst antwortet gerade nicht.');
@@ -107,6 +110,9 @@ final readonly class KarteController
     /** One step of "Jetzt Koordinaten ermitteln": a few addresses, then the new state as JSON. */
     public function ermitteln(): Response
     {
+        // A step talks to the geocoder for seconds - the user's other tabs
+        // must not wait for the session meanwhile.
+        $this->dienste->session->schliessen();
         $stand = Koordinatenermittlung::aus($this->dienste)->ermitteln($this->jetzt(), self::SCHRITT_ANZAHL, self::SCHRITT_BUDGET_S);
 
         return Response::json($stand->toArray());
