@@ -73,6 +73,16 @@ Ansicht und Export zeigen genau das, was es liefert.
 | **BLSV-Meldung** | §4 | Stichtag | alle |
 | **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | alle (Beitragsspalten nur Admin und Nur lesen) |
 
+### Auffälligkeiten
+
+- Eine Zeile je Hinweis, Filter nach Art (`HinweisArt`). Dazu gehören seit
+  #108 „Anschrift auf der Karte nicht gefunden" und „Anschrift auf der Karte
+  nur ungefähr gefunden" (07 §6): Mirko sieht hier, welche Anschriften er
+  auf der Karte noch korrigieren muss.
+- Eine Zeile kann das Mitglied auf einem bestimmten Reiter öffnen
+  (`ListenZeile::$reiter`): die beiden Karten-Hinweise öffnen es im Reiter
+  „Daten", wo der Block „Wohnort auf der Karte" steht.
+
 ### Geburtstage
 
 - Runde Geburtstage: Liste der Alter in den Einstellungen (Default
@@ -157,4 +167,6 @@ Beitragsspalten, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.
 `/app/listen` liefert die Geburtstagsliste; Personen-Links zeigen auf die
 Listenseite mit `mitglied=<id>`, Sortieren und Filter behalten die Person,
 Speichern in der geöffneten Person bleibt auf der Liste, htmx tauscht nur
-den Bereich `listen-bereich` – `ListenMitgliedTest`.
+den Bereich `listen-bereich` – `ListenMitgliedTest`. Auffälligkeiten mit den
+Karten-Hinweisen (#108): Filter je Art, Link öffnet den Reiter „Daten",
+gefundene Anschriften erscheinen nicht – `KarteSeiteTest`.

@@ -235,6 +235,7 @@
 .modus-barrierefrei .karte-punkt-ungefaehr {
     border: 3px dashed #000000;
     background: #ffffff;
+    box-shadow: none;
     color: #000000;
 }
 

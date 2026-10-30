@@ -10,8 +10,10 @@ use App\Domain\AuditAktion;
 use App\Domain\Mitglied;
 use App\Http\Request;
 use App\Http\Response;
+use App\Repository\GeoAnschriftRepository;
 use App\Repository\MitgliedRepository;
 use App\Service\Karte\Anschrift;
+use App\Service\Karte\GeoStatus;
 use App\Service\Karte\HandSuche;
 use App\Service\Karte\Koordinatenermittlung;
 use App\Service\Karte\Wohnort;
@@ -108,6 +110,11 @@ final readonly class WohnortController
 
                 return $zurueck;
             case self::AKTION_PUNKT_ENTFERNEN:
+                if ((new GeoAnschriftRepository($this->dienste->pdo())->eintrag($anschrift->hash())['status'] ?? null) !== GeoStatus::VonHand) {
+                    $this->dienste->session->flash('Für diese Anschrift ist kein Punkt von Hand gesetzt.', FlashArt::Info);
+
+                    return $zurueck;
+                }
                 $ergebnis = $ermittlung->punktEntfernen($anschrift, $jetzt);
                 if ($ergebnis !== HandSuche::Belegt) {
                     $this->protokollierenPunkt($r, $mitglied, 'entfernt');

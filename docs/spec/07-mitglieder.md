@@ -78,6 +78,28 @@ Attribut `form` dazu. Audit `mitglied.karten_suche_geaendert` nur mit
 Mitglieds-ID und Ergebnis (`korrektur`: gesetzt/entfernt, `ergebnis`) –
 nie mit Anschrift.
 
+Seit #108 kennt der Block zwei weitere Zustände, jeweils als Etikett mit
+Text: **ungefähr** (nur PLZ und Ort gefunden, der Punkt steht in der
+Ortsmitte; kleine Karte mit hohlem, gestricheltem Marker) und **von Hand**
+(Punkt von Hand gesetzt). Wer `mitglieder.bearbeiten` hat, kann den
+**Punkt von Hand setzen** („Punkt von Hand setzen", bei „von Hand" offen als
+„Punkt verschieben oder entfernen"): Klick in die kleine Karte oder Ziehen
+des Markers füllt die Felder **Breite** und **Länge**, „Punkt speichern"
+speichert (`aktion` = `punkt-setzen`). Die Felder sind zugleich der Weg
+ohne Skript und per Tastatur (Text, Dezimalkomma erlaubt, Breite −90…90,
+Länge −180…180, sonst Fehlermeldung und nichts gespeichert). Ohne Punkt
+öffnet die kleine Karte an `App\Service\Karte\Kartenmitte` – Mitte der
+Punkte mit derselben PLZ, sonst desselben Orts, sonst aller Punkte des
+Vereins, sonst Deutschland; ohne Anfrage nach außen. Gespeichert wird zur
+Anschrift (`geo_anschrift.status` = `von_hand`), ohne Anfrage; er gilt vor
+jeder automatischen Suche und wird von keiner überschrieben. Solange er
+steht, sind „Jetzt suchen" und die Such-Anschrift ausgeblendet (und
+serverseitig abgelehnt). „Punkt von Hand entfernen" (`punkt-entfernen`)
+führt zur automatischen Suche zurück und fragt sofort einmal (mit der
+Such-Anschrift, falls eine da ist). Audit `mitglied.karten_punkt_geaendert`
+nur mit Mitglieds-ID und `punkt`: gesetzt/entfernt – nie Anschrift oder
+Koordinaten.
+
 ## 2. Abteilungen
 
 Einstellungen: Name, **BLSV-Nummer** (Spartenkennzeichen, Text, z. B.
@@ -156,7 +178,8 @@ und mit dem Mitglied. Angezeigt im Reiter **Nachweise** direkt nach
 
 Hinweise sind **berechnet**, nie gespeichert: eine reine Funktion
 `App\Service\Mitglied\Hinweise::fuer(Mitglied, Kontext): list<Hinweis>`
-(Kontext = Stichtag, Familie, Nachweise, Beitragsarten). Sie erscheinen
+(Kontext = Stichtag, Familie, Nachweise, Beitragsarten, Stand der Anschrift
+auf der Karte). Sie erscheinen
 oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 „Auffälligkeiten" (09). Sie blockieren nie etwas.
 
@@ -178,18 +201,28 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 | Beitragsfrei ohne Grund | Regel `beitragsfrei`, Bemerkung leer |
 | Eintrittsdatum unbekannt | Eintrittsdatum fehlt |
 | Pflichtangaben für BLSV fehlen | Geschlecht oder Geburtsdatum fehlt |
+| Anschrift auf der Karte nicht gefunden (#108) | Anschrift auf der Karte „nicht gefunden", nicht ehemalig |
+| Anschrift auf der Karte nur ungefähr gefunden (#108) | Anschrift auf der Karte „ungefähr" (nur PLZ und Ort gefunden), nicht ehemalig |
 
 Umsetzung (#21): `App\Service\Mitglied\Hinweise::fuer(Mitglied,
 HinweisKontext): list<Hinweis>` liest nichts und speichert nichts; der
 `HinweisKontext` trägt Stichtag, die Personen der Familie (das übergebene
 Mitglied ersetzt das gespeicherte, so zählen auch ungespeicherte Änderungen),
-die Nachweise und alle Beitragsarten. `HinweisLader` holt den Kontext aus den
-Repositories. Jede Zeile der Tabelle ist eine `HinweisArt` (Reihenfolge der
+die Nachweise, alle Beitragsarten und den Geo-Status der Anschrift
+(`geo_anschrift.status`, #108). `HinweisLader` holt den Kontext aus den
+Repositories – für die Liste „Auffälligkeiten" alle Geo-Status mit **einer**
+Abfrage, nicht je Mitglied. Jede Zeile der Tabelle ist eine `HinweisArt` (Reihenfolge der
 Tabelle = Reihenfolge der Hinweise; die Liste „Auffälligkeiten" filtert
 danach). Anzeige: `HinweiseAbschnitt` (gefundener Abschnitt am Mitglied, immer
 der aktuelle Stand); nach dem Speichern sagt die Meldung nur, *dass* es
 Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
 
+- Die beiden Karten-Hinweise (#108) nennen als Abhilfe den Block „Wohnort
+  auf der Karte" im Reiter „Daten" (Such-Anschrift oder Punkt von Hand);
+  `HinweisArt::reiter()` = `daten`, darum öffnet die Liste
+  „Auffälligkeiten" das Mitglied dort, und oben am Mitglied steht auf einem
+  anderen Reiter ein Link dorthin. „Gefunden", „von Hand" und „noch nicht
+  gesucht" sind kein Hinweis.
 - „Aktiv/passiv" vergleicht das Häkchen mit `aktiv_art` der Beitragsart
   (`aktiv`/`passiv`; `egal` passt zu beidem).
 - Alter und „gültig bis" zählen tageweise: genau 18 bzw. 67 zählt als 18
@@ -320,7 +353,7 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
 | Nachweis vermerken | ✓ | ✓ | – |
 | Nachweis löschen, Mitglied löschen | ✓ | – | – |
 | Familien pflegen | ✓ | ✓ | – |
-| Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106) | ✓ | ✓ | – |
+| Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106), Punkt von Hand setzen/verschieben/entfernen (#108) | ✓ | ✓ | – |
 | Reiter „Beiträge" (lesen) | ✓ | – | ✓ |
 
 „Nur lesen“ (#87) sieht den Reiter „Daten“ als reine Ansicht
@@ -342,4 +375,10 @@ Familienmitglieder. Rechte-Matrix §9 serverseitig. Wohnort auf der Karte
 (#106, `WohnortTest`): die drei Zustände, Such-Anschrift speichern →
 gefunden bzw. weiter nicht gefunden mit den eingegebenen Werten, entfernen,
 „Nur lesen" sieht den Block ohne Formular und bekommt auf den POST 403,
-Audit ohne Anschrift.
+Audit ohne Anschrift. Punkt von Hand (#108, `WohnortTest`,
+`KartenPruefungUndPunktVonHandTest`): setzen, verschieben, entfernen (fragt
+wieder automatisch), ungültige Koordinaten → Fehler ohne Speichern, „Nur
+lesen" 403, Audit ohne Anschrift und Koordinaten, Cron/Suche/„Alle neu
+ermitteln" überschreiben ihn nicht. Karten-Hinweise (`HinweiseTest`):
+nicht gefunden und ungefähr ja; gefunden, von Hand, noch nicht gesucht und
+ehemalig nein.

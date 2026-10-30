@@ -97,6 +97,19 @@ umgeschaltet statt verlinkt.
    #106) zentriert die Karte dessen Anschrift und öffnet ihren Marker; die
    Links unter „Nicht gefundene Anschriften" führen direkt in den Reiter
    „Daten" des Mitglieds, zum Block „Wohnort auf der Karte".
+   Seit #108: Der Stand zählt „ungefähr" und „von Hand gesetzt" eigens
+   („x von y Anschriften gefunden, z ungefähr, w von Hand gesetzt"). Auf der
+   Karte stehen auch ungefähre Punkte (hohler, gestrichelter Marker, Name
+   „… (ungefähr)") und Punkte von Hand; in der Tabelle tragen sie das
+   Etikett „ungefähr" bzw. „von Hand". Eigene Liste „Ungefähr gefundene
+   Anschriften" mit Links in den Reiter „Daten" wie bei „nicht gefunden".
+   Für den Admin unter dem Knopf der Satz „Am schnellsten: Knopf drücken und
+   den Tab offen lassen (etwa eine Anschrift pro Sekunde)." und, hinter
+   einem aufklappbaren „Alle neu ermitteln", die Rückfrage in ganzen Sätzen
+   (was vergessen wird, was bleibt, wie lange es bei offenem Tab dauert) mit
+   Häkchen; danach läuft dieselbe Schrittkette wie beim Knopf
+   (`POST /app/karte/neu-ermitteln`, `admin.system`, ohne Skript zurück auf
+   die Seite mit Meldung, der Cron sucht weiter).
 5. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit

@@ -279,7 +279,9 @@ echten Daten installiert, das Repository öffentlich.
 
 Geprüft beim Bau der Seite „Karte" (2026-10-30), Abschnitte C, E, I und J
 für die neuen Routen erneut durchgegangen; K-10 bis K-14 beim Wohnort am
-Mitglied (#106, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft.
+Mitglied (#106, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft;
+K-15 bis K-20 bei PLZ-Prüfung, Punkt von Hand und „Alle neu ermitteln"
+(#108, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft.
 
 | ID | Prüfung | Ergebnis | Fundstelle |
 |---|---|---|---|
@@ -289,14 +291,20 @@ Mitglied (#106, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft.
 | K-04 | Keine Mitgliederdaten in Log, Cron-Antwort oder Kachel-Cache | ✓ | Log nur „HTTP 429"/„keine Antwort" (`Koordinatenermittlung`); Cron-Ergebnis nur Zähler; Cache-Dateinamen `z/x/y.png`; `geo_anschrift` nur Hash + Koordinaten |
 | K-05 | Kein SSRF: Ziel-URLs fest, Parameter nur Zahlen bzw. URL-kodierte Felder, nur HTTPS, keine Weiterleitungen | ✓ | `KachelProxy::URL` + `gueltig()`, `Geocoder::URL` + `http_build_query`, `CurlHttpAbruf` (`CURLPROTO_HTTPS`, `FOLLOWLOCATION` aus, Größe begrenzt) |
 | K-06 | Kein Massenabruf beim Kachelserver über die Route | ✓ mit Restrisiko ⚠ | nur angemeldet, Zoom 5–18, Cache 7 Tage; ein angemeldeter Benutzer könnte viele Kacheln anfordern – bei zwei festen Rollen und echten Vereinskonten akzeptiert |
-| K-07 | Ausfall des Dienstes ist ein Hinweis, kein Absturz | ✓ | Geocoder: Pause 15 min, Hinweis auf der Seite; Kacheln: alte Kopie oder 503 (`KarteSeiteTest::testATileServerFailureIsAHintNotACrash`) |
+| K-07 | Ausfall des Dienstes ist ein Hinweis, kein Absturz | ✓ | Geocoder: Pause 2 min (#108, vorher 15), Hinweis auf der Seite; Kacheln: alte Kopie oder 503 (`KarteSeiteTest::testATileServerFailureIsAHintNotACrash`) |
 | K-08 | `Cache-Control` | ✓ | Seite `no-store` wie alle (I-10); nur die Kachel-Antwort setzt `private, max-age=86400` – Kartenbild, keine Mitgliederdaten |
 | K-09 | Popups ohne HTML aus Daten | ✓ | `karte.js` klont die serverseitig escapte Tabellenzelle, Zahl/Anschrift als `textContent` |
 | K-10 | Wohnort am Mitglied (#106): neue Route `POST /app/mitglieder/{id}/wohnort` deklariert (`mitglieder.bearbeiten`), CSRF zentral, „Nur lesen" → 403 | ✓ | `app/routes/wohnort.php`, `tests/Http/routen-zugriff/wohnort.txt`, `WohnortTest::testReadOnlySeesTheStateButNoFormAndMayNotPost`, `::testWithoutTheTokenNothingHappens` |
 | K-11 | Such-Anschrift nie in Log, Audit, Meldung oder URL | ✓ | Audit nur Mitglieds-ID + `korrektur`/`ergebnis` (`WohnortController::protokollieren()`), Log nur der Fehlergrund (`Koordinatenermittlung::pausieren()`), Meldungen ohne Anschrift, Weiterleitung nur mit ID/Reiter; `WohnortTest::testACorrectionIsSavedAskedAndAudited` |
-| K-12 | Ein Klick = höchstens eine Anfrage an den Geocoder, unter Lock und Abstand; kein Weg um die Pause herum | ✓ | `Koordinatenermittlung::vonHand()`; `KartenSucheVonHandTest` (Abstand, Sperre belegt, Pause) |
+| K-12 | Ein Klick = höchstens eine Suche (seit #108 bis zu zwei Anfragen, beide mit Abstand ≥ 1 s) an den Geocoder, unter Lock; kein Weg um die Pause herum | ✓ | `Koordinatenermittlung::vonHand()`; `KartenSucheVonHandTest` (Abstand, Sperre belegt, Pause) |
 | K-13 | `geo_anschrift` enthält jetzt Anschriftstext (nur `such_*`, ohne Namen) | ✓ mit Hinweis | Wie alle Tabellen nur im verschlüsselten Backup; wird mit der nächsten Ermittlung gelöscht, sobald kein aktuelles Mitglied die Anschrift mehr hat (03 §2) |
 | K-14 | Kleine Karte lädt nur von `'self'` | ✓ | dieselben Kacheln über `/app/karte/kachel/…`, Leaflet vendored; `WohnortTest::testFoundShowsTheSmallMapAndTheLinkToTheBigOne` prüft, dass kein fremder Host im HTML steht |
+| K-15 | Neue Route `POST /app/karte/neu-ermitteln` (#108) deklariert (`admin.system`), CSRF zentral, Rückfrage serverseitig (`sicher=1`), Vorstand → 403 | ✓ | `app/routes/karte.php`, `tests/Http/routen-zugriff/karte.txt`, `KarteSeiteTest::testTheBoardCannotRerunAll`, `::testRerunningAllForgetsTheAutomaticResultsAndKeepsWhatWasDoneByHand` |
+| K-16 | Punkt von Hand (#108) über die bestehende Route `POST /app/mitglieder/{id}/wohnort` (`mitglieder.bearbeiten`), „Nur lesen" → 403 | ✓ | `WohnortTest::testReadOnlyMayNotSetOrRemoveAPoint` |
+| K-17 | Koordinaten aus dem Formular streng geprüft (Zahl, höchstens 3+12 Stellen, Breite −90…90, Länge −180…180, endlich) | ✓ | `WohnortController::punkt()`, `Koordinatenermittlung::gueltig()`; `WohnortTest::testInvalidCoordinatesAreRefused`, `KartenPruefungUndPunktVonHandTest::testInvalidCoordinatesAreRefused` |
+| K-18 | Audit ohne Anschrift und ohne Koordinaten | ✓ | `mitglied.karten_punkt_geaendert` nur Mitglieds-ID + `punkt` gesetzt/entfernt, `karte.neu_ermittelt` nur die Anzahl; `WohnortTest::testAPointSetByHandIsSavedShownAndAuditedWithoutCoordinates` |
+| K-19 | Ein Punkt von Hand löst keine Anfrage nach außen aus; die Startmitte der kleinen Karte kommt aus vorhandenen Daten | ✓ | `Kartenmitte`; `WohnortTest::testWithoutADotTheSmallMapOpensWhereOtherMembersOfThePostcodeLive` |
+| K-20 | Hinweise „Anschrift auf der Karte …" ohne Anschrift im Text; Liste lädt den Geo-Status mit einer Abfrage | ✓ | `Hinweise::fuer()`, `HinweisLader::fuerAlle()`; Link nur mit ID und Reiter |
 
 ## Befunde des Durchlaufs 2026-10-29
 

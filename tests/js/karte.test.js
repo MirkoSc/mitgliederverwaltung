@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { punktText, punktGroesse, punktTitel, orteAus, wohnortAus, statusText, weiter } = require('../../public/js/karte.js');
+const { punktText, punktGroesse, punktTitel, orteAus, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter } = require('../../public/js/karte.js');
 
 test('a marker shows how many members live at the address', () => {
     assert.equal(punktText(1), '1');
@@ -61,4 +61,35 @@ test('a row marked for focus keeps the mark (issue #106)', () => {
         { lat: '48.2', lon: '11.6', anschrift: 'B', anzahl: '1', fokus: true },
     ]);
     assert.deepEqual(orte.map((o) => o.fokus), [false, true]);
+});
+
+test('an approximate or hand-set dot says so in its name (issue #108)', () => {
+    assert.equal(punktTitel('Am Hang 12, 63867 Johannesberg', 1, 'ungefaehr'), 'Am Hang 12, 63867 Johannesberg: 1 Mitglied (ungefähr)');
+    assert.equal(punktTitel('Am Hang 12, 63867 Johannesberg', 2, 'von_hand'), 'Am Hang 12, 63867 Johannesberg: 2 Mitglieder (von Hand)');
+    assert.equal(punktTitel('A', 1, 'irgendwas'), 'A: 1 Mitglied');
+    const orte = orteAus([
+        { lat: '50.1', lon: '9.1', anschrift: 'A', anzahl: '1', genauigkeit: 'ungefaehr' },
+        { lat: '50.2', lon: '9.2', anschrift: 'B', anzahl: '1', genauigkeit: '<script>' },
+    ]);
+    assert.deepEqual(orte.map((o) => o.genauigkeit), ['ungefaehr', '']);
+    assert.equal(wohnortAus({ lat: '50.1', lon: '9.1', titel: 'A', genauigkeit: 'von_hand' }).genauigkeit, 'von_hand');
+});
+
+test('a small map without a dot opens at its middle (issue #108)', () => {
+    assert.deepEqual(mitteAus({ mitteLat: '50.032900', mitteLon: '9.142400', mitteZoom: '14' }), { lat: 50.0329, lon: 9.1424, zoom: 14 });
+    assert.deepEqual(mitteAus({ mitteLat: '51', mitteLon: '10' }), { lat: 51, lon: 10, zoom: 13 });
+    assert.equal(mitteAus({}), null);
+    assert.equal(mitteAus({ mitteLat: '91', mitteLon: '10' }), null);
+});
+
+test('the fields of a point by hand take a decimal comma and refuse anything else (issue #108)', () => {
+    assert.deepEqual(punktAusFeldern('50,0329', ' 9.1424 '), { lat: 50.0329, lon: 9.1424 });
+    assert.deepEqual(punktAusFeldern('-90', '180'), { lat: -90, lon: 180 });
+    assert.equal(punktAusFeldern('90.1', '9'), null);
+    assert.equal(punktAusFeldern('50', '-180.5'), null);
+    assert.equal(punktAusFeldern('', '9'), null);
+    assert.equal(punktAusFeldern('5e1', '9'), null);
+    assert.equal(punktAusFeldern('50,1,2', '9'), null);
+    assert.equal(feldText(50.03290012), '50.032900');
+    assert.equal(feldText(-9.5), '-9.500000');
 });

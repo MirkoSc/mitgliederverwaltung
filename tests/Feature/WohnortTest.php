@@ -369,6 +369,12 @@ final class WohnortTest extends AppTestCase
         self::assertSame(GeoStatus::Gefunden, $this->eintrag('Hauptstraße 1')['status'] ?? null);
         self::assertStringContainsString('Der Punkt von Hand ist entfernt. Die Anschrift wurde auf der Karte gefunden.', $this->daten($id));
         self::assertSame(3, (int) $this->dienste->pdo()->query("SELECT COUNT(*) FROM audit_log WHERE action = 'mitglied.karten_punkt_geaendert'")->fetchColumn());
+
+        // Without a point by hand there is nothing to remove: no search, no audit.
+        $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-entfernen']);
+        self::assertCount(1, $this->http->anfragen);
+        self::assertStringContainsString('kein Punkt von Hand gesetzt', $this->daten($id));
+        self::assertSame(3, (int) $this->dienste->pdo()->query("SELECT COUNT(*) FROM audit_log WHERE action = 'mitglied.karten_punkt_geaendert'")->fetchColumn());
     }
 
     /**

@@ -152,23 +152,47 @@ Projektadresse), wie es ihre Nutzungsregeln verlangen.
   einem Minus („Musterort - OAB“), den der Geocoder nicht kennt.
   Migration 192 hat daraufhin alle „nicht gefunden“ vergessen, damit sie
   neu gesucht werden.
+  **PLZ-Prüfung** (#108): Nominatim ignoriert PLZ und Ort, wenn es die
+  Straße dort nicht kennt, und liefert dieselbe Straße irgendwo in
+  Deutschland („Am Hang", 63867 Johannesberg, landete in 51515 Kürten).
+  Darum fragt der Geocoder mit `addressdetails=1` und `limit=5` und nimmt
+  nur einen Treffer, dessen `address.postcode` die PLZ der Anschrift ist
+  (mehrere PLZ mit `;` werden einzeln verglichen); ohne PLZ muss `town`/
+  `city`/`village`/`municipality` dem Ort entsprechen (ohne Groß-/
+  Kleinschreibung). Passt keiner, folgt eine zweite Anfrage nur mit PLZ,
+  Ort und Land; passt deren Treffer (dieselbe Prüfung), heißt das Ergebnis
+  **ungefähr** (`GeoStatus::Ungefaehr`, mit Koordinaten der Ortsmitte),
+  sonst „nicht gefunden". Eine Anschrift ohne Straße kann nur „ungefähr"
+  sein. Die Such-Anschrift von Hand wird genauso geprüft (mit ihrer PLZ
+  bzw. ihrem Ort). Migration 194 hat alle automatischen Ergebnisse
+  vergessen, damit sie mit der Prüfung neu gesucht werden.
+  **Punkt von Hand** (#108, `GeoStatus::VonHand`): am Mitglied gesetzt (07
+  §1), ohne Anfrage, gilt vor jeder automatischen Suche; Cron, „Jetzt
+  suchen", Such-Anschrift und „Alle neu ermitteln" überschreiben ihn nie.
+  **„Alle neu ermitteln"** (Admin, Seite Karte): vergisst gefunden/
+  ungefähr/nicht gefunden – Such-Anschriften und Punkte von Hand bleiben –
+  und startet dann die Schrittkette des Knopfs.
   `Koordinatenermittlung` fragt je Aufruf nur wenige Anschriften
-  (Cron: 10 bzw. 12 s, Admin-Knopf „Jetzt Koordinaten ermitteln" als
-  Schrittkette: 5 bzw. 8 s je Schritt), höchstens eine Anfrage je
+  (Cron: 20 Anschriften bzw. 22 s, #108 – eine Anschrift kann zwei Anfragen
+  brauchen, darum bleibt die letzte begonnene deutlich unter 30 s;
+  Admin-Knopf „Jetzt Koordinaten ermitteln" als Schrittkette: 5 bzw. 8 s je
+  Schritt, etwa eine Anschrift pro Sekunde bei offenem Tab), höchstens eine Anfrage je
   Sekunde über alle Requests hinweg (Zeitpunkt der letzten Anfrage im
   Setting `karte_geocoding_letzte_anfrage`, DB-Lock `mv_geo_<db>` gegen
   gleichzeitiges Fragen von Cron und Knopf). „Nicht gefunden" wird
   gemerkt; eine geänderte Anschrift hat einen anderen Hash und wird neu
   gefragt. Ein Fehler des Dienstes (HTTP ≠ 200, keine Antwort, kaputtes
   JSON) speichert nichts, wird ohne Anschrift geloggt und lässt die
-  Ermittlung 15 Minuten ruhen (Setting `karte_geocoding_pause_bis`) – er
+  Ermittlung 2 Minuten ruhen (Setting `karte_geocoding_pause_bis`, #108:
+  vorher 15) – er
   ist ein Hinweis auf der Seite, nie ein Absturz.
   **Von Hand** (#106): Am Mitglied fragt „Jetzt suchen“ eine einzelne
   Anschrift sofort; wer `mitglieder.bearbeiten` hat, kann dort eine
   **Such-Anschrift nur für die Karte** angeben (Straße, PLZ, Ort; das Land
   bleibt das des Mitglieds) oder sie wieder entfernen
   (`Koordinatenermittlung::jetztSuchen()/korrigieren()/korrekturEntfernen()`).
-  Jede dieser Aktionen ist genau **eine** Anfrage unter denselben Regeln:
+  Jede dieser Aktionen ist genau **eine** Suche (seit #108 bis zu zwei
+  Anfragen, Abstand dazwischen ≥ 1 s) unter denselben Regeln:
   derselbe DB-Lock (ist er belegt, ändert sich nichts und ein Hinweis bittet
   um einen neuen Versuch), derselbe Abstand ≥ 1 s, dieselbe Pause nach einem
   Fehler (dann bleibt die Such-Anschrift gemerkt und der nächste Lauf fragt).
@@ -199,6 +223,12 @@ Speichern, Sperre; von Hand #106: Such-Anschrift wortgetreu gefragt und
 gemerkt, weiter nicht gefunden, entfernen fragt wieder mit der Anschrift,
 Cron nutzt die Such-Anschrift, geänderte Anschrift ignoriert sie, Sperre
 belegt → nichts geändert, Fehler → Pause, Such-Anschrift bleibt –
-`KartenSucheVonHandTest`), Kachel-Proxy (Cache-Treffer, Ablauf, ungültige
+`KartenSucheVonHandTest`), PLZ-Prüfung (#108, `GeocoderTest`,
+`KartenPruefungUndPunktVonHandTest`: Treffer mit falscher PLZ verworfen –
+Fall Kürten –, richtige PLZ angenommen auch an späterer Stelle, Ersatz
+„ungefähr", auch der Ersatz passt nicht → nicht gefunden, Such-Anschrift
+ebenso geprüft, Abstand auch zwischen den zwei Anfragen einer Anschrift),
+Punkt von Hand und „Alle neu ermitteln" (überschreibt keinen Punkt von
+Hand, behält Such-Anschriften), Migration 194, Kachel-Proxy (Cache-Treffer, Ablauf, ungültige
 Zoomstufe/Koordinaten → 404 ohne Anfrage, nicht angemeldet → kein
 Zugriff, Aufräumen nach Alter und Größe).
