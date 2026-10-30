@@ -129,6 +129,12 @@ final readonly class BackupErstellung
             if ($this->laeuft()) {
                 throw new BackupLaeuftBereits('Es wird bereits ein Backup erstellt.');
             }
+            // A dump taken while the key change wraps the values anew would
+            // hold some under the old and some under the new key - no one
+            // key could restore it (App\Service\Crypto\Schluesselwechsel).
+            if ($this->crypto->wechselLaeuft()) {
+                throw new BackupLaeuftBereits('Gerade wird der Server-Schlüssel gewechselt. Bitte danach erneut versuchen.');
+            }
             $this->arbeitsdateienLoeschen();
 
             $jetzt = $this->backups->jetzt();

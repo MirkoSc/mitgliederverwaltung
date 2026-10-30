@@ -17,6 +17,11 @@ use App\Dienste;
  * vault in this project (E-11).
  *
  * Stored form: version (1 byte) | nonce (24 bytes) | ciphertext+tag.
+ *
+ * During a key change (App\Service\Crypto\Schluesselwechsel) config.php
+ * holds a second, previous key: decrypt() falls back to it, encrypt() and
+ * hmac() only ever use the current one. So every value stays readable
+ * while the chain wraps them anew, however often it is interrupted.
  */
 final readonly class ServerCrypto
 {
@@ -30,17 +35,21 @@ final readonly class ServerCrypto
 
     /**
      * @param string $key the raw server key, 32 bytes (Config::$serverKey)
+     * @param string|null $altKey the previous key while a key change runs
+     *        (Config::$serverKeyAlt) - only ever used to decrypt
      */
-    public function __construct(private string $key)
-    {
-        if (strlen($key) !== self::KEY_BYTES) {
+    public function __construct(
+        #[\SensitiveParameter] private string $key,
+        #[\SensitiveParameter] private ?string $altKey = null,
+    ) {
+        if (strlen($key) !== self::KEY_BYTES || ($altKey !== null && strlen($altKey) !== self::KEY_BYTES)) {
             throw new CryptoException(sprintf('The server key is %d bytes long.', self::KEY_BYTES));
         }
     }
 
     public static function aus(Dienste $d): self
     {
-        return $d->dienst(self::class, static fn(Dienste $d): self => new self($d->config->serverKey));
+        return $d->dienst(self::class, static fn(Dienste $d): self => new self($d->config->serverKey, $d->config->serverKeyAlt));
     }
 
     public function encrypt(string $plaintext): string
@@ -55,6 +64,45 @@ final readonly class ServerCrypto
      */
     public function decrypt(string $stored): string
     {
+        $plaintext = self::oeffnen($stored, $this->key);
+        if ($plaintext === null && $this->altKey !== null) {
+            $plaintext = self::oeffnen($stored, $this->altKey);
+        }
+
+        if ($plaintext === null) {
+            throw new CryptoException('Server ciphertext could not be decrypted.');
+        }
+
+        return $plaintext;
+    }
+
+    /** Whether a key change runs: config.php holds a previous key. */
+    public function wechselLaeuft(): bool
+    {
+        return $this->altKey !== null;
+    }
+
+    /**
+     * Whether the current key alone opens the value - false for one still
+     * under the previous key, a damaged one or one of another installation.
+     * What the key change asks before it wraps a value anew.
+     */
+    public function mitAktuellemSchluessel(string $stored): bool
+    {
+        try {
+            return self::oeffnen($stored, $this->key) !== null;
+        } catch (CryptoException) {
+            return false;
+        }
+    }
+
+    /**
+     * @return string|null null when the key does not open it
+     *
+     * @throws CryptoException when the value is no server ciphertext at all
+     */
+    private static function oeffnen(string $stored, string $key): ?string
+    {
         if (strlen($stored) < 1 + self::NONCE_BYTES + self::MAC_BYTES) {
             throw new CryptoException('Server ciphertext is too short.');
         }
@@ -67,14 +115,10 @@ final readonly class ServerCrypto
         $plaintext = sodium_crypto_secretbox_open(
             substr($stored, 1 + self::NONCE_BYTES),
             substr($stored, 1, self::NONCE_BYTES),
-            $this->key,
+            $key,
         );
 
-        if ($plaintext === false) {
-            throw new CryptoException('Server ciphertext could not be decrypted.');
-        }
-
-        return $plaintext;
+        return $plaintext === false ? null : $plaintext;
     }
 
     /**
@@ -96,6 +140,6 @@ final readonly class ServerCrypto
      */
     public function __debugInfo(): array
     {
-        return ['key' => '*** server key ***'];
+        return ['key' => '*** server key ***', 'altKey' => $this->altKey === null ? null : '*** old server key ***'];
     }
 }

@@ -39,6 +39,8 @@ enum AuditAktion: string
     case EinzugDateiHeruntergeladen = 'einzug.datei_heruntergeladen';
     case VersionZurueckgeholt = 'mitglied.version_zurueckgeholt';
     case MitgliedGeloescht = 'mitglied.geloescht';
+    case SchluesselwechselBegonnen = 'server_schluessel.wechsel_begonnen';
+    case SchluesselGewechselt = 'server_schluessel.gewechselt';
 
     public function bezeichnung(): string
     {
@@ -70,6 +72,8 @@ enum AuditAktion: string
             self::EinzugDateiHeruntergeladen => 'Lastschriftdatei heruntergeladen',
             self::VersionZurueckgeholt => 'Version zurückgeholt',
             self::MitgliedGeloescht => 'Mitglied gelöscht',
+            self::SchluesselwechselBegonnen => 'Server-Schlüssel: Wechsel begonnen',
+            self::SchluesselGewechselt => 'Server-Schlüssel gewechselt',
         };
     }
 }

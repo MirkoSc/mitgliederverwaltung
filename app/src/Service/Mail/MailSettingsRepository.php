@@ -42,7 +42,7 @@ final readonly class MailSettingsRepository
     {
         return $dienste->dienst(self::class, static fn(Dienste $d): self => new self(
             $d->einstellungen(),
-            $d->dienst(GeheimnisSchutz::class, static fn(Dienste $d): GeheimnisSchutz => new ServerKeyGeheimnisSchutz($d->config->serverKey)),
+            $d->dienst(GeheimnisSchutz::class, static fn(Dienste $d): GeheimnisSchutz => new ServerKeyGeheimnisSchutz($d->config->serverKey, $d->config->serverKeyAlt)),
         ));
     }
 
