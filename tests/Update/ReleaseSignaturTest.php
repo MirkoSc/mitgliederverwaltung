@@ -224,7 +224,7 @@ final class ReleaseSignaturTest extends TestCase
         self::assertSame(1, substr_count($workflow, 'secrets.'), 'only RELEASE_SIGNING_KEY, only once');
         self::assertStringContainsString('RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}', $publish);
         self::assertLessThan(
-            strpos($publish, 'softprops/action-gh-release'),
+            strpos($publish, 'gh release create'),
             strpos($publish, 'php tools/release-signatur.php signieren dist/checksums.txt'),
         );
         self::assertStringContainsString('persist-credentials: false', $publish);
