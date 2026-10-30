@@ -13,8 +13,10 @@ use App\Repository\JahresbeitragRepository;
 /**
  * The tab "Beiträge" of an opened member (docs/spec/08-beitraege.md
  * section 2): all years with amount, status and notes, newest first; each
- * year opens the page of that fee. Admin only - the Vorstand never sees
- * the tab, and every route behind it checks BeitraegeVerwalten itself.
+ * year opens the page of that fee. Shown with beitraege.sehen (admin and
+ * "Nur lesen", issue #87) - the Vorstand never sees the tab. The links to
+ * the fee pages appear only with BeitraegeVerwalten, and every route behind
+ * them checks it itself.
  */
 final readonly class BeitraegeReiter implements Reiter
 {
@@ -44,7 +46,7 @@ final readonly class BeitraegeReiter implements Reiter
 
     public function recht(): Permission
     {
-        return Permission::BeitraegeVerwalten;
+        return Permission::BeitraegeSehen;
     }
 
     public function template(): string
@@ -66,8 +68,11 @@ final readonly class BeitraegeReiter implements Reiter
             }
         }
 
+        $konto = $this->dienste->view->konto();
+
         return [
             'beitraege' => $beitraege,
+            'darfVerwalten' => $konto !== null && $konto->darf(Permission::BeitraegeVerwalten),
             'namen' => $namen,
             'mitgliedId' => $mitgliedId,
             'seitenAdresse' => BeitraegeController::seitenAdresse((int) new \DateTimeImmutable('today')->format('Y')),

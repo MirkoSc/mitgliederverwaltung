@@ -12,7 +12,8 @@ namespace App\Domain;
  *
  * COMPLETE on purpose (docs/spec/05-entwicklung.md section 6): later issues
  * use these rights and do not add new ones - a missing one is argued for in
- * the pull request. Which role holds which right is App\Domain\Rolle.
+ * the pull request (#87 added beitraege.sehen for the role "Nur lesen").
+ * Which role holds which right is App\Domain\Rolle.
  */
 enum Permission: string
 {
@@ -28,13 +29,21 @@ enum Permission: string
     /** Delete a member or a proof (07 section 9: admin only). */
     case MitgliederLoeschen = 'mitglieder.loeschen';
 
-    /** The lists and their exports (09); fee columns need BeitraegeVerwalten. */
+    /** The lists and their exports (09); fee columns need BeitraegeSehen. */
     case ListenSehen = 'listen.sehen';
 
     /**
-     * Everything in 08: annual fees, paid status, the tab "Beiträge", direct
-     * debits and the debit file, the list "Selbst kassieren", fee columns in
-     * the full export.
+     * Read the fee data of members without changing anything: the tab
+     * "Beiträge" (paid status, amounts, notes), fee columns in the lists,
+     * the list "Selbst kassieren" (issue #87). Not the page "Beiträge",
+     * direct debits or the debit file - those are BeitraegeVerwalten.
+     */
+    case BeitraegeSehen = 'beitraege.sehen';
+
+    /**
+     * Everything in 08 that changes or collects: the page "Beiträge" (create
+     * and set annual fees, paid status, notes), direct debits and the debit
+     * file. Reading fee data is BeitraegeSehen.
      */
     case BeitraegeVerwalten = 'beitraege.verwalten';
 
@@ -63,6 +72,7 @@ enum Permission: string
             self::MitgliederBearbeiten => 'Mitglieder anlegen und bearbeiten',
             self::MitgliederLoeschen => 'Mitglieder und Nachweise löschen',
             self::ListenSehen => 'Listen ansehen und exportieren',
+            self::BeitraegeSehen => 'Bezahlt-Status und Beitragsangaben ansehen',
             self::BeitraegeVerwalten => 'Beiträge und Einzug',
             self::AdminEinstellungen => 'Einstellungen',
             self::AdminBenutzer => 'Benutzer verwalten',

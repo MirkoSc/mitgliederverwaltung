@@ -73,7 +73,7 @@ Mitglieder, sonst deaktivieren.
   Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
   dazu `POST …/familie/{beitreten,neu,rolle,umbenennen,verlassen}`
   (`App\App\FamilieController`, `app/routes/familie.php`, Recht
-  `mitglieder.bearbeiten`, also beide Rollen). Jede Änderung ist ein
+  `mitglieder.bearbeiten`, also Admin und Vorstand). Jede Änderung ist ein
   normales Speichern des Mitglieds (neue Version, Anlass `geaendert`); die
   Rolle ohne Angabe ist `elternteil`. Das Formular „Daten" enthält Familie
   und Rolle nicht, sie bleiben beim Speichern erhalten.
@@ -244,13 +244,19 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
 
 ## 9. Rechte
 
-| Aktion | Admin | Vorstand |
-|---|:-:|:-:|
-| Mitglieder suchen, ansehen, anlegen, bearbeiten, Version zurückholen | ✓ | ✓ |
-| Nachweis vermerken | ✓ | ✓ |
-| Nachweis löschen, Mitglied löschen | ✓ | – |
-| Familien pflegen | ✓ | ✓ |
-| Reiter „Beiträge" | ✓ | – |
+| Aktion | Admin | Vorstand | Nur lesen |
+|---|:-:|:-:|:-:|
+| Mitglieder suchen, ansehen, Verlauf, Familie und Nachweise ansehen/herunterladen | ✓ | ✓ | ✓ |
+| Mitglieder anlegen, bearbeiten, Version zurückholen | ✓ | ✓ | – |
+| Nachweis vermerken | ✓ | ✓ | – |
+| Nachweis löschen, Mitglied löschen | ✓ | – | – |
+| Familien pflegen | ✓ | ✓ | – |
+| Reiter „Beiträge" (lesen) | ✓ | – | ✓ |
+
+„Nur lesen“ (#87) sieht den Reiter „Daten“ als reine Ansicht
+(`mitglied/daten-lesen.php`: die Gruppen des Formulars als Angaben, leere
+Felder weggelassen) statt als Formular; die übrigen Reiter blenden ihre
+Formulare über dieselben Rechte aus wie beim Vorstand das Löschen.
 
 ## Pflicht-Tests
 

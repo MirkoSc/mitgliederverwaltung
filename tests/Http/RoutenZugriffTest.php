@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
  * Built from the real route files under app/routes/ with the real login
  * guard and CSRF check (App\Anwendung) - only the handlers are replaced by
  * a stand-in that says "reached". Every route is called as anonymous
- * visitor and as each of the two roles.
+ * visitor and as each of the three roles.
  *
  * Every declaration is listed in tests/Http/routen-zugriff/, one file per
  * route file: a new route, a removed one or a changed declaration fails
@@ -218,6 +218,29 @@ final class RoutenZugriffTest extends TestCase
         }
     }
 
+    /**
+     * Vorstand and "Nur lesen" have no admin area (issue #87): every route
+     * under /admin answers them 403.
+     */
+    public function testNeitherBoardNorReadOnlyReachesAnyAdminRoute(): void
+    {
+        $router = $this->router();
+        $gesehen = 0;
+        foreach ($router->routes() as $route) {
+            if ($route->pattern !== '/admin' && !str_starts_with($route->pattern, '/admin/')) {
+                continue;
+            }
+            foreach ([Rolle::Vorstand, Rolle::Lesend] as $rolle) {
+                $this->anmelden($rolle);
+                $antwort = $this->aufrufen($router, $route->method, self::beispielPfad($route->pattern));
+                self::assertSame(403, $antwort->status, $route->method->value . ' ' . $route->pattern . ' as ' . $rolle->value);
+            }
+            $gesehen++;
+        }
+
+        self::assertGreaterThan(10, $gesehen, 'the admin routes were found');
+    }
+
     public function testEveryAppRouteNeedsALogin(): void
     {
         foreach ($this->router()->routes() as $route) {
@@ -244,6 +267,22 @@ final class RoutenZugriffTest extends TestCase
             [Rolle::Vorstand, HttpMethod::Get, '/app/beitraege', false],
             [Rolle::Admin, HttpMethod::Get, '/admin', true],
             [Rolle::Vorstand, HttpMethod::Get, '/admin', false],
+            // "Nur lesen" (issue #87): members, lists, exports, proofs - no
+            // writing, no page "Beiträge", no direct debit, no /admin.
+            [Rolle::Lesend, HttpMethod::Get, '/app/mitglieder', true],
+            [Rolle::Lesend, HttpMethod::Get, '/app/listen', true],
+            [Rolle::Lesend, HttpMethod::Post, '/app/listen/alle-mitglieder/export', true],
+            [Rolle::Lesend, HttpMethod::Get, '/app/mitglieder/7/nachweise/7/datei', true],
+            [Rolle::Lesend, HttpMethod::Get, '/app/mitglieder/neu', false],
+            [Rolle::Lesend, HttpMethod::Post, '/app/mitglieder/7', false],
+            [Rolle::Lesend, HttpMethod::Post, '/app/mitglieder/7/familie/verlassen', false],
+            [Rolle::Lesend, HttpMethod::Post, '/app/mitglieder/7/nachweise', false],
+            [Rolle::Lesend, HttpMethod::Post, '/app/mitglieder/7/verlauf/1/zurueckholen', false],
+            [Rolle::Lesend, HttpMethod::Get, '/app/beitraege', false],
+            [Rolle::Lesend, HttpMethod::Get, '/app/beitraege/7', false],
+            [Rolle::Lesend, HttpMethod::Post, '/app/beitraege/einzug', false],
+            [Rolle::Lesend, HttpMethod::Get, '/app/beitraege/einzuege/7/datei', false],
+            [Rolle::Lesend, HttpMethod::Get, '/admin', false],
         ];
 
         foreach ($faelle as [$rolle, $methode, $pfad, $erwartet]) {

@@ -19,7 +19,8 @@ use App\View\FlashArt;
 /**
  * The forms of the settings section Benutzer (App\Admin\Einstellungen\
  * BenutzerAbschnitt, docs/spec/02-sicherheit.md section 5): invite, send the
- * invitation again, change the role, lock, unlock, delete. Admin only
+ * invitation again, change the role, switch the Barrierefrei-Modus, lock,
+ * unlock, delete. Admin only
  * (`admin.benutzer`, declared by app/routes/benutzer.php).
  *
  * Every form answers with a redirect back to the section and a flash
@@ -45,13 +46,14 @@ final readonly class BenutzerController
         if ($rolle === null) {
             return $this->zurueck('Bitte eine Rolle wählen.', FlashArt::Fehler);
         }
+        $barrierefrei = $request->feld('barrierefrei') === '1';
 
         try {
-            $einladung = Einladung::aus($this->dienste)->einladen($request->feld('email'), $request->feld('name'), $rolle);
+            $einladung = Einladung::aus($this->dienste)->einladen($request->feld('email'), $request->feld('name'), $rolle, barrierefrei: $barrierefrei);
         } catch (BenutzerRegelVerstoss $e) {
             return $this->zurueck($e->getMessage(), FlashArt::Fehler);
         }
-        $this->protokollieren($request, AuditAktion::BenutzerAngelegt, $einladung['userId'], ['rolle' => $rolle->value, 'einladung' => 'neu']);
+        $this->protokollieren($request, AuditAktion::BenutzerAngelegt, $einladung['userId'], ['rolle' => $rolle->value, 'einladung' => 'neu', 'barrierefrei' => $barrierefrei]);
 
         return $this->versandMelden(
             Kontomails::aus($this->dienste)->einladung($request, $einladung['email'], $einladung['token']),
@@ -87,6 +89,20 @@ final readonly class BenutzerController
             ['rolle' => $rolle->value],
             fn(BenutzerVerwaltung $v, int $admin) => $v->rolleAendern($admin, $id, $rolle),
             fn(string $name): string => sprintf('%s hat jetzt die Rolle %s.', $name, $rolle->bezeichnung()),
+        );
+    }
+
+    /** Switches the Barrierefrei-Modus of an account on or off for it (issue #87). */
+    public function barrierefrei(Request $request, int $id): Response
+    {
+        $an = $request->feld('an') === '1';
+
+        return $this->schritt(
+            $request,
+            AuditAktion::BenutzerGeaendert,
+            ['barrierefrei' => $an],
+            fn(BenutzerVerwaltung $v, int $admin) => $v->barrierefreiSetzen($id, $an),
+            fn(string $name): string => sprintf($an ? '%s arbeitet ab der nächsten Seite im Barrierefrei-Modus.' : 'Der Barrierefrei-Modus von %s ist ausgeschaltet.', $name),
         );
     }
 

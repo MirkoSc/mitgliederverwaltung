@@ -220,6 +220,7 @@ final readonly class MitgliedController
             'mitglied' => $mitglied,
             'familie' => $familie,
             'aktion' => $mitglied?->id === null ? self::PFAD_NEU : self::speicherAdresse($mitglied->id),
+            'darfBearbeiten' => $konto !== null && $konto->darf(Permission::MitgliederBearbeiten),
             'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen),
             'einbettung' => $einbettung ?? Einbettung::mitgliederSeite(),
         ];
