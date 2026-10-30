@@ -278,7 +278,8 @@ echten Daten installiert, das Repository öffentlich.
 ## K – Karte und externe Dienste (#91)
 
 Geprüft beim Bau der Seite „Karte" (2026-10-30), Abschnitte C, E, I und J
-für die neuen Routen erneut durchgegangen.
+für die neuen Routen erneut durchgegangen; K-10 bis K-14 beim Wohnort am
+Mitglied (#106, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft.
 
 | ID | Prüfung | Ergebnis | Fundstelle |
 |---|---|---|---|
@@ -291,6 +292,11 @@ für die neuen Routen erneut durchgegangen.
 | K-07 | Ausfall des Dienstes ist ein Hinweis, kein Absturz | ✓ | Geocoder: Pause 15 min, Hinweis auf der Seite; Kacheln: alte Kopie oder 503 (`KarteSeiteTest::testATileServerFailureIsAHintNotACrash`) |
 | K-08 | `Cache-Control` | ✓ | Seite `no-store` wie alle (I-10); nur die Kachel-Antwort setzt `private, max-age=86400` – Kartenbild, keine Mitgliederdaten |
 | K-09 | Popups ohne HTML aus Daten | ✓ | `karte.js` klont die serverseitig escapte Tabellenzelle, Zahl/Anschrift als `textContent` |
+| K-10 | Wohnort am Mitglied (#106): neue Route `POST /app/mitglieder/{id}/wohnort` deklariert (`mitglieder.bearbeiten`), CSRF zentral, „Nur lesen" → 403 | ✓ | `app/routes/wohnort.php`, `tests/Http/routen-zugriff/wohnort.txt`, `WohnortTest::testReadOnlySeesTheStateButNoFormAndMayNotPost`, `::testWithoutTheTokenNothingHappens` |
+| K-11 | Such-Anschrift nie in Log, Audit, Meldung oder URL | ✓ | Audit nur Mitglieds-ID + `korrektur`/`ergebnis` (`WohnortController::protokollieren()`), Log nur der Fehlergrund (`Koordinatenermittlung::pausieren()`), Meldungen ohne Anschrift, Weiterleitung nur mit ID/Reiter; `WohnortTest::testACorrectionIsSavedAskedAndAudited` |
+| K-12 | Ein Klick = höchstens eine Anfrage an den Geocoder, unter Lock und Abstand; kein Weg um die Pause herum | ✓ | `Koordinatenermittlung::vonHand()`; `KartenSucheVonHandTest` (Abstand, Sperre belegt, Pause) |
+| K-13 | `geo_anschrift` enthält jetzt Anschriftstext (nur `such_*`, ohne Namen) | ✓ mit Hinweis | Wie alle Tabellen nur im verschlüsselten Backup; wird mit der nächsten Ermittlung gelöscht, sobald kein aktuelles Mitglied die Anschrift mehr hat (03 §2) |
+| K-14 | Kleine Karte lädt nur von `'self'` | ✓ | dieselben Kacheln über `/app/karte/kachel/…`, Leaflet vendored; `WohnortTest::testFoundShowsTheSmallMapAndTheLinkToTheBigOne` prüft, dass kein fremder Host im HTML steht |
 
 ## Befunde des Durchlaufs 2026-10-29
 

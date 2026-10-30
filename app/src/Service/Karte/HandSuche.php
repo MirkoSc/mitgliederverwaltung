@@ -23,10 +23,4 @@ enum HandSuche
 
     /** The service failed just now; a search address is kept and asked later. */
     case Fehler;
-
-    /** Whether the address was looked up with an answer - found or not. */
-    public function istErgebnis(): bool
-    {
-        return $this === self::Gefunden || $this === self::NichtGefunden;
-    }
 }

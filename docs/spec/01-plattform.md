@@ -163,6 +163,19 @@ Projektadresse), wie es ihre Nutzungsregeln verlangen.
   JSON) speichert nichts, wird ohne Anschrift geloggt und lässt die
   Ermittlung 15 Minuten ruhen (Setting `karte_geocoding_pause_bis`) – er
   ist ein Hinweis auf der Seite, nie ein Absturz.
+  **Von Hand** (#106): Am Mitglied fragt „Jetzt suchen“ eine einzelne
+  Anschrift sofort; wer `mitglieder.bearbeiten` hat, kann dort eine
+  **Such-Anschrift nur für die Karte** angeben (Straße, PLZ, Ort; das Land
+  bleibt das des Mitglieds) oder sie wieder entfernen
+  (`Koordinatenermittlung::jetztSuchen()/korrigieren()/korrekturEntfernen()`).
+  Jede dieser Aktionen ist genau **eine** Anfrage unter denselben Regeln:
+  derselbe DB-Lock (ist er belegt, ändert sich nichts und ein Hinweis bittet
+  um einen neuen Versuch), derselbe Abstand ≥ 1 s, dieselbe Pause nach einem
+  Fehler (dann bleibt die Such-Anschrift gemerkt und der nächste Lauf fragt).
+  Die Such-Anschrift geht **wortgetreu** an den Geocoder (kein Abschneiden
+  am Minus); auch der Cron fragt eine Anschrift mit Such-Anschrift nur mit
+  dieser. Sie hängt am Hash der Anschrift: ändert sich die Anschrift des
+  Mitglieds, gilt sie nicht mehr.
 - **Kacheln** (`App\Service\Karte\KachelProxy`): Route
   `/app/karte/kachel/{z}/{x}/{y}.png`, nur angemeldet
   (`mitglieder.sehen`), nur Zoom 5–18 und Kacheln innerhalb der Zoomstufe
@@ -182,6 +195,10 @@ Ausnahmen – derzeit keine), Routen-Zugriffsmatrix, Cron-Token und
 `zend.exception_ignore_args`. Karte (#91, mit Fake-HTTP): Geocoding
 (Abstand ≥ 1 s auch über Aufrufe hinweg, je Anschrift nur einmal, nicht
 gefunden gemerkt, geänderte Anschrift neu gefragt, Fehler → Pause ohne
-Speichern, Sperre), Kachel-Proxy (Cache-Treffer, Ablauf, ungültige
+Speichern, Sperre; von Hand #106: Such-Anschrift wortgetreu gefragt und
+gemerkt, weiter nicht gefunden, entfernen fragt wieder mit der Anschrift,
+Cron nutzt die Such-Anschrift, geänderte Anschrift ignoriert sie, Sperre
+belegt → nichts geändert, Fehler → Pause, Such-Anschrift bleibt –
+`KartenSucheVonHandTest`), Kachel-Proxy (Cache-Treffer, Ablauf, ungültige
 Zoomstufe/Koordinaten → 404 ohne Anfrage, nicht angemeldet → kein
 Zugriff, Aufräumen nach Alter und Größe).

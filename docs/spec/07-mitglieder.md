@@ -52,6 +52,32 @@ sie schon hat. Löschen (Admin): Rückfrage unter
 Dateien der Nachweise werden mitgelöscht, das Audit-Log vermerkt
 `mitglied.geloescht` nur mit ID und Mitgliedsnummer.
 
+**Wohnort auf der Karte** (#106): Im Reiter **Daten** steht bei der
+Anschrift ein Block (`App\Service\Karte\Wohnort`, Template
+`mitglied/wohnort`), in jeder einbettenden Seite gleich. Er sagt als Text,
+was die Karte weiß – **gefunden** (dazu eine kleine Karte mit einem Marker
+auf Straßenebene, Kacheln über den Proxy aus #91, „© OpenStreetMap-
+Mitwirkende", und der Link „Auf der großen Karte zeigen"), **nicht
+gefunden** oder **noch nicht gesucht** (wer bearbeiten darf: Knopf „Jetzt
+suchen"); ehemalige Mitglieder und Anschriften ohne PLZ und Ort stehen nicht
+auf der Karte und sagen das. Die Karte ist Zugabe: ohne Skript und im
+Barrierefrei-Modus genügt der Text. Wer `mitglieder.bearbeiten` hat, kann
+eine **Such-Anschrift nur für die Karte** angeben (Straße, PLZ, Ort;
+vorbelegt mit der bisherigen Such-Anschrift, sonst der Anschrift mit dem
+Ort bis zum ersten Minus) – offen bei „nicht gefunden", sonst hinter „Lage
+stimmt nicht? Anders suchen" – und sie wieder entfernen. Die Anschrift des
+Mitglieds bleibt unverändert, es entsteht keine Version. Gespeichert wird
+die Such-Anschrift zur Anschrift (`geo_anschrift.such_*`, 03), gefragt wird
+sofort einmal (01 §8); das Ergebnis steht danach als Meldung und im Block.
+Route `POST /app/mitglieder/{id}/wohnort` (`App\App\WohnortController`,
+Feld `aktion` = `suchen`/`korrigieren`/`entfernen`, zurück auf die
+einbettende Seite, Reiter „Daten", Anker `#wohnort`). Weil das
+Mitgliederformular kein zweites Formular enthalten darf, steht das
+Formular des Blocks hinter ihm; Felder und Knöpfe gehören über das
+Attribut `form` dazu. Audit `mitglied.karten_suche_geaendert` nur mit
+Mitglieds-ID und Ergebnis (`korrektur`: gesetzt/entfernt, `ergebnis`) –
+nie mit Anschrift.
+
 ## 2. Abteilungen
 
 Einstellungen: Name, **BLSV-Nummer** (Spartenkennzeichen, Text, z. B.
@@ -294,6 +320,7 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
 | Nachweis vermerken | ✓ | ✓ | – |
 | Nachweis löschen, Mitglied löschen | ✓ | – | – |
 | Familien pflegen | ✓ | ✓ | – |
+| Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106) | ✓ | ✓ | – |
 | Reiter „Beiträge" (lesen) | ✓ | – | ✓ |
 
 „Nur lesen“ (#87) sieht den Reiter „Daten“ als reine Ansicht
@@ -311,4 +338,8 @@ eindeutig, nächste freie Nummer. IBAN-Prüfziffer. Suche findet über alle
 Suchfelder, Groß-/Kleinschreibung egal; Geburtsdatum in mehreren
 Schreibweisen, IBAN mit/ohne Leerzeichen und als Teilstück, Adresse mit Name,
 Bemerkung, Wort ohne Treffer; Filter Beitragsart findet Zahler und
-Familienmitglieder. Rechte-Matrix §9 serverseitig.
+Familienmitglieder. Rechte-Matrix §9 serverseitig. Wohnort auf der Karte
+(#106, `WohnortTest`): die drei Zustände, Such-Anschrift speichern →
+gefunden bzw. weiter nicht gefunden mit den eingegebenen Werten, entfernen,
+„Nur lesen" sieht den Block ohne Formular und bekommt auf den POST 403,
+Audit ohne Anschrift.
