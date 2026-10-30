@@ -104,7 +104,7 @@ Teil eines Releases sind.
   Update, Systemcheck, Audit-Log. Nur der Admin hat einen Adminbereich.
 
 **Oberfläche (06-oberflaeche.md):** so wenige Seiten wie möglich –
-Mitglieder, Listen, Karte, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
+Mitglieder, Familien, Listen, Karte, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
 und PC. Barrierearmut als solide Grundlage, kein Vollstandard; dazu ein
 **Barrierefrei-Modus** je Benutzer (PC: große Schrift, hoher Kontrast,
 große Flächen, nur Tastatur möglich) als CSS-Klasse, kein zweites Layout.

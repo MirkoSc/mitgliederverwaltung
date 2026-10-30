@@ -26,13 +26,13 @@ eigenständig nach dem Skill `frontend-design` gestaltet.
 
 ## 2. Seitenaufbau (Vorschlag)
 
-Sechs Bereiche in der Hauptnavigation, mehr nicht („Karte" kam mit #91
-dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
+Sieben Bereiche in der Hauptnavigation, mehr nicht („Karte" kam mit #91,
+„Familien" mit #92 dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
 umgeschaltet statt verlinkt.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Mitglieder   Listen   Karte   Beiträge*   Einstellungen*   [Benutzer]│
+│ Mitglieder  Familien  Listen  Karte  Beiträge*  Einstellungen*  [Ben.]│
 └──────────────────────────────────────────────────────────────────────┘
 * nur Admin
 ```
@@ -58,13 +58,26 @@ umgeschaltet statt verlinkt.
      Zahlers daneben, und ein Knopf trägt sie ins Formular „Daten" ein
      (gespeichert erst mit dem Formular).
    - „Neues Mitglied" öffnet dasselbe Formular leer.
-   - Familien werden im Mitglied gepflegt (Familie wählen/anlegen, Rolle).
-2. **Listen** – eine Seite, oben eine Auswahl:
+   - Familien werden im Mitglied gepflegt (Familie wählen/anlegen, Rolle);
+     der Reiter „Familie" verlinkt „In Familien öffnen".
+2. **Familien** (#92, alle Rollen sehen, `mitglieder.bearbeiten` ändert) –
+   links die Liste aller Familien (Name, Zahler, Personen, Etikett
+   „Anschriften weichen ab"), Suche nach dem Namen der Familie oder einer
+   Person (nur im POST-Body), darunter „Neue Familie". Klick öffnet rechts
+   die Familie: Personen mit Rolle und Anschrift (abweichende mit
+   „weicht ab"), Hinweise (zu klein, kein/mehrere Zahler, Anschriften), je
+   Person Rolle ändern und „Aus der Familie nehmen", „Zahler wechseln",
+   „Anschriften vereinheitlichen", „Person hinzufügen" (Suche), umbenennen,
+   eine leere Familie löschen. Eine Person öffnet sich **an Stelle der
+   Familie** als Baustein (§5) mit „Zurück zur Familie". URL:
+   `/app/familien?familie=…&mitglied=…&reiter=…`. Am Handy nacheinander
+   Liste → Familie → Mitglied, je mit Zurück-Link.
+3. **Listen** – eine Seite, oben eine Auswahl:
    Geburtstage · Ehrungen · Funktionen · Selbst kassieren ·
    Auffälligkeiten · BLSV-Meldung · Alle Mitglieder (Gesamtexport).
    Jede Liste hat ihre wenigen Filter (z. B. Woche/Monat/Jahr, nur runde)
    und **einen** Export-Knopf (xlsx oder csv).
-3. **Karte** (#91, beide Rollen, `mitglieder.sehen`) – die Wohnorte der
+4. **Karte** (#91, beide Rollen, `mitglieder.sehen`) – die Wohnorte der
    aktuellen Mitglieder auf einer OpenStreetMap-Karte (Leaflet, vendored).
    Oben der Stand („x von y Anschriften gefunden"), für den Admin der Knopf
    „Jetzt Koordinaten ermitteln", ein einfacher Filter (Abteilung,
@@ -76,15 +89,15 @@ umgeschaltet statt verlinkt.
    Seite ohne Karte und im Barrierefrei-Modus vollständig nutzbar.
    Hinweis „© OpenStreetMap-Mitwirkende" auf der Karte. Keine Änderung an
    der Datenschutzerklärung (mit Mirko abgestimmt).
-4. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
+5. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
    „bezahlt setzen".
-5. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
+6. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
    (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
    Systemcheck – übernommen).
-6. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
+7. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
    **Barrierefrei-Modus an/aus**, Abmelden.
 
 Was die Rolle nicht darf, wird nicht angezeigt **und** serverseitig
@@ -160,8 +173,8 @@ Ein geöffnetes Mitglied (Kopf mit Name, Nummer, Status und „Schließen",
 Hinweise, Reiter) ist **ein** Baustein: `App\App\Mitglied\MitgliedAnsicht`
 mit dem Template `app/views/mitglied/ansicht.php`. Eine Seite mit einer
 Personenliste bettet ihn rechts neben ihrer Liste ein (Muster „Liste neben
-Mitglied", `geteilt`). Heute tut das die Mitglieder-Seite; Familien (#92)
-und Listen (#93) folgen auf demselben Weg. Was im Mitglied auf eine eigene
+Mitglied", `geteilt`). Das tun die Mitglieder-Seite und die Familien
+(#92); Listen (#93) folgen auf demselben Weg. Was im Mitglied auf eine eigene
 Seite führt (Familie wählen, Löschen-Rückfrage, ein Jahresbeitrag), führt
 von dort auf die einbettende Seite zurück, nie auf die Mitglieder-Seite.
 
@@ -218,6 +231,12 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
 - **Rechte** bleiben serverseitig je Aktion: Reiter und Abschnitte
   erscheinen nur mit ihrem Recht, jede Route prüft ihr eigenes. Die
   einbettende Seite braucht selbst mindestens `MitgliederSehen`.
+- **An Stelle statt daneben:** Steht das Mitglied nicht neben der Liste,
+  sondern ersetzt es etwas (die Familien: die geöffnete Familie), setzt die
+  Seite `->mitZurueck('Zurück zur Familie')`. Dann führt ein eigener
+  Zurück-Link mit diesem Text auch am PC zurück (statt „Schließen"); er
+  fragt mit `fokus=zurueck` nach dem Fokus, den die Seite auf ihre eigene
+  Überschrift legt.
 - **Barrierefrei-Modus (PC):** Das Mitglied steht unter der Liste (eine
   Spalte, kräftige Linie davor), „Schließen" schließt es; am Handy wie
   sonst eine eigene Ansicht mit „Zurück zur Liste".
@@ -230,5 +249,7 @@ Benutzereinstellung gesetzt und überlebt das Neuladen; Mitglied als
 Baustein mit einer zweiten einbettenden Seite (Reiter, Speichern-
 Weiterleitung, Schließen, Löschen zeigen auf diese Seite; unsicheres
 `zurueck` fällt auf die Mitglieder-Seite zurück; Fokus) –
-`MitgliedAnsichtTest`, `EinbettungTest`; manuelle Prüfliste
+`MitgliedAnsichtTest`, `EinbettungTest`; Familien-Seite (#92) mit dem
+Mitglied an Stelle der Familie, „Zurück zur Familie", Fokus –
+`FamilienSeiteTest`; manuelle Prüfliste
 je UI-PR: 360 px Handy, PC, PC im Barrierefrei-Modus (nur Tastatur).

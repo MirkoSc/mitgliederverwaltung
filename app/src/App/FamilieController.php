@@ -8,12 +8,12 @@ use App\App\Mitglied\Einbettung;
 use App\Dienste;
 use App\Domain\FamilienRolle;
 use App\Domain\Mitglied;
-use App\Domain\VersionsAnlass;
 use App\Http\Request;
 use App\Http\Response;
 use App\Repository\FamilieRepository;
 use App\Repository\MitgliedRepository;
 use App\Repository\VersionKonfliktException;
+use App\Service\Mitglied\FamilienPflege;
 use App\View\Area;
 use App\View\FlashArt;
 
@@ -160,11 +160,7 @@ final readonly class FamilieController
     private function setzen(Request $r, Mitglied $mitglied, ?int $familieId, ?FamilienRolle $rolle, string $meldung): Response
     {
         try {
-            $ergebnis = $this->mitglieder->speichern(
-                $mitglied->mit(['familieId' => $familieId, 'familieRolle' => $rolle]),
-                VersionsAnlass::geaendert(),
-                $this->dienste->session->userId(),
-            );
+            $ergebnis = FamilienPflege::aus($this->dienste)->setzen($mitglied, $familieId, $rolle);
         } catch (VersionKonfliktException) {
             return $this->zurueck($r, $mitglied, 'Jemand anderes hat dieses Mitglied gerade gespeichert. Bitte noch einmal versuchen.', FlashArt::Warnung);
         }

@@ -4,7 +4,9 @@
  * The opened member as a building block (App\App\Mitglied\MitgliedAnsicht,
  * docs/spec/06-oberflaeche.md section 5): the right half of "Liste neben
  * Mitglied"; an empty div without a member - the list then has the whole
- * width. "Schließen" (PC) and "Zurück zur Liste" (phone) close it. Hints on
+ * width. "Schließen" (PC) and "Zurück zur Liste" (phone) close it - or one
+ * link of the embedding's own text on both (Einbettung::$zurueckText, the
+ * families: "Zurück zur Familie"). Hints on
  * top, then the tabs - extensions found by file name (App\App\Mitglied\
  * Reiter, ...Abschnitt). Every link leads back to the embedding page
  * ($einbettung), never to another one.
@@ -28,12 +30,18 @@
 <div class="geteilt-detail">
     <?php if ($mitglied !== null && $einbettung !== null): ?>
         <?php $id = (int) $mitglied->id; ?>
-        <a class="zurueck" <?= $einbettung->link($einbettung->rueckweg()) ?>>Zurück zur Liste</a>
+        <?php if ($einbettung->zurueckText !== null): ?>
+            <a class="zurueck zurueck-immer" <?= $einbettung->link($einbettung->rueckweg(), 'zurueck') ?>><?= e($einbettung->zurueckText) ?></a>
+        <?php else: ?>
+            <a class="zurueck" <?= $einbettung->link($einbettung->rueckweg()) ?>>Zurück zur Liste</a>
+        <?php endif; ?>
         <div class="detail-kopf">
             <h2 id="mitglied-titel" tabindex="-1"<?= $fokus === 'mitglied' ? ' autofocus' : '' ?>><?= e($mitglied->anzeigeName()) ?></h2>
             <span class="nummer">Nr. <?= e($mitglied->mitgliedsnummer) ?></span>
             <span class="etikett <?= e($statusKlasse) ?>"><?= e($statusText) ?></span>
-            <a class="knopf knopf-still detail-schliessen" <?= $einbettung->link($einbettung->rueckweg()) ?>>Schließen</a>
+            <?php if ($einbettung->zurueckText === null): ?>
+                <a class="knopf knopf-still detail-schliessen" <?= $einbettung->link($einbettung->rueckweg()) ?>>Schließen</a>
+            <?php endif; ?>
         </div>
 
         <?php foreach ($abschnitte as $abschnitt): ?>
