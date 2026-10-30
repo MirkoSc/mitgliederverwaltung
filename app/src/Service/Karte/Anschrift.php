@@ -52,6 +52,20 @@ final readonly class Anschrift
         return implode('|', [$strasse, mb_strtolower($this->plz), mb_strtolower($this->ort), $this->land]);
     }
 
+    /**
+     * The town as the geocoder gets it: up to the first minus. The old
+     * software wrote the district after the town ("Johannesberg - OAB"),
+     * which the geocoder does not know; town and postcode are enough to
+     * find the street. Without a minus, or with nothing before it, the
+     * town stays as it is.
+     */
+    public function ortFuerSuche(): string
+    {
+        $vorne = trim(explode('-', $this->ort, 2)[0]);
+
+        return $vorne !== '' ? $vorne : $this->ort;
+    }
+
     public function hash(): string
     {
         return hash('sha256', $this->normalisiert());
