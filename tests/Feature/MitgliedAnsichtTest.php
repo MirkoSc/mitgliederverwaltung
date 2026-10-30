@@ -228,7 +228,7 @@ final class MitgliedAnsichtTest extends AppTestCase
 
         $this->konto = $this->als(Rolle::Vorstand);
         $vorstand = $this->zeigen($id);
-        self::assertStringNotContainsString('reiter=beitraege', $vorstand, 'the Vorstand never sees the fees');
+        self::assertStringContainsString('reiter=beitraege', $vorstand, 'the Vorstand sees the paid status');
         self::assertStringNotContainsString('Mitglied löschen', $vorstand);
 
         $this->konto = $this->als(Rolle::Admin);

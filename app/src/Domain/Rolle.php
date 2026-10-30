@@ -23,12 +23,15 @@ enum Rolle: string
         return match ($this) {
             self::Admin => Permission::cases(),
             // Members: search, view, create, edit (also IBAN, department,
-            // fee type); lists and exports. Not: annual fees, direct debit,
-            // paid status, debit file, settings, users, system.
+            // fee type); lists and exports; whether a member has paid
+            // (read only, like "Nur lesen"). Not: the page "Beiträge"
+            // (annual fees, direct debit, debit file), settings, users,
+            // system.
             self::Vorstand => [
                 Permission::MitgliederSehen,
                 Permission::MitgliederBearbeiten,
                 Permission::ListenSehen,
+                Permission::BeitraegeSehen,
             ],
             // Read only (issue #87): members, families, proofs, history,
             // lists with exports, and whether a member has paid. Changes

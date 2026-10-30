@@ -189,9 +189,10 @@ Verschlüsselung einzelner Datenbankfelder.
   (kein Rollen-Editor):
   - **Admin**: alle Rechte.
   - **Vorstand**: Mitglieder suchen, ansehen, anlegen, bearbeiten (auch
-    IBAN, Abteilung, Beitragsart), Listen und Exporte. **Nicht**:
-    Jahresbeiträge, Einzug, Bezahlt-Status, Lastschriftdatei,
-    Einstellungen, Benutzer, System.
+    IBAN, Abteilung, Beitragsart), Listen und Exporte, und lesend **ob ein
+    Mitglied bezahlt hat** (`beitraege.sehen`, wie Nur lesen; seit
+    30.10.2026). **Nicht**: Seite „Beiträge“ (Jahresbeiträge, bezahlt
+    setzen), Einzug, Lastschriftdatei, Einstellungen, Benutzer, System.
   - **Nur lesen** (`lesend`, #87): Mitglieder suchen und öffnen (Daten,
     Familie, Nachweise ansehen und herunterladen, Verlauf), Listen **mit
     Exporten** und **ob ein Mitglied bezahlt hat** (Reiter „Beiträge“ und
@@ -218,7 +219,7 @@ Verschlüsselung einzelner Datenbankfelder.
   | `mitglieder.bearbeiten` | anlegen, bearbeiten (auch IBAN, Abteilung, Beitragsart), Version zurückholen, Familien, Nachweis/Ehrung vermerken | ✓ | ✓ | – |
   | `mitglieder.loeschen` | Mitglied löschen, Nachweis löschen | ✓ | – | – |
   | `listen.sehen` | Listen ansehen und exportieren | ✓ | ✓ | ✓ |
-  | `beitraege.sehen` | Bezahlt-Status und Beitragsangaben lesen: Reiter „Beiträge" (ohne Links auf die Beitragsseiten), Liste „Selbst kassieren", Beitragsspalten im Gesamtexport | ✓ | – | ✓ |
+  | `beitraege.sehen` | Bezahlt-Status und Beitragsangaben lesen: Reiter „Beiträge" (ohne Links auf die Beitragsseiten), Liste „Selbst kassieren", Beitragsspalten im Gesamtexport | ✓ | ✓ | ✓ |
   | `beitraege.verwalten` | Seite „Beiträge": Jahresbeiträge erzeugen, Betrag, Bezahlt-Status, Vermerke; Einzug, Lastschriftdatei | ✓ | – | – |
   | `admin.einstellungen` | Einstellungen-Seite: Vereinsdaten, Abteilungen, Beitragsarten, Funktionen, Geburtstage, Ehrungsstufen, Mail, Rechtstexte | ✓ | – | – |
   | `admin.benutzer` | Benutzer einladen, sperren, löschen, Rolle ändern, Barrierefrei-Modus setzen | ✓ | – | – |

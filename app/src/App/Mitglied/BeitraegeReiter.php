@@ -13,8 +13,8 @@ use App\Repository\JahresbeitragRepository;
 /**
  * The tab "Beiträge" of an opened member (docs/spec/08-beitraege.md
  * section 2): all years with amount, status and notes, newest first; each
- * year opens the page of that fee. Shown with beitraege.sehen (admin and
- * "Nur lesen", issue #87) - the Vorstand never sees the tab. The links to
+ * year opens the page of that fee. Shown with beitraege.sehen (every role:
+ * admin, Vorstand and "Nur lesen" see whether a member has paid). The links to
  * the fee pages appear only with BeitraegeVerwalten, and every route behind
  * them checks it itself.
  */

@@ -21,14 +21,14 @@ final class RolleTest extends TestCase
         }
     }
 
-    public function testTheBoardWorksWithMembersAndListsOnly(): void
+    public function testTheBoardWorksWithMembersAndListsAndSeesPaidStatus(): void
     {
         $erwartet = [
             'mitglieder.sehen' => true,
             'mitglieder.bearbeiten' => true,
             'mitglieder.loeschen' => false,
             'listen.sehen' => true,
-            'beitraege.sehen' => false,
+            'beitraege.sehen' => true,
             'beitraege.verwalten' => false,
             'admin.einstellungen' => false,
             'admin.benutzer' => false,

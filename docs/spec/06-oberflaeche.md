@@ -255,7 +255,7 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
 ## Pflicht-Tests
 
 `CspComplianceTest` (kein Inline-JS, kein `hx-on`), Routen-Zugriffsmatrix
-inkl. „Vorstand sieht keine Beiträge", Barrierefrei-Modus wird aus der
+inkl. „Vorstand und Nur lesen sehen die Seite Beiträge nicht", Barrierefrei-Modus wird aus der
 Benutzereinstellung gesetzt und überlebt das Neuladen; Mitglied als
 Baustein mit einer zweiten einbettenden Seite (Reiter, Speichern-
 Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite

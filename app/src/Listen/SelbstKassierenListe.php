@@ -14,9 +14,8 @@ use App\Support\Iban;
 /**
  * "Selbst kassieren" (docs/spec/09-listen-und-exporte.md section 2): open
  * annual fees of members who pay by themselves or have no valid IBAN, so
- * they can be collected by hand. Filter: the year. Admin and "Nur lesen"
- * (beitraege.sehen, issue #87) - the permission keeps the Vorstand from
- * seeing it. A list only reads, so reading is all it needs.
+ * they can be collected by hand. Filter: the year. Needs beitraege.sehen
+ * (every role has it). A list only reads, so reading is all it needs.
  */
 final readonly class SelbstKassierenListe implements Liste
 {

@@ -134,9 +134,9 @@ Jahresbeitrags. Nachweis-Dateien und Versionen sind nicht enthalten (dafür
 gibt es das Backup).
 
 Umsetzung `AlleMitgliederListe`. Als **Beitragsspalten** (nur mit dem Recht
-`beitraege.sehen`, also Admin und Nur lesen) gelten Beitragsart, Zahlart, IBAN, BIC,
+`beitraege.sehen`, also alle drei Rollen) gelten Beitragsart, Zahlart, IBAN, BIC,
 Kontoinhaber, Mandatsreferenz, Mandatsdatum sowie Betrag und Status des
-Jahresbeitrags des laufenden Jahres; der Vorstand bekommt alle übrigen Felder.
+Jahresbeitrags des laufenden Jahres.
 
 ## 6. Datenmodell
 
@@ -152,8 +152,8 @@ Alter; Ehrungsjahr-Berechnung inkl. unbekanntem Eintritt und „nur offene";
 csv mit BOM, `;` und Feldern mit Semikolon/Anführungszeichen/Zeilenumbruch;
 xlsx öffnet sich (gültiges ZIP, Inhalt per Rücklesen geprüft), Datum als
 Datumszelle; BLSV-Export hat exakt die Spalten der Vorlage in der
-Reihenfolge; Vorstand sieht „Selbst kassieren" nicht und bekommt keine
-Beitragsspalten, Nur lesen sieht beides, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.
+Reihenfolge; Vorstand und Nur lesen sehen „Selbst kassieren" und die
+Beitragsspalten, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.
 `/app/listen` liefert die Geburtstagsliste; Personen-Links zeigen auf die
 Listenseite mit `mitglied=<id>`, Sortieren und Filter behalten die Person,
 Speichern in der geöffneten Person bleibt auf der Liste, htmx tauscht nur

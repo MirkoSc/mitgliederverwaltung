@@ -1,10 +1,9 @@
 # 08 – Beiträge und Einzug
 
 Quelle: `docs/fachlichkeit.md` §5. Alles in dieser Datei ist **nur für
-den Admin** (Rolle Vorstand: kein Zugriff, serverseitig geprüft). Einzige
-Ausnahme: die Rolle „Nur lesen“ sieht mit `beitraege.sehen` den Reiter
-„Beiträge“ und die Beitragsspalten der Listen, ändert aber nichts (#87,
-02 §6).
+den Admin** (serverseitig geprüft). Einzige Ausnahme: Vorstand und „Nur
+lesen“ sehen mit `beitraege.sehen` den Reiter „Beiträge“ und die
+Beitragsspalten der Listen, ändern aber nichts daran (#87, 02 §6).
 
 ## 1. Beitragsarten
 
@@ -274,7 +273,8 @@ eingecheckt) mit und ohne BIC, mit abweichendem Kontoinhaber, mit
 Umlauten; Kontrollsumme und Anzahl stimmen; die Datei wird beim Erzeugen
 verschlüsselt gespeichert, jeder Download liefert byte-gleich dieselbe
 Datei, auch nachdem sich Mitgliedsdaten geändert haben; Archiv zeigt
-verworfene Einzüge; Vorstand bekommt auf jeder Route dieser Datei 403.
+verworfene Einzüge; Vorstand und Nur lesen bekommen auf jeder Route der
+Seite „Beiträge“ 403, sehen aber den Reiter „Beiträge“ ohne Links.
 Zu §2a: Löschen mit falschem Bestätigungswort scheitert; Löschen eines
 bezahlten Jahres mit Einzug entfernt alles des Jahres (Beiträge, Einzüge,
 Dateien) und nichts anderer Jahre, ein Einzug mit mehreren Jahren bleibt;

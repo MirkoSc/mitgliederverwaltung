@@ -20,8 +20,7 @@ use App\Repository\MitgliedRepository;
  * per member with every field of 07 section 1 in readable form, for a later
  * move to other software. The fee columns (fee type, payment, bank data,
  * mandate, annual fee of the current year) are only for accounts that may
- * read fee data (beitraege.sehen: admin and "Nur lesen"); the committee
- * gets the rest.
+ * read fee data (beitraege.sehen, today every role).
  */
 final class AlleMitgliederListe implements Liste
 {
