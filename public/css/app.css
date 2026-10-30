@@ -1278,6 +1278,26 @@ textarea:disabled {
     color: var(--farbe-gedaempft);
 }
 
+/* "Seite x von y" and "Je Seite" between Vorherige and Nächste. */
+.blaettern-mitte {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--abstand-2) var(--abstand-4);
+}
+
+.blaettern-anzahl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-2);
+}
+
+.blaettern-anzahl select {
+    width: auto;
+}
+
 /* ------------------------------------------------------------- Patterns */
 
 /* Tabs of a record (Daten, Beiträge, Verlauf): links with

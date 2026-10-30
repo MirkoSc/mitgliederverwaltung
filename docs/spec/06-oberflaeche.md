@@ -38,9 +38,11 @@ umgeschaltet statt verlinkt.
 ```
 
 1. **Mitglieder** (Startseite)
-   - Suchfeld (Name, Mitgliedsnummer, Ort) mit Live-Ergebnis, darunter
-     die Liste; einfache Filter (Abteilung, aktiv/passiv, Beitragsart,
-     Ehemalige anzeigen) und „Je Seite" (50, 100, 200, Alle).
+   - Suchfeld (Name, Anschrift, Kontakt, IBAN, Geburtsdatum …, 07 §8)
+     mit Live-Ergebnis und einer Beschreibung, wonach gesucht wird
+     (`aria-describedby`), darunter die Liste; einfache Filter
+     (Abteilung, aktiv/passiv, Beitragsart, Ehemalige anzeigen). „Je
+     Seite" (50, 100, 200, Alle) steht in der Blätterleiste unter der Liste.
    - Klick auf ein Mitglied öffnet es **auf derselben Seite** (am PC
      rechts neben der Liste, am Handy als eigene Ansicht mit „Zurück").
      Das geöffnete Mitglied ist ein Baustein, den andere Seiten (Listen,
@@ -93,7 +95,12 @@ abgelehnt (02 §6).
 - Listen: Tabelle am PC, Karten untereinander am Handy; Sortierung durch
   Klick auf die Spaltenüberschrift; bei 700 Mitgliedern genügt Blättern
   in Seiten zu 50; die Mitgliederliste bietet dazu „Je Seite" bis „Alle"
-  (Parameter `anzahl`, `alle` = eine Seite).
+  (Parameter `anzahl`, `alle` = eine Seite). Das Auswahlfeld sitzt in der
+  Blätterleiste zwischen „Vorherige Seite" und „Nächste Seite", neben „Seite
+  x von y", und gehört per `form`-Attribut zum Suchformular: mit htmx wirkt
+  die Änderung sofort, ohne Skript der Knopf „Übernehmen". Die Leiste
+  erscheint auch bei nur einer Seite, sobald eine größere Anzahl gewählt ist
+  (sonst käme man von „Alle" nicht zurück).
 - Formulare: einspaltig am Handy, zweispaltig am PC; Speichern-Knopf
   immer sichtbar; Hinweise erscheinen nach dem Speichern oben, blockieren
   nie.

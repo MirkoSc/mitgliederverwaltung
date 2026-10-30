@@ -267,7 +267,18 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
 
     <nav class="blaettern" aria-label="Seiten der Liste">
         <a class="knopf" href="<?= e($link(['seite' => '1'], 'muster-liste')) ?>">Vorherige Seite</a>
-        <p class="blaettern-stand">Seite 2 von 14, je Seite 50 Mitglieder</p>
+        <div class="blaettern-mitte">
+            <p class="blaettern-stand">Seite 2 von 14</p>
+            <div class="feld blaettern-anzahl">
+                <label for="muster-je-seite">Je Seite</label>
+                <select id="muster-je-seite" name="anzahl">
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="alle">Alle</option>
+                </select>
+            </div>
+        </div>
         <a class="knopf" href="<?= e($link(['seite' => '3'], 'muster-liste')) ?>">Nächste Seite</a>
     </nav>
 
