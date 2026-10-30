@@ -60,6 +60,22 @@ final readonly class SystemCheck
     /** Where shared/config.php would be if a domain pointed one level above web/. */
     public const string CONFIG_PROBE_PATH = '/shared/config.php';
 
+    /** The page whose response headers are inspected: public, no session needed to render it. */
+    public const string HEADER_PROBE_PATH = '/anmelden';
+
+    /** PHP settings file in web/; nobody needs to read it from outside. */
+    public const string USER_INI_PROBE_PATH = '/.user.ini';
+
+    /**
+     * Headers web/.htaccess has to send (lower-case name => what it protects).
+     * Content-Security-Policy is judged separately, see securityHeaders().
+     */
+    private const array REQUIRED_HEADERS = [
+        'strict-transport-security' => 'Strict-Transport-Security',
+        'x-frame-options' => 'X-Frame-Options',
+        'x-content-type-options' => 'X-Content-Type-Options',
+    ];
+
     /**
      * @param ?string $varDir absolute path of shared/var; without it the
      *        write check is left out, like the database check without a PDO
@@ -68,12 +84,16 @@ final readonly class SystemCheck
      *        an origin for all(), the config exposure check is left out
      * @param ?string $sharedDir absolute path of shared/; its parent holds
      *        the directories whose deny-all .htaccess is checked
+     * @param (\Closure(string): ?array{status: int, headers: array<string, string>})|null $headerProbe
+     *        status and headers of a URL (CurlHeaderProbe); without it, or
+     *        without an origin for all(), the security header check is left out
      */
     public function __construct(
         private ?\PDO $pdo = null,
         private ?string $varDir = null,
         private ?\Closure $statusProbe = null,
         private ?string $sharedDir = null,
+        private ?\Closure $headerProbe = null,
     ) {
     }
 
@@ -111,6 +131,11 @@ final readonly class SystemCheck
 
         if ($origin !== null && $this->statusProbe !== null) {
             $results[] = $this->configExposure($origin);
+            $results[] = $this->userIniExposure($origin);
+        }
+
+        if ($origin !== null && $this->headerProbe !== null) {
+            $results[] = $this->securityHeaders($origin);
         }
 
         return $results;
@@ -413,6 +438,141 @@ final readonly class SystemCheck
                 'Weder ausgeliefert noch eindeutig gesperrt. Von außen im Browser nachprüfen.',
             ),
         };
+    }
+
+    /**
+     * Is web/.user.ini (PHP settings, no secrets) readable from outside?
+     * Only a 200 is a finding, and only a warning: the file holds nothing
+     * confidential, but web/.htaccess is meant to lock it.
+     */
+    public function userIniExposure(string $origin): CheckResult
+    {
+        $url = rtrim($origin, '/') . self::USER_INI_PROBE_PATH;
+        $status = $this->statusProbe === null ? null : ($this->statusProbe)($url);
+
+        $result = static fn(string $actual, CheckStatus $rating, string $detail): CheckResult => new CheckResult(
+            key: 'user_ini_exposure',
+            label: 'web/.user.ini von außen gesperrt',
+            expected: 'nicht abrufbar (nicht HTTP 200)',
+            actual: $actual,
+            status: $rating,
+            detail: $detail,
+        );
+
+        return match (true) {
+            $status === null => $result(
+                'keine Antwort',
+                CheckStatus::Warn,
+                'Der Server hat auf ' . self::USER_INI_PROBE_PATH . ' nicht geantwortet – die Prüfung ist '
+                    . 'ohne Ergebnis. Von außen im Browser nachprüfen.',
+            ),
+            $status === 200 => $result(
+                'abrufbar (HTTP 200)',
+                CheckStatus::Warn,
+                'Die PHP-Einstellungen sind von außen lesbar. web/.htaccess mit der Vorlage aus dem Release '
+                    . 'abgleichen.',
+            ),
+            default => $result(
+                'gesperrt (HTTP ' . $status . ')',
+                CheckStatus::Ok,
+                'Die Domain liefert ' . self::USER_INI_PROBE_PATH . ' nicht aus.',
+            ),
+        };
+    }
+
+    /**
+     * Do the security headers of web/.htaccess reach the browser? Asks the
+     * installation's own login page, the way the updater's self-test asks
+     * its start page. The question is not whether the file is right but
+     * whether the host delivers it: <IfModule mod_headers.c> drops every
+     * header without a word when the module is missing, and a hand-edited
+     * .htaccess is never overwritten by setup.php or an update.
+     *
+     * Expected: a Content-Security-Policy whose script-src is 'self' without
+     * 'unsafe-inline'/'unsafe-eval', Strict-Transport-Security,
+     * X-Frame-Options, X-Content-Type-Options, and no X-Powered-By. A gap is
+     * a hint, never a lock (guideline "Hinweise statt Sperren"): a broken
+     * CSP rates "fail" because it is the one header that carries the
+     * script protection, the rest "warn". Only header NAMES end up in the
+     * output, never their values.
+     */
+    public function securityHeaders(string $origin): CheckResult
+    {
+        $url = rtrim($origin, '/') . self::HEADER_PROBE_PATH;
+        $answer = $this->headerProbe === null ? null : ($this->headerProbe)($url);
+
+        $expected = 'CSP mit script-src \'self\', HSTS, X-Frame-Options, X-Content-Type-Options, kein X-Powered-By';
+        if ($answer === null) {
+            return new CheckResult(
+                key: 'security_headers',
+                label: 'Sicherheits-Header am Server',
+                expected: $expected,
+                actual: 'keine Antwort',
+                status: CheckStatus::Warn,
+                detail: 'Der Server hat auf ' . self::HEADER_PROBE_PATH . ' nicht geantwortet – die Prüfung ist '
+                    . 'ohne Ergebnis. Die Header im Browser (Entwicklerwerkzeuge, Netzwerk) nachprüfen.',
+            );
+        }
+
+        $headers = array_change_key_case($answer['headers'], CASE_LOWER);
+        $missing = [];
+
+        $csp = $headers['content-security-policy'] ?? null;
+        $cspProblem = null;
+        if ($csp === null) {
+            $cspProblem = 'Content-Security-Policy fehlt';
+        } elseif (!self::scriptSrcIsStrict($csp)) {
+            $cspProblem = 'Content-Security-Policy: script-src ist nicht „\'self\'“ ohne unsafe-inline/unsafe-eval';
+        }
+        if ($cspProblem !== null) {
+            $missing[] = $cspProblem;
+        }
+
+        foreach (self::REQUIRED_HEADERS as $key => $name) {
+            if (!isset($headers[$key]) || trim($headers[$key]) === '') {
+                $missing[] = $name . ' fehlt';
+            }
+        }
+        if (isset($headers['x-powered-by'])) {
+            $missing[] = 'X-Powered-By wird gesendet';
+        }
+
+        $ok = $missing === [];
+
+        return new CheckResult(
+            key: 'security_headers',
+            label: 'Sicherheits-Header am Server',
+            expected: $expected,
+            actual: $ok ? 'vollständig' : implode('; ', $missing),
+            status: $ok ? CheckStatus::Ok : ($cspProblem !== null ? CheckStatus::Fail : CheckStatus::Warn),
+            detail: $ok
+                ? 'Die Header aus web/.htaccess kommen im Browser an.'
+                : 'Die Header aus web/.htaccess kommen nicht vollständig an (fehlt das Apache-Modul mod_headers, '
+                    . 'oder wurde die Datei von Hand geändert?). web/.htaccess mit der Vorlage aus dem Release '
+                    . 'abgleichen; fehlt das Modul, ist der Hoster gefragt. Die Anwendung läuft trotzdem weiter.',
+        );
+    }
+
+    /**
+     * script-src (or, absent that, nothing: default-src is not enough for
+     * the promise the CSP makes) must allow 'self' and nothing that
+     * re-opens inline script or eval.
+     */
+    private static function scriptSrcIsStrict(string $csp): bool
+    {
+        foreach (explode(';', $csp) as $directive) {
+            $tokens = preg_split('/\s+/', strtolower(trim($directive))) ?: [];
+            if (($tokens[0] ?? '') !== 'script-src') {
+                continue;
+            }
+
+            return in_array("'self'", $tokens, true)
+                && !in_array("'unsafe-inline'", $tokens, true)
+                && !in_array("'unsafe-eval'", $tokens, true)
+                && !in_array('*', $tokens, true);
+        }
+
+        return false;
     }
 
     /**

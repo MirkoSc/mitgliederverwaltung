@@ -212,7 +212,7 @@ echten Daten installiert, das Repository öffentlich.
 | H-09 | Prüfsumme; Liste gehört zur Zielversion; kein Downgrade (in `download` **und** `extract`) | ✓ | `UpdateService::pruefeEchtheit()`, `versionDerListe()`, `check()` |
 | H-10 | Zip-Slip beim Entpacken des Releases | ✓ | `ReleaseDownloader::extractTo()` (`ZipArchive::extractTo()` entfernt `../`/führende `/`, legt keine Symlinks an) + ZIP-Prüfsumme aus dem eigenen Repo |
 | H-11 | Update/setup.php: **Echtheit** (Signatur) statt nur Integrität | ✓ (#37) | `Update/ReleaseSignatur::PUBLIC_KEY` gesetzt (Commit bb57f6f), Secret `RELEASE_SIGNING_KEY` im Release-Workflow; ab v0.1.3 mit `checksums.txt.sig`, Updater und `setup.php` nehmen nur noch signierte Releases an |
-| H-12 | Release-Pipeline gegen Lieferketten-Angriffe | ⚠ niedrig | `.github/workflows/release.yml`: Secret nur im `publish`-Job, `permissions` minimal ✓; aber Actions per veränderlichem Tag (`@v2`/`@v4`), Drittanbieter-Actions im Job mit `contents: write` und Signatur-Secret, kein Environment-Schutz → #79 |
+| H-12 | Release-Pipeline gegen Lieferketten-Angriffe | ✓ (#79) | `.github/workflows/release.yml`/`ci.yml`: alle Actions per Commit-SHA gepinnt (Version als Kommentar), `permissions` minimal, Secret nur im `publish`-Job; dort nur `actions/*` (kein `setup-php`, kein `action-gh-release`: PHP des Runners mit Prüfschritt auf `sodium`, `gh release create`); `ReleaseWorkflowTest::testEveryActionIsPinnedToACommitSha`. Optional offen: Environment `release` mit Pflicht-Freigabe (Handarbeit in den Repo-Einstellungen) |
 | H-13 | Wartungs-Flag + `rename()`-Umschaltung, Shim als Konstante, Flag bleibt bis Selbsttest, alter Shim zurück bei Fehler | ✓ | `ReleaseSwitcher::switchTo()/rollback()/SHIM`, `UpdateService::finish()`, `ShimContentTest` |
 | H-14 | Schrittfolge der Update-Kette serverseitig erzwungen | ⚠ Härtung | `UpdateService::step()` prüft nur `zielVersion` – `switch` ist z. B. ohne `backup` aufrufbar |
 | H-15 | `setup.php` sperrt/löscht sich nach der Installation | ⚠ Härtung | Löschen in `InstallController::abschliessen()` ✓ (sonst Hinweis); Sperre in `bin/setup.template.php` hängt nur an `is_dir(current)` |
@@ -238,7 +238,7 @@ echten Daten installiert, das Repository öffentlich.
 | I-06 | Vendored htmx mit Version/Lizenz/Prüfsumme | ✓ (2.0.10, SHA-256 in README, `VendorAssetsTest`) | `public/js/vendor/README.md` |
 | I-07 | Header erreichen bestehende Installationen beim Update | ✓ mit Einschränkung | `ReleaseSwitcher::refreshDocrootFiles()` (ersetzt nur, wenn die Datei der Vorlage des Vorgänger-Release gleicht), aufgerufen in `UpdateService::finish()` Z. 326; Shim über `refreshShim()`. Einschränkungen: **I-B01**, **I-B02** |
 | I-08 | HTTP→HTTPS-Umleitung | ✓ (Shim, nur GET/HEAD, nicht `/cron`, nicht localhost/IP/Fremdport, Notschalter `shared/https_umleitung_aus.flag`; `X-Forwarded-Proto` kann die Umleitung nur für die eigene Anfrage abschalten) | `docker/web/index.php` = `ReleaseSwitcher::SHIM` (Byte-Gleichheit per `ShimContentTest`) |
-| I-09 | Header tatsächlich am Host vorhanden (Systemcheck/Selbsttest) | ✗ | **I-B01** → #81 |
+| I-09 | Header tatsächlich am Host vorhanden (Systemcheck/Selbsttest) | ✓ | `SystemCheck::securityHeaders()` und `userIniExposure()` (Einstellungen → System), Abruf über `CurlHeaderProbe` wie der Selbsttest des Updaters; `SystemCheckTest`, `SystemcheckSeiteTest` (#81) |
 | I-10 | `Cache-Control: no-store` auf allen Seiten mit Mitgliederdaten (inkl. htmx-Partials, JSON der Schrittketten) | ✓ | Jede `/app`- und `/admin`-Route läuft durch `LoginGuard::check()` → `Session::start()` mit `cache_limiter=nocache` (`Cache-Control: no-store, no-cache, must-revalidate`, `Session::OPTIONEN`); `Response` setzt kein eigenes `Cache-Control`, überschreibt also nichts |
 | I-11 | `no-store` auf Downloads: xlsx/csv-Exporte, Nachweis-Dateien, pain.008, Backup | ✓ | `ListenExport.php:44`, `NachweisController.php:133`, `EinzugController.php:179`, `BackupController.php:128` |
 | I-12 | Back/Forward-Cache zeigt nach Abmelden keine Mitgliederseite | ✓ mit Härtung | `no-store` + neue Session-ID beim Abmelden (`Session::destroy()`) – siehe **I-B03** |
@@ -291,10 +291,10 @@ Test.
 | H-07 / D-25 | niedrig | Klartext-Upload-Chunks ohne Aufräumen | ✓ behoben (Cron) |
 | I-B02 | niedrig | `.htaccess`/`.user.ini` nach fehlgeschlagenem Selbsttest nicht zurückgestellt | ✓ behoben |
 | A-19 | niedrig | „Passwort vergessen" verrät über die Laufzeit (sofortiger SMTP-Versand), ob ein Konto existiert | ⚠ akzeptiert: wenige Konten, Rate-Limit je IP und Konto; Versand über den Cron hieße bis zu 10 min Wartezeit auf den Link |
-| H-12 | niedrig | Actions im Release-Workflow nicht per Commit-SHA gepinnt | offen → #79 |
+| H-12 | niedrig | Actions im Release-Workflow nicht per Commit-SHA gepinnt | ✓ behoben (#79) |
 | F-11 | niedrig | Server-Schlüssel nicht wechselbar | ✓ behoben (#80) |
 | F-12 | niedrig | Audit-Hash-Kette ungeschlüsselt (DB-Schreiber kann sie neu rechnen) | ⚠ akzeptiert: DB-Zugriff ist ohnehin Vollzugriff (E-11); Folge-Issue möglich |
-| I-B01 | niedrig | niemand prüft, ob die Security-Header am Host ankommen | offen → #81; bis dahin einmal `curl -I` von Hand |
+| I-B01 | niedrig | niemand prüft, ob die Security-Header am Host ankommen | erledigt (#81): Systemcheck-Zeile „Sicherheits-Header am Server“ |
 | C-F4 | Härtung | Doku zu `Erweiterung::recht()` | ✓ behoben |
 | E-21 | Härtung | Markdown-Links `//host` | ✓ behoben |
 | E-23 | Härtung | Import prüft Länge von `bemerkung` nicht | ✓ behoben |

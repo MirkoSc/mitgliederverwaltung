@@ -21,7 +21,13 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
     `release/<pfad>`), `setup.php`.
   - Job `publish` (`contents: write`, Secret `RELEASE_SIGNING_KEY`):
     signiert `checksums.txt` mit Ed25519 → `checksums.txt.sig`,
-    veröffentlicht alles als **Pre-Release**.
+    veröffentlicht alles als **Pre-Release**. Hier läuft kein
+    Drittanbieter-Code: PHP des Runners (Prüfschritt auf `sodium`) statt
+    `setup-php`, `gh release create` statt einer Release-Action; nur
+    `actions/*`.
+  - **Alle Actions in `release.yml` und `ci.yml` sind per vollem
+    Commit-SHA gepinnt**, die Version steht als Kommentar dahinter
+    (`ReleaseWorkflowTest`). Ein Update ist eine bewusste Änderung am SHA.
 - Nicht im ZIP: `tests/`, `tools/`, `docs/`, Docker-Dateien außer
   `docker/web/`.
 - **Kanäle:**
@@ -226,7 +232,20 @@ Einstellungen (`SystemAbschnitt`, Routen in `app/routes/system.php`).
 `max_execution_time`, `memory_limit`, Upload-Grenzen, Erweiterungen
 (sodium, gd, zip, curl), `PASSWORD_ARGON2ID`, Schreibrechte auf
 `shared/var/`, sperrende `.htaccess` in `shared/`/`releases/`/`current/`,
-`shared/config.php` nicht über die eigene Domain abrufbar. Dienst ohne
+`shared/config.php` nicht über die eigene Domain abrufbar, `web/.user.ini`
+nicht mit HTTP 200 abrufbar und die **Sicherheits-Header** (I-09): der
+Systemcheck ruft `/anmelden` der eigenen Installation ab (`CurlHeaderProbe`,
+gleiche Technik wie der Selbsttest des Updaters: curl, sonst Stream-Wrapper,
+Weiterleitungen werden verfolgt, der Rumpf verworfen) und prüft
+`Content-Security-Policy` mit `script-src 'self'` ohne
+`unsafe-inline`/`unsafe-eval`, `Strict-Transport-Security`,
+`X-Frame-Options`, `X-Content-Type-Options` sowie das Fehlen von
+`X-Powered-By`. Ampel: fehlende oder zu lockere CSP = Fehler, jede andere
+Abweichung = Warnung (nie eine Sperre; Leitlinie „Hinweise statt Sperren“);
+die Meldung nennt nur Headernamen, nie Werte, und verweist auf den Abgleich
+von `web/.htaccess` mit der Vorlage aus dem Release. Ohne Antwort: Warnung.
+Die Abrufe sind über `StatusProbe`/`HeaderProbe` austauschbar (Fake in
+Tests). Dienst ohne
 Abhängigkeit zu Http/Session (`App\Service\SystemCheck\SystemCheck`); die
 Ergebnisse lädt der Abschnitt „System“ per htmx nach.
 
@@ -241,7 +260,8 @@ Release-ZIP, manipuliertes ZIP, kein Downgrade), `MaintenanceModeTest`,
 `InstallFlowTest` (Token, `config.php` erst nach
 Bestätigung, Kanal-Übernahme, Sicherungsschlüssel einmal angezeigt),
 Backup+Restore-Roundtrip (Backup verschlüsselt, Restore mit Schlüssel,
-falscher Schlüssel abgelehnt), `SystemCheckTest`,
+falscher Schlüssel abgelehnt), `SystemCheckTest` (inkl. Header-Prüfung
+mit fehlenden/vorhandenen Headern per Fake-Probe), `CurlHeaderProbeTest`,
 Test der Client-Logik der Update-Schrittkette (Reihenfolge, Wiederholung
 ab dem fehlgeschlagenen Schritt, Rollback-Knopf erst ab `migrate`),
 `UpdateSeiteTest` (Abschnitt, Schritt-Route, Banner, Freigeben mit Token
