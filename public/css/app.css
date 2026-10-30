@@ -1454,7 +1454,7 @@ textarea:disabled {
 
 /* The heading of an opened record takes the focus (tabindex="-1"); the
    focus ring is for elements that are operated, not for a heading. */
-.detail-kopf h2:focus:not(:focus-visible) {
+.detail-kopf :is(h2, h3):focus:not(:focus-visible) {
     outline: none;
 }
 

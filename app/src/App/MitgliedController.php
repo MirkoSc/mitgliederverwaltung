@@ -70,7 +70,7 @@ final readonly class MitgliedController
     /** "Neues Mitglied": the empty form with the next free number (07 section 1). */
     public function neu(): Response
     {
-        return $this->formularSeite(MitgliedFormular::neu($this->mitglieder->naechsteNummer()), null);
+        return $this->formularSeite(MitgliedFormular::neu($this->mitglieder->naechsteNummer()), null, Einbettung::mitgliederSeite());
     }
 
     public function anlegen(Request $r): Response
