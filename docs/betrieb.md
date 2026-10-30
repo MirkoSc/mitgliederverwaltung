@@ -142,8 +142,9 @@ Dateien verloren.
 
 ## 4. Cron (regelmäßige Aufgaben)
 
-Die Anwendung braucht einen regelmäßigen Aufruf, damit Mails verschickt
-und alte Daten aufgeräumt werden.
+Die Anwendung braucht einen regelmäßigen Aufruf, damit Mails verschickt,
+die Koordinaten für die Karte nach und nach ermittelt und alte Daten
+aufgeräumt werden.
 
 **Einrichten im Kontrollpanel des Hosters:**
 
@@ -172,6 +173,15 @@ Hinweise:
   in der Warteschlange, bis er wieder läuft. Anmeldecodes und
   Passwort-Reset gehen **sofort** raus und hängen nicht am Cron. Kommen
   sie nicht an, liegt es an der Mail-Einstellung (Abschnitt 5).
+- **Karte:** Der Cron ermittelt je Lauf die Koordinaten von bis zu zehn
+  Anschriften bei OpenStreetMap (höchstens eine Anfrage pro Sekunde). Bei
+  etwa 700 Mitgliedern ist das in einem Tag durch; schneller geht es mit
+  **Karte → „Jetzt Koordinaten ermitteln"** (Admin). Damit OpenStreetMap
+  die Installation erkennt, sollte unter **Einstellungen → Mail** die
+  **öffentliche Adresse** eingetragen sein – sie steht im User-Agent der
+  Anfragen. Antwortet der Dienst nicht, pausiert die Ermittlung 15 Minuten
+  und die Karte zeigt einen Hinweis. Kartenkacheln liegen zwischengespeichert
+  unter `shared/var/kacheln/` (höchstens 100 MB, gehören nicht ins Backup).
 
 ---
 

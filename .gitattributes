@@ -1,2 +1,5 @@
 * text=auto eol=lf
 *.woff2 binary
+# Vendored libraries stay byte for byte as published - their checksums
+# are recorded in public/js/vendor/README.md (Leaflet ships CRLF files).
+public/js/vendor/** -text

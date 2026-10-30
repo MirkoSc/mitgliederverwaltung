@@ -26,13 +26,14 @@ eigenständig nach dem Skill `frontend-design` gestaltet.
 
 ## 2. Seitenaufbau (Vorschlag)
 
-Fünf Bereiche in der Hauptnavigation, mehr nicht. Was zusammengehört,
-liegt auf **einer** Seite und wird dort umgeschaltet statt verlinkt.
+Sechs Bereiche in der Hauptnavigation, mehr nicht („Karte" kam mit #91
+dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
+umgeschaltet statt verlinkt.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ Mitglieder   Listen   Beiträge*   Einstellungen*   [Benutzer]│
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│ Mitglieder   Listen   Karte   Beiträge*   Einstellungen*   [Benutzer]│
+└──────────────────────────────────────────────────────────────────────┘
 * nur Admin
 ```
 
@@ -61,15 +62,27 @@ liegt auf **einer** Seite und wird dort umgeschaltet statt verlinkt.
    Auffälligkeiten · BLSV-Meldung · Alle Mitglieder (Gesamtexport).
    Jede Liste hat ihre wenigen Filter (z. B. Woche/Monat/Jahr, nur runde)
    und **einen** Export-Knopf (xlsx oder csv).
-3. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
+3. **Karte** (#91, beide Rollen, `mitglieder.sehen`) – die Wohnorte der
+   aktuellen Mitglieder auf einer OpenStreetMap-Karte (Leaflet, vendored).
+   Oben der Stand („x von y Anschriften gefunden"), für den Admin der Knopf
+   „Jetzt Koordinaten ermitteln", ein einfacher Filter (Abteilung,
+   aktiv/passiv, per GET). Ein Marker je Anschrift mit der Zahl der
+   Mitglieder dort; Klick bzw. Enter zeigt Namen und Nummern mit Link zum
+   Mitglied. Darunter dieselben Anschriften als Tabelle (die Marker
+   entstehen aus deren Zeilen), dazu „Nicht gefundene Anschriften",
+   „Noch nicht ermittelt" und „Ohne Anschrift" mit Links – damit ist die
+   Seite ohne Karte und im Barrierefrei-Modus vollständig nutzbar.
+   Hinweis „© OpenStreetMap-Mitwirkende" auf der Karte. Keine Änderung an
+   der Datenschutzerklärung (mit Mirko abgestimmt).
+4. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
    „bezahlt setzen".
-4. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
+5. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
    (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
    Systemcheck – übernommen).
-5. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
+6. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
    **Barrierefrei-Modus an/aus**, Abmelden.
 
 Was die Rolle nicht darf, wird nicht angezeigt **und** serverseitig

@@ -31,6 +31,7 @@ final class VendorAssetsTest extends TestCase
 
     /**
      * @return list<string> paths relative to VENDOR_DIR, without the README
+     *         and licence texts
      */
     private static function libraries(): array
     {
@@ -41,7 +42,9 @@ final class VendorAssetsTest extends TestCase
         );
         foreach ($iterator as $datei) {
             $name = $datei->getFilename();
-            if (str_ends_with($name, '.js') || str_ends_with($name, '.mjs')) {
+            // Stylesheets and images of a library (Leaflet, issue #91) are
+            // just as much reviewed code as its script.
+            if (preg_match('/\.(m?js|css|png)$/', $name) === 1) {
                 $dateien[] = ltrim(str_replace($wurzel, '', $datei->getPathname()), '/');
             }
         }

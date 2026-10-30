@@ -271,6 +271,23 @@ echten Daten installiert, das Repository öffentlich.
 | J-19 | Flash-Meldungen (liegen in der Session-Datei) ohne Mitgliederdaten | ✓ mit Ausnahme | Ausnahme Familienname, **J-B04** |
 | J-20 | `autocomplete` an sensiblen Feldern | ✓ | Mitgliederformular (`mitglied/formular.php:54`, IBAN Z. 174 `off`), Suche `off`, Passwörter `current-/new-password`, Codes `one-time-code` |
 
+## K – Karte und externe Dienste (#91)
+
+Geprüft beim Bau der Seite „Karte" (2026-10-30), Abschnitte C, E, I und J
+für die neuen Routen erneut durchgegangen.
+
+| ID | Prüfung | Ergebnis | Fundstelle |
+|---|---|---|---|
+| K-01 | Neue Routen deklariert und getestet: Seite und Kacheln `mitglieder.sehen`, „Jetzt ermitteln" `admin.system` (POST mit CSRF) | ✓ | `app/routes/karte.php`, `tests/Http/routen-zugriff/karte.txt`, `KarteSeiteTest` |
+| K-02 | Browser spricht keinen fremden Host an; CSP unverändert | ✓ | Kacheln über `/app/karte/kachel/…` (`KachelProxy`); Leaflet vendored mit Prüfsummen (`VendorAssetsTest` prüft jetzt auch `.css`/`.png`); einziger externer Verweis ist der Link „OpenStreetMap" im Quellenhinweis (nur bei Klick) |
+| K-03 | An den Geocoder geht nur die Anschrift, nie Name oder Mitgliedsnummer | ✓ | `Geocoder::url()`; `KoordinatenermittlungTest::testNoNameAndNoMemberNumberLeavesTheServer` |
+| K-04 | Keine Mitgliederdaten in Log, Cron-Antwort oder Kachel-Cache | ✓ | Log nur „HTTP 429"/„keine Antwort" (`Koordinatenermittlung`); Cron-Ergebnis nur Zähler; Cache-Dateinamen `z/x/y.png`; `geo_anschrift` nur Hash + Koordinaten |
+| K-05 | Kein SSRF: Ziel-URLs fest, Parameter nur Zahlen bzw. URL-kodierte Felder, nur HTTPS, keine Weiterleitungen | ✓ | `KachelProxy::URL` + `gueltig()`, `Geocoder::URL` + `http_build_query`, `CurlHttpAbruf` (`CURLPROTO_HTTPS`, `FOLLOWLOCATION` aus, Größe begrenzt) |
+| K-06 | Kein Massenabruf beim Kachelserver über die Route | ✓ mit Restrisiko ⚠ | nur angemeldet, Zoom 5–18, Cache 7 Tage; ein angemeldeter Benutzer könnte viele Kacheln anfordern – bei zwei festen Rollen und echten Vereinskonten akzeptiert |
+| K-07 | Ausfall des Dienstes ist ein Hinweis, kein Absturz | ✓ | Geocoder: Pause 15 min, Hinweis auf der Seite; Kacheln: alte Kopie oder 503 (`KarteSeiteTest::testATileServerFailureIsAHintNotACrash`) |
+| K-08 | `Cache-Control` | ✓ | Seite `no-store` wie alle (I-10); nur die Kachel-Antwort setzt `private, max-age=86400` – Kartenbild, keine Mitgliederdaten |
+| K-09 | Popups ohne HTML aus Daten | ✓ | `karte.js` klont die serverseitig escapte Tabellenzelle, Zahl/Anschrift als `textContent` |
+
 ## Befunde des Durchlaufs 2026-10-29
 
 Kein Befund war „kritisch" oder „hoch". Behoben heißt: im PR zu #37 mit
