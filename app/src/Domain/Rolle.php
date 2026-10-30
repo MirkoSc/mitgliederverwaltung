@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain;
 
 /**
- * The two fixed roles (docs/spec/02-sicherheit.md section 6) - no role
+ * The three fixed roles (docs/spec/02-sicherheit.md section 6) - no role
  * editor, no scopes: role to rights is this one `match`.
  *
  * The values are what `user.rolle` stores, so they are part of the data
@@ -15,6 +15,7 @@ enum Rolle: string
 {
     case Admin = 'admin';
     case Vorstand = 'vorstand';
+    case Lesend = 'lesend';
 
     /** @return list<Permission> */
     public function rechte(): array
@@ -29,6 +30,14 @@ enum Rolle: string
                 Permission::MitgliederBearbeiten,
                 Permission::ListenSehen,
             ],
+            // Read only (issue #87): members, families, proofs, history,
+            // lists with exports, and whether a member has paid. Changes
+            // nothing; no page "Beiträge", no direct debit, no /admin.
+            self::Lesend => [
+                Permission::MitgliederSehen,
+                Permission::ListenSehen,
+                Permission::BeitraegeSehen,
+            ],
         };
     }
 
@@ -42,6 +51,7 @@ enum Rolle: string
         return match ($this) {
             self::Admin => 'Admin',
             self::Vorstand => 'Vorstand',
+            self::Lesend => 'Nur lesen',
         };
     }
 }

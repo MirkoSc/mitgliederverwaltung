@@ -213,6 +213,7 @@ final readonly class MitgliedController
             'familie' => $familie,
             'aktion' => $mitglied?->id === null ? self::PFAD_NEU : self::speicherAdresse($mitglied->id),
             'abbrechen' => $mitglied?->id === null ? self::PFAD_LISTE : self::adresse($mitglied->id),
+            'darfBearbeiten' => $konto !== null && $konto->darf(Permission::MitgliederBearbeiten),
             'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen),
             'loeschAdresse' => $mitglied?->id === null ? null : self::loeschAdresse($mitglied->id),
         ];

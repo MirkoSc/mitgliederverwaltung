@@ -31,11 +31,12 @@ final readonly class BenutzerRepository
         BenutzerStatus $status,
         Rolle $rolle,
         \DateTimeImmutable $now,
+        bool $barrierefrei = false,
     ): int {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO `user` (email, name, password_hash, status, rolle, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO `user` (email, name, password_hash, status, rolle, created_at, modus_barrierefrei) VALUES (?, ?, ?, ?, ?, ?, ?)',
         );
-        $stmt->execute([$email, $name, $passwordHash, $status->value, $rolle->value, $now->format(self::FORMAT)]);
+        $stmt->execute([$email, $name, $passwordHash, $status->value, $rolle->value, $now->format(self::FORMAT), $barrierefrei ? 1 : 0]);
 
         return (int) $this->pdo->lastInsertId();
     }

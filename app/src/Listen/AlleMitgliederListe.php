@@ -19,8 +19,9 @@ use App\Repository\MitgliedRepository;
  * "Alle Mitglieder" (docs/spec/09-listen-und-exporte.md section 5): one row
  * per member with every field of 07 section 1 in readable form, for a later
  * move to other software. The fee columns (fee type, payment, bank data,
- * mandate, annual fee of the current year) are only for the account that may
- * manage fees (the admin); the committee gets the rest.
+ * mandate, annual fee of the current year) are only for accounts that may
+ * read fee data (beitraege.sehen: admin and "Nur lesen"); the committee
+ * gets the rest.
  */
 final class AlleMitgliederListe implements Liste
 {
@@ -67,7 +68,7 @@ final class AlleMitgliederListe implements Liste
     public function ergebnis(array $filter, Konto $konto): ListenErgebnis
     {
         $pdo = $this->dienste->pdo();
-        $mitBeitrag = $konto->darf(Permission::BeitraegeVerwalten);
+        $mitBeitrag = $konto->darf(Permission::BeitraegeSehen);
         $jahr = (int) new \DateTimeImmutable('today')->format('Y');
 
         $spalten = [
