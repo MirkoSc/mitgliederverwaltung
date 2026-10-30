@@ -71,7 +71,7 @@ final class ReleaseWorkflowTest extends TestCase
     public function testEveryReleaseStartsAsAPreRelease(): void
     {
         self::assertMatchesRegularExpression("#tags: \\['v\\*\\.\\*\\.\\*'\\]#", self::workflow());
-        self::assertStringContainsString('prerelease: true', self::workflow());
+        self::assertStringContainsString('--prerelease', self::workflow());
         self::assertStringNotContainsString('make_latest', self::workflow());
     }
 
@@ -89,7 +89,48 @@ final class ReleaseWorkflowTest extends TestCase
         self::assertStringNotContainsString('run: echo "${{ inputs.version', $workflow);
         self::assertStringContainsString('if [ "$REF" != "refs/heads/main" ]; then', $workflow);
         self::assertStringContainsString("grep -Eq '^v[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.]+)?$'", $workflow);
-        self::assertStringContainsString('tag_name: ${{ needs.build.outputs.tag }}', $workflow);
-        self::assertStringContainsString('target_commitish: ${{ github.sha }}', $workflow);
+        self::assertStringContainsString('TAG: ${{ needs.build.outputs.tag }}', $workflow);
+        self::assertStringContainsString('gh release create "$TAG" dist/*', $workflow);
+        self::assertStringContainsString('--target "$GITHUB_SHA"', $workflow);
+    }
+
+    /**
+     * Supply chain (security checklist H-12): every action is pinned to a
+     * full commit SHA with the version as a comment, in both workflows - a
+     * moved tag must not be able to run other code next to the signing
+     * secret.
+     */
+    public function testEveryActionIsPinnedToACommitSha(): void
+    {
+        foreach (['release.yml', 'ci.yml'] as $datei) {
+            $workflow = (string) file_get_contents(dirname(__DIR__, 2) . '/.github/workflows/' . $datei);
+            self::assertGreaterThan(0, preg_match_all('/^\s*(?:- )?uses: (\S+)(.*)$/m', $workflow, $treffer, PREG_SET_ORDER));
+            foreach ($treffer as $uses) {
+                self::assertMatchesRegularExpression(
+                    '/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/',
+                    $uses[1],
+                    "$datei: {$uses[1]} is not pinned to a commit SHA",
+                );
+                self::assertMatchesRegularExpression('/^ # \S+$/', $uses[2], "$datei: version comment missing at {$uses[1]}");
+            }
+        }
+    }
+
+    /**
+     * The publish job runs next to contents: write and the signing key: only
+     * first-party actions there, PHP from the runner, gh instead of a
+     * release action.
+     */
+    public function testThePublishJobUsesNoThirdPartyAction(): void
+    {
+        $workflow = self::workflow();
+        $publish = substr($workflow, (int) strpos($workflow, "\n  publish:"));
+
+        self::assertGreaterThan(0, preg_match_all('/uses: (\S+)@/', $publish, $treffer));
+        foreach ($treffer[1] as $action) {
+            self::assertStringStartsWith('actions/', $action);
+        }
+        self::assertStringNotContainsString('setup-php', $publish);
+        self::assertStringNotContainsString('action-gh-release', $publish);
     }
 }
