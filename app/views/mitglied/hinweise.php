@@ -44,6 +44,9 @@ use App\Service\Mitglied\HinweisArt;
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
+                    <?php if ($hinweis->art->reiter() === 'daten' && $offenerReiter !== 'daten'): ?>
+                        <p><a <?= $einbettung->link($einbettung->adresse($mitgliedId, 'daten'), 'reiter') ?>>Zu „Wohnort auf der Karte“ im Reiter „Daten“</a></p>
+                    <?php endif; ?>
                 </li>
             <?php endforeach; ?>
         </ul>

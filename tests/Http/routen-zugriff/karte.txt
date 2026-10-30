@@ -1,5 +1,7 @@
 # app/routes/karte.php - the map (issue #91): both roles see it and its
-# tiles; asking the geocoder on demand is the admin's.
+# tiles; asking the geocoder on demand (and "Alle neu ermitteln", #108)
+# is the admin's.
 GET /app/karte -> mitglieder.sehen
 GET /app/karte/kachel/{z:[0-9]+}/{x:[0-9]+}/{y:[0-9]+}.png -> mitglieder.sehen
 POST /app/karte/ermitteln -> admin.system
+POST /app/karte/neu-ermitteln -> admin.system

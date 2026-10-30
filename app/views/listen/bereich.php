@@ -178,7 +178,7 @@ $versteckt = static function () use ($ansicht): array {
                                         <?php if ($nr === 0 && $zeile->mitgliedId !== null && $darfMitglied): ?>
                                             <?php /* The person opens beside the list; a second click closes it again. */ ?>
                                             <?php $istOffen = $offen === $zeile->mitgliedId; ?>
-                                            <a <?= $istOffen ? $einbettung->link($einbettung->rueckweg()) : $einbettung->link($einbettung->adresse($zeile->mitgliedId), 'mitglied') ?><?= $istOffen ? ' aria-current="true"' : '' ?>><?= e($text) ?></a>
+                                            <a <?= $istOffen ? $einbettung->link($einbettung->rueckweg()) : $einbettung->link($einbettung->adresse($zeile->mitgliedId, $zeile->reiter), 'mitglied') ?><?= $istOffen ? ' aria-current="true"' : '' ?>><?= e($text) ?></a>
                                         <?php else: ?>
                                             <?= e($text) ?>
                                         <?php endif; ?>

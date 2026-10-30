@@ -43,6 +43,8 @@ enum AuditAktion: string
     case MitgliedGeloescht = 'mitglied.geloescht';
     case AnschriftUebernommen = 'familie.anschrift_uebernommen';
     case KartenSucheGeaendert = 'mitglied.karten_suche_geaendert';
+    case KartenPunktGeaendert = 'mitglied.karten_punkt_geaendert';
+    case KarteNeuErmittelt = 'karte.neu_ermittelt';
     case SchluesselwechselBegonnen = 'server_schluessel.wechsel_begonnen';
     case SchluesselGewechselt = 'server_schluessel.gewechselt';
 
@@ -80,6 +82,8 @@ enum AuditAktion: string
             self::MitgliedGeloescht => 'Mitglied gelöscht',
             self::AnschriftUebernommen => 'Anschrift in der Familie übernommen',
             self::KartenSucheGeaendert => 'Such-Anschrift für die Karte geändert',
+            self::KartenPunktGeaendert => 'Punkt auf der Karte von Hand geändert',
+            self::KarteNeuErmittelt => 'Karte: alle Koordinaten neu ermitteln',
             self::SchluesselwechselBegonnen => 'Server-Schlüssel: Wechsel begonnen',
             self::SchluesselGewechselt => 'Server-Schlüssel gewechselt',
         };

@@ -8,7 +8,9 @@ use App\App\MitgliedController;
 use App\Dienste;
 use App\Domain\Permission;
 use App\Repository\GeoAnschriftRepository;
+use App\Repository\KartenRepository;
 use App\Repository\MitgliedRepository;
+use App\Service\Karte\Kartenmitte;
 use App\Service\Karte\Wohnort;
 use App\Support\Datum;
 
@@ -19,8 +21,10 @@ use App\Support\Datum;
  * a member opens on it.
  *
  * At the address it shows the block "Wohnort auf der Karte" (issue #106,
- * app/views/mitglied/wohnort.php): found, not found or not asked yet,
- * with a small map when found.
+ * app/views/mitglied/wohnort.php): found, approximately found, set by
+ * hand, not found or not asked yet, with a small map when there is a dot.
+ * Whoever may edit gets the small map without a dot too, to set one by
+ * hand (issue #108): it opens at Kartenmitte, from the dots there are.
  */
 final readonly class DatenReiter implements Reiter
 {
@@ -66,10 +70,18 @@ final readonly class DatenReiter implements Reiter
         }
 
         $heute = new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
+        $pdo = $this->dienste->pdo();
+        $geo = new GeoAnschriftRepository($pdo);
+        $wohnort = Wohnort::aus($mitglied, $geo, $heute);
+        $mitte = null;
+        if ($wohnort->suchbar() && !$wohnort->zustand->hatPunkt() && $this->dienste->view->konto()?->darf(Permission::MitgliederBearbeiten) === true) {
+            $mitte = Kartenmitte::fuer($wohnort->anschrift, new KartenRepository($pdo)->anschriften($heute), $geo->alle());
+        }
 
         return [
             ...MitgliedController::aus($this->dienste)->formularDaten(MitgliedFormular::aus($mitglied), $mitglied),
-            'wohnort' => Wohnort::aus($mitglied, new GeoAnschriftRepository($this->dienste->pdo()), $heute),
+            'wohnort' => $wohnort,
+            'wohnortMitte' => $mitte,
         ];
     }
 }

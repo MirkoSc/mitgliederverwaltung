@@ -13,8 +13,9 @@ use App\View\Navigation;
 /**
  * The page "Karte" (issue #91): both roles see it (mitglieder.sehen), and
  * the map tiles come through this installation under the same right - a
- * visitor without login gets no tile. "Jetzt Koordinaten ermitteln" is the
- * admin's (admin.system: it talks to an external service on demand).
+ * visitor without login gets no tile. "Jetzt Koordinaten ermitteln" and
+ * "Alle neu ermitteln" (issue #108) are the admin's (admin.system: they talk
+ * to an external service on demand).
  */
 return static function (Routen $routen): void {
     $sehen = Zugriff::recht(Permission::MitgliederSehen);
@@ -27,4 +28,5 @@ return static function (Routen $routen): void {
         static fn(Request $r, array $p): Response => $controller()->kachel($p['z'], $p['x'], $p['y']),
     );
     $routen->post(KarteController::PFAD_ERMITTELN, Zugriff::recht(Permission::AdminSystem), static fn(Request $r): Response => $controller()->ermitteln());
+    $routen->post(KarteController::PFAD_NEU_ERMITTELN, Zugriff::recht(Permission::AdminSystem), static fn(Request $r): Response => $controller()->neuErmitteln($r));
 };
