@@ -11,13 +11,17 @@
  * @var bool $darfVerwalten
  * @var list<\App\Domain\Jahresbeitrag> $beitraege
  * @var array<int, string|null> $namen
- * @var string $zurueck
+ * @var int $mitgliedId
+ * @var \App\App\Mitglied\Einbettung|null $einbettung the page the member is shown on (MitgliedAnsicht)
  * @var string $seitenAdresse
  */
 
 use App\App\BeitraegeController;
+use App\App\Mitglied\Einbettung;
 use App\Domain\JahresbeitragStatus;
 
+// The page of a fee leads back to this member on this tab.
+$zurueck = ($einbettung ?? Einbettung::mitgliederSeite())->adresse($mitgliedId, 'beitraege');
 $statusEtikett = require dirname(__DIR__) . '/beitraege/status-etikett.php';
 ?>
 <?php if ($beitraege === []): ?>

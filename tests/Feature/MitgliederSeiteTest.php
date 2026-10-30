@@ -207,7 +207,7 @@ final class MitgliederSeiteTest extends AppTestCase
         $seite = $this->get('/app/mitglieder', ['mitglied' => (string) $id])->body;
 
         self::assertStringContainsString('class="geteilt geteilt-mit-detail"', $seite);
-        self::assertStringContainsString('<h2>Erika Mustermann</h2>', $seite);
+        self::assertStringContainsString('<h2 id="mitglied-titel" tabindex="-1" autofocus>Erika Mustermann</h2>', $seite, 'a whole page puts the focus on the member');
         self::assertStringContainsString('Nr. 1001', $seite);
         self::assertStringContainsString('aria-current="page">Daten<', $seite, 'the tab "Daten" is open');
         self::assertStringContainsString('id="mitglied-formular"', $seite);
@@ -224,7 +224,7 @@ final class MitgliederSeiteTest extends AppTestCase
         $antwort = $this->htmx(['text' => 'karl', 'ehemalige' => '0'], 'mitglieder-bereich', ['mitglied' => (string) $id]);
 
         self::assertStringContainsString('<div class="geteilt geteilt-mit-detail" id="mitglieder-bereich">', $antwort->body);
-        self::assertStringContainsString('<h2>Karl Beispiel</h2>', $antwort->body);
+        self::assertStringContainsString('<h2 id="mitglied-titel" tabindex="-1">Karl Beispiel</h2>', $antwort->body, 'without fokus (sorting) htmx leaves the focus alone');
         self::assertStringContainsString('etikett ">passiv<', $antwort->body);
         self::assertStringContainsString('value="karl"', $antwort->body, 'the search stays when a member opens');
         self::assertStringNotContainsString('<html', $antwort->body);

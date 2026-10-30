@@ -43,6 +43,8 @@ umgeschaltet statt verlinkt.
      Ehemalige anzeigen) und „Je Seite" (50, 100, 200, Alle).
    - Klick auf ein Mitglied öffnet es **auf derselben Seite** (am PC
      rechts neben der Liste, am Handy als eigene Ansicht mit „Zurück").
+     Das geöffnete Mitglied ist ein Baustein, den andere Seiten (Listen,
+     Familien) genauso einbetten können (§5).
      Ohne geöffnetes Mitglied hat die Liste am PC die ganze Breite; am PC
      schließen „Schließen" im Kopf des Mitglieds oder ein zweiter Klick
      auf seinen Namen in der Liste es wieder.
@@ -132,7 +134,7 @@ nichts Wesentliches.
 | Schrift | deutlich größer (Grundschrift ~150 %), größere Zeilenabstände |
 | Kontrast | sehr hoher Kontrast, kein grauer Text, deutliche Rahmen um Felder und Knöpfe; heller Hintergrund unabhängig vom Dunkelmodus |
 | Bedienflächen | große Knöpfe und Klickflächen, Knöpfe immer mit Text, keine reinen Symbole |
-| Aufbau | Mitglied öffnet sich als ganze Seite statt neben der Liste; Formulare einspaltig; Listen mit weniger Spalten und größeren Zeilen |
+| Aufbau | Mitglied öffnet sich unter der Liste statt daneben, seine Überschrift bekommt den Fokus (§5); Formulare einspaltig; Listen mit weniger Spalten und größeren Zeilen |
 | Bewegung | keine Animationen, nichts erscheint nur beim Darüberfahren mit der Maus |
 | Tastatur | vollständig mit Tastatur bedienbar, sehr deutlicher Fokusrahmen |
 | Zeit | Leerlaufzeit der Sitzung 60 statt 30 Minuten, Warnung mit „Weiterarbeiten" vor dem Abmelden |
@@ -145,9 +147,81 @@ zweiten Templates. Die große Schrift greift ab PC-Breite (48rem); am Handy
 wächst sie nur leicht, Kontrast und Rahmen gelten überall. Die Punkte
 Zeit (Leerlauf, Warnung) und Rückfragen setzt #10 um.
 
+## 5. Mitglied als Baustein (#86)
+
+Ein geöffnetes Mitglied (Kopf mit Name, Nummer, Status und „Schließen",
+Hinweise, Reiter) ist **ein** Baustein: `App\App\Mitglied\MitgliedAnsicht`
+mit dem Template `app/views/mitglied/ansicht.php`. Eine Seite mit einer
+Personenliste bettet ihn rechts neben ihrer Liste ein (Muster „Liste neben
+Mitglied", `geteilt`). Heute tut das die Mitglieder-Seite; Familien (#92)
+und Listen (#93) folgen auf demselben Weg. Was im Mitglied auf eine eigene
+Seite führt (Familie wählen, Löschen-Rückfrage, ein Jahresbeitrag), führt
+von dort auf die einbettende Seite zurück, nie auf die Mitglieder-Seite.
+
+**Einbetten** – drei Schritte im Controller, einer im Template:
+
+```php
+// 1. Wo das Mitglied steht: eigene Adresse + eigener Zustand (Filter,
+//    Sortierung – nie ein Suchtext), mit htmx: id des getauschten Bereichs.
+$einbettung = new Einbettung('/app/listen/geburtstage', ['zeitraum' => 'monat'])
+    ->mitHtmx('listen-bereich');            // ohne: gewöhnliche Links
+// 2. Das Mitglied aus der Anfrage (mitglied, reiter, fokus aus Query/Body).
+$ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
+// 3. Antwort: bei HX-Target = 'listen-bereich' nur diesen Bereich rendern.
+```
+
+```php
+<div class="geteilt<?= $ansicht->klasse() ?>" id="listen-bereich">
+    <div class="geteilt-liste">
+        … <a <?= $einbettung->link($einbettung->adresse($zeile->id), 'mitglied') ?>>Name</a> …
+    </div>
+    <?= $ansicht->html ?>
+</div>
+```
+
+- **Adressen:** `$einbettung->adresse($id, $reiter)` =
+  `/app/listen/geburtstage?zeitraum=monat&mitglied=12&reiter=daten`;
+  `rueckweg()` = dieselbe Seite ohne Mitglied („Schließen"). Ein zweiter
+  Klick auf das geöffnete Mitglied verlinkt `rueckweg()` (schließt).
+  `$ansicht->unbekannt` meldet eine gelöschte Person (Hinweis über der
+  Liste, kein Fehler).
+- **htmx:** `link()` tauscht den Bereich `ziel` (outerHTML) und schreibt
+  die Adresse in den Verlauf; mit `mitHtmx($ziel, '#formular')` per POST
+  samt diesem Formular (die Mitglieder-Seite, weil ihr Suchtext nur im
+  Body reist), sonst per GET. Ohne Skript sind es normale Links.
+- **Formulare und Weiterleitungen:** Die Formulare des Mitglieds posten an
+  ihre eigenen Routen (`/app/mitglieder/{id}/…`) und tragen die Seite im
+  versteckten Feld `zurueck` (`$einbettung->feld()`), eigene Seiten
+  (Familie wählen, Löschen-Rückfrage) im Query (`mitRueckweg()`). Nach dem
+  Speichern leitet die Route dorthin zurück, auf den Reiter, von dem das
+  Formular kam (`Einbettung::ausAnfrage()`); nach dem Löschen auf die
+  Seite ohne Mitglied. `zurueck` wird nur als Pfad unter `/app` mit
+  einfachem Query angenommen (`Einbettung::istSicher()`, kein Open
+  Redirect), sonst gilt die Mitglieder-Seite.
+- **Reiter und Abschnitte** bekommen zu ihren eigenen Daten
+  `$einbettung`, `$mitgliedId` und `$offenerReiter`; wer einen neuen
+  schreibt, baut Links und Formulare damit statt mit festen Adressen.
+- **Fokus:** Öffnet ein Link das Mitglied (`link(…, 'mitglied')`) oder
+  lädt die ganze Seite mit Mitglied ohne Meldung oben (nach dem Speichern
+  bleibt die Meldung im Blick, der Fokus am Seitenanfang), bekommt
+  seine Überschrift den Fokus (`autofocus` an `h2 tabindex="-1"`, htmx
+  fokussiert nach dem Tausch); ein Reiterwechsel (`'reiter'`) fokussiert
+  den gewählten Reiter; andere Links (Sortieren) lassen den Fokus, wo er
+  ist.
+- **Rechte** bleiben serverseitig je Aktion: Reiter und Abschnitte
+  erscheinen nur mit ihrem Recht, jede Route prüft ihr eigenes. Die
+  einbettende Seite braucht selbst mindestens `MitgliederSehen`.
+- **Barrierefrei-Modus (PC):** Das Mitglied steht unter der Liste (eine
+  Spalte, kräftige Linie davor), „Schließen" schließt es; am Handy wie
+  sonst eine eigene Ansicht mit „Zurück zur Liste".
+
 ## Pflicht-Tests
 
 `CspComplianceTest` (kein Inline-JS, kein `hx-on`), Routen-Zugriffsmatrix
 inkl. „Vorstand sieht keine Beiträge", Barrierefrei-Modus wird aus der
-Benutzereinstellung gesetzt und überlebt das Neuladen; manuelle Prüfliste
+Benutzereinstellung gesetzt und überlebt das Neuladen; Mitglied als
+Baustein mit einer zweiten einbettenden Seite (Reiter, Speichern-
+Weiterleitung, Schließen, Löschen zeigen auf diese Seite; unsicheres
+`zurueck` fällt auf die Mitglieder-Seite zurück; Fokus) –
+`MitgliedAnsichtTest`, `EinbettungTest`; manuelle Prüfliste
 je UI-PR: 360 px Handy, PC, PC im Barrierefrei-Modus (nur Tastatur).

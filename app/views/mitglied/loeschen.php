@@ -9,6 +9,7 @@
  * @var \App\Domain\Mitglied $mitglied
  * @var bool $ehemalig
  * @var string|null $csrf
+ * @var \App\App\Mitglied\Einbettung $einbettung where the member was opened
  */
 
 use App\App\MitgliedController;
@@ -33,6 +34,7 @@ $id = (int) $mitglied->id;
 
 <form method="post" action="<?= e(MitgliedController::loeschAdresse($id)) ?>" class="knopfreihe">
     <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
+    <?= $einbettung->feld() ?>
     <button type="submit" class="knopf knopf-gefahr">Mitglied endgültig löschen</button>
-    <a class="knopf knopf-still" href="<?= e(MitgliedController::adresse($id)) ?>">Nicht löschen, zurück zum Mitglied</a>
+    <a class="knopf knopf-still" href="<?= e($einbettung->adresse($id)) ?>">Nicht löschen, zurück zum Mitglied</a>
 </form>
