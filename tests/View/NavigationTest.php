@@ -41,7 +41,7 @@ final class NavigationTest extends TestCase
     /** Issue #87: "Nur lesen" has neither the page "Beiträge" nor the admin area. */
     public function testReadOnlySeesNeitherFeesPageNorSettings(): void
     {
-        self::assertSame(['Mitglieder', 'Listen'], self::labels(Navigation::haupt(), new Konto(1, 'L', Rolle::Lesend)));
+        self::assertSame(['Mitglieder', 'Listen', 'Karte'], self::labels(Navigation::haupt(), new Konto(1, 'L', Rolle::Lesend)));
         self::assertSame('/app/mitglieder', Navigation::startseiteFuer(new Konto(1, 'L', Rolle::Lesend)));
     }
 
