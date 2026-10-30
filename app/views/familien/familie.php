@@ -31,7 +31,7 @@ $csrfFeld = '<input type="hidden" name="_csrf" value="' . e($csrf ?? '') . '">';
 <div class="geteilt-detail familie-detail">
     <a class="zurueck" <?= $liste->link($liste->rueckweg()) ?>>Zurück zur Liste</a>
     <div class="detail-kopf">
-        <h2 id="familie-titel" tabindex="-1"<?= $fokus ? ' autofocus' : '' ?>><?= e($familie->name) ?></h2>
+        <h2 id="familie-detail-titel" tabindex="-1"<?= $fokus ? ' autofocus' : '' ?>><?= e($familie->name) ?></h2>
         <span><?= e(match ($anzahl) { 0 => 'niemand', 1 => '1 Person', default => $anzahl . ' Personen' }) ?></span>
         <a class="knopf knopf-still detail-schliessen" <?= $liste->link($liste->rueckweg()) ?>>Schließen</a>
     </div>

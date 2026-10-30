@@ -299,7 +299,7 @@ final readonly class FamilienController
         }
         $vorher = $mitglied->familieId === null || $mitglied->familieId === $familie->id ? null : $this->familien->finde($mitglied->familieId);
 
-        return $this->setzen($familie->id, $mitglied, $familie->id, self::rolle($r), 'Zur Familie hinzugefügt.'
+        return $this->setzen($familie->id, $mitglied, $familie->id, self::leseRolle($r), 'Zur Familie hinzugefügt.'
             . ($vorher === null ? '' : ' Vorher war die Person in „' . $vorher->name . '“.'));
     }
 
@@ -314,7 +314,7 @@ final readonly class FamilienController
             return $this->keinePerson($familie);
         }
 
-        return $this->setzen($familie->id, $person, $familie->id, self::rolle($r), 'Rolle geändert.');
+        return $this->setzen($familie->id, $person, $familie->id, self::leseRolle($r), 'Rolle geändert.');
     }
 
     /** @param array<string, string> $params */
@@ -422,7 +422,7 @@ final readonly class FamilienController
         return $this->weiter($zurueck, $meldung);
     }
 
-    private static function rolle(Request $r): FamilienRolle
+    private static function leseRolle(Request $r): FamilienRolle
     {
         return FamilienRolle::tryFrom($r->feld('rolle')) ?? FamilienRolle::Elternteil;
     }
