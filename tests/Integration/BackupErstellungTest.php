@@ -85,6 +85,21 @@ final class BackupErstellungTest extends DatabaseTestCase
         $this->erstellung()->starten();
     }
 
+    public function testNoBackupWhileTheServerKeyIsBeingChanged(): void
+    {
+        $erstellung = new BackupErstellung(
+            $this->backups($this->jetzt),
+            $this->pdo(),
+            new ServerCrypto(random_bytes(ServerCrypto::KEY_BYTES), $this->schluessel),
+            2048,
+        );
+
+        $this->expectException(BackupLaeuftBereits::class);
+        $this->expectExceptionMessage('Server-Schlüssel');
+
+        $erstellung->starten();
+    }
+
     public function testCancellingRemovesWorkFilesAndState(): void
     {
         $erstellung = $this->erstellung();

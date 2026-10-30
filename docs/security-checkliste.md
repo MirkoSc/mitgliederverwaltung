@@ -191,7 +191,7 @@ echten Daten installiert, das Repository öffentlich.
 | F-08 | Fehlschlag sicher: falscher Schlüssel/Manipulation → Exception, nie „kürzere Datei" | ✓ | `CryptoException` überall; `BlobService::openRead()` liefert nur authentifizierte Blöcke, das Ende wird erzwungen; `BackupCipher::kopfPruefen()` scheitert vor dem ersten geschriebenen Byte |
 | F-09 | Schlüssel nie in Logs/Dumps/Traces | ✓ | `__debugInfo()` in `Config`, `ServerCrypto`, `FileKey`; `#[\SensitiveParameter]`; `bootstrap.php`/`setup.php` setzen `zend.exception_ignore_args`; `Kernel` loggt nur Klasse/Meldung/Pfad |
 | F-10 | Server-Schlüssel 32 Byte aus `random_bytes`, base64 in `config.php`, einmal zum Ausdrucken gezeigt | ✓ | `Installer/ConfigWriter::neuerServerSchluessel()`, `InstallController::admin()/schluessel()` |
-| F-11 | Schlüsselwechsel nach Kompromittierung möglich | ✗ niedrig | weder Code noch Spec; Restore übernimmt immer den alten Schlüssel (`InstallController::wiederherstellen()`) → #80 |
+| F-11 | Schlüsselwechsel nach Kompromittierung möglich | ✓ | `Crypto/Schluesselwechsel` (Schrittkette, Einstellungen → System, Passwort erneut), `ConfigWriter::schluesselSchreiben()` (atomar, 0600), `ServerCrypto`/`ServerKeyGeheimnisSchutz` lesen während des Wechsels mit beiden Schlüsseln; Spec 02 §2, `docs/betrieb.md` §3 (#80) |
 | F-12 | Audit-Log manipulationserkennend (Hash-Kette) | ⚠ niedrig | `Audit/AuditLog::hashBilden()`: ungeschlüsseltes SHA-256 – erkennt nur naive Änderungen; Abschneiden am Ende nicht erkannt (Spec 02 §8, bewusst) |
 | F-13 | IP im Audit-Log nur als HMAC unter dem Server-Schlüssel | ✓ | `AuditLog::protokollieren()` (Schlüsseltrennung s. F-07) |
 | F-14 | Backup als Ganzes verschlüsselt, nur mit Schlüssel lesbar; abgeschnitten/verändert/verlängert = Fehler; secretstream-Zustand im Statusfile verschlüsselt | ✓ | `Backup/BackupCipher::verschluesseln()/entschluesseln()`, `zustandVerpacken()` |
@@ -292,7 +292,7 @@ Test.
 | I-B02 | niedrig | `.htaccess`/`.user.ini` nach fehlgeschlagenem Selbsttest nicht zurückgestellt | ✓ behoben |
 | A-19 | niedrig | „Passwort vergessen" verrät über die Laufzeit (sofortiger SMTP-Versand), ob ein Konto existiert | ⚠ akzeptiert: wenige Konten, Rate-Limit je IP und Konto; Versand über den Cron hieße bis zu 10 min Wartezeit auf den Link |
 | H-12 | niedrig | Actions im Release-Workflow nicht per Commit-SHA gepinnt | offen → #79 |
-| F-11 | niedrig | Server-Schlüssel nicht wechselbar | offen → #80 |
+| F-11 | niedrig | Server-Schlüssel nicht wechselbar | ✓ behoben (#80) |
 | F-12 | niedrig | Audit-Hash-Kette ungeschlüsselt (DB-Schreiber kann sie neu rechnen) | ⚠ akzeptiert: DB-Zugriff ist ohnehin Vollzugriff (E-11); Folge-Issue möglich |
 | I-B01 | niedrig | niemand prüft, ob die Security-Header am Host ankommen | offen → #81; bis dahin einmal `curl -I` von Hand |
 | C-F4 | Härtung | Doku zu `Erweiterung::recht()` | ✓ behoben |

@@ -40,6 +40,44 @@ Verschlüsselung einzelner Datenbankfelder.
   lesen. `config.php` wird deshalb **getrennt gesichert** (Ausdruck des
   Schlüssels bzw. Kopie beim zweiten Vorstandsmitglied); der Installer
   zeigt den Schlüssel einmal zum Ausdrucken an (04 §2).
+- **Schlüsselwechsel** (#80, nach einer möglichen Kompromittierung von
+  `config.php` oder des Ausdrucks): Einstellungen → System, Recht
+  `admin.system`, nur nach erneuter Passwort-Eingabe (Rate-Limit je Konto).
+  Neu verpackt werden nur die kleinen Werte unter dem Schlüssel
+  (`file_blob.key_enc`, `mfa_totp.secret_enc`, SMTP-Passwort), nie die
+  Dateien selbst. Schrittkette (01 §4, `App\Service\Crypto\Schluesselwechsel`),
+  `config.php` ist die einzige Quelle der Wahrheit:
+  1. Start: neuer Schlüssel per `random_bytes` wird `server_key`, der alte
+     wandert nach `server_key_alt` – ein atomares Neuschreiben von
+     `config.php` (temporäre Datei, `fsync`, 0600, `rename`;
+     `ConfigWriter::schluesselSchreiben()`). Ab dann verschlüsseln alle
+     Anfragen unter dem neuen Schlüssel und entschlüsseln mit beiden
+     (`ServerCrypto`, `ServerKeyGeheimnisSchutz`).
+  2. Je Schritt eine Portion Werte: mit dem alten Schlüssel öffnen, mit dem
+     neuen verschlüsseln, per Compare-and-swap schreiben. Werte, die der
+     neue Schlüssel schon öffnet, bleiben unberührt – jeder Schritt ist
+     wiederholbar.
+  3. Eine Anfrage, die `config.php` vor dem Start gelesen hat (oder ein
+     Opcode-Cache), kann noch unter dem alten Schlüssel schreiben. Deshalb
+     wartet die Kette 120 s nach dem Start und läuft dann ein zweites Mal
+     über alles; erst ein Durchgang, der nach dieser Frist begann, beendet
+     sie.
+  4. Abschluss: `config.php` ohne `server_key_alt`. Audit-Einträge bei
+     Start und Abschluss; der neue Schlüssel wird einmal zum Ausdrucken
+     angezeigt.
+
+  Bricht die Kette irgendwo ab, ist alles mit dem lesbar, was in
+  `config.php` steht; das nächste Öffnen der Einstellungen setzt sie fort.
+  Die Schlüssel stehen nie in der Statusdatei
+  (`shared/var/schluesselwechsel.json`: Fingerabdrücke, Positionen,
+  Zähler). Werte, die nur als HMAC unter dem Schlüssel liegen
+  (Backup-Codes, gemerkte Geräte, offene Mail-Codes), lassen sich nicht
+  neu verpacken und werden beim Start gelöscht; Benutzer erzeugen neue
+  Backup-Codes. Während des Wechsels startet kein Backup (ein Dump wäre
+  halb alt, halb neu verschlüsselt); bestehende Backups bleiben unter dem
+  alten Schlüssel – nach dem Wechsel ein neues Backup erstellen und den
+  alten Ausdruck erst danach vernichten. Die IP-Hashes im Audit-Log
+  (§8) entstehen ab dann unter dem neuen Schlüssel.
 
 ## 3. Anmeldung
 
@@ -200,7 +238,8 @@ Benutzer nur mit ID), Backup erstellt und heruntergeladen, Update, Restore,
 Export, Import, Einzug erzeugt/bestätigt/verworfen, Lastschriftdatei
 heruntergeladen, Version zurückgeholt, Mitglied gelöscht,
 Mitgliederbestand geleert (Probelauf des Imports, 10 §1), Abgleich
-durchgeführt (10 §4). Prüfliste und letzter Sicherheits-Durchlauf:
+durchgeführt (10 §4), Server-Schlüssel: Wechsel begonnen und
+abgeschlossen (§2). Prüfliste und letzter Sicherheits-Durchlauf:
 `docs/security-checkliste.md` (#37).
 Ansicht im Admin (Seite `/admin/audit`, verlinkt aus den Einstellungen) mit
 Kettenprüfung bei jedem Aufruf. Schnittstelle für alle Bereiche:
@@ -222,4 +261,9 @@ lesbar; Login (alle Fehlerfälle wortgleich, Rate-Limit atomar), 2FA
 (TOTP-Einmalverwendung, E-Mail-Code-Limit, Backup-Codes, Gerät merken),
 Reset (Token einmalig, Sessions beendet), Session-Timeouts inkl.
 Barrierefrei-Modus, `session_epoch`; CSRF auf jeder POST-Route,
-CSP-Compliance, Routen-Zugriffsmatrix inkl. Vorstand, Audit-Kette.
+CSP-Compliance, Routen-Zugriffsmatrix inkl. Vorstand, Audit-Kette;
+Schlüsselwechsel (`SchluesselwechselTest`: danach alles mit dem neuen und
+nichts mit dem alten Schlüssel lesbar, Abbruch nach jedem Schritt und
+Verlust der Statusdatei, Absturz zwischen `config.php` und Statusdatei,
+ein während der Kette unter dem alten Schlüssel geschriebener Wert,
+kein Start während eines Backups).

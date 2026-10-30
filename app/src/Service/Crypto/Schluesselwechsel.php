@@ -247,12 +247,16 @@ final readonly class Schluesselwechsel
 
         if ($stand['bereich'] === null) {
             $endgueltig = (int) $stand['durchgang_beginn'] >= (int) $stand['seit'] + $this->gnadenfrist;
-            if ($endgueltig && !($this->backupLaeuft)()) {
+            $backup = ($this->backupLaeuft)();
+            if ($endgueltig && !$backup) {
                 return $this->abschliessen($stand, $schluessel);
             }
-            $stand = $this->jetzt()->getTimestamp() >= (int) $stand['seit'] + $this->gnadenfrist
+            // Another pass right away once the waiting time is over;
+            // otherwise wait - for the time, or for a backup to finish (a
+            // backup begun under the old key must not outlive it).
+            $stand = !$endgueltig && $this->jetzt()->getTimestamp() >= (int) $stand['seit'] + $this->gnadenfrist
                 ? $this->neuerDurchgang($stand)
-                : [...$stand, 'phase' => self::PHASE_WARTEN];
+                : [...$stand, 'phase' => self::PHASE_WARTEN, 'wartet_auf_backup' => $endgueltig && $backup];
         }
         $this->speichern([...$stand, 'aktualisiert' => $this->jetzt()->getTimestamp()]);
 
@@ -415,6 +419,7 @@ final readonly class Schluesselwechsel
         return [
             ...$stand,
             'phase' => self::PHASE_UMSCHLUESSELN,
+            'wartet_auf_backup' => false,
             'durchgang' => (int) $stand['durchgang'] + 1,
             'durchgang_beginn' => $this->jetzt()->getTimestamp(),
             'bereich' => self::BEREICHE[0],

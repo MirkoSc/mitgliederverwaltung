@@ -39,10 +39,15 @@ $hashes = is_array($stand['hashes'] ?? null) ? $stand['hashes'] : null;
 <?php endif; ?>
 
 <?php if ($laeuft): ?>
-    <?php if ($stand !== null && $stand['phase'] === Schluesselwechsel::PHASE_WARTEN && $wartezeit > 0): ?>
+    <?php if ($stand !== null && $stand['phase'] === Schluesselwechsel::PHASE_WARTEN): ?>
         <p role="status"<?php if ($weiter): ?> hx-post="/admin/schluesselwechsel/schritt" hx-trigger="load delay:5s" hx-target="#schluesselwechsel" hx-swap="innerHTML"<?php endif; ?>>
-            Alle Werte sind umgeschlüsselt. Bevor der alte Schlüssel gelöscht wird, wartet der Wechsel noch etwa
-            <?= e($wartezeit) ?> Sekunden auf Anfragen, die noch mit dem alten Schlüssel begonnen haben, und prüft dann alles ein zweites Mal.
+            <?php if (($stand['wartet_auf_backup'] ?? false) === true): ?>
+                Alle Werte sind umgeschlüsselt. Bevor der alte Schlüssel gelöscht wird, wartet der Wechsel, bis das
+                laufende Backup fertig ist.
+            <?php else: ?>
+                Alle Werte sind umgeschlüsselt. Bevor der alte Schlüssel gelöscht wird, wartet der Wechsel noch etwa
+                <?= e(max(5, $wartezeit)) ?> Sekunden auf Anfragen, die noch mit dem alten Schlüssel begonnen haben, und prüft dann alles ein zweites Mal.
+            <?php endif; ?>
         </p>
     <?php else: ?>
         <p role="status"<?php if ($weiter): ?> hx-post="/admin/schluesselwechsel/schritt" hx-trigger="load" hx-target="#schluesselwechsel" hx-swap="innerHTML"<?php endif; ?>>
