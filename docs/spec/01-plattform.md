@@ -52,6 +52,8 @@ nicht öffentlich. Zusätzlich sperren `.htaccess`-Dateien
    var/log/app.log    eigenes Log (eine Generation .1 ab 5 MB)
    var/tmp/           nur Chiffrat oder Upload-Chunks, wird aufgeräumt
    var/update/        Download-Zwischenablage des Updaters
+   var/kacheln/       Kartenkacheln von OpenStreetMap (Cache, #91; keine
+                      Mitgliederdaten, kein Teil des Backups)
 ```
 
 Die drei Docroot-Dateien liegen im Repo unter `docker/web/`, reisen im
@@ -93,9 +95,10 @@ Kein Request darf lange laufen. Muster (übernommen aus Vereinsbelege 06 §4):
 
 - Der Cron des Hoster-Kontrollpanels ruft `/cron?token=…` per HTTP auf
   (Token aus `config.php`, Vergleich mit `hash_equals`).
-- Aufgaben: Mail-Queue versenden, Aufräumen (abgelaufene Tokens, Rate-Limit-
-  Zeilen, `var/tmp/`, alte Backups und liegengebliebene Backup-Ketten),
-  sonst nichts.
+- Aufgaben: Mail-Queue versenden, Koordinaten für die Karte ermitteln
+  (`KoordinatenTask`, §8), Aufräumen (abgelaufene Tokens, Rate-Limit-
+  Zeilen, `var/tmp/`, alte Backups und liegengebliebene Backup-Ketten,
+  Kartenkacheln), sonst nichts.
 - Eine Sperre (DB-Lock `GET_LOCK`, `App\Repository\CronSperre`) verhindert
   überlappende Läufe; sie endet mit dem Lauf bzw. der Verbindung, ein
   abgestürzter Lauf blockiert also nichts. Aufräumarbeiten sind gedrosselt
@@ -133,9 +136,47 @@ Kein Request darf lange laufen. Muster (übernommen aus Vereinsbelege 06 §4):
 - Messages von Exceptions enthalten nie fachliche Werte.
 - Fehlerseiten zeigen eine Referenz-ID, keine Details.
 
+## 8. Externe Dienste: Karte (#91)
+
+Die Seite „Karte" braucht zwei Dienste von OpenStreetMap. Beide spricht
+**nur der Server** an (`App\Service\Karte\HttpAbruf`, curl mit kurzem
+Timeout, nur HTTPS); der Browser lädt nichts von einem fremden Host, die
+CSP bleibt `'self'` (02 §7). Beide bekommen einen eigenen User-Agent
+`Mitgliederverwaltung/<Version> (+<oeffentliche_url>)` (ohne Setting: die
+Projektadresse), wie es ihre Nutzungsregeln verlangen.
+
+- **Geocoder** (Nominatim, `App\Service\Karte\Geocoder`): strukturierte
+  Suche mit Straße, PLZ, Ort, Land – nie Name oder Mitgliedsnummer.
+  `Koordinatenermittlung` fragt je Aufruf nur wenige Anschriften
+  (Cron: 10 bzw. 12 s, Admin-Knopf „Jetzt Koordinaten ermitteln" als
+  Schrittkette: 5 bzw. 8 s je Schritt), höchstens eine Anfrage je
+  Sekunde über alle Requests hinweg (Zeitpunkt der letzten Anfrage im
+  Setting `karte_geocoding_letzte_anfrage`, DB-Lock `mv_geo_<db>` gegen
+  gleichzeitiges Fragen von Cron und Knopf). „Nicht gefunden" wird
+  gemerkt; eine geänderte Anschrift hat einen anderen Hash und wird neu
+  gefragt. Ein Fehler des Dienstes (HTTP ≠ 200, keine Antwort, kaputtes
+  JSON) speichert nichts, wird ohne Anschrift geloggt und lässt die
+  Ermittlung 15 Minuten ruhen (Setting `karte_geocoding_pause_bis`) – er
+  ist ein Hinweis auf der Seite, nie ein Absturz.
+- **Kacheln** (`App\Service\Karte\KachelProxy`): Route
+  `/app/karte/kachel/{z}/{x}/{y}.png`, nur angemeldet
+  (`mitglieder.sehen`), nur Zoom 5–18 und Kacheln innerhalb der Zoomstufe
+  (sonst 404, ohne Anfrage nach außen). Cache unter `shared/var/kacheln/`,
+  7 Tage gültig; fällt der Dienst aus, dient eine abgelaufene Kopie,
+  sonst 503. `KachelAufraeumenTask` (Aufräumen) löscht Abgelaufenes und
+  hält den Cache unter 100 MB (älteste zuerst, auf 80 %).
+- Tests senden nie eine echte Anfrage: Fakes für `HttpAbruf` und `Takt`;
+  zusätzlich schickt `CurlHttpAbruf` nichts, solange die Konstante
+  `MV_OHNE_NETZ` definiert ist (`tests/bootstrap.php`).
+
 ## Pflicht-Tests
 
 `NoShellExecutionTest` (kein Prozessaufruf im Quellcode außer erlaubten
 Ausnahmen – derzeit keine), Routen-Zugriffsmatrix, Cron-Token und
 -Sperre, Logger schreibt keine Argumente, Bootstrap setzt Zeitzone und
-`zend.exception_ignore_args`.
+`zend.exception_ignore_args`. Karte (#91, mit Fake-HTTP): Geocoding
+(Abstand ≥ 1 s auch über Aufrufe hinweg, je Anschrift nur einmal, nicht
+gefunden gemerkt, geänderte Anschrift neu gefragt, Fehler → Pause ohne
+Speichern, Sperre), Kachel-Proxy (Cache-Treffer, Ablauf, ungültige
+Zoomstufe/Koordinaten → 404 ohne Anfrage, nicht angemeldet → kein
+Zugriff, Aufräumen nach Alter und Größe).

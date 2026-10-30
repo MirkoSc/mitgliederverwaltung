@@ -10,8 +10,8 @@ use App\Http\HttpMethod;
 
 /**
  * The whole navigation of the application (docs/spec/06-oberflaeche.md
- * section 2): five areas and no more - Mitglieder, Listen, Beiträge,
- * Einstellungen and the user menu.
+ * section 2): Mitglieder, Listen, Karte, Beiträge, Einstellungen and the
+ * user menu. "Karte" came later as a sixth (issue #91).
  *
  * Complete from issue #1 on (docs/spec/05-entwicklung.md section 6): later
  * issues register the routes behind these entries in their own files and
@@ -22,6 +22,7 @@ final class Navigation
 {
     public const string MITGLIEDER = '/app/mitglieder';
     public const string LISTEN = '/app/listen';
+    public const string KARTE = '/app/karte';
     public const string BEITRAEGE = '/app/beitraege';
     public const string EINSTELLUNGEN = '/admin';
 
@@ -42,6 +43,7 @@ final class Navigation
         return [
             new NavItem('Mitglieder', self::MITGLIEDER, Permission::MitgliederSehen),
             new NavItem('Listen', self::LISTEN, Permission::ListenSehen),
+            new NavItem('Karte', self::KARTE, Permission::MitgliederSehen),
             new NavItem('Beiträge', self::BEITRAEGE, Permission::BeitraegeVerwalten),
             new NavItem('Einstellungen', self::EINSTELLUNGEN, Permission::AdminEinstellungen),
         ];

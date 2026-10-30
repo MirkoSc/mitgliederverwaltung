@@ -16,6 +16,9 @@
  * @var list<string> $stylesheets
  * @var \App\Domain\Konto|null $konto
  * @var array{seit: string, grund: string}|null $wartung maintenance flag, set by App\View\View
+ * @var list<string>|null $styles stylesheets of one page (a vendored
+ *      library's, e.g. Leaflet on the map), loaded BEFORE the design system
+ *      so its rules win where both style the same element
  * @var bool|null $barrierefreiVorschau set by the pattern page only: shows
  *      the page in the Barrierefrei-Modus without changing the setting
  */
@@ -48,7 +51,7 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
              forth, which style-src 'self' blocks with a console error on
              every swap (issue #36). */ ?>
     <meta name="htmx-config" content='{"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0,"allowEval":false,"attributesToSettle":["class","width","height"]}'>
-    <?php foreach ($stylesheets as $stylesheet): ?>
+    <?php foreach ([...($styles ?? []), ...$stylesheets] as $stylesheet): ?>
     <link rel="stylesheet" href="<?= e($stylesheet) ?>?v=<?= e($version) ?>">
     <?php endforeach; ?>
     <link rel="icon" href="<?= e($faviconUrl) ?>" type="<?= e($faviconTyp) ?>">

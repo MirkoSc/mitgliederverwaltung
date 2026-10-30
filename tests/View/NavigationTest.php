@@ -26,16 +26,16 @@ final class NavigationTest extends TestCase
         ));
     }
 
-    public function testFiveAreasAndNoMore(): void
+    public function testTheMainAreasAndNoMore(): void
     {
-        self::assertSame(['Mitglieder', 'Listen', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt()));
+        self::assertSame(['Mitglieder', 'Listen', 'Karte', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt()));
     }
 
     /** "* nur Admin" in 06 section 2. */
     public function testTheBoardSeesNeitherFeesNorSettings(): void
     {
-        self::assertSame(['Mitglieder', 'Listen'], self::labels(Navigation::haupt(), new Konto(1, 'V', Rolle::Vorstand)));
-        self::assertSame(['Mitglieder', 'Listen', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt(), new Konto(1, 'A', Rolle::Admin)));
+        self::assertSame(['Mitglieder', 'Listen', 'Karte'], self::labels(Navigation::haupt(), new Konto(1, 'V', Rolle::Vorstand)));
+        self::assertSame(['Mitglieder', 'Listen', 'Karte', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt(), new Konto(1, 'A', Rolle::Admin)));
     }
 
     public function testTheUserMenuOffersWhatEveryAccountDoesForItself(): void

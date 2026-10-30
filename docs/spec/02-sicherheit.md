@@ -222,6 +222,12 @@ Verschlüsselung einzelner Datenbankfelder.
   `X-Content-Type-Options: nosniff`, `Referrer-Policy:
   strict-origin-when-cross-origin`, `Cross-Origin-Opener-Policy:
   same-origin`, `Permissions-Policy` restriktiv.
+- **Karte** (#91): Leaflet ist vendored (`public/js/vendor/leaflet/`),
+  Kacheln kommen über den eigenen Server (01 §8) – die CSP bleibt
+  unverändert. Leaflet setzt Stile nur per CSSOM (`element.style`), das
+  `style-src 'self'` erlaubt. Kacheln sind keine Mitgliederdaten und
+  dürfen deshalb einen Tag im Browser bleiben (`private, max-age=86400`);
+  die Seite selbst bleibt `no-store`.
 - `.user.ini`: `zend.exception_ignore_args = On`,
   `zend.exception_string_param_max_len = 0`, `display_errors = Off`.
 - Kein Inline-JS, keine `on*`-Attribute, kein `eval`; htmx über
