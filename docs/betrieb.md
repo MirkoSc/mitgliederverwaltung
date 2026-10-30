@@ -193,21 +193,25 @@ Hinweise:
 
 ## 6. Benutzer und Anmeldung
 
-**Zwei feste Rollen** (kein Rollen-Editor):
+**Drei feste Rollen** (kein Rollen-Editor):
 
 - **Admin**: alles, inkl. Einstellungen, Benutzer, Backup, Update,
   Audit-Log.
 - **Vorstand**: Mitglieder suchen, ansehen, anlegen und bearbeiten;
-  Listen, Beiträge und Einzug je nach Recht.
+  Listen und Exporte. Keine Beiträge, kein Einzug, kein Adminbereich.
+- **Nur lesen**: Mitglieder, Familien, Nachweise und Listen ansehen und
+  exportieren, dazu sehen, ob ein Mitglied bezahlt hat. Ändert nichts,
+  keine Seite „Beiträge", kein Einzug, kein Adminbereich.
 
 **Benutzer einladen** (Einstellungen → Benutzer):
 
-1. E-Mail-Adresse und Rolle eintragen → die Person bekommt einen Link
-   per Mail. Der Link ist **72 Stunden** gültig und nur **einmal**
+1. E-Mail-Adresse und Rolle eintragen, bei Bedarf das Häkchen
+   „Barrierefrei-Modus von Anfang an einschalten" setzen → die Person
+   bekommt einen Link per Mail. Der Link ist **72 Stunden** gültig und nur **einmal**
    nutzbar.
 2. Die Person setzt ihr Passwort und richtet den **zweiten Faktor** ein.
-3. Sperren, entsperren, Rolle ändern oder löschen geht ebenfalls unter
-   „Benutzer". Man kann sich nicht selbst löschen oder herabstufen, und
+3. Sperren, entsperren, Rolle ändern, Barrierefrei-Modus ein- oder
+   ausschalten oder löschen geht ebenfalls unter „Benutzer". Man kann sich nicht selbst löschen oder herabstufen, und
    der letzte aktive Admin bleibt Admin.
 
 **Zweiter Faktor** (Pflicht für alle Konten). Jeder wählt:

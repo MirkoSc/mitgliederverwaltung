@@ -109,7 +109,9 @@ abgelehnt (02 §6).
 ## 4. Barrierefrei-Modus
 
 Einstellung **je Benutzer** (Benutzermenü), gespeichert am Benutzer, wirkt
-sofort auf allen Seiten. Ausgelegt auf den **PC**; am Handy ändert er
+sofort auf allen Seiten. Der Admin kann sie beim Einladen voreinstellen
+(das Konto ist dann ab dem ersten Login im Modus) und bei bestehenden
+Konten in der Benutzerverwaltung ein- oder ausschalten (02 §5, #87). Ausgelegt auf den **PC**; am Handy ändert er
 nichts Wesentliches.
 
 | Bereich | Im Modus |

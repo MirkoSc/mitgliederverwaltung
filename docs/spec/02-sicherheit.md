@@ -172,7 +172,12 @@ Verschlüsselung einzelner Datenbankfelder.
   gespeichert, erneut sendbar); das Konto setzt Passwort und zweiten
   Faktor selbst. Sperren (beendet alle Sessions, verwirft offene Links),
   Sperre aufheben, Löschen, Rolle ändern – im Einstellungs-Abschnitt
-  „Benutzer“ (`admin.benutzer`).
+  „Benutzer“ (`admin.benutzer`). Beim Einladen wählt der Admin die Rolle
+  und kann den **Barrierefrei-Modus** voreinstellen (Häkchen „Barrierefrei-
+  Modus von Anfang an einschalten“, 06 §4): das Konto startet dann schon
+  beim ersten Login darin und kann ihn selbst ausschalten. Bei bestehenden
+  Konten schaltet der Admin den Modus im selben Abschnitt ein oder aus
+  (#87, Audit „Benutzer geändert“).
 - Zwei Regeln halten die Installation erreichbar: das eigene Konto sperrt,
   löscht oder degradiert man nicht selbst, und der letzte aktive Admin
   bleibt aktiver Admin.
@@ -180,31 +185,46 @@ Verschlüsselung einzelner Datenbankfelder.
 
 ## 6. Rollen und Rechte
 
-- Rechte sind ein PHP-Enum `App\Domain\Permission`. **Zwei feste Rollen**
+- Rechte sind ein PHP-Enum `App\Domain\Permission`. **Drei feste Rollen**
   (kein Rollen-Editor):
   - **Admin**: alle Rechte.
   - **Vorstand**: Mitglieder suchen, ansehen, anlegen, bearbeiten (auch
     IBAN, Abteilung, Beitragsart), Listen und Exporte. **Nicht**:
     Jahresbeiträge, Einzug, Bezahlt-Status, Lastschriftdatei,
     Einstellungen, Benutzer, System.
+  - **Nur lesen** (`lesend`, #87): Mitglieder suchen und öffnen (Daten,
+    Familie, Nachweise ansehen und herunterladen, Verlauf), Listen **mit
+    Exporten** und **ob ein Mitglied bezahlt hat** (Reiter „Beiträge“ und
+    Beitragsspalten der Listen, nur lesend). Ändert nichts – die
+    Oberfläche zeigt keine Formulare, Bearbeiten- oder Löschen-Knöpfe, der
+    Reiter „Daten“ ist eine reine Ansicht; serverseitig ohnehin gesperrt.
+    **Nicht**: Seite „Beiträge“ (erzeugen, festsetzen, bezahlt setzen),
+    Einzug, Lastschriftdatei, Adminbereich.
+- **Vorstand und Nur lesen haben keinen Adminbereich**: kein Eintrag
+  „Einstellungen“ in der Navigation, jede Route unter `/admin` antwortet
+  403 (`RoutenZugriffTest::testNeitherBoardNorReadOnlyReachesAnyAdminRoute`).
 - Rolle → Rechte steht im Code (ein `match` in `App\Domain\Rolle`).
   Keine Scopes – alle sehen alle Mitglieder. Geprüft serverseitig je Route
   (`App\Http\Zugriff`).
-- Das Enum ist seit #1 vollständig (05 §6); spätere Issues nutzen diese
-  Rechte und erweitern es nicht:
+- Das Enum war seit #1 vollständig (05 §6); #87 hat bewusst
+  `beitraege.sehen` ergänzt, weil „Nur lesen“ den Bezahlt-Status sehen,
+  aber nichts an Beiträgen ändern darf – mit `beitraege.verwalten` hätte
+  die Rolle auch die Seite „Beiträge“ und den Einzug bekommen. Spätere
+  Issues nutzen diese Rechte und erweitern es nicht:
 
-  | Recht | Wofür | Admin | Vorstand |
-  |---|---|:-:|:-:|
-  | `mitglieder.sehen` | Mitglieder suchen, ansehen, Verlauf ansehen | ✓ | ✓ |
-  | `mitglieder.bearbeiten` | anlegen, bearbeiten (auch IBAN, Abteilung, Beitragsart), Version zurückholen, Familien, Nachweis/Ehrung vermerken | ✓ | ✓ |
-  | `mitglieder.loeschen` | Mitglied löschen, Nachweis löschen | ✓ | – |
-  | `listen.sehen` | Listen ansehen und exportieren | ✓ | ✓ |
-  | `beitraege.verwalten` | alles aus 08: Jahresbeiträge, Bezahlt-Status, Reiter „Beiträge", Einzug, Lastschriftdatei, Liste „Selbst kassieren", Beitragsspalten im Gesamtexport | ✓ | – |
-  | `admin.einstellungen` | Einstellungen-Seite: Vereinsdaten, Abteilungen, Beitragsarten, Funktionen, Geburtstage, Ehrungsstufen, Mail, Rechtstexte | ✓ | – |
-  | `admin.benutzer` | Benutzer einladen, sperren, löschen, Rolle ändern | ✓ | – |
-  | `admin.import` | Erst- und Abgleich-Import (10) | ✓ | – |
-  | `admin.system` | Update, Backup/Restore, Systemcheck, Integritätscheck, Wartung | ✓ | – |
-  | `admin.audit` | Audit-Log ansehen | ✓ | – |
+  | Recht | Wofür | Admin | Vorstand | Nur lesen |
+  |---|---|:-:|:-:|:-:|
+  | `mitglieder.sehen` | Mitglieder suchen, ansehen, Verlauf ansehen, Nachweise herunterladen | ✓ | ✓ | ✓ |
+  | `mitglieder.bearbeiten` | anlegen, bearbeiten (auch IBAN, Abteilung, Beitragsart), Version zurückholen, Familien, Nachweis/Ehrung vermerken | ✓ | ✓ | – |
+  | `mitglieder.loeschen` | Mitglied löschen, Nachweis löschen | ✓ | – | – |
+  | `listen.sehen` | Listen ansehen und exportieren | ✓ | ✓ | ✓ |
+  | `beitraege.sehen` | Bezahlt-Status und Beitragsangaben lesen: Reiter „Beiträge" (ohne Links auf die Beitragsseiten), Liste „Selbst kassieren", Beitragsspalten im Gesamtexport | ✓ | – | ✓ |
+  | `beitraege.verwalten` | Seite „Beiträge": Jahresbeiträge erzeugen, Betrag, Bezahlt-Status, Vermerke; Einzug, Lastschriftdatei | ✓ | – | – |
+  | `admin.einstellungen` | Einstellungen-Seite: Vereinsdaten, Abteilungen, Beitragsarten, Funktionen, Geburtstage, Ehrungsstufen, Mail, Rechtstexte | ✓ | – | – |
+  | `admin.benutzer` | Benutzer einladen, sperren, löschen, Rolle ändern, Barrierefrei-Modus setzen | ✓ | – | – |
+  | `admin.import` | Erst- und Abgleich-Import (10) | ✓ | – | – |
+  | `admin.system` | Update, Backup/Restore, Systemcheck, Integritätscheck, Wartung | ✓ | – | – |
+  | `admin.audit` | Audit-Log ansehen | ✓ | – | – |
 
   Jede Route unter `/admin` verlangt ein `admin.*`-Recht, jede unter
   `/app` eine Anmeldung; öffentlich sind nur `/`, `/anmelden…`,
@@ -268,7 +288,9 @@ lesbar; Login (alle Fehlerfälle wortgleich, Rate-Limit atomar), 2FA
 (TOTP-Einmalverwendung, E-Mail-Code-Limit, Backup-Codes, Gerät merken),
 Reset (Token einmalig, Sessions beendet), Session-Timeouts inkl.
 Barrierefrei-Modus, `session_epoch`; CSRF auf jeder POST-Route,
-CSP-Compliance, Routen-Zugriffsmatrix inkl. Vorstand, Audit-Kette;
+CSP-Compliance, Routen-Zugriffsmatrix inkl. Vorstand und Nur lesen (jede
+`/admin`-Route 403 für beide), keine Bearbeiten-Elemente für Nur lesen
+(`NurLesenTest`), Einladung mit Barrierefrei-Häkchen, Audit-Kette;
 Schlüsselwechsel (`SchluesselwechselTest`: danach alles mit dem neuen und
 nichts mit dem alten Schlüssel lesbar, Abbruch nach jedem Schritt und
 Verlust der Statusdatei, Absturz zwischen `config.php` und Statusdatei,

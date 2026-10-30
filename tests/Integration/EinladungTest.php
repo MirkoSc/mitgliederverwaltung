@@ -47,6 +47,22 @@ final class EinladungTest extends DatabaseTestCase
         self::assertTrue(password_verify(self::PASSWORT, $benutzer?->passwordHash ?? ''));
     }
 
+    /** Issue #87: the Barrierefrei-Modus can be preset and survives accepting the invitation. */
+    public function testTheBarrierefreiModusCanBePresetAndIsOffOtherwise(): void
+    {
+        $mit = $this->einladung->einladen('lena@example.org', 'Lena Lesend', Rolle::Lesend, barrierefrei: true);
+        $ohne = $this->einladung->einladen('volker@example.org', 'Volker Muster', Rolle::Vorstand);
+        $repo = new BenutzerRepository($this->pdo());
+
+        self::assertTrue($repo->findById($mit['userId'])?->barrierefrei);
+        self::assertSame(Rolle::Lesend, $repo->findById($mit['userId'])?->rolle);
+        self::assertFalse($repo->findById($ohne['userId'])?->barrierefrei);
+
+        $this->einladung->annehmen($mit['token'], self::PASSWORT, self::PASSWORT);
+        self::assertTrue($repo->findById($mit['userId'])?->barrierefrei, 'still on once the account is active');
+        self::assertTrue($repo->findById($mit['userId'])?->konto()->barrierefrei, 'and the login sees it');
+    }
+
     public function testTheLinkWorksOnceAndRunsOutAfterThreeDays(): void
     {
         $jetzt = new \DateTimeImmutable('2026-03-02 10:00:00');

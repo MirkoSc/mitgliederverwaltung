@@ -29,10 +29,13 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 
 - **muss** Nutzer sind der Vorstand bzw. ein kleiner Verwaltungskreis
   (Hauptnutzer: Mirko). Verein mit rund **700 Mitgliedern**.
-- **muss** Zwei feste Rollen, kein Rollen-Editor:
+- **muss** Drei feste Rollen, kein Rollen-Editor (die dritte seit #87):
   - **Admin** (Mirko): darf alles.
   - **Vorstand**: Mitglieder suchen und anlegen, aber **keine Finanzen**
-    (Beiträge, Einzug, Bezahlt-Status).
+    (Beiträge, Einzug, Bezahlt-Status). Kein Adminbereich.
+  - **Nur lesen**: Mitglieder, Familien, Nachweise, Listen inkl. Exporten
+    und ob ein Mitglied bezahlt hat; ändert nichts, keine Seite
+    „Beiträge", kein Einzug, kein Adminbereich.
 - **nicht** Zugriff für Mitglieder selbst (E-F2: geklärt, vorerst nein).
 - **nicht** Öffentliche Seiten außer Anmeldung, Impressum, Datenschutz
   (E-F3: geklärt, vorerst nein).
