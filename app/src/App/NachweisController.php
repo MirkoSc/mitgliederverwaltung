@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\App;
 
+use App\App\Mitglied\Einbettung;
 use App\Dienste;
 use App\Domain\BlobMeta;
 use App\Domain\Nachweis;
@@ -22,7 +23,8 @@ use App\View\FlashArt;
  * Proofs of a member (docs/spec/07-mitglieder.md section 5, issue #23):
  * note one with an optional file, download the file, delete (admin only).
  * Who noted it and when are set here and in the repository, never taken
- * from the form. Answers with a redirect to the member and a message.
+ * from the form. Answers with a redirect to the member - on the page it was
+ * opened on (App\App\Mitglied\Einbettung) - and a message.
  *
  * The file comes with the form (multipart): a scan is small, and the form
  * then works without JavaScript.
@@ -80,13 +82,13 @@ final readonly class NachweisController
 
         $art = NachweisArt::tryFrom($r->feld('art'));
         if ($art === null) {
-            return $this->zurueck($id, 'Bitte die Art des Nachweises wählen.', FlashArt::Warnung);
+            return $this->zurueck($r, $id, 'Bitte die Art des Nachweises wählen.', FlashArt::Warnung);
         }
         $bis = null;
         if (trim($r->feld('gueltig_bis')) !== '') {
             $bis = \DateTimeImmutable::createFromFormat('!Y-m-d', trim($r->feld('gueltig_bis')));
             if ($bis === false || $bis->format('Y-m-d') !== trim($r->feld('gueltig_bis'))) {
-                return $this->zurueck($id, 'Das Datum bei „gültig bis" ist ungültig.', FlashArt::Warnung);
+                return $this->zurueck($r, $id, 'Das Datum bei „gültig bis" ist ungültig.', FlashArt::Warnung);
             }
         }
 
@@ -95,11 +97,11 @@ final readonly class NachweisController
         if (is_array($datei) && (int) ($datei['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
             $fehler = $this->pruefeDatei($datei);
             if ($fehler !== null) {
-                return $this->zurueck($id, $fehler, FlashArt::Warnung);
+                return $this->zurueck($r, $id, $fehler, FlashArt::Warnung);
             }
             $blobId = $this->speichereDatei($datei);
             if ($blobId === null) {
-                return $this->zurueck($id, 'Die Datei konnte nicht gespeichert werden. Bitte noch einmal versuchen.', FlashArt::Warnung);
+                return $this->zurueck($r, $id, 'Die Datei konnte nicht gespeichert werden. Bitte noch einmal versuchen.', FlashArt::Warnung);
             }
         }
 
@@ -112,7 +114,7 @@ final readonly class NachweisController
             vermerktVon: $this->dienste->session->userId(),
         ));
 
-        return $this->zurueck($id, 'Nachweis vermerkt.');
+        return $this->zurueck($r, $id, 'Nachweis vermerkt.');
     }
 
     /** @param array<string, string> $params */
@@ -149,7 +151,7 @@ final readonly class NachweisController
         $id = (int) $params['id'];
         $nachweis = $this->nachweise->finde((int) $params['nachweis']);
         if ($nachweis === null || $nachweis->mitgliedId !== $id) {
-            return $this->zurueck($id, 'Diesen Nachweis gibt es nicht mehr.', FlashArt::Warnung);
+            return $this->zurueck($r, $id, 'Diesen Nachweis gibt es nicht mehr.', FlashArt::Warnung);
         }
 
         $blobId = $this->nachweise->loeschen((int) $nachweis->id);
@@ -165,7 +167,7 @@ final readonly class NachweisController
             }
         }
 
-        return $this->zurueck($id, 'Nachweis gelöscht.');
+        return $this->zurueck($r, $id, 'Nachweis gelöscht.');
     }
 
     /**
@@ -220,11 +222,11 @@ final readonly class NachweisController
         return (string) new \finfo(FILEINFO_MIME_TYPE)->file($pfad);
     }
 
-    private function zurueck(int $mitgliedId, string $meldung, FlashArt $art = FlashArt::Ok): Response
+    private function zurueck(Request $r, int $mitgliedId, string $meldung, FlashArt $art = FlashArt::Ok): Response
     {
         $this->dienste->session->flash($meldung, $art);
 
-        return Response::redirect(MitgliedController::adresse($mitgliedId, 'nachweise'));
+        return Response::redirect(Einbettung::ausAnfrage($r)->adresse($mitgliedId, 'nachweise'));
     }
 
     private function gibtEsNicht(): Response

@@ -12,9 +12,13 @@
  * @var bool $darfPflegen
  * @var bool $darfLoeschen
  * @var string|null $csrf
+ * @var \App\App\Mitglied\Einbettung|null $einbettung the page the member is shown on (MitgliedAnsicht)
  */
 
+use App\App\Mitglied\Einbettung;
 use App\App\NachweisController;
+
+$einbettung ??= Einbettung::mitgliederSeite();
 ?>
 <section class="nachweise" aria-labelledby="nachweise-titel">
     <h2 id="nachweise-titel" class="nur-lesehilfe">Nachweise</h2>
@@ -49,6 +53,7 @@ use App\App\NachweisController;
                         <?php if ($darfLoeschen): ?>
                             <form method="post" action="<?= e(NachweisController::adresse($mitgliedId, $nachweis->id . '/loeschen')) ?>">
                                 <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
+                                <?= $einbettung->feld() ?>
                                 <button type="submit" class="knopf knopf-gefahr">Nachweis löschen</button>
                             </form>
                         <?php endif; ?>
@@ -61,6 +66,7 @@ use App\App\NachweisController;
     <?php if ($darfPflegen): ?>
         <form method="post" action="<?= e(NachweisController::adresse($mitgliedId)) ?>" enctype="multipart/form-data" class="formular">
             <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
+            <?= $einbettung->feld() ?>
             <div class="feld">
                 <label for="nachweis-art">Art</label>
                 <select id="nachweis-art" name="art" required>

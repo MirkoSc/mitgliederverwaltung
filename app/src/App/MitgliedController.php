@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\App;
 
 use App\App\Mitglied\Auswahllisten;
+use App\App\Mitglied\Einbettung;
 use App\App\Mitglied\MitgliedFormular;
 use App\Dienste;
 use App\Domain\AuditAktion;
@@ -28,8 +29,10 @@ use App\View\FlashArt;
  * (App\App\Mitglied\DatenReiter) on the members page; a new member gets the
  * same form on a page of its own.
  *
- * A save that works answers with a redirect to the member on the members
- * page and the outcome as flash message (hints included). A save that
+ * A save that works answers with a redirect to the member on the page it
+ * was opened on (the field `zurueck`, App\App\Mitglied\Einbettung; the
+ * members page without it) and the outcome as flash message (hints
+ * included). A save that
  * cannot be done - a required field missing, the number taken, somebody
  * else saved in between - shows the form again on a page of its own, with
  * what was typed.
@@ -48,8 +51,7 @@ final readonly class MitgliedController
         return $dienste->dienst(self::class, static fn(Dienste $d): self => new self($d, new MitgliedRepository($d->pdo())));
     }
 
-    /** Where a member opens: the members page with that member beside the list. */
-    /** The member opened on the list page, on the tab $reiter (default: Daten). */
+    /** The member opened on the members page, on the tab $reiter (default: Daten). */
     public static function adresse(int $id, ?string $reiter = null): string
     {
         return self::PFAD_LISTE . '?mitglied=' . $id . ($reiter === null ? '' : '&reiter=' . rawurlencode($reiter));
@@ -73,18 +75,19 @@ final readonly class MitgliedController
 
     public function anlegen(Request $r): Response
     {
+        $einbettung = Einbettung::ausAnfrage($r);
         $formular = MitgliedFormular::gelesen($r->post, new Mitglied(1, ''), $this->listen());
         if ($formular->mitglied === null) {
-            return $this->formularSeite($formular, null, 422);
+            return $this->formularSeite($formular, null, $einbettung, 422);
         }
 
         try {
             $ergebnis = $this->mitglieder->speichern($formular->mitglied, VersionsAnlass::angelegt(), $this->dienste->session->userId());
         } catch (MitgliedsnummerVergebenException) {
-            return $this->formularSeite($this->nummerVergeben($formular), null, 422);
+            return $this->formularSeite($this->nummerVergeben($formular), null, $einbettung, 422);
         }
 
-        return $this->fertig($ergebnis->mitglied, 'Mitglied angelegt.');
+        return $this->fertig($ergebnis->mitglied, 'Mitglied angelegt.', $einbettung);
     }
 
     /** @param array<string, string> $params */
@@ -95,9 +98,10 @@ final readonly class MitgliedController
             return $this->gibtEsNicht();
         }
 
+        $einbettung = Einbettung::ausAnfrage($r);
         $formular = MitgliedFormular::gelesen($r->post, $gespeichert, $this->listen());
         if ($formular->mitglied === null) {
-            return $this->formularSeite($formular, $gespeichert->mit(['version' => self::version($r, $gespeichert)]), 422);
+            return $this->formularSeite($formular, $gespeichert->mit(['version' => self::version($r, $gespeichert)]), $einbettung, 422);
         }
 
         // The version the form was opened with: the optimistic lock (07 section 8).
@@ -105,7 +109,7 @@ final readonly class MitgliedController
         try {
             $ergebnis = $this->mitglieder->speichern($mitglied, VersionsAnlass::geaendert(), $this->dienste->session->userId());
         } catch (MitgliedsnummerVergebenException) {
-            return $this->formularSeite($this->nummerVergeben($formular), $mitglied, 422);
+            return $this->formularSeite($this->nummerVergeben($formular), $mitglied, $einbettung, 422);
         } catch (VersionKonfliktException) {
             $aktuell = $this->mitglieder->finde($gespeichert->id ?? 0);
             if ($aktuell === null) {
@@ -114,13 +118,14 @@ final readonly class MitgliedController
 
             // The form keeps what was typed, the hidden version moves on to
             // the current one: saving again then means "mine wins", on purpose.
-            return $this->formularSeite($formular, $aktuell, 409, 'Jemand anderes hat dieses Mitglied gespeichert, während Sie es bearbeitet haben. '
+            return $this->formularSeite($formular, $aktuell, $einbettung, 409, 'Jemand anderes hat dieses Mitglied gespeichert, während Sie es bearbeitet haben. '
                 . 'Unten stehen Ihre Eingaben. Öffnen Sie das Mitglied neu, um den anderen Stand zu sehen, oder speichern Sie Ihre Eingaben erneut – dann gelten sie.');
         }
 
         return $this->fertig(
             $ergebnis->mitglied,
             $ergebnis->neueVersion ? 'Mitglied gespeichert.' : 'Nichts geändert – das Mitglied war schon so gespeichert.',
+            $einbettung,
         );
     }
 
@@ -130,7 +135,7 @@ final readonly class MitgliedController
      *
      * @param array<string, string> $params
      */
-    public function loeschenFragen(array $params): Response
+    public function loeschenFragen(Request $r, array $params): Response
     {
         $mitglied = $this->mitglieder->finde((int) $params['id']);
         if ($mitglied === null) {
@@ -141,6 +146,7 @@ final readonly class MitgliedController
             'title' => 'Mitglied löschen',
             'mitglied' => $mitglied,
             'ehemalig' => $mitglied->istEhemalig(new \DateTimeImmutable('today')),
+            'einbettung' => Einbettung::ausAnfrage($r),
         ], Area::App));
     }
 
@@ -172,7 +178,8 @@ final readonly class MitgliedController
 
         $this->dienste->session->flash(sprintf('Mitglied Nr. %d ist gelöscht.', $mitglied->mitgliedsnummer));
 
-        return Response::redirect(self::PFAD_LISTE);
+        // Back to the page it was opened on, without a member.
+        return Response::redirect(Einbettung::ausAnfrage($r)->rueckweg());
     }
 
     private function listen(): Auswahllisten
@@ -184,24 +191,25 @@ final readonly class MitgliedController
      * The form on a page of its own: "Neues Mitglied", or a member whose
      * save could not be done.
      */
-    private function formularSeite(MitgliedFormular $formular, ?Mitglied $mitglied, int $status = 200, ?string $meldung = null): Response
+    private function formularSeite(MitgliedFormular $formular, ?Mitglied $mitglied, Einbettung $einbettung, int $status = 200, ?string $meldung = null): Response
     {
         $titel = $mitglied === null ? 'Neues Mitglied' : 'Mitglied bearbeiten';
 
         return Response::html($this->dienste->view->render('mitglied/seite', [
             'title' => $titel,
             'meldung' => $meldung,
-            ...$this->formularDaten($formular, $mitglied),
+            ...$this->formularDaten($formular, $mitglied, $einbettung),
         ], Area::App), $status);
     }
 
     /**
      * What the template mitglied/formular needs - shared with the tab
-     * "Daten" (App\App\Mitglied\DatenReiter).
+     * "Daten" (App\App\Mitglied\DatenReiter, which gets its Einbettung
+     * from MitgliedAnsicht). Cancel and delete lead back to $einbettung.
      *
      * @return array<string, mixed>
      */
-    public function formularDaten(MitgliedFormular $formular, ?Mitglied $mitglied): array
+    public function formularDaten(MitgliedFormular $formular, ?Mitglied $mitglied, ?Einbettung $einbettung = null): array
     {
         $konto = $this->dienste->view->konto();
         $familie = $mitglied?->familieId === null ? null : new FamilieRepository($this->dienste->pdo())->finde($mitglied->familieId);
@@ -212,9 +220,8 @@ final readonly class MitgliedController
             'mitglied' => $mitglied,
             'familie' => $familie,
             'aktion' => $mitglied?->id === null ? self::PFAD_NEU : self::speicherAdresse($mitglied->id),
-            'abbrechen' => $mitglied?->id === null ? self::PFAD_LISTE : self::adresse($mitglied->id),
             'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen),
-            'loeschAdresse' => $mitglied?->id === null ? null : self::loeschAdresse($mitglied->id),
+            'einbettung' => $einbettung ?? Einbettung::mitgliederSeite(),
         ];
     }
 
@@ -231,7 +238,7 @@ final readonly class MitgliedController
         ));
     }
 
-    private function fertig(Mitglied $mitglied, string $meldung): Response
+    private function fertig(Mitglied $mitglied, string $meldung, Einbettung $einbettung): Response
     {
         // The hints themselves stand at the top of the opened member (07
         // section 6, HinweiseAbschnitt); the message only says there are some.
@@ -245,7 +252,7 @@ final readonly class MitgliedController
             $anzahl === 0 ? FlashArt::Ok : FlashArt::Warnung,
         );
 
-        return Response::redirect(self::adresse((int) $mitglied->id));
+        return Response::redirect($einbettung->adresse((int) $mitglied->id));
     }
 
     private function gibtEsNicht(): Response

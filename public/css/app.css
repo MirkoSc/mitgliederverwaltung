@@ -1342,9 +1342,10 @@ textarea:disabled {
 }
 
 /* List next to detail (06 section 2): on the PC the opened record stands
-   right of the list; on a phone and in the Barrierefrei-Modus it is a view
-   of its own with "Zurück". The server marks an opened record with
-   .geteilt-mit-detail - nothing here needs a script. */
+   right of the list, in the Barrierefrei-Modus below it (the heading takes
+   the focus, 06 section 5); on a phone it is a view of its own with
+   "Zurück". The server marks an opened record with .geteilt-mit-detail -
+   nothing here needs a script. */
 .geteilt {
     display: grid;
     gap: var(--abstand-5);
@@ -1427,6 +1428,34 @@ textarea:disabled {
         border-radius: var(--radius);
         background: var(--farbe-flaeche);
     }
+}
+
+/* Barrierefrei-Modus on the PC: one column, the list stays, the opened
+   record follows below it behind a strong rule; "Schließen" closes it. */
+@media (min-width: 64rem) {
+    :root.modus-barrierefrei .geteilt-mit-detail .geteilt-liste {
+        display: block;
+    }
+
+    :root.modus-barrierefrei .geteilt .zurueck {
+        display: none;
+    }
+
+    :root.modus-barrierefrei .detail-schliessen {
+        display: inline-flex;
+        margin-left: auto;
+    }
+
+    :root.modus-barrierefrei .geteilt-mit-detail .geteilt-detail {
+        padding-top: var(--abstand-5);
+        border-top: 4px solid var(--farbe-text);
+    }
+}
+
+/* The heading of an opened record takes the focus (tabindex="-1"); the
+   focus ring is for elements that are operated, not for a heading. */
+.detail-kopf h2:focus:not(:focus-visible) {
+    outline: none;
 }
 
 /* htmx loading indicator (includeIndicatorStyles is off - the CSP would

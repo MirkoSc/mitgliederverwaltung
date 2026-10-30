@@ -24,6 +24,6 @@ return static function (Routen $routen): void {
     $routen->get(MitgliedController::PFAD_NEU, $bearbeiten, static fn(Request $r): Response => $controller()->neu());
     $routen->post(MitgliedController::PFAD_NEU, $bearbeiten, static fn(Request $r): Response => $controller()->anlegen($r));
     $routen->post('/app/mitglieder/{id:[0-9]+}', $bearbeiten, static fn(Request $r, array $p): Response => $controller()->speichern($r, $p));
-    $routen->get('/app/mitglieder/{id:[0-9]+}/loeschen', $loeschen, static fn(Request $r, array $p): Response => $controller()->loeschenFragen($p));
+    $routen->get('/app/mitglieder/{id:[0-9]+}/loeschen', $loeschen, static fn(Request $r, array $p): Response => $controller()->loeschenFragen($r, $p));
     $routen->post('/app/mitglieder/{id:[0-9]+}/loeschen', $loeschen, static fn(Request $r, array $p): Response => $controller()->loeschen($r, $p));
 };

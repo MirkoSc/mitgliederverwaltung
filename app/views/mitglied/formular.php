@@ -14,18 +14,23 @@
  * @var \App\Domain\Mitglied|null $mitglied the stored member, null for a new one
  * @var \App\Domain\Familie|null $familie
  * @var string $aktion
- * @var string $abbrechen
  * @var bool $darfLoeschen
- * @var string|null $loeschAdresse
+ * @var \App\App\Mitglied\Einbettung|null $einbettung the page the member is shown on (MitgliedAnsicht)
  * @var string|null $csrf
  */
 
+use App\App\Mitglied\Einbettung;
 use App\App\Mitglied\MitgliedFormular;
+use App\App\MitgliedController;
 use App\Domain\Geschlecht;
 use App\Domain\Zahlart;
 use App\Support\Iban;
 
 $neu = $mitglied?->id === null;
+// Cancelling and deleting lead back to the page the member was opened on.
+$einbettung ??= Einbettung::mitgliederSeite();
+$abbrechen = $neu ? $einbettung->rueckweg() : $einbettung->adresse((int) $mitglied->id);
+$loeschAdresse = $neu ? null : $einbettung->mitRueckweg(MitgliedController::loeschAdresse((int) $mitglied->id));
 
 /** id, aria-describedby and aria-invalid of a field; $hilfe = id of a help text. */
 $attribute = static function (string $feld, ?string $hilfe = null) use ($formular): string {
@@ -84,6 +89,7 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
 ?>
 <form class="formular formular-zweispaltig mitglied-formular" id="mitglied-formular" method="post" action="<?= e($aktion) ?>">
     <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
+    <?= $einbettung->feld() ?>
     <?php if (!$neu): ?>
         <input type="hidden" name="version" value="<?= e($mitglied->version) ?>">
     <?php endif; ?>
