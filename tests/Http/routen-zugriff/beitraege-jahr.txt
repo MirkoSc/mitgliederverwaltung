@@ -1,0 +1,4 @@
+# app/routes/beitraege-jahr.php - delete a fee year, several fees paid at once: admin only (08 section 2a).
+GET /app/beitraege/jahr-loeschen -> beitraege.verwalten
+POST /app/beitraege/jahr-loeschen -> beitraege.verwalten
+POST /app/beitraege/bezahlt -> beitraege.verwalten

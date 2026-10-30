@@ -111,6 +111,8 @@ final readonly class BeitraegeController
                 static fn(?string $wert): bool => $wert !== null,
             )),
             'zahlweisen' => Zahlweise::cases(),
+            'heute' => $heute,
+            'scripts' => ['/js/beitraege-auswahl.js'],
             // The direct debit and its archive (#30) live on this page too.
             ...EinzugController::aus($this->dienste)->seitenDaten(),
         ], Area::App));
