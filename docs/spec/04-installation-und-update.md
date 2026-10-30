@@ -21,7 +21,13 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
     `release/<pfad>`), `setup.php`.
   - Job `publish` (`contents: write`, Secret `RELEASE_SIGNING_KEY`):
     signiert `checksums.txt` mit Ed25519 → `checksums.txt.sig`,
-    veröffentlicht alles als **Pre-Release**.
+    veröffentlicht alles als **Pre-Release**. Hier läuft kein
+    Drittanbieter-Code: PHP des Runners (Prüfschritt auf `sodium`) statt
+    `setup-php`, `gh release create` statt einer Release-Action; nur
+    `actions/*`.
+  - **Alle Actions in `release.yml` und `ci.yml` sind per vollem
+    Commit-SHA gepinnt**, die Version steht als Kommentar dahinter
+    (`ReleaseWorkflowTest`). Ein Update ist eine bewusste Änderung am SHA.
 - Nicht im ZIP: `tests/`, `tools/`, `docs/`, Docker-Dateien außer
   `docker/web/`.
 - **Kanäle:**
