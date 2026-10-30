@@ -1,0 +1,107 @@
+/* The page "Familien" (issue #92). Tokens from app.css only.
+
+   The family stands where an opened member stands (geteilt-detail); its
+   parts follow one another under a thin rule instead of boxes inside the
+   box. The one thing that stands out is the address the family gets when
+   it is made uniform - that is what the section is about. */
+
+/* "Zurück zur Familie" in the member: the member stands in place of the
+   family, so the way back is a link on the PC too (app.css hides the
+   phone's "Zurück zur Liste" there). */
+.geteilt .zurueck-immer {
+    display: inline-flex;
+}
+
+/* For a browser without script only; familien.js hides it. */
+.nur-ohne-skript[hidden] {
+    display: none;
+}
+
+.familie-neu {
+    margin-top: var(--abstand-5);
+    align-items: end;
+}
+
+.familie-teil {
+    margin-top: var(--abstand-5);
+    padding-top: var(--abstand-4);
+    border-top: 1px solid var(--farbe-rand);
+}
+
+.familie-teil > h3 {
+    margin-top: 0;
+}
+
+.familie-tabelle .nummer {
+    display: block;
+}
+
+.familie-aendern form {
+    margin: 0 0 var(--abstand-2);
+}
+
+/* Role and its button on one line where the column allows it. */
+.familie-aendern .knopfreihe {
+    gap: var(--abstand-2);
+}
+
+.familie-aendern select {
+    width: auto;
+}
+
+.familie-aendern form:last-child {
+    margin-bottom: 0;
+}
+
+/* The address everybody ticked gets. */
+.familie-zielanschrift {
+    margin: 0 0 var(--abstand-4);
+    padding: var(--abstand-3) var(--abstand-4);
+    border-left: 4px solid var(--farbe-haupt);
+    background: var(--farbe-grund);
+    font-size: 1.15em;
+    font-weight: 650;
+}
+
+.familie-anschrift .feld-haken {
+    align-items: flex-start;
+    padding: var(--abstand-2) 0;
+}
+
+.familie-anschrift .feld-haken input {
+    margin-top: 0.3em;
+}
+
+.familie-bisher {
+    display: block;
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+.familie-treffer {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.familie-treffer li {
+    padding: var(--abstand-2) 0;
+    border-bottom: 1px solid var(--farbe-rand);
+}
+
+.familie-treffer .knopfreihe {
+    margin: 0;
+}
+
+.familie-treffer-name {
+    flex: 1 1 14rem;
+}
+
+/* Barrierefrei-Modus: no grey text, strong rules. */
+.modus-barrierefrei .familie-bisher {
+    color: var(--farbe-text);
+}
+
+.modus-barrierefrei .familie-teil {
+    border-top: 3px solid var(--farbe-text);
+}

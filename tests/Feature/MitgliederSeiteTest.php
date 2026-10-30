@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Feature;
 
+use App\Domain\FamilienRolle;
 use App\Domain\Mitglied;
 use App\Domain\Rolle;
 use App\Domain\VersionsAnlass;
@@ -12,6 +13,8 @@ use App\Http\Request;
 use App\Http\Response;
 use App\Http\Session;
 use App\Repository\AbteilungRepository;
+use App\Repository\BeitragsartRepository;
+use App\Repository\FamilieRepository;
 use App\Repository\MitgliedRepository;
 use App\Tests\Support\AppTestCase;
 
@@ -355,16 +358,97 @@ final class MitgliederSeiteTest extends AppTestCase
         self::assertStringNotContainsString('Anschrift des Zahlers', $this->get('/app/mitglieder', ['mitglied' => (string) $zahler->id])->body);
     }
 
-    public function testThePageSizeIsADropdownAndKeptInTheLinks(): void
+    public function testThePageSizeIsADropdownInThePagerAndKeptInTheLinks(): void
     {
         $this->als(Rolle::Vorstand);
 
         $seite = $this->get('/app/mitglieder', ['anzahl' => 'alle'])->body;
 
-        self::assertStringContainsString('<select id="filter-anzahl" name="anzahl">', $seite);
+        self::assertStringContainsString('<select id="filter-anzahl" name="anzahl" form="mitglieder-form">', $seite);
         self::assertStringContainsString('<option value="alle" selected>Alle</option>', $seite);
         self::assertStringContainsString('<option value="50">50</option>', $seite);
-        self::assertStringContainsString('change from:#filter-anzahl', $seite);
+        self::assertStringContainsString('change from:#mitglieder-ergebnis', $seite);
         self::assertStringContainsString('href="/app/mitglieder?anzahl=alle&amp;mitglied=' . $this->idVon(1001) . '"', $seite, 'opening a member keeps the size');
+        // It is no longer one of the filters above the list.
+        self::assertSame(1, substr_count($seite, 'id="filter-anzahl"'));
+        self::assertLessThan(strpos($seite, 'id="filter-anzahl"'), strpos($seite, 'class="blaettern"'));
+    }
+
+    /** Between "Vorherige" and "Nächste", beside "Seite x von y" - and usable without a script. */
+    public function testThePagerHoldsThePageSizeBetweenThePageButtons(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $repo = new MitgliedRepository($this->pdo);
+        for ($i = 1; $i <= 60; $i++) {
+            $repo->speichern(new Mitglied(2000 + $i, sprintf('Test%03d', $i)), VersionsAnlass::angelegt(), 1);
+        }
+
+        $seite = $this->get('/app/mitglieder')->body;
+        $nav = substr($seite, (int) strpos($seite, '<nav class="blaettern"'));
+        $nav = substr($nav, 0, (int) strpos($nav, '</nav>'));
+
+        $vorherige = strpos($nav, 'Vorherige Seite');
+        $stand = strpos($nav, 'Seite 1 von 2');
+        $select = strpos($nav, '<select id="filter-anzahl"');
+        $naechste = strpos($nav, 'Nächste Seite');
+        self::assertNotFalse($vorherige);
+        self::assertTrue($vorherige < $stand && $stand < $select && $select < $naechste, 'order in the pager');
+        self::assertStringContainsString('<label for="filter-anzahl">Je Seite</label>', $nav);
+        self::assertStringContainsString('<button type="submit" form="mitglieder-form" class="knopf knopf-still">Übernehmen</button>', $nav);
+        self::assertStringNotContainsString('je Seite 50', $nav, 'the select says it');
+
+        // A larger size with one page keeps the pager, or "Alle" could not be left again.
+        $alle = $this->get('/app/mitglieder', ['anzahl' => 'alle'])->body;
+        self::assertStringContainsString('<nav class="blaettern"', $alle);
+        self::assertStringContainsString('Seite 1 von 1', $alle);
+        // With the default size and one page there is no pager.
+        $klein = $this->get('/app/mitglieder', ['abteilung' => (string) new AbteilungRepository($this->pdo)->alle()[1]->id])->body;
+        self::assertStringNotContainsString('<nav class="blaettern"', $klein);
+    }
+
+    public function testTheSearchFieldSaysWhatIsSearched(): void
+    {
+        $this->als(Rolle::Vorstand);
+
+        $seite = $this->get('/app/mitglieder')->body;
+
+        self::assertStringContainsString('aria-describedby="suche-hilfe"', $seite);
+        self::assertMatchesRegularExpression('/id="suche-hilfe">Sucht in [^<]*IBAN[^<]*Geburtsdatum[^<]*Bemerkung/', $seite);
+    }
+
+    public function testSearchingByDateOfBirthAndAddressThroughTheForm(): void
+    {
+        $this->als(Rolle::Vorstand);
+        new MitgliedRepository($this->pdo)->speichern(
+            new Mitglied(1004, 'Probe', vorname: 'Anna', strasse: 'Hauptstraße 12', ort: 'Musterort', geburtsdatum: new \DateTimeImmutable('1980-02-01')),
+            VersionsAnlass::angelegt(),
+            1,
+        );
+
+        $antwort = $this->htmx(['text' => 'Anna 1.2.1980 Hauptstr. 12', 'ehemalige' => '0'], 'mitglieder-ergebnis');
+
+        self::assertStringContainsString('Probe, Anna', $antwort->body);
+        self::assertStringNotContainsString('Mustermann', $antwort->body);
+        self::assertStringContainsString('1 Mitglied gefunden.', $antwort->body);
+    }
+
+    public function testFamilyMembersFoundThroughThePayerAreMarked(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $repo = new MitgliedRepository($this->pdo);
+        $familie = new FamilieRepository($this->pdo)->anlegen('Familie Muster');
+        $art = null;
+        foreach (new BeitragsartRepository($this->pdo)->alle() as $beitragsart) {
+            $art = $beitragsart->name === 'Familie' ? $beitragsart->id : $art;
+        }
+        $repo->speichern(new Mitglied(3001, 'Muster', vorname: 'Paula', beitragsartId: $art, familieId: $familie->id, familieRolle: FamilienRolle::Zahler), VersionsAnlass::angelegt(), 1);
+        $repo->speichern(new Mitglied(3002, 'Muster', vorname: 'Tom', familieId: $familie->id, familieRolle: FamilienRolle::Kind), VersionsAnlass::angelegt(), 1);
+
+        $antwort = $this->htmx(['beitragsart' => (string) $art, 'ehemalige' => '0'], 'mitglieder-ergebnis');
+
+        self::assertStringContainsString('Muster, Paula', $antwort->body);
+        self::assertStringContainsString('Muster, Tom</a> <span class="klein gedaempft">über Familie Muster</span>', $antwort->body);
+        self::assertSame(1, substr_count($antwort->body, 'über Familie Muster'), 'the payer is not marked');
+        self::assertStringContainsString('2 Mitglieder gefunden.', $antwort->body);
     }
 }
