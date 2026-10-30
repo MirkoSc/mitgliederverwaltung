@@ -102,6 +102,8 @@ final readonly class AuffaelligkeitenListe implements Liste
                 $zeilen[] = new ListenZeile(
                     ['name' => $name, 'art' => $hinweis->art->bezeichnung(), 'hinweis' => $hinweis->text],
                     $m->id,
+                    // The map's hints open the member where they are fixed (issue #108).
+                    reiter: $hinweis->art->reiter(),
                 );
             }
         }

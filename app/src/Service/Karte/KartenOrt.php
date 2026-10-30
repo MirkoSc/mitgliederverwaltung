@@ -15,6 +15,8 @@ final readonly class KartenOrt
         public array $mitglieder,
         public ?float $lat = null,
         public ?float $lon = null,
+        /** What the map knows - Ungefaehr and VonHand are labelled on the page (issue #108). */
+        public ?GeoStatus $status = null,
     ) {
     }
 }

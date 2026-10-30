@@ -10,6 +10,7 @@ use App\Domain\FamilienRolle;
 use App\Domain\Mitglied;
 use App\Domain\NachweisArt;
 use App\Domain\Zahlart;
+use App\Service\Karte\GeoStatus;
 use App\Support\Iban;
 
 /**
@@ -160,6 +161,16 @@ final class Hinweise
                 $mitglied->geburtsdatum === null ? 'das Geburtsdatum' : null,
             ]);
             $melden(HinweisArt::BlsvAngabenFehlen, sprintf('Für die BLSV-Meldung fehlt %s. Bitte ergänzen.', implode(' und ', $fehlt)));
+        }
+
+        // The map (issue #108): only what the search left to fix by hand.
+        // Found, set by hand and not asked yet are no hint.
+        if (!$mitglied->istEhemalig($tag)) {
+            if ($kontext->geoStatus === GeoStatus::NichtGefunden) {
+                $melden(HinweisArt::KarteNichtGefunden, 'Die Anschrift wurde auf der Karte nicht gefunden. Bitte im Reiter „Daten“ unter „Wohnort auf der Karte“ eine Such-Anschrift angeben oder den Punkt von Hand setzen.');
+            } elseif ($kontext->geoStatus === GeoStatus::Ungefaehr) {
+                $melden(HinweisArt::KarteUngefaehr, 'Die Anschrift wurde auf der Karte nur ungefähr gefunden: PLZ und Ort, nicht die Straße. Bitte im Reiter „Daten“ unter „Wohnort auf der Karte“ die Suche korrigieren oder den Punkt von Hand setzen.');
+            }
         }
 
         return $hinweise;

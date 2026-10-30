@@ -13,6 +13,7 @@ use App\Domain\Mitglied;
 use App\Domain\Nachweis;
 use App\Domain\NachweisArt;
 use App\Domain\Zahlart;
+use App\Service\Karte\GeoStatus;
 use App\Service\Mitglied\HinweisArt;
 use App\Service\Mitglied\HinweisKontext;
 use App\Service\Mitglied\Hinweise;
@@ -478,6 +479,35 @@ final class HinweiseTest extends TestCase
         foreach (HinweisArt::cases() as $art) {
             self::assertNotSame('', $art->bezeichnung());
         }
-        self::assertCount(16, HinweisArt::cases(), 'one per row of the table in 07 section 6');
+        self::assertCount(18, HinweisArt::cases(), 'one per row of the table in 07 section 6');
+    }
+
+    /**
+     * The map (issue #108): "not found" and "approximately found" are
+     * hints that point to the tab "Daten"; found, set by hand and not
+     * asked yet are none.
+     */
+    public function testTheMapHintsOnlyWhatTheSearchLeftToFix(): void
+    {
+        $mitKarte = static fn(?GeoStatus $status, ?Mitglied $m = null): array => array_map(
+            static fn($h): HinweisArt => $h->art,
+            Hinweise::fuer($m ?? self::mitglied(), new HinweisKontext(self::tag(), [], [], self::beitragsarten(), $status)),
+        );
+
+        self::assertSame([HinweisArt::KarteNichtGefunden], $mitKarte(GeoStatus::NichtGefunden));
+        self::assertSame([HinweisArt::KarteUngefaehr], $mitKarte(GeoStatus::Ungefaehr));
+        self::assertSame([], $mitKarte(GeoStatus::Gefunden));
+        self::assertSame([], $mitKarte(GeoStatus::VonHand));
+        self::assertSame([], $mitKarte(null), 'not asked yet');
+        self::assertSame([], $mitKarte(GeoStatus::NichtGefunden, self::mitglied(['austrittsdatum' => new \DateTimeImmutable('2020-12-31')])), 'a former member is not on the map');
+
+        $text = Hinweise::fuer(self::mitglied(), new HinweisKontext(self::tag(), [], [], self::beitragsarten(), GeoStatus::Ungefaehr))[0]->text;
+        self::assertStringContainsString('Reiter „Daten“', $text);
+        self::assertStringContainsString('Punkt von Hand', $text);
+        self::assertSame('daten', HinweisArt::KarteUngefaehr->reiter());
+        self::assertSame('daten', HinweisArt::KarteNichtGefunden->reiter());
+        self::assertNull(HinweisArt::KeinBeitrag->reiter());
+        self::assertSame('Anschrift auf der Karte nicht gefunden', HinweisArt::KarteNichtGefunden->bezeichnung());
+        self::assertSame('Anschrift auf der Karte nur ungefähr gefunden', HinweisArt::KarteUngefaehr->bezeichnung());
     }
 }

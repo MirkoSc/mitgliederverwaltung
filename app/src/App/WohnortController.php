@@ -10,8 +10,10 @@ use App\Domain\AuditAktion;
 use App\Domain\Mitglied;
 use App\Http\Request;
 use App\Http\Response;
+use App\Repository\GeoAnschriftRepository;
 use App\Repository\MitgliedRepository;
 use App\Service\Karte\Anschrift;
+use App\Service\Karte\GeoStatus;
 use App\Service\Karte\HandSuche;
 use App\Service\Karte\Koordinatenermittlung;
 use App\Service\Karte\Wohnort;
@@ -22,7 +24,9 @@ use App\View\FlashArt;
  * The block "Wohnort auf der Karte" in the tab "Daten" (issue #106): asks
  * the geocoder for the member's address now ("Jetzt suchen"), saves a
  * search address for the map only and asks with it, or removes it again.
- * The member's own address is never touched.
+ * Since issue #108 also sets the point by hand (latitude and longitude,
+ * from a click on the small map or typed) or removes it again. The
+ * member's own address is never touched.
  *
  * One route, the button says what to do (field `aktion`); every answer is a
  * redirect back to the tab "Daten" on the page the member is shown on
@@ -34,6 +38,8 @@ final readonly class WohnortController
     public const string AKTION_SUCHEN = 'suchen';
     public const string AKTION_KORRIGIEREN = 'korrigieren';
     public const string AKTION_ENTFERNEN = 'entfernen';
+    public const string AKTION_PUNKT_SETZEN = 'punkt-setzen';
+    public const string AKTION_PUNKT_ENTFERNEN = 'punkt-entfernen';
 
     /** Anchor of the block, where the redirect lands. */
     public const string ANKER = 'wohnort';
@@ -91,13 +97,36 @@ final readonly class WohnortController
             case self::AKTION_ENTFERNEN:
                 $ergebnis = $ermittlung->korrekturEntfernen($anschrift, $jetzt);
                 break;
+            case self::AKTION_PUNKT_SETZEN:
+                $punkt = self::punkt($r);
+                if ($punkt === null) {
+                    $this->dienste->session->flash('Bitte geben Sie Breite (−90 bis 90) und Länge (−180 bis 180) als Zahlen an, zum Beispiel 50,0329 und 9,1424 – oder klicken Sie in die kleine Karte.', FlashArt::Fehler);
+
+                    return $zurueck;
+                }
+                $ermittlung->punktSetzen($anschrift, $punkt[0], $punkt[1], $jetzt);
+                $this->protokollierenPunkt($r, $mitglied, 'gesetzt');
+                $this->dienste->session->flash('Der Punkt ist gespeichert. Er steht so auf der Karte, bis Sie ihn entfernen oder die Anschrift sich ändert.', FlashArt::Ok);
+
+                return $zurueck;
+            case self::AKTION_PUNKT_ENTFERNEN:
+                if ((new GeoAnschriftRepository($this->dienste->pdo())->eintrag($anschrift->hash())['status'] ?? null) !== GeoStatus::VonHand) {
+                    $this->dienste->session->flash('Für diese Anschrift ist kein Punkt von Hand gesetzt.', FlashArt::Info);
+
+                    return $zurueck;
+                }
+                $ergebnis = $ermittlung->punktEntfernen($anschrift, $jetzt);
+                if ($ergebnis !== HandSuche::Belegt) {
+                    $this->protokollierenPunkt($r, $mitglied, 'entfernt');
+                }
+                break;
             default:
                 $this->dienste->session->flash('Diese Aktion gibt es nicht.', FlashArt::Fehler);
 
                 return $zurueck;
         }
 
-        if ($aktion !== self::AKTION_SUCHEN && $ergebnis !== HandSuche::Belegt) {
+        if (in_array($aktion, [self::AKTION_KORRIGIEREN, self::AKTION_ENTFERNEN], true) && !in_array($ergebnis, [HandSuche::Belegt, HandSuche::PunktVonHand], true)) {
             $this->protokollieren($r, $mitglied, $aktion, $ergebnis);
         }
         [$text, $art] = self::meldung($aktion, $ergebnis);
@@ -117,6 +146,40 @@ final readonly class WohnortController
         );
     }
 
+    /**
+     * Latitude and longitude from the form, or null when they are no
+     * coordinates. A decimal comma is fine ("50,0329").
+     *
+     * @return array{float, float}|null
+     */
+    public static function punkt(Request $r): ?array
+    {
+        $zahlen = [];
+        foreach (['breite', 'laenge'] as $feld) {
+            $text = str_replace(',', '.', trim(mb_substr($r->feld($feld), 0, 32)));
+            if (preg_match('/^[+-]?\d{1,3}(\.\d{1,12})?$/', $text) !== 1) {
+                return null;
+            }
+            $zahlen[] = (float) $text;
+        }
+        [$lat, $lon] = $zahlen;
+
+        return Koordinatenermittlung::gueltig($lat, $lon) ? [$lat, $lon] : null;
+    }
+
+    /** The point set or removed by hand - member id only, never address or coordinates (issue #108). */
+    private function protokollierenPunkt(Request $r, Mitglied $mitglied, string $was): void
+    {
+        $this->dienste->audit()->protokollieren(
+            AuditAktion::KartenPunktGeaendert,
+            $this->dienste->session->userId(),
+            'mitglied',
+            (int) $mitglied->id,
+            ['punkt' => $was],
+            $r->ip,
+        );
+    }
+
     /** By member id and the outcome only - never the address (CLAUDE.md section 4). */
     private function protokollieren(Request $r, Mitglied $mitglied, string $aktion, HandSuche $ergebnis): void
     {
@@ -129,6 +192,7 @@ final readonly class WohnortController
                 'korrektur' => $aktion === self::AKTION_KORRIGIEREN ? 'gesetzt' : 'entfernt',
                 'ergebnis' => match ($ergebnis) {
                     HandSuche::Gefunden => 'gefunden',
+                    HandSuche::Ungefaehr => 'ungefaehr',
                     HandSuche::NichtGefunden => 'nicht_gefunden',
                     default => 'offen',
                 },
@@ -147,20 +211,26 @@ final readonly class WohnortController
         $gemerkt = match ($aktion) {
             self::AKTION_KORRIGIEREN => 'Die Such-Anschrift ist gespeichert. ',
             self::AKTION_ENTFERNEN => 'Die Such-Anschrift ist entfernt. ',
+            self::AKTION_PUNKT_ENTFERNEN => 'Der Punkt von Hand ist entfernt. ',
             default => '',
         };
 
         return match ($ergebnis) {
             HandSuche::Gefunden => [$gemerkt . 'Die Anschrift wurde auf der Karte gefunden.', FlashArt::Ok],
+            HandSuche::Ungefaehr => [
+                $gemerkt . 'Die Straße wurde nicht gefunden, nur PLZ und Ort: Der Punkt steht ungefähr, in der Ortsmitte. Sie können die Suche ändern oder den Punkt von Hand setzen.',
+                FlashArt::Warnung,
+            ],
             HandSuche::NichtGefunden => [
                 $aktion === self::AKTION_KORRIGIEREN
-                    ? $gemerkt . 'Auch mit ihr wurde die Anschrift auf der Karte nicht gefunden. Prüfen Sie Straße, PLZ und Ort.'
-                    : $gemerkt . 'Die Anschrift wurde auf der Karte nicht gefunden.',
+                    ? $gemerkt . 'Auch mit ihr wurde die Anschrift auf der Karte nicht gefunden. Prüfen Sie Straße, PLZ und Ort – oder setzen Sie den Punkt von Hand.'
+                    : $gemerkt . 'Die Anschrift wurde auf der Karte nicht gefunden. Sie können den Punkt von Hand setzen.',
                 FlashArt::Warnung,
             ],
             HandSuche::Belegt => ['Der Kartendienst ist gerade mit einer anderen Suche beschäftigt. Es wurde nichts geändert – bitte versuchen Sie es in einer Minute noch einmal.', FlashArt::Info],
             HandSuche::Ruht => [$gemerkt . 'Der Kartendienst hat zuletzt nicht geantwortet und ruht ein paar Minuten; danach wird automatisch gesucht.', FlashArt::Info],
             HandSuche::Fehler => [$gemerkt . 'Der Kartendienst antwortet gerade nicht; in ein paar Minuten wird automatisch gesucht.', FlashArt::Warnung],
+            HandSuche::PunktVonHand => ['Der Punkt ist von Hand gesetzt, es wurde nicht gesucht. Entfernen Sie zuerst den Punkt von Hand, wenn wieder automatisch gesucht werden soll.', FlashArt::Info],
         };
     }
 }

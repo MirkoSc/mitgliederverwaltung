@@ -11,7 +11,8 @@ use App\Repository\GeoAnschriftRepository;
  * Where one member lives as the map sees it (issue #106): the block
  * "Wohnort auf der Karte" in the tab "Daten". Built on every view from the
  * member's address and its row in geo_anschrift - nothing of its own is
- * stored.
+ * stored. Coordinates whenever the map has a dot: found, approximately
+ * found or set by hand (issue #108).
  */
 final readonly class Wohnort
 {
@@ -40,13 +41,12 @@ final readonly class Wohnort
         $lat = $eintrag['lat'] ?? null;
         $lon = $eintrag['lon'] ?? null;
 
-        $zustand = match (true) {
-            ($eintrag['status'] ?? null) === GeoStatus::Gefunden && $lat !== null && $lon !== null => WohnortZustand::Gefunden,
-            ($eintrag['status'] ?? null) === GeoStatus::NichtGefunden => WohnortZustand::NichtGefunden,
-            default => WohnortZustand::Offen,
-        };
+        $zustand = WohnortZustand::aus($eintrag['status'] ?? null);
+        if ($zustand->hatPunkt() && ($lat === null || $lon === null)) {
+            $zustand = WohnortZustand::Offen;
+        }
 
-        return new self($anschrift, $zustand, $zustand === WohnortZustand::Gefunden ? $lat : null, $zustand === WohnortZustand::Gefunden ? $lon : null, $korrektur);
+        return new self($anschrift, $zustand, $zustand->hatPunkt() ? $lat : null, $zustand->hatPunkt() ? $lon : null, $korrektur);
     }
 
     /** The member's address as the map sees it. */

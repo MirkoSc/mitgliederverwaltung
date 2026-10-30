@@ -220,3 +220,65 @@
 .modus-barrierefrei .wohnort-korrektur > summary {
     text-decoration: underline;
 }
+
+/* An approximate dot (issue #108: only postcode and town were found) is
+   drawn hollow with a dashed ring - "somewhere here", not "this house".
+   The label in the table and the marker's name say it in words. */
+.karte-punkt-ungefaehr,
+.karte-punkt-ungefaehr.karte-punkt-mehr {
+    border: 2px dashed var(--farbe-haupt);
+    background: var(--farbe-flaeche);
+    color: var(--farbe-text);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+.modus-barrierefrei .karte-punkt-ungefaehr {
+    border: 3px dashed #000000;
+    background: #ffffff;
+    box-shadow: none;
+    color: #000000;
+}
+
+/* "Alle neu ermitteln" (issue #108): behind a summary, so the question is
+   read before the button can be pressed. */
+.karte-neu {
+    margin-top: var(--abstand-3);
+}
+
+.karte-neu > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    color: var(--farbe-link);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.karte-neu[open] > form {
+    display: grid;
+    gap: var(--abstand-3);
+    max-width: 40rem;
+    margin-top: var(--abstand-2);
+}
+
+.karte-neu p {
+    margin: 0;
+}
+
+.modus-barrierefrei .karte-neu > summary {
+    text-decoration: underline;
+}
+
+/* Setting the point by hand (issue #108): a crosshair over the small map
+   says that a click places the dot; latitude and longitude side by side. */
+.wohnort-karte[data-setzen].leaflet-container {
+    cursor: crosshair;
+}
+
+.wohnort-koordinaten {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.wohnort-punkt-stand:empty {
+    display: none;
+}

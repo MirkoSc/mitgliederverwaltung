@@ -6,12 +6,16 @@ namespace App\Service\Karte;
 
 /**
  * The outcome of one search for one address on demand (issue #106): the
- * button "Jetzt suchen", saving or removing a search address at a member
- * (Koordinatenermittlung::jetztSuchen(), korrigieren(), korrekturEntfernen()).
+ * button "Jetzt suchen", saving or removing a search address at a member,
+ * removing a point set by hand (issue #108) - Koordinatenermittlung::
+ * jetztSuchen(), korrigieren(), korrekturEntfernen(), punktEntfernen().
  */
 enum HandSuche
 {
     case Gefunden;
+
+    /** Only postcode and town were found (issue #108). */
+    case Ungefaehr;
 
     case NichtGefunden;
 
@@ -23,4 +27,20 @@ enum HandSuche
 
     /** The service failed just now; a search address is kept and asked later. */
     case Fehler;
+
+    /**
+     * A point set by hand stands at the address (issue #108): no search
+     * replaces it - nothing changed. Remove the point first.
+     */
+    case PunktVonHand;
+
+    public static function aus(GeoStatus $status): self
+    {
+        return match ($status) {
+            GeoStatus::Gefunden => self::Gefunden,
+            GeoStatus::Ungefaehr => self::Ungefaehr,
+            GeoStatus::NichtGefunden => self::NichtGefunden,
+            GeoStatus::VonHand => self::PunktVonHand,
+        };
+    }
 }

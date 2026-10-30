@@ -14,12 +14,14 @@ final readonly class ListenZeile
      * @param string|null $marke short label shown beside the first cell in the view
      *        only (e.g. "rund"); a column is what the export carries
      * @param ListenAktion|null $aktion a button for this row, shown by the page only
+     * @param string|null $reiter the tab the member opens on (e.g. "daten"), null = its first
      */
     public function __construct(
         public array $werte,
         public ?int $mitgliedId = null,
         public ?string $marke = null,
         public ?ListenAktion $aktion = null,
+        public ?string $reiter = null,
     ) {
     }
 }

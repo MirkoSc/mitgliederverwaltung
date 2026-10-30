@@ -5,6 +5,9 @@
  * map, and below it the same addresses as text - the table rows carry the
  * coordinates, public/js/karte.js builds the markers from them. Without
  * script, and in the Barrierefrei-Modus, the text lists are the page.
+ * An approximate dot (only postcode and town found) and a dot set by hand
+ * carry their label as text in the table (issue #108); the approximate
+ * ones are listed once more on their own, with links to the member.
  *
  * @var \App\Service\Karte\KartenAnsicht $ansicht
  * @var \App\Service\Karte\ErmittlungsStand $stand
@@ -13,6 +16,7 @@
  * @var \App\Domain\MitgliederStatus $status
  * @var bool $gefiltert
  * @var bool $darfErmitteln
+ * @var string $neuErmittelnPfad "Alle neu ermitteln" (issue #108)
  * @var string $kachelUrl
  * @var string $mitgliedPfad
  * @var int|null $fokusMitglied the member whose place is centred (link "Auf der großen Karte zeigen", issue #106)
@@ -21,6 +25,7 @@
 
 use App\App\KarteController;
 use App\Domain\MitgliederStatus;
+use App\Service\Karte\GeoStatus;
 use App\Service\Karte\KachelProxy;
 
 // $zumWohnort: the link opens the member's tab "Daten" at its block
@@ -54,6 +59,26 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
             <button type="submit" class="knopf">Jetzt Koordinaten ermitteln</button>
             <span id="karte-ermitteln-status" role="status" hidden></span>
         </form>
+        <p class="feld-hinweis">Am schnellsten: Knopf drücken und den Tab offen lassen (etwa eine Anschrift pro Sekunde).</p>
+    <?php endif; ?>
+    <?php if ($darfErmitteln && $stand->gesamt > 0): ?>
+        <details class="karte-neu">
+            <summary>Alle neu ermitteln</summary>
+            <form id="karte-neu-ermitteln" method="post" action="<?= e($neuErmittelnPfad) ?>" data-csrf="<?= e((string) $csrf) ?>" data-kette="<?= e(KarteController::PFAD_ERMITTELN) ?>">
+                <input type="hidden" name="_csrf" value="<?= e((string) $csrf) ?>">
+                <p>Alle automatisch gefundenen, ungefähr gefundenen und nicht gefundenen Anschriften werden vergessen und
+                    neu beim Kartendienst gesucht. Such-Anschriften und Punkte, die jemand am Mitglied von Hand gesetzt hat,
+                    bleiben erhalten.</p>
+                <p>Das dauert bei offenem Tab etwa eine Sekunde je Anschrift, bei <?= e($anzahlText($stand->gesamt, 'Anschrift', 'Anschriften')) ?>
+                    also rund <?= e((string) max(1, (int) ceil($stand->gesamt / 60))) ?> Minuten. Schließen Sie den Tab vorher, sucht der
+                    Hintergrund nach und nach weiter; bis dahin fehlen die Punkte auf der Karte.</p>
+                <label class="feld-haken"><input type="checkbox" name="sicher" value="1" required> Ja, alle automatisch ermittelten Ergebnisse vergessen und neu suchen.</label>
+                <p class="karte-ermitteln">
+                    <button type="submit" class="knopf">Alle neu ermitteln</button>
+                    <span id="karte-neu-status" role="status" hidden></span>
+                </p>
+            </form>
+        </details>
     <?php endif; ?>
 </div>
 
@@ -114,8 +139,9 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
                 </thead>
                 <tbody>
                     <?php foreach ($ansicht->gefunden as $ort): ?>
-                        <tr<?= $fokusMitglied !== null && in_array($fokusMitglied, array_map(static fn($m): int => $m->id, $ort->mitglieder), true) ? ' data-fokus' : '' ?> data-lat="<?= e(number_format((float) $ort->lat, 6, '.', '')) ?>" data-lon="<?= e(number_format((float) $ort->lon, 6, '.', '')) ?>">
-                            <td class="liste-titel" data-karte-anschrift><?= e($ort->anschrift->text()) ?></td>
+                        <?php $genau = $ort->status === GeoStatus::Ungefaehr || $ort->status === GeoStatus::VonHand ? $ort->status : null; ?>
+                        <tr<?= $genau !== null ? ' data-genauigkeit="' . e($genau->value) . '"' : '' ?><?= $fokusMitglied !== null && in_array($fokusMitglied, array_map(static fn($m): int => $m->id, $ort->mitglieder), true) ? ' data-fokus' : '' ?> data-lat="<?= e(number_format((float) $ort->lat, 6, '.', '')) ?>" data-lon="<?= e(number_format((float) $ort->lon, 6, '.', '')) ?>">
+                            <td class="liste-titel"><span data-karte-anschrift><?= e($ort->anschrift->text()) ?></span><?php if ($genau !== null): ?> <span class="etikett <?= $genau === GeoStatus::Ungefaehr ? 'etikett-warnung' : 'etikett-info' ?>" data-karte-etikett><?= e($genau->etikett()) ?></span><?php endif; ?></td>
                             <td class="zahl" data-label="Anzahl" data-karte-anzahl><?= count($ort->mitglieder) ?></td>
                             <td data-label="Mitglieder" data-karte-mitglieder><?= $mitgliederListe($ort) ?></td>
                         </tr>
@@ -127,7 +153,8 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
 </section>
 
 <?php foreach ([
-    ['nicht-gefunden', 'Nicht gefundene Anschriften', $ansicht->nichtGefunden, 'Der Kartendienst kennt diese Anschriften nicht. Beim Mitglied (Reiter „Daten“, „Wohnort auf der Karte“) lässt sich eine andere Anschrift nur für die Suche angeben.'],
+    ['ungefaehr', 'Ungefähr gefundene Anschriften', $ansicht->ungefaehr, 'Der Kartendienst kennt hier die Straße nicht, nur PLZ und Ort; der Punkt steht in der Ortsmitte. Beim Mitglied (Reiter „Daten“, „Wohnort auf der Karte“) lässt sich eine andere Anschrift für die Suche angeben oder der Punkt von Hand setzen.'],
+    ['nicht-gefunden', 'Nicht gefundene Anschriften', $ansicht->nichtGefunden, 'Der Kartendienst kennt diese Anschriften nicht. Beim Mitglied (Reiter „Daten“, „Wohnort auf der Karte“) lässt sich eine andere Anschrift nur für die Suche angeben oder der Punkt von Hand setzen.'],
     ['offen', 'Noch nicht ermittelt', $ansicht->offen, 'Diese Anschriften kommen in den nächsten Durchläufen dran.'],
 ] as [$schluessel, $titel, $orte, $erklaerung]): ?>
     <?php if ($orte !== []): ?>
@@ -146,7 +173,7 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
                         <?php foreach ($orte as $ort): ?>
                             <tr>
                                 <td class="liste-titel"><?= e($ort->anschrift->text()) ?></td>
-                                <td data-label="Mitglieder"><?= $mitgliederListe($ort, $schluessel === 'nicht-gefunden') ?></td>
+                                <td data-label="Mitglieder"><?= $mitgliederListe($ort, $schluessel !== 'offen') ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

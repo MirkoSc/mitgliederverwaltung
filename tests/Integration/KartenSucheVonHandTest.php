@@ -49,7 +49,7 @@ final class KartenSucheVonHandTest extends DatabaseTestCase
         $this->mitglieder = new MitgliedRepository($this->pdo());
         $this->takt = new FakeTakt();
         $this->jetzt = new \DateTimeImmutable('2026-10-30 12:00:00');
-        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::treffer(48.0, 11.0);
+        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::trefferFuer($url, 48.0, 11.0);
         $takt = $this->takt;
         $this->http = new FakeHttpAbruf(function (string $url) use ($takt): HttpAntwort {
             $takt->vor(0.25);
@@ -106,7 +106,7 @@ final class KartenSucheVonHandTest extends DatabaseTestCase
         self::assertSame('Musterstadt', $this->letzteAbfrage()['city'], 'the address itself: town up to the minus');
 
         $this->antwort = static fn(string $url): HttpAntwort => str_contains($url, 'Am%20Markt')
-            ? FakeHttpAbruf::treffer(49.5, 9.25)
+            ? FakeHttpAbruf::trefferFuer($url, 49.5, 9.25)
             : FakeHttpAbruf::keinTreffer();
         $ergebnis = $this->ermittlung()->korrigieren($anschrift, new Anschrift('Am Markt 3', '12346', 'Musterstadt-Nord', $anschrift->land), $this->jetzt);
 
@@ -140,14 +140,14 @@ final class KartenSucheVonHandTest extends DatabaseTestCase
         $ergebnis = $this->ermittlung()->korrigieren($anschrift, new Anschrift('Gibtsauchnichtweg 9', '12345', 'Musterstadt'), $this->jetzt);
 
         self::assertSame(HandSuche::NichtGefunden, $ergebnis);
-        self::assertCount(1, $this->http->anfragen);
+        self::assertCount(2, $this->http->anfragen, 'the street, then the place alone (issue #108)');
         $eintrag = $this->geo()->eintrag($anschrift->hash());
         self::assertSame(GeoStatus::NichtGefunden, $eintrag['status'] ?? null);
         self::assertSame('Gibtsauchnichtweg 9', $eintrag['korrektur']['strasse'] ?? null, 'the form shows what was typed');
 
         // The automatic run does not ask again: "not found" is remembered.
         $this->ermittlung()->ermitteln($this->jetzt, 10, 12.0);
-        self::assertCount(1, $this->http->anfragen);
+        self::assertCount(2, $this->http->anfragen);
     }
 
     public function testRemovingTheCorrectionSearchesWithTheAddressAgain(): void

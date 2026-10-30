@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\App;
 
 use App\Dienste;
+use App\Domain\AuditAktion;
 use App\Domain\MitgliederStatus;
 use App\Domain\Permission;
 use App\Http\Request;
@@ -17,13 +18,16 @@ use App\Service\Karte\KartenAnsicht;
 use App\Service\Karte\Koordinatenermittlung;
 use App\Support\Datum;
 use App\View\Area;
+use App\View\FlashArt;
 use App\View\Navigation;
 
 /**
  * The page "Karte" (issue #91): the members' addresses on an OpenStreetMap
  * map, with a text list of the same addresses below it - which is all the
  * Barrierefrei-Modus needs. Also the tile proxy the map loads its images
- * from, and the step of the admin's button "Jetzt Koordinaten ermitteln".
+ * from, the step of the admin's button "Jetzt Koordinaten ermitteln", and
+ * "Alle neu ermitteln" (issue #108), which forgets the automatic results
+ * before that chain runs.
  */
 final readonly class KarteController
 {
@@ -31,6 +35,8 @@ final readonly class KarteController
     public const string PFAD_KACHEL = Navigation::KARTE . '/kachel';
 
     public const string PFAD_ERMITTELN = Navigation::KARTE . '/ermitteln';
+
+    public const string PFAD_NEU_ERMITTELN = Navigation::KARTE . '/neu-ermitteln';
 
     /** Addresses per step of the admin's chain - a step answers within seconds. */
     public const int SCHRITT_ANZAHL = 5;
@@ -73,6 +79,7 @@ final readonly class KarteController
             'status' => $status,
             'gefiltert' => $abteilungId !== null || $status !== MitgliederStatus::Alle,
             'darfErmitteln' => $konto?->rolle->darf(Permission::AdminSystem) === true,
+            'neuErmittelnPfad' => self::PFAD_NEU_ERMITTELN,
             'kachelUrl' => self::PFAD_KACHEL . '/{z}/{x}/{y}.png',
             'mitgliedPfad' => Navigation::MITGLIEDER,
             // "Auf der großen Karte zeigen" at a member (issue #106): its place is centred.
@@ -118,6 +125,45 @@ final readonly class KarteController
         $stand = Koordinatenermittlung::aus($this->dienste)->ermitteln($this->jetzt(), self::SCHRITT_ANZAHL, self::SCHRITT_BUDGET_S);
 
         return Response::json($stand->toArray());
+    }
+
+    /**
+     * "Alle neu ermitteln" (issue #108): forgets found, approximate and not
+     * found - search addresses and points set by hand stay - after the tick
+     * of the question. The script then runs the chain of PFAD_ERMITTELN and
+     * gets the new state as JSON; without script the page comes back and
+     * the cron does the asking.
+     */
+    public function neuErmitteln(Request $request): Response
+    {
+        $hintergrund = $request->header('X-Hintergrund') === '1';
+        if ($request->feld('sicher') !== '1') {
+            if ($hintergrund) {
+                return Response::json(['fehler' => 'Bitte bestätigen Sie die Rückfrage.'], 422);
+            }
+            $this->dienste->session->flash('Bitte bestätigen Sie die Rückfrage, damit alle Koordinaten neu ermittelt werden.', FlashArt::Fehler);
+
+            return Response::redirect(Navigation::KARTE);
+        }
+
+        $ermittlung = Koordinatenermittlung::aus($this->dienste);
+        $vergessen = $ermittlung->alleVergessen();
+        // A count only - no address (CLAUDE.md section 4).
+        $this->dienste->audit()->protokollieren(
+            AuditAktion::KarteNeuErmittelt,
+            $this->dienste->session->userId(),
+            'geo_anschrift',
+            null,
+            ['vergessen' => $vergessen],
+            $request->ip,
+        );
+
+        if ($hintergrund) {
+            return Response::json($ermittlung->stand($this->jetzt())->toArray());
+        }
+        $this->dienste->session->flash('Die bisherigen Ergebnisse sind vergessen. Die Koordinaten werden jetzt neu ermittelt – mit „Jetzt Koordinaten ermitteln“ sofort, sonst nach und nach im Hintergrund.', FlashArt::Ok);
+
+        return Response::redirect(Navigation::KARTE);
     }
 
     private function jetzt(): \DateTimeImmutable

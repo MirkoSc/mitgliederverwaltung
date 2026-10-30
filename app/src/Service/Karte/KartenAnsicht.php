@@ -6,20 +6,24 @@ namespace App\Service\Karte;
 
 /**
  * What the page "Karte" shows (issue #91), built from the (filtered)
- * members and the known coordinates: the addresses on the map, the ones the
- * geocoder did not find, the ones not asked yet, and members without an
- * address. Several members at one address are one entry.
+ * members and the known coordinates: the addresses on the map (found,
+ * approximately found or set by hand - issue #108), the approximate ones
+ * once more as a list of their own, the ones the geocoder did not find,
+ * the ones not asked yet, and members without an address. Several members
+ * at one address are one entry.
  */
 final readonly class KartenAnsicht
 {
     /**
-     * @param list<KartenOrt> $gefunden
+     * @param list<KartenOrt> $gefunden every address with a dot on the map
+     * @param list<KartenOrt> $ungefaehr the approximate ones among them
      * @param list<KartenOrt> $nichtGefunden
      * @param list<KartenOrt> $offen
      * @param list<KartenMitglied> $ohneAnschrift
      */
     private function __construct(
         public array $gefunden,
+        public array $ungefaehr,
         public array $nichtGefunden,
         public array $offen,
         public array $ohneAnschrift,
@@ -45,12 +49,17 @@ final readonly class KartenAnsicht
         }
 
         $gefunden = [];
+        $ungefaehr = [];
         $nichtGefunden = [];
         $offen = [];
         foreach ($gruppen as $hash => $gruppe) {
             $geo = $koordinaten[$hash] ?? null;
-            if ($geo !== null && $geo['status'] === GeoStatus::Gefunden && $geo['lat'] !== null && $geo['lon'] !== null) {
-                $gefunden[] = new KartenOrt($gruppe['anschrift'], $gruppe['mitglieder'], $geo['lat'], $geo['lon']);
+            if ($geo !== null && $geo['status']?->hatPunkt() === true && $geo['lat'] !== null && $geo['lon'] !== null) {
+                $ort = new KartenOrt($gruppe['anschrift'], $gruppe['mitglieder'], $geo['lat'], $geo['lon'], $geo['status']);
+                $gefunden[] = $ort;
+                if ($geo['status'] === GeoStatus::Ungefaehr) {
+                    $ungefaehr[] = $ort;
+                }
             } elseif ($geo !== null && $geo['status'] === GeoStatus::NichtGefunden) {
                 $nichtGefunden[] = new KartenOrt($gruppe['anschrift'], $gruppe['mitglieder']);
             } else {
@@ -58,7 +67,7 @@ final readonly class KartenAnsicht
             }
         }
 
-        return new self(self::sortiert($gefunden), self::sortiert($nichtGefunden), self::sortiert($offen), $ohneAnschrift);
+        return new self(self::sortiert($gefunden), self::sortiert($ungefaehr), self::sortiert($nichtGefunden), self::sortiert($offen), $ohneAnschrift);
     }
 
     public function anzahlMitglieder(): int

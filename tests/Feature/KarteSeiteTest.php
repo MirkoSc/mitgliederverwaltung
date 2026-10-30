@@ -51,7 +51,7 @@ final class KarteSeiteTest extends AppTestCase
         $this->http = new FakeHttpAbruf(fn(string $url): HttpAntwort => match (true) {
             $this->dienstAus => new HttpAntwort(0),
             str_contains($url, 'tile.openstreetmap.org') => new HttpAntwort(200, FakeHttpAbruf::png(), 'image/png'),
-            default => FakeHttpAbruf::treffer(48.0, 11.0),
+            default => FakeHttpAbruf::trefferFuer($url, 48.0, 11.0),
         });
         $http = $this->http;
         $this->dienste->dienst(HttpAbruf::class, static fn(): HttpAbruf => $http);
@@ -244,7 +244,7 @@ final class KarteSeiteTest extends AppTestCase
 
     public function testTheCronTaskLooksUpAFewAddresses(): void
     {
-        for ($i = 1; $i <= 12; $i++) {
+        for ($i = 1; $i <= KoordinatenTask::JE_LAUF + 5; $i++) {
             $this->mitglied(100 + $i, 'Muster' . $i, 'Weg ' . $i);
         }
 
@@ -252,5 +252,145 @@ final class KarteSeiteTest extends AppTestCase
 
         self::assertSame(KoordinatenTask::JE_LAUF, $erledigt);
         self::assertCount(KoordinatenTask::JE_LAUF, $this->http->anfragen);
+    }
+
+    /** A POST of the script: with the CSRF token and the background header (JSON answer). */
+    private function postImHintergrund(string $pfad, array $felder = []): \App\Http\Response
+    {
+        $session = new \App\Http\Session();
+        $session->start();
+        $felder['_csrf'] = $session->csrfToken();
+
+        return $this->aufrufen(new \App\Http\Request(\App\Http\HttpMethod::Post, $pfad, post: $felder, headers: ['x-hintergrund' => '1']));
+    }
+
+    public function testApproximateAndHandSetDotsAreLabelledAndListed(): void
+    {
+        $ungefaehr = $this->mitglied(101, 'Musterfrau', 'Am Hang 12');
+        $this->mitglied(102, 'Mustermann', 'Hauptstraße 1');
+        $this->mitglied(103, 'Beispiel', 'Bahnhofstraße 3');
+        $this->koordinaten('Am Hang 12', GeoStatus::Ungefaehr, 50.0329, 9.1424);
+        $this->koordinaten('Hauptstraße 1', GeoStatus::Gefunden, 50.03, 9.14);
+        new GeoAnschriftRepository($this->dienste->pdo())->punktSetzen(new Anschrift('Bahnhofstraße 3', '12345', 'Musterstadt')->hash(), 50.04, 9.15, new \DateTimeImmutable());
+        $this->als(Rolle::Vorstand);
+
+        $html = $this->get('/app/karte')->body;
+
+        self::assertStringContainsString('1 von 3 Anschriften gefunden, 1 ungefähr, 1 von Hand gesetzt', $html);
+        self::assertStringContainsString('Anschriften auf der Karte (3)', $html, 'all three have a dot');
+        self::assertStringContainsString('<tr data-genauigkeit="ungefaehr" data-lat="50.032900"', $html);
+        self::assertStringContainsString('<tr data-genauigkeit="von_hand" data-lat="50.040000"', $html);
+        self::assertStringContainsString('<span class="etikett etikett-warnung" data-karte-etikett>ungefähr</span>', $html);
+        self::assertStringContainsString('<span class="etikett etikett-info" data-karte-etikett>von Hand</span>', $html);
+        self::assertStringContainsString('Ungefähr gefundene Anschriften (1)', $html);
+        self::assertStringContainsString('href="/app/mitglieder?mitglied=' . $ungefaehr . '&amp;reiter=daten#wohnort"', $html);
+        self::assertStringNotContainsString('Alle neu ermitteln', $html, 'the board does not get the button');
+    }
+
+    public function testTheAdminSeesTheHintOnSpeedAndTheQuestionBeforeRerunningAll(): void
+    {
+        $this->mitglied(101, 'Musterfrau', 'Hauptstraße 1');
+        $this->als(Rolle::Admin);
+
+        $html = $this->get('/app/karte')->body;
+
+        self::assertStringContainsString('Am schnellsten: Knopf drücken und den Tab offen lassen (etwa eine Anschrift pro Sekunde).', $html);
+        self::assertStringContainsString('<summary>Alle neu ermitteln</summary>', $html);
+        self::assertStringContainsString('etwa eine Sekunde je Anschrift', $html);
+        self::assertStringContainsString('<input type="checkbox" name="sicher" value="1" required>', $html);
+        self::assertStringContainsString('data-kette="/app/karte/ermitteln"', $html);
+    }
+
+    public function testRerunningAllForgetsTheAutomaticResultsAndKeepsWhatWasDoneByHand(): void
+    {
+        foreach (['Hauptstraße 1', 'Am Hang 12', 'Gibtsnichtweg 9', 'Bahnhofstraße 3', 'Kirchweg 5'] as $nr => $strasse) {
+            $this->mitglied(101 + $nr, 'Muster' . $nr, $strasse);
+        }
+        $geo = new GeoAnschriftRepository($this->dienste->pdo());
+        $hash = static fn(string $strasse): string => new Anschrift($strasse, '12345', 'Musterstadt')->hash();
+        $this->koordinaten('Hauptstraße 1', GeoStatus::Gefunden, 50.0, 9.0);
+        $this->koordinaten('Am Hang 12', GeoStatus::Ungefaehr, 50.1, 9.1);
+        $this->koordinaten('Gibtsnichtweg 9', GeoStatus::NichtGefunden);
+        $geo->punktSetzen($hash('Bahnhofstraße 3'), 50.2, 9.2, new \DateTimeImmutable());
+        $geo->korrekturSetzen($hash('Kirchweg 5'), 'Kirchplatz 5', '12345', 'Musterstadt', new \DateTimeImmutable());
+        $geo->speichern($hash('Kirchweg 5'), GeoStatus::Gefunden, 50.3, 9.3, new \DateTimeImmutable());
+        $this->als(Rolle::Admin);
+
+        // Without the tick nothing happens.
+        $antwort = $this->post('/app/karte/neu-ermitteln');
+        self::assertWeiterleitungNach('/app/karte', $antwort);
+        self::assertSame(GeoStatus::Gefunden, $geo->eintrag($hash('Hauptstraße 1'))['status'] ?? null);
+        self::assertStringContainsString('Bitte bestätigen Sie die Rückfrage', $this->get('/app/karte')->body);
+
+        $antwort = $this->postImHintergrund('/app/karte/neu-ermitteln', ['sicher' => '1']);
+
+        self::assertSame(200, $antwort->status);
+        $stand = json_decode($antwort->body, true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame(1, $stand['von_hand']);
+        self::assertSame(4, $stand['offen']);
+        self::assertFalse($stand['fertig'], 'the script goes on with the chain');
+        self::assertSame([], $this->http->anfragen, 'forgetting asks nobody');
+        self::assertNull($geo->eintrag($hash('Hauptstraße 1')));
+        self::assertNull($geo->eintrag($hash('Am Hang 12')));
+        self::assertNull($geo->eintrag($hash('Gibtsnichtweg 9')));
+        self::assertSame(GeoStatus::VonHand, $geo->eintrag($hash('Bahnhofstraße 3'))['status'] ?? null);
+        $kirche = $geo->eintrag($hash('Kirchweg 5'));
+        self::assertNotNull($kirche, 'the row with the search address stays');
+        self::assertNull($kirche['status']);
+        self::assertSame('Kirchplatz 5', $kirche['korrektur']['strasse'] ?? null, 'the search address stays');
+
+        $audit = $this->dienste->pdo()->query("SELECT details FROM audit_log WHERE action = 'karte.neu_ermittelt'")->fetchColumn();
+        self::assertSame(['vergessen' => 4], json_decode((string) $audit, true));
+
+        // The chain then asks again - the search address with itself, the point by hand not at all.
+        $this->post('/app/karte/ermitteln');
+        self::assertCount(4, $this->http->anfragen);
+        self::assertSame(1, substr_count(implode(' ', $this->http->urls()), 'Kirchplatz'));
+        self::assertStringNotContainsString('Bahnhof', implode(' ', $this->http->urls()));
+        self::assertSame(GeoStatus::VonHand, $geo->eintrag($hash('Bahnhofstraße 3'))['status'] ?? null);
+    }
+
+    public function testRerunningAllWithoutScriptComesBackToThePage(): void
+    {
+        $this->mitglied(101, 'Musterfrau', 'Hauptstraße 1');
+        $this->koordinaten('Hauptstraße 1', GeoStatus::Gefunden, 50.0, 9.0);
+        $this->als(Rolle::Admin);
+
+        self::assertWeiterleitungNach('/app/karte', $this->post('/app/karte/neu-ermitteln', ['sicher' => '1']));
+        self::assertStringContainsString('Die bisherigen Ergebnisse sind vergessen.', $this->get('/app/karte')->body);
+        self::assertSame([], new GeoAnschriftRepository($this->dienste->pdo())->alle());
+    }
+
+    public function testTheBoardCannotRerunAll(): void
+    {
+        $this->mitglied(101, 'Musterfrau', 'Hauptstraße 1');
+        $this->koordinaten('Hauptstraße 1', GeoStatus::Gefunden, 50.0, 9.0);
+        $this->als(Rolle::Vorstand);
+
+        self::assertSame(403, $this->post('/app/karte/neu-ermitteln', ['sicher' => '1'])->status);
+        self::assertCount(1, new GeoAnschriftRepository($this->dienste->pdo())->alle());
+    }
+
+    public function testTheMapHintsAreInTheListAuffaelligkeitenAndOpenTheData(): void
+    {
+        $ungefaehr = $this->mitglied(101, 'Musterfrau', 'Am Hang 12');
+        $nicht = $this->mitglied(102, 'Mustermann', 'Gibtsnichtweg 9');
+        $this->mitglied(103, 'Beispiel', 'Hauptstraße 1');
+        $this->koordinaten('Am Hang 12', GeoStatus::Ungefaehr, 50.0329, 9.1424);
+        $this->koordinaten('Gibtsnichtweg 9', GeoStatus::NichtGefunden);
+        $this->koordinaten('Hauptstraße 1', GeoStatus::Gefunden, 50.03, 9.14);
+        $this->als(Rolle::Vorstand);
+
+        $html = $this->get('/app/listen/auffaelligkeiten', ['art' => 'karte-ungefaehr'])->body;
+        self::assertStringContainsString('Anschrift auf der Karte nur ungefähr gefunden', $html);
+        self::assertStringContainsString('mitglied=' . $ungefaehr . '&amp;reiter=daten', $html);
+        self::assertStringNotContainsString('mitglied=' . $nicht . '&amp;', $html);
+
+        $html = $this->get('/app/listen/auffaelligkeiten', ['art' => 'karte-nicht-gefunden'])->body;
+        self::assertStringContainsString('Die Anschrift wurde auf der Karte nicht gefunden.', $html);
+        self::assertStringContainsString('mitglied=' . $nicht . '&amp;reiter=daten', $html);
+        self::assertStringNotContainsString('mitglied=' . $ungefaehr . '&amp;', $html);
+        self::assertStringNotContainsString('Beispiel', $html);
+        self::assertSame([], $this->http->anfragen);
     }
 }

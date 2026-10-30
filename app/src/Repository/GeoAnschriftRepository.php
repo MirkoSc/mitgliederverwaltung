@@ -13,7 +13,12 @@ use App\Service\Karte\GeoStatus;
  * somebody gave by hand for the map (such_*, migration 193, issue #106).
  *
  * A row is "not asked yet" without a status: that only happens with a
- * search address that could not be asked right away.
+ * search address that could not be asked right away, or after "Alle neu
+ * ermitteln" (issue #108) for a row that keeps its search address.
+ *
+ * A point set by hand (status von_hand, issue #108) is never overwritten
+ * by an automatic result: speichern() leaves it alone, and only
+ * punktEntfernen() takes it away.
  *
  * Also the lock of the geocoding (GET_LOCK, like App\Repository\CronSperre):
  * the cron and the admin's step chain must not both send requests at the
@@ -83,19 +88,88 @@ final class GeoAnschriftRepository
         $this->pdo->prepare('DELETE FROM geo_anschrift WHERE anschrift_hash = ?')->execute([$hash]);
     }
 
+    /**
+     * Stores what the geocoder said - except over a point set by hand,
+     * which an automatic result never overwrites (issue #108; also when the
+     * point was set while the cron was asking).
+     */
     public function speichern(string $hash, GeoStatus $status, ?float $lat, ?float $lon, \DateTimeImmutable $zeitpunkt): void
     {
+        $this->zeileAnlegen($hash, $zeitpunkt);
         $stmt = $this->pdo->prepare(
-            'INSERT INTO geo_anschrift (anschrift_hash, status, lat, lon, geprueft_am) VALUES (?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE status = VALUES(status), lat = VALUES(lat), lon = VALUES(lon), geprueft_am = VALUES(geprueft_am)',
+            'UPDATE geo_anschrift SET status = ?, lat = ?, lon = ?, geprueft_am = ?
+             WHERE anschrift_hash = ? AND (status IS NULL OR status <> ?)',
         );
         $stmt->execute([
-            $hash,
             $status->value,
-            $lat === null ? null : number_format($lat, 6, '.', ''),
-            $lon === null ? null : number_format($lon, 6, '.', ''),
+            self::zahl($lat),
+            self::zahl($lon),
             $zeitpunkt->format('Y-m-d H:i:s'),
+            $hash,
+            GeoStatus::VonHand->value,
         ]);
+    }
+
+    /**
+     * A point set by hand (issue #108): replaces whatever the geocoder
+     * said and keeps a search address, should there be one.
+     */
+    public function punktSetzen(string $hash, float $lat, float $lon, \DateTimeImmutable $zeitpunkt): void
+    {
+        $this->zeileAnlegen($hash, $zeitpunkt);
+        $this->pdo->prepare('UPDATE geo_anschrift SET status = ?, lat = ?, lon = ?, geprueft_am = ? WHERE anschrift_hash = ?')
+            ->execute([GeoStatus::VonHand->value, self::zahl($lat), self::zahl($lon), $zeitpunkt->format('Y-m-d H:i:s'), $hash]);
+    }
+
+    /**
+     * Takes a point set by hand away: the address counts as not asked
+     * again (with its search address, if any). Nothing happens to a row
+     * that holds no point set by hand.
+     */
+    public function punktEntfernen(string $hash): void
+    {
+        $this->pdo->prepare('UPDATE geo_anschrift SET status = NULL, lat = NULL, lon = NULL WHERE anschrift_hash = ? AND status = ?')
+            ->execute([$hash, GeoStatus::VonHand->value]);
+        $this->pdo->prepare(
+            'DELETE FROM geo_anschrift WHERE anschrift_hash = ? AND status IS NULL'
+            . ' AND such_strasse IS NULL AND such_plz IS NULL AND such_ort IS NULL',
+        )->execute([$hash]);
+    }
+
+    /**
+     * "Alle neu ermitteln" (issue #108): forgets every automatic result -
+     * found, approximate, not found. Search addresses stay (the row is
+     * asked again with them), points set by hand stay as they are.
+     *
+     * @return int addresses forgotten
+     */
+    public function automatischeVergessen(): int
+    {
+        $werte = GeoStatus::automatischeWerte();
+        $platz = implode(',', array_fill(0, count($werte), '?'));
+        $mitSuche = $this->pdo->prepare(
+            'UPDATE geo_anschrift SET status = NULL, lat = NULL, lon = NULL WHERE status IN (' . $platz . ')'
+            . ' AND (such_strasse IS NOT NULL OR such_plz IS NOT NULL OR such_ort IS NOT NULL)',
+        );
+        $mitSuche->execute($werte);
+        $ohneSuche = $this->pdo->prepare('DELETE FROM geo_anschrift WHERE status IN (' . $platz . ')');
+        $ohneSuche->execute($werte);
+
+        return $mitSuche->rowCount() + $ohneSuche->rowCount();
+    }
+
+    /** An empty row ("not asked yet") unless there is one already. */
+    private function zeileAnlegen(string $hash, \DateTimeImmutable $zeitpunkt): void
+    {
+        $this->pdo->prepare(
+            'INSERT INTO geo_anschrift (anschrift_hash, status, lat, lon, geprueft_am) VALUES (?, NULL, NULL, NULL, ?)
+             ON DUPLICATE KEY UPDATE anschrift_hash = anschrift_hash',
+        )->execute([$hash, $zeitpunkt->format('Y-m-d H:i:s')]);
+    }
+
+    private static function zahl(?float $wert): ?string
+    {
+        return $wert === null ? null : number_format($wert, 6, '.', '');
     }
 
     /**

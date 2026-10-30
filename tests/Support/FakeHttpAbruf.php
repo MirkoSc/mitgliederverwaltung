@@ -40,10 +40,57 @@ final class FakeHttpAbruf implements HttpAbruf
         return array_column($this->anfragen, 'url');
     }
 
-    /** A geocoder answer with one hit. */
-    public static function treffer(float $lat, float $lon): HttpAntwort
+    /**
+     * A geocoder answer with one hit at postcode $plz in $ort (issue #108:
+     * only a hit with the right postcode counts). Without a postcode the
+     * hit carries none - it never fits an address with a postcode.
+     */
+    public static function treffer(float $lat, float $lon, string $plz = '', string $ort = ''): HttpAntwort
     {
-        return new HttpAntwort(200, (string) json_encode([['lat' => (string) $lat, 'lon' => (string) $lon, 'display_name' => 'x']]), 'application/json');
+        return self::antwort([self::hit($lat, $lon, $plz, $ort)]);
+    }
+
+    /**
+     * A hit exactly where the request asked: postcode and town of the
+     * query echoed back - for tests about something else than the check.
+     */
+    public static function trefferFuer(string $url, float $lat, float $lon): HttpAntwort
+    {
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $abfrage);
+
+        return self::treffer($lat, $lon, is_string($abfrage['postalcode'] ?? null) ? $abfrage['postalcode'] : '', is_string($abfrage['city'] ?? null) ? $abfrage['city'] : '');
+    }
+
+    /**
+     * One hit as Nominatim gives it with addressdetails=1.
+     *
+     * @return array<string, mixed>
+     */
+    public static function hit(float $lat, float $lon, string $plz = '', string $ort = '', string $ortArt = 'village'): array
+    {
+        $adresse = ['country' => 'Deutschland', 'country_code' => 'de'];
+        if ($plz !== '') {
+            $adresse['postcode'] = $plz;
+        }
+        if ($ort !== '') {
+            $adresse[$ortArt] = $ort;
+        }
+
+        return ['lat' => (string) $lat, 'lon' => (string) $lon, 'display_name' => 'x', 'address' => $adresse];
+    }
+
+    /** @param list<array<string, mixed>> $hits */
+    public static function antwort(array $hits): HttpAntwort
+    {
+        return new HttpAntwort(200, (string) json_encode($hits), 'application/json');
+    }
+
+    /** Whether the request asked for a street (the first query, not the one for the place alone). */
+    public static function mitStrasse(string $url): bool
+    {
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $abfrage);
+
+        return isset($abfrage['street']);
     }
 
     /** A geocoder answer without a hit. */

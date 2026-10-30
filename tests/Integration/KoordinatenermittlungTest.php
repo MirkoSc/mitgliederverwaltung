@@ -45,7 +45,7 @@ final class KoordinatenermittlungTest extends DatabaseTestCase
         $this->mitglieder = new MitgliedRepository($this->pdo());
         $this->takt = new FakeTakt();
         $this->jetzt = new \DateTimeImmutable('2026-10-30 12:00:00');
-        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::treffer(48.0, 11.0);
+        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::trefferFuer($url, 48.0, 11.0);
         $takt = $this->takt;
         // Every request takes a quarter of a second on the fake clock.
         $this->http = new FakeHttpAbruf(function (string $url) use ($takt): HttpAntwort {
@@ -121,10 +121,10 @@ final class KoordinatenermittlungTest extends DatabaseTestCase
 
         $zeiten = [];
         $takt = $this->takt;
-        $this->antwort = static function () use ($takt, &$zeiten): HttpAntwort {
+        $this->antwort = static function (string $url) use ($takt, &$zeiten): HttpAntwort {
             $zeiten[] = $takt->jetzt();
 
-            return FakeHttpAbruf::treffer(48.0, 11.0);
+            return FakeHttpAbruf::trefferFuer($url, 48.0, 11.0);
         };
 
         $this->ermittlung()->ermitteln($this->jetzt, 2, 12.0);
@@ -169,8 +169,10 @@ final class KoordinatenermittlungTest extends DatabaseTestCase
         self::assertSame(0, $stand->offen());
         self::assertSame('0 von 1 Anschrift gefunden', $stand->text());
 
+        // Two requests: the street, then the place alone (issue #108).
+        self::assertCount(2, $this->http->anfragen);
         $this->ermittlung()->ermitteln($this->jetzt->modify('+30 days'), 10, 12.0);
-        self::assertCount(1, $this->http->anfragen);
+        self::assertCount(2, $this->http->anfragen);
     }
 
     public function testAChangedAddressIsLookedUpAgainAndTheOldOneLeaves(): void
@@ -219,8 +221,8 @@ final class KoordinatenermittlungTest extends DatabaseTestCase
         self::assertSame([], new GeoAnschriftRepository($this->pdo())->alle());
 
         // During the pause nobody is asked ...
-        $this->antwort = static fn(): HttpAntwort => FakeHttpAbruf::treffer(48.0, 11.0);
-        $this->ermittlung()->ermitteln($this->jetzt->modify('+10 minutes'), 10, 12.0);
+        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::trefferFuer($url, 48.0, 11.0);
+        $this->ermittlung()->ermitteln($this->jetzt->modify('+1 minute'), 10, 12.0);
         self::assertCount(1, $this->http->anfragen);
 
         // ... afterwards it goes on.

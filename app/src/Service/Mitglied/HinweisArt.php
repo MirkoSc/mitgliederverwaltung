@@ -29,6 +29,21 @@ enum HinweisArt: string
     case BeitragsfreiOhneGrund = 'beitragsfrei-ohne-grund';
     case EintrittsdatumUnbekannt = 'eintrittsdatum-unbekannt';
     case BlsvAngabenFehlen = 'blsv-angaben-fehlen';
+    case KarteNichtGefunden = 'karte-nicht-gefunden';
+    case KarteUngefaehr = 'karte-ungefaehr';
+
+    /**
+     * The tab of the member where the hint is dealt with - the list
+     * "Auffälligkeiten" opens the member there (issue #108); null: the
+     * member's first tab.
+     */
+    public function reiter(): ?string
+    {
+        return match ($this) {
+            self::KarteNichtGefunden, self::KarteUngefaehr => 'daten',
+            default => null,
+        };
+    }
 
     /** Short name for filters and the list "Auffälligkeiten". */
     public function bezeichnung(): string
@@ -50,6 +65,8 @@ enum HinweisArt: string
             self::BeitragsfreiOhneGrund => 'Beitragsfrei ohne Grund',
             self::EintrittsdatumUnbekannt => 'Eintrittsdatum unbekannt',
             self::BlsvAngabenFehlen => 'Pflichtangaben für BLSV fehlen',
+            self::KarteNichtGefunden => 'Anschrift auf der Karte nicht gefunden',
+            self::KarteUngefaehr => 'Anschrift auf der Karte nur ungefähr gefunden',
         };
     }
 }

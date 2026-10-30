@@ -50,7 +50,7 @@ final class WohnortTest extends AppTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::treffer(48.137154, 11.576124);
+        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::trefferFuer($url, 48.137154, 11.576124);
         $this->http = new FakeHttpAbruf(fn(string $url): HttpAntwort => ($this->antwort)($url));
         $http = $this->http;
         $this->dienste->dienst(HttpAbruf::class, static fn(): HttpAbruf => $http);
@@ -132,7 +132,12 @@ final class WohnortTest extends AppTestCase
         $html = $this->daten($id);
 
         self::assertStringContainsString('Die Anschrift wurde auf der Karte nicht gefunden.', $html);
-        self::assertStringNotContainsString('data-wohnort-karte', $html);
+        // The small map without a dot, to set one by hand (issue #108): no
+        // other dot in the club, so it opens on Germany.
+        self::assertStringContainsString('data-wohnort-karte', $html);
+        self::assertStringNotContainsString('data-lat=', $html);
+        self::assertStringContainsString('data-mitte-lat="51.163400" data-mitte-lon="10.447700" data-mitte-zoom="6"', $html);
+        self::assertStringContainsString('data-setzen="#wohnort-punkt"', $html);
         self::assertStringContainsString('<details class="wohnort-korrektur" open>', $html);
         self::assertStringContainsString('name="such_strasse" value="Gibtsnichtweg 9"', $html);
         self::assertStringContainsString('name="such_plz" value="12345"', $html);
@@ -165,7 +170,7 @@ final class WohnortTest extends AppTestCase
         $id = $this->mitglied(101, 'Gibtsnichtweg 9');
         $this->geoStatus('Gibtsnichtweg 9', GeoStatus::NichtGefunden);
         $this->antwort = static fn(string $url): HttpAntwort => str_contains($url, 'Am%20Markt')
-            ? FakeHttpAbruf::treffer(49.5, 9.25)
+            ? FakeHttpAbruf::trefferFuer($url, 49.5, 9.25)
             : FakeHttpAbruf::keinTreffer();
         $this->als(Rolle::Vorstand);
         $zurueck = '/app/listen/geburtstage?zeitraum=jahr';
@@ -302,5 +307,146 @@ final class WohnortTest extends AppTestCase
         $antwort = $this->post("/app/mitglieder/$ohne/wohnort", ['aktion' => 'suchen']);
         self::assertSame(302, $antwort->status);
         self::assertSame([], $this->http->anfragen);
+    }
+
+    private function eintrag(string $strasse): ?array
+    {
+        return new GeoAnschriftRepository($this->dienste->pdo())->eintrag(new Anschrift($strasse, '12345', 'Musterstadt - OAB')->hash());
+    }
+
+    public function testAPointSetByHandIsSavedShownAndAuditedWithoutCoordinates(): void
+    {
+        $id = $this->mitglied(101, 'Am Hang 12');
+        $this->geoStatus('Am Hang 12', GeoStatus::NichtGefunden);
+        $this->als(Rolle::Vorstand);
+
+        $antwort = $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-setzen', 'breite' => '50,0329', 'laenge' => '9.1424']);
+
+        self::assertSame(302, $antwort->status);
+        self::assertSame([], $this->http->anfragen, 'setting a point asks nobody');
+        $eintrag = $this->eintrag('Am Hang 12');
+        self::assertSame(GeoStatus::VonHand, $eintrag['status'] ?? null);
+        self::assertEqualsWithDelta(50.0329, $eintrag['lat'] ?? null, 0.000001);
+        self::assertEqualsWithDelta(9.1424, $eintrag['lon'] ?? null, 0.000001);
+
+        $html = $this->daten($id);
+        self::assertStringContainsString('Der Punkt ist gespeichert.', $html);
+        self::assertStringContainsString('<span class="etikett etikett-info">von Hand</span>', $html);
+        self::assertStringContainsString('data-lat="50.032900" data-lon="9.142400"', $html);
+        self::assertStringContainsString('data-genauigkeit="von_hand"', $html);
+        self::assertStringContainsString('name="breite" value="50.032900"', $html);
+        self::assertStringContainsString('>Punkt von Hand entfernen</button>', $html);
+        self::assertStringNotContainsString('Anders suchen', $html, 'no search while a point is set by hand');
+        self::assertStringNotContainsString('Mit einer anderen Anschrift suchen', $html);
+
+        $zeile = $this->dienste->pdo()->query("SELECT entity, entity_id, details FROM audit_log WHERE action = 'mitglied.karten_punkt_geaendert'")->fetch(\PDO::FETCH_ASSOC);
+        self::assertIsArray($zeile);
+        self::assertSame(['mitglied', (string) $id], [$zeile['entity'], (string) $zeile['entity_id']]);
+        self::assertSame(['punkt' => 'gesetzt'], json_decode((string) $zeile['details'], true));
+        foreach (['50', '9.14', 'Hang', '12345', 'Musterstadt'] as $teil) {
+            self::assertStringNotContainsString($teil, (string) $zeile['details'], 'no address or coordinates in the audit log');
+        }
+    }
+
+    public function testThePointCanBeMovedAndRemoved(): void
+    {
+        $id = $this->mitglied(101, 'Hauptstraße 1');
+        $this->als(Rolle::Admin);
+        $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-setzen', 'breite' => '48.1', 'laenge' => '11.5']);
+
+        $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-setzen', 'breite' => '48.2', 'laenge' => '11.6']);
+        self::assertEqualsWithDelta(48.2, $this->eintrag('Hauptstraße 1')['lat'] ?? null, 0.000001);
+
+        // A search is refused while the point stands - nothing changes.
+        $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'suchen']);
+        self::assertSame([], $this->http->anfragen);
+        self::assertStringContainsString('Entfernen Sie zuerst den Punkt von Hand', $this->daten($id));
+        self::assertSame(GeoStatus::VonHand, $this->eintrag('Hauptstraße 1')['status'] ?? null);
+
+        $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-entfernen']);
+
+        self::assertCount(1, $this->http->anfragen, 'removing goes back to the automatic search');
+        self::assertSame(GeoStatus::Gefunden, $this->eintrag('Hauptstraße 1')['status'] ?? null);
+        self::assertStringContainsString('Der Punkt von Hand ist entfernt. Die Anschrift wurde auf der Karte gefunden.', $this->daten($id));
+        self::assertSame(3, (int) $this->dienste->pdo()->query("SELECT COUNT(*) FROM audit_log WHERE action = 'mitglied.karten_punkt_geaendert'")->fetchColumn());
+
+        // Without a point by hand there is nothing to remove: no search, no audit.
+        $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-entfernen']);
+        self::assertCount(1, $this->http->anfragen);
+        self::assertStringContainsString('kein Punkt von Hand gesetzt', $this->daten($id));
+        self::assertSame(3, (int) $this->dienste->pdo()->query("SELECT COUNT(*) FROM audit_log WHERE action = 'mitglied.karten_punkt_geaendert'")->fetchColumn());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function ungueltigePunkte(): iterable
+    {
+        yield 'latitude too big' => ['90.5', '9'];
+        yield 'longitude too small' => ['50', '-180.01'];
+        yield 'empty' => ['', ''];
+        yield 'text' => ['fünfzig', '9'];
+        yield 'two commas' => ['50,1,2', '9'];
+        yield 'exponent' => ['5e1', '9'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('ungueltigePunkte')]
+    public function testInvalidCoordinatesAreRefused(string $breite, string $laenge): void
+    {
+        $id = $this->mitglied(101, 'Hauptstraße 1');
+        $this->als(Rolle::Vorstand);
+
+        $antwort = $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-setzen', 'breite' => $breite, 'laenge' => $laenge]);
+
+        self::assertSame(302, $antwort->status);
+        self::assertNull($this->eintrag('Hauptstraße 1'));
+        self::assertStringContainsString('Bitte geben Sie Breite (−90 bis 90) und Länge (−180 bis 180) als Zahlen an', $this->daten($id));
+        self::assertSame(0, (int) $this->dienste->pdo()->query("SELECT COUNT(*) FROM audit_log WHERE action = 'mitglied.karten_punkt_geaendert'")->fetchColumn());
+    }
+
+    public function testReadOnlyMayNotSetOrRemoveAPoint(): void
+    {
+        $id = $this->mitglied(101, 'Hauptstraße 1');
+        $this->geoStatus('Hauptstraße 1', GeoStatus::Ungefaehr, 48.1, 11.5);
+        $this->als(Rolle::Lesend);
+
+        $html = $this->daten($id);
+        self::assertStringContainsString('<span class="etikett etikett-warnung">ungefähr</span>', $html);
+        self::assertStringNotContainsString('<summary>Punkt von Hand setzen</summary>', $html);
+        self::assertStringNotContainsString('name="breite"', $html);
+        self::assertStringNotContainsString('data-setzen', $html);
+
+        self::assertSame(403, $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-setzen', 'breite' => '48.2', 'laenge' => '11.6'])->status);
+        self::assertSame(403, $this->post("/app/mitglieder/$id/wohnort", ['aktion' => 'punkt-entfernen'])->status);
+        self::assertSame(GeoStatus::Ungefaehr, $this->eintrag('Hauptstraße 1')['status'] ?? null);
+    }
+
+    public function testApproximateShowsItsLabelAndTheHintLinksToTheData(): void
+    {
+        $id = $this->mitglied(101, 'Am Hang 12');
+        $this->geoStatus('Am Hang 12', GeoStatus::Ungefaehr, 50.0329, 9.1424);
+        $this->als(Rolle::Vorstand);
+
+        $html = $this->daten($id);
+        self::assertStringContainsString('<span class="etikett etikett-warnung">ungefähr</span> Die Straße wurde nicht gefunden, nur PLZ und Ort.', $html);
+        self::assertStringContainsString('data-genauigkeit="ungefaehr"', $html);
+        self::assertStringContainsString('Die Anschrift wurde auf der Karte nur ungefähr gefunden', $html, 'the hint at the top');
+        self::assertStringNotContainsString('Zu „Wohnort auf der Karte“ im Reiter „Daten“', $html, 'already on the tab');
+
+        $andererReiter = $this->get('/app/mitglieder', ['mitglied' => (string) $id, 'reiter' => 'verlauf'])->body;
+        self::assertStringContainsString('Zu „Wohnort auf der Karte“ im Reiter „Daten“', $andererReiter);
+    }
+
+    public function testWithoutADotTheSmallMapOpensWhereOtherMembersOfThePostcodeLive(): void
+    {
+        $this->mitglied(101, 'Hauptstraße 1');
+        $this->mitglied(102, 'Bahnhofstraße 3');
+        $id = $this->mitglied(103, 'Am Hang 12');
+        $this->geoStatus('Hauptstraße 1', GeoStatus::Gefunden, 50.0, 9.0);
+        $this->geoStatus('Bahnhofstraße 3', GeoStatus::VonHand, 50.2, 9.2);
+        $this->als(Rolle::Vorstand);
+
+        self::assertStringContainsString('data-mitte-lat="50.100000" data-mitte-lon="9.100000" data-mitte-zoom="14"', $this->daten($id));
+        self::assertSame([], $this->http->anfragen, 'no external request for the middle');
     }
 }
