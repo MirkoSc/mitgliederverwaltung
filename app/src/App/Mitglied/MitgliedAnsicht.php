@@ -40,7 +40,9 @@ final readonly class MitgliedAnsicht
         $daten = [...$r->query, ...$r->post];
         $reiter = is_string($daten['reiter'] ?? null) ? $daten['reiter'] : '';
 
-        return $this->zeigen(self::id($daten['mitglied'] ?? null), $reiter, self::fokus($r, $daten), $einbettung);
+        $fokus = self::fokus($r, $daten, $this->dienste->session->hatFlash());
+
+        return $this->zeigen(self::id($daten['mitglied'] ?? null), $reiter, $fokus, $einbettung);
     }
 
     /**
@@ -99,19 +101,21 @@ final readonly class MitgliedAnsicht
 
     /**
      * Where the focus goes: a whole page that shows a member (opened by a
-     * link without script, or after a save) puts it on the member's
-     * heading; an htmx answer only where its link asked for it (Einbettung::
-     * link()), so sorting the list beside it does not move the focus.
+     * link without script) puts it on the member's heading - unless a
+     * message waits at the top of the page (after a save): that stays in
+     * view, the focus at the start. An htmx answer moves it only where its
+     * link asked for it (Einbettung::link()), so sorting the list beside it
+     * does not move the focus.
      *
      * @param array<array-key, mixed> $daten
      */
-    private static function fokus(Request $r, array $daten): ?string
+    private static function fokus(Request $r, array $daten, bool $meldungWartet): ?string
     {
         if ($r->header('hx-history-restore-request') === 'true') {
             return null;
         }
         if (!$r->istHtmx()) {
-            return 'mitglied';
+            return $meldungWartet ? null : 'mitglied';
         }
         $fokus = $daten['fokus'] ?? null;
 

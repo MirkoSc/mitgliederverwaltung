@@ -42,8 +42,8 @@ liegt auf **einer** Seite und wird dort umgeschaltet statt verlinkt.
      Ehemalige anzeigen) und „Je Seite" (50, 100, 200, Alle).
    - Klick auf ein Mitglied öffnet es **auf derselben Seite** (am PC
      rechts neben der Liste, am Handy als eigene Ansicht mit „Zurück").
-     Das geöffnete Mitglied ist ein Baustein, den auch andere Seiten
-     (Listen, Familien) so einbetten (§5).
+     Das geöffnete Mitglied ist ein Baustein, den andere Seiten (Listen,
+     Familien) genauso einbetten können (§5).
      Ohne geöffnetes Mitglied hat die Liste am PC die ganze Breite; am PC
      schließen „Schließen" im Kopf des Mitglieds oder ein zweiter Klick
      auf seinen Namen in der Liste es wieder.
@@ -136,10 +136,12 @@ Zeit (Leerlauf, Warnung) und Rückfragen setzt #10 um.
 
 Ein geöffnetes Mitglied (Kopf mit Name, Nummer, Status und „Schließen",
 Hinweise, Reiter) ist **ein** Baustein: `App\App\Mitglied\MitgliedAnsicht`
-mit dem Template `app/views/mitglied/ansicht.php`. Jede Seite mit einer
+mit dem Template `app/views/mitglied/ansicht.php`. Eine Seite mit einer
 Personenliste bettet ihn rechts neben ihrer Liste ein (Muster „Liste neben
-Mitglied", `geteilt`); die Mitglieder-Seite ist eine davon. Nichts im
-Mitglied führt auf eine andere Seite.
+Mitglied", `geteilt`). Heute tut das die Mitglieder-Seite; Familien (#92)
+und Listen (#93) folgen auf demselben Weg. Was im Mitglied auf eine eigene
+Seite führt (Familie wählen, Löschen-Rückfrage, ein Jahresbeitrag), führt
+von dort auf die einbettende Seite zurück, nie auf die Mitglieder-Seite.
 
 **Einbetten** – drei Schritte im Controller, einer im Template:
 
@@ -185,7 +187,8 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
   `$einbettung`, `$mitgliedId` und `$offenerReiter`; wer einen neuen
   schreibt, baut Links und Formulare damit statt mit festen Adressen.
 - **Fokus:** Öffnet ein Link das Mitglied (`link(…, 'mitglied')`) oder
-  lädt die ganze Seite mit Mitglied (auch nach dem Speichern), bekommt
+  lädt die ganze Seite mit Mitglied ohne Meldung oben (nach dem Speichern
+  bleibt die Meldung im Blick, der Fokus am Seitenanfang), bekommt
   seine Überschrift den Fokus (`autofocus` an `h2 tabindex="-1"`, htmx
   fokussiert nach dem Tausch); ein Reiterwechsel (`'reiter'`) fokussiert
   den gewählten Reiter; andere Links (Sortieren) lassen den Fokus, wo er

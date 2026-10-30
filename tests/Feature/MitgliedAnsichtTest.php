@@ -274,6 +274,35 @@ final class MitgliedAnsichtTest extends AppTestCase
         self::assertStringNotContainsString('autofocus', $this->aufrufen($htmx([]))->body);
     }
 
+    public function testAfterASaveTheMessageKeepsTheFocusAtTheTop(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $id = (int) $this->mitglied()->id;
+        $this->dienste->session->flash('Mitglied gespeichert.');
+
+        $seite = $this->get('/app/mitglieder', ['mitglied' => (string) $id])->body;
+
+        self::assertStringContainsString('Mitglied gespeichert.', $seite);
+        self::assertStringContainsString('<h2 id="mitglied-titel" tabindex="-1">', $seite);
+    }
+
+    public function testANewMemberFromAFilteredListReturnsToIt(): void
+    {
+        $this->als(Rolle::Vorstand);
+
+        $liste = $this->get('/app/mitglieder', ['status' => 'aktiv'])->body;
+        preg_match('#href="(/app/mitglieder/neu[^"]*)">Neues Mitglied#', $liste, $treffer);
+        self::assertNotEmpty($treffer);
+        self::assertStringContainsString('zurueck=', $treffer[1]);
+
+        $formular = $this->get('/app/mitglieder/neu', ['zurueck' => '/app/mitglieder?status=aktiv'])->body;
+        self::assertStringContainsString('<input type="hidden" name="zurueck" value="/app/mitglieder?status=aktiv">', $formular);
+
+        $antwort = $this->post('/app/mitglieder/neu', ['mitgliedsnummer' => '77', 'nachname' => 'Neumann', 'zurueck' => '/app/mitglieder?status=aktiv']);
+        self::assertSame(302, $antwort->status);
+        self::assertMatchesRegularExpression('#^/app/mitglieder\?status=aktiv&mitglied=\d+$#', $antwort->headers['Location'] ?? '');
+    }
+
     public function testAnUnknownMemberIsNoError(): void
     {
         $this->konto = $this->als(Rolle::Vorstand);

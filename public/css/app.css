@@ -1400,15 +1400,17 @@ textarea:disabled {
         grid-template-columns: minmax(22rem, 2fr) minmax(0, 3fr);
     }
 
-    :root:not(.modus-barrierefrei) .geteilt-mit-detail .geteilt-liste {
+    /* Also in the Barrierefrei-Modus: the list stays (the record follows
+       below it, see there), "Schließen" closes the record. */
+    .geteilt-mit-detail .geteilt-liste {
         display: block;
     }
 
-    :root:not(.modus-barrierefrei) .geteilt .zurueck {
+    .geteilt .zurueck {
         display: none;
     }
 
-    :root:not(.modus-barrierefrei) .detail-schliessen {
+    .detail-schliessen {
         display: inline-flex;
         margin-left: auto;
     }
@@ -1430,22 +1432,9 @@ textarea:disabled {
     }
 }
 
-/* Barrierefrei-Modus on the PC: one column, the list stays, the opened
-   record follows below it behind a strong rule; "Schließen" closes it. */
+/* Barrierefrei-Modus on the PC: one column, the opened record follows
+   below the list behind a strong rule. */
 @media (min-width: 64rem) {
-    :root.modus-barrierefrei .geteilt-mit-detail .geteilt-liste {
-        display: block;
-    }
-
-    :root.modus-barrierefrei .geteilt .zurueck {
-        display: none;
-    }
-
-    :root.modus-barrierefrei .detail-schliessen {
-        display: inline-flex;
-        margin-left: auto;
-    }
-
     :root.modus-barrierefrei .geteilt-mit-detail .geteilt-detail {
         padding-top: var(--abstand-5);
         border-top: 4px solid var(--farbe-text);
