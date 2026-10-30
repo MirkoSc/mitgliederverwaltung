@@ -79,7 +79,7 @@ final class VereinTest extends AppTestCase
     public function testTheAdminSeesTheSectionVorstandDoesNot(): void
     {
         $this->als(Rolle::Admin);
-        self::assertStringContainsString('<h2 id="titel-verein">Verein</h2>', $this->get('/admin')->body);
+        self::assertStringContainsString('<h2 id="titel-verein" tabindex="-1">Verein</h2>', $this->get('/admin')->body);
 
         $this->als(Rolle::Vorstand);
         self::assertSame(403, $this->get('/admin')->status);

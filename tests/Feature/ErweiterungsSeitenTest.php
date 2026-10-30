@@ -81,7 +81,7 @@ final class ErweiterungsSeitenTest extends AppTestCase
         $seite = $this->get('/admin')->body;
 
         self::assertStringContainsString('<section class="abschnitt" id="testlauf-' . $kennung . '" aria-labelledby="titel-testlauf-' . $kennung . '">', $seite);
-        self::assertStringContainsString('<h2 id="titel-testlauf-' . $kennung . '">Testlauf-Abschnitt</h2>', $seite);
+        self::assertStringContainsString('<h2 id="titel-testlauf-' . $kennung . '" tabindex="-1">Testlauf-Abschnitt</h2>', $seite);
         self::assertStringContainsString('Inhalt aus dem Abschnitt.', $seite);
     }
 

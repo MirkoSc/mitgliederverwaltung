@@ -1,0 +1,103 @@
+/* Table of contents of the settings page (and any long page with sections).
+   Phone: a bar that sticks to the top and swipes sideways. PC: a column on
+   the left that sticks while the sections scroll. Plain anchors; the script
+   only sets aria-current and moves the focus. */
+.verzeichnis {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: 0 calc(-1 * var(--abstand-4)) var(--abstand-4);
+    padding: 0 var(--abstand-4);
+    overflow-x: auto;
+    background: var(--farbe-grund);
+    border-bottom: 1px solid var(--farbe-rand);
+}
+
+.verzeichnis ul {
+    display: flex;
+    gap: var(--abstand-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.verzeichnis a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-3);
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+}
+
+.verzeichnis a[aria-current="true"] {
+    border-bottom-color: var(--farbe-fokus);
+    font-weight: 650;
+}
+
+.verzeichnis a:focus-visible {
+    outline: var(--fokus-breite) solid var(--farbe-fokus);
+    outline-offset: -2px;
+}
+
+.muster .verzeichnis {
+    position: static;
+}
+
+.verzeichnis-inhalt h2:focus {
+    outline: none;
+}
+
+.verzeichnis-inhalt h2:focus-visible {
+    outline: var(--fokus-breite) solid var(--farbe-fokus);
+    outline-offset: 2px;
+}
+
+.mit-verzeichnis .abschnitt {
+    scroll-margin-top: calc(var(--tippflaeche) + var(--abstand-3));
+}
+
+@media (min-width: 64rem) {
+    .mit-verzeichnis {
+        display: grid;
+        grid-template-columns: 14rem minmax(0, 1fr);
+        gap: var(--abstand-5);
+        align-items: start;
+    }
+
+    .verzeichnis {
+        top: var(--abstand-4);
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        background: none;
+        border-bottom: 0;
+    }
+
+    .verzeichnis ul {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .verzeichnis a {
+        border-bottom: 0;
+        border-left: 3px solid transparent;
+    }
+
+    .verzeichnis a[aria-current="true"] {
+        border-left-color: var(--farbe-fokus);
+    }
+
+    .mit-verzeichnis .abschnitt {
+        scroll-margin-top: var(--abstand-4);
+    }
+}
+
+.modus-barrierefrei .verzeichnis a {
+    min-height: var(--tippflaeche);
+    font-size: 1.125em;
+}
+
+.modus-barrierefrei .verzeichnis a[aria-current="true"] {
+    background: var(--farbe-markierung, transparent);
+}

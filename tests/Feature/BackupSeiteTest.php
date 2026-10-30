@@ -60,7 +60,7 @@ final class BackupSeiteTest extends AppTestCase
 
         $seite = $this->get('/admin')->body;
 
-        self::assertStringContainsString('<h2 id="titel-backups">Backups</h2>', $seite);
+        self::assertStringContainsString('<h2 id="titel-backups" tabindex="-1">Backups</h2>', $seite);
         self::assertStringContainsString('id="backup-erstellen"', $seite);
         self::assertStringContainsString('<script src="/js/backups.js?v=0.0.0-test" defer></script>', $seite);
         self::assertStringContainsString('Noch kein Backup vorhanden', $seite);
