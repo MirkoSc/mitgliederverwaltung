@@ -40,12 +40,17 @@ final readonly class Einbettung
      * @param array<string, string> $parameter the page's own state, without mitglied and reiter
      * @param string|null $ziel id of the element htmx swaps (outerHTML), null = ordinary links
      * @param string|null $formular selector of a form htmx posts along, null = htmx gets
+     * @param string|null $zurueckText the way back as a link of its own, also on the PC,
+     *                                 in place of "Schließen" (the families: "Zurück zur
+     *                                 Familie"); null = "Zurück zur Liste" on a phone,
+     *                                 "Schließen" on the PC
      */
     public function __construct(
         public string $pfad,
         public array $parameter = [],
         public ?string $ziel = null,
         public ?string $formular = null,
+        public ?string $zurueckText = null,
     ) {
         if (!self::istPfad($pfad)) {
             throw new \InvalidArgumentException('Not an address of this application: ' . $pfad);
@@ -109,7 +114,18 @@ final readonly class Einbettung
     /** The same page, its links swapping the element $ziel by htmx. */
     public function mitHtmx(string $ziel, ?string $formular = null): self
     {
-        return new self($this->pfad, $this->parameter, $ziel, $formular);
+        return new self($this->pfad, $this->parameter, $ziel, $formular, $this->zurueckText);
+    }
+
+    /**
+     * The same page, the member led back from by a link of its own with
+     * this text (on the PC too) - for a page where the member stands in
+     * place of something else, not beside the list (the families: the
+     * member replaces the family).
+     */
+    public function mitZurueck(string $text): self
+    {
+        return new self($this->pfad, $this->parameter, $this->ziel, $this->formular, $text);
     }
 
     /**

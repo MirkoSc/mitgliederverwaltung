@@ -1,0 +1,12 @@
+# app/routes/familien.php - the families page (issue #92): every role that
+# sees members sees it; changes are mitglieder.bearbeiten (07 section 9).
+GET /app/familien -> mitglieder.sehen
+POST /app/familien -> mitglieder.sehen
+POST /app/familien/neu -> mitglieder.bearbeiten
+POST /app/familien/{id:[0-9]+}/umbenennen -> mitglieder.bearbeiten
+POST /app/familien/{id:[0-9]+}/loeschen -> mitglieder.bearbeiten
+POST /app/familien/{id:[0-9]+}/hinzufuegen -> mitglieder.bearbeiten
+POST /app/familien/{id:[0-9]+}/rolle -> mitglieder.bearbeiten
+POST /app/familien/{id:[0-9]+}/zahler -> mitglieder.bearbeiten
+POST /app/familien/{id:[0-9]+}/entfernen -> mitglieder.bearbeiten
+POST /app/familien/{id:[0-9]+}/anschrift -> mitglieder.bearbeiten

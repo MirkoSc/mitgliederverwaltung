@@ -28,20 +28,20 @@ final class NavigationTest extends TestCase
 
     public function testTheMainAreasAndNoMore(): void
     {
-        self::assertSame(['Mitglieder', 'Listen', 'Karte', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt()));
+        self::assertSame(['Mitglieder', 'Familien', 'Listen', 'Karte', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt()));
     }
 
     /** "* nur Admin" in 06 section 2. */
     public function testTheBoardSeesNeitherFeesNorSettings(): void
     {
-        self::assertSame(['Mitglieder', 'Listen', 'Karte'], self::labels(Navigation::haupt(), new Konto(1, 'V', Rolle::Vorstand)));
-        self::assertSame(['Mitglieder', 'Listen', 'Karte', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt(), new Konto(1, 'A', Rolle::Admin)));
+        self::assertSame(['Mitglieder', 'Familien', 'Listen', 'Karte'], self::labels(Navigation::haupt(), new Konto(1, 'V', Rolle::Vorstand)));
+        self::assertSame(['Mitglieder', 'Familien', 'Listen', 'Karte', 'Beiträge', 'Einstellungen'], self::labels(Navigation::haupt(), new Konto(1, 'A', Rolle::Admin)));
     }
 
     /** Issue #87: "Nur lesen" has neither the page "Beiträge" nor the admin area. */
     public function testReadOnlySeesNeitherFeesPageNorSettings(): void
     {
-        self::assertSame(['Mitglieder', 'Listen', 'Karte'], self::labels(Navigation::haupt(), new Konto(1, 'L', Rolle::Lesend)));
+        self::assertSame(['Mitglieder', 'Familien', 'Listen', 'Karte'], self::labels(Navigation::haupt(), new Konto(1, 'L', Rolle::Lesend)));
         self::assertSame('/app/mitglieder', Navigation::startseiteFuer(new Konto(1, 'L', Rolle::Lesend)));
     }
 
