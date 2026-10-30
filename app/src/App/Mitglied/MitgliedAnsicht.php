@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\App\Mitglied;
 
 use App\Dienste;
-use App\Domain\Mitglied;
 use App\Http\Request;
 use App\Repository\MitgliedRepository;
 
