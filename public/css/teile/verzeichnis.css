@@ -5,7 +5,7 @@
 .verzeichnis {
     position: sticky;
     top: 0;
-    z-index: 5;
+    z-index: 4;
     margin: 0 calc(-1 * var(--abstand-4)) var(--abstand-4);
     padding: 0 var(--abstand-4);
     overflow-x: auto;
@@ -72,6 +72,8 @@
         overflow: visible;
         background: none;
         border-bottom: 0;
+        max-height: calc(100vh - 2 * var(--abstand-4));
+        overflow-y: auto;
     }
 
     .verzeichnis ul {
@@ -80,6 +82,7 @@
     }
 
     .verzeichnis a {
+        white-space: normal;
         border-bottom: 0;
         border-left: 3px solid transparent;
     }

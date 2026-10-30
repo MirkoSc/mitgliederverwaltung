@@ -64,7 +64,7 @@
             links.forEach(function (link) {
                 if (link.getAttribute('href') === '#' + id) {
                     link.setAttribute('aria-current', 'true');
-                    if (leiste.scrollWidth > leiste.clientWidth && link.scrollIntoView) {
+                    if (leiste.scrollWidth > leiste.clientWidth) {
                         // Phone: the bar scrolls sideways; keep the current entry in view.
                         leiste.scrollLeft = link.offsetLeft - leiste.clientWidth / 2 + link.offsetWidth / 2;
                     }
