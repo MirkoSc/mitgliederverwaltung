@@ -32,7 +32,9 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 - **muss** Drei feste Rollen, kein Rollen-Editor (die dritte seit #87):
   - **Admin** (Mirko): darf alles.
   - **Vorstand**: Mitglieder suchen und anlegen, aber **keine Finanzen**
-    (Beiträge, Einzug, Bezahlt-Status). Kein Adminbereich.
+    verwalten (Beiträge erzeugen, Einzug, bezahlt setzen). Sieht seit
+    30.10.2026 lesend, ob ein Mitglied bezahlt hat (wie „Nur lesen").
+    Kein Adminbereich.
   - **Nur lesen**: Mitglieder, Familien, Nachweise, Listen inkl. Exporten
     und ob ein Mitglied bezahlt hat; ändert nichts, keine Seite
     „Beiträge", kein Einzug, kein Adminbereich.
@@ -41,7 +43,8 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
   (E-F3: geklärt, vorerst nein).
 - **muss** „Keine Finanzen" heißt: Der Vorstand darf Mitglieder anlegen
   und bearbeiten (auch IBAN, Abteilung, Beitragsart). Einzug, Bezahlt-
-  Status und Lastschriftdatei sind dem Admin vorbehalten (B2 ✅).
+  Status setzen und Lastschriftdatei sind dem Admin vorbehalten (B2 ✅).
+  Den Bezahlt-Status **sehen** darf der Vorstand (geklärt 30.10.2026).
 
 ## 2. Mitglieder – Stammdaten
 

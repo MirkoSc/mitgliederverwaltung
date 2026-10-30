@@ -320,7 +320,7 @@ final class MitgliederSeiteTest extends AppTestCase
 
         $this->als(Rolle::Vorstand);
         $seite = $this->get('/app/mitglieder', ['mitglied' => $id])->body;
-        self::assertSame(['Daten', 'Familie', 'Nachweise', 'Verlauf'], $reiter($seite));
+        self::assertSame(['Daten', 'Familie', 'Beiträge', 'Nachweise', 'Verlauf'], $reiter($seite));
         self::assertStringNotContainsString('id="familie-titel"', $seite, 'the family is no longer above the tabs');
 
         $familie = $this->get('/app/mitglieder', ['mitglied' => $id, 'reiter' => 'familie'])->body;

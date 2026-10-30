@@ -133,15 +133,16 @@ final class NurLesenTest extends AppTestCase
     }
 
     /** The Vorstand keeps its rights unchanged: the form, no fee tab. */
-    public function testTheBoardStillEditsAndSeesNoFees(): void
+    public function testTheBoardStillEditsAndSeesThePaidStatus(): void
     {
         $this->als(Rolle::Vorstand);
 
         $seite = $this->mitgliedSeite();
         self::assertStringContainsString('id="mitglied-formular"', $seite);
-        self::assertStringNotContainsString('reiter=beitraege', $seite);
-        self::assertStringNotContainsString('Status Jahresbeitrag', $this->get('/app/listen/alle-mitglieder')->body);
-        self::assertSame(404, $this->get('/app/listen/selbst-kassieren')->status, 'a list without the right does not exist for the account');
+        self::assertStringContainsString('reiter=beitraege', $seite);
+        self::assertStringContainsString('Status Jahresbeitrag', $this->get('/app/listen/alle-mitglieder')->body);
+        self::assertSame(200, $this->get('/app/listen/selbst-kassieren')->status);
+        self::assertSame(403, $this->get('/app/beitraege')->status, 'the page "Beiträge" stays the admin\'s');
         self::assertStringNotContainsString('href="/admin', $seite);
     }
 

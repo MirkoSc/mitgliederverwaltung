@@ -58,7 +58,7 @@ final class BeitraegeSeiteTest extends AppTestCase
         return (string) $this->dienste->session->pullFlash()?->text;
     }
 
-    public function testTheVorstandGets403OnEveryRouteAndNoTab(): void
+    public function testTheVorstandGets403OnEveryRouteButSeesTheTabReadOnly(): void
     {
         $id = $this->mitglied(1, 'Musterfrau');
         $beitrag = $this->beitrag($id);
@@ -75,9 +75,8 @@ final class BeitraegeSeiteTest extends AppTestCase
         self::assertSame([], $this->beitraege()->finde($beitrag)?->vermerke);
 
         $seite = $this->get('/app/mitglieder', ['mitglied' => (string) $id, 'reiter' => 'beitraege'])->body;
-        self::assertStringNotContainsString('reiter=beitraege', $seite, 'no tab for the Vorstand');
-        self::assertStringNotContainsString('mitglied-beitraege', $seite, 'the Daten tab instead');
-        self::assertStringNotContainsString('/app/beitraege/', $seite);
+        self::assertStringContainsString('reiter=beitraege', $seite, 'the Vorstand sees whether the member has paid');
+        self::assertStringNotContainsString('/app/beitraege/', $seite, 'but no links to the fee pages');
     }
 
     public function testTheAdminCreatesTheYearsFeesFromThePage(): void

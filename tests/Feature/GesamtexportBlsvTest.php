@@ -156,7 +156,7 @@ final class GesamtexportBlsvTest extends AppTestCase
         self::assertCount(2 + 1, $zeilen, 'two current members, former ones excluded');
     }
 
-    public function testGesamtexportTheBoardGetsNoFeeColumns(): void
+    public function testGesamtexportTheBoardGetsTheFeeColumns(): void
     {
         $this->als(Rolle::Vorstand);
 
@@ -164,9 +164,9 @@ final class GesamtexportBlsvTest extends AppTestCase
         $kopf = self::csv($csv)[0];
 
         foreach (['Beitragsart', 'Zahlart', 'IBAN', 'BIC', 'Kontoinhaber', 'Mandatsreferenz', 'Mandatsdatum'] as $spalte) {
-            self::assertNotContains($spalte, $kopf);
+            self::assertContains($spalte, $kopf);
         }
-        self::assertStringNotContainsString('DE02120300000000202051', $csv);
+        self::assertStringContainsString('DE02120300000000202051', $csv);
         self::assertContains('Mitgliedsnummer', $kopf);
     }
 
