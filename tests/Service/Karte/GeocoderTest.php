@@ -35,6 +35,16 @@ final class GeocoderTest extends TestCase
         self::assertSame('Mitgliederverwaltung/1.0 (+https://verein.example.org)', $http->anfragen[0]['userAgent']);
     }
 
+    public function testTheTownGoesOnlyUpToItsFirstMinus(): void
+    {
+        $http = new FakeHttpAbruf(static fn(): HttpAntwort => FakeHttpAbruf::keinTreffer());
+        new Geocoder($http, 'ua')->suchen(new Anschrift('Hauptstraße 1', '12345', 'Musterort - OAB'));
+
+        parse_str((string) parse_url($http->urls()[0], PHP_URL_QUERY), $abfrage);
+        self::assertSame('Musterort', $abfrage['city']);
+        self::assertSame('12345', $abfrage['postalcode']);
+    }
+
     public function testAnUnknownCountryCodeGoesAsCountryName(): void
     {
         $http = new FakeHttpAbruf(static fn(): HttpAntwort => FakeHttpAbruf::keinTreffer());

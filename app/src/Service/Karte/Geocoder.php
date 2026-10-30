@@ -9,7 +9,8 @@ namespace App\Service\Karte;
  * (issue #91). Server side only. What leaves the server is the address -
  * street, postcode, town, country - and never a name or a member number.
  *
- * A structured query (street/postalcode/city/countrycodes) with limit 1:
+ * A structured query (street/postalcode/city/countrycodes) with limit 1,
+ * the town only up to its first minus (Anschrift::ortFuerSuche()):
  * the first hit is good enough for a dot on a club's map. The User-Agent
  * names the installation, as the usage policy of Nominatim demands.
  */
@@ -45,7 +46,7 @@ final readonly class Geocoder
             $abfrage['postalcode'] = $anschrift->plz;
         }
         if ($anschrift->ort !== '') {
-            $abfrage['city'] = $anschrift->ort;
+            $abfrage['city'] = $anschrift->ortFuerSuche();
         }
         $code = self::LAENDER[$anschrift->land] ?? null;
         if ($code !== null) {

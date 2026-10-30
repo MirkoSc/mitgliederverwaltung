@@ -36,6 +36,16 @@ final class AnschriftTest extends TestCase
         self::assertFalse(new Anschrift('', '12345', '')->istLeer());
     }
 
+    public function testTheGeocoderGetsTheTownUpToItsFirstMinus(): void
+    {
+        self::assertSame('Musterort', new Anschrift('', '12345', 'Musterort - OAB')->ortFuerSuche());
+        self::assertSame('Musterort', new Anschrift('', '12345', 'Musterort-Unterdorf')->ortFuerSuche());
+        self::assertSame('Musterort', new Anschrift('', '12345', 'Musterort - Ober - Unterdorf')->ortFuerSuche());
+        self::assertSame('Musterort', new Anschrift('', '12345', 'Musterort')->ortFuerSuche());
+        self::assertSame('- OAB', new Anschrift('', '12345', '- OAB')->ortFuerSuche(), 'nothing before the minus: unchanged');
+        self::assertSame('12345 Musterort - OAB', new Anschrift('', '12345', 'Musterort - OAB')->text(), 'the page shows the town as entered');
+    }
+
     public function testTheTextNamesTheCountryOnlyAbroad(): void
     {
         self::assertSame('Hauptstraße 1, 12345 Musterstadt', new Anschrift('Hauptstraße 1', '12345', 'Musterstadt')->text());

@@ -147,6 +147,11 @@ Projektadresse), wie es ihre Nutzungsregeln verlangen.
 
 - **Geocoder** (Nominatim, `App\Service\Karte\Geocoder`): strukturierte
   Suche mit Straße, PLZ, Ort, Land – nie Name oder Mitgliedsnummer.
+  Der Ort geht nur bis zum ersten Minus an den Geocoder
+  (`Anschrift::ortFuerSuche()`): die Altdaten führen den Ortsteil nach
+  einem Minus („Musterort - OAB“), den der Geocoder nicht kennt.
+  Migration 192 hat daraufhin alle „nicht gefunden“ vergessen, damit sie
+  neu gesucht werden.
   `Koordinatenermittlung` fragt je Aufruf nur wenige Anschriften
   (Cron: 10 bzw. 12 s, Admin-Knopf „Jetzt Koordinaten ermitteln" als
   Schrittkette: 5 bzw. 8 s je Schritt), höchstens eine Anfrage je
