@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Service\Backup;
 
 use App\Dienste;
+use App\Config\ConfigException;
+use App\Installer\ConfigWriter;
 use App\Service\Crypto\ServerCrypto;
 
 /**
@@ -68,6 +70,14 @@ final readonly class BackupErstellung
         private int $dumpBytes = self::DUMP_BYTES,
         private float $dumpSekunden = self::DUMP_SEKUNDEN,
         private int $verschluesselnBytes = BackupCipher::BYTES_JE_SCHRITT,
+        /**
+         * Whether the server key is being changed, read from config.php
+         * itself (App\Service\Crypto\Schluesselwechsel) - the config of
+         * this request may be older; null asks $crypto.
+         *
+         * @var (\Closure(): bool)|null
+         */
+        private ?\Closure $schluesselwechselLaeuft = null,
     ) {
     }
 
@@ -77,6 +87,13 @@ final readonly class BackupErstellung
             BackupService::aus($d),
             $d->pdo(),
             ServerCrypto::aus($d),
+            schluesselwechselLaeuft: static function () use ($d): bool {
+                try {
+                    return ConfigWriter::schluesselLesen($d->paths->configFile())[1] !== null;
+                } catch (ConfigException) {
+                    return ServerCrypto::aus($d)->wechselLaeuft();
+                }
+            },
         ));
     }
 
@@ -132,7 +149,7 @@ final readonly class BackupErstellung
             // A dump taken while the key change wraps the values anew would
             // hold some under the old and some under the new key - no one
             // key could restore it (App\Service\Crypto\Schluesselwechsel).
-            if ($this->crypto->wechselLaeuft()) {
+            if ($this->schluesselwechselLaeuft !== null ? ($this->schluesselwechselLaeuft)() : $this->crypto->wechselLaeuft()) {
                 throw new BackupLaeuftBereits('Gerade wird der Server-Schlüssel gewechselt. Bitte danach erneut versuchen.');
             }
             $this->arbeitsdateienLoeschen();
@@ -163,6 +180,29 @@ final readonly class BackupErstellung
             $this->speichern($stand);
 
             return [...$stand, 'gerade_fertig' => false];
+        });
+    }
+
+    /**
+     * Runs $arbeit while no chain can start: under the lock of the chain,
+     * and only when none is running. The key change writes config.php
+     * this way, so no backup can begin between its look at the backups and
+     * the new key.
+     *
+     * @template T
+     * @param \Closure(): T $arbeit
+     * @return T
+     *
+     * @throws BackupLaeuftBereits when a chain is running or holds the lock
+     */
+    public function ausschliesslich(\Closure $arbeit): mixed
+    {
+        return $this->gesperrt(function () use ($arbeit): mixed {
+            if ($this->laeuft()) {
+                throw new BackupLaeuftBereits('Es wird gerade ein Backup erstellt.');
+            }
+
+            return $arbeit();
         });
     }
 

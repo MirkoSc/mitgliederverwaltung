@@ -98,7 +98,8 @@ Regeln:
   ersetzen: Ohne ihn sind alle Backups und verschlüsselten Dateien
   unlesbar.
 - Die Anwendung verschickt keine Mails mit dem Schlüssel und zeigt ihn nur
-  bei der Installation und nach einem Schlüsselwechsel je einmal an.
+  bei der Installation und nach einem Schlüsselwechsel an (dann bis zur
+  Bestätigung „ausgedruckt", nur mit Passwort).
 
 ### Schlüssel wechseln
 
@@ -115,11 +116,16 @@ Kopie), wechseln Sie den Schlüssel:
    Wird der Wechsel unterbrochen (Seite geschlossen, Verbindung weg), ist
    nichts verloren: Beim nächsten Öffnen der Einstellungen läuft er an
    derselben Stelle weiter.
-3. Am Ende zeigt die Seite den **neuen Sicherungsschlüssel einmal** an:
-   ausdrucken oder abschreiben und wie oben doppelt aufbewahren. Die neue
-   `config.php` per FTP herunterladen und die alte Kopie ersetzen.
+3. Am Ende zeigt die Seite den **neuen Sicherungsschlüssel** an:
+   ausdrucken oder abschreiben, wie oben doppelt aufbewahren und auf der
+   Seite bestätigen. Bis zu dieser Bestätigung lässt er sich in den
+   Einstellungen mit Ihrem Passwort erneut anzeigen. Die neue `config.php`
+   per FTP herunterladen und die alte Kopie ersetzen.
 4. **Sofort ein neues Backup erstellen.** Alle älteren Backups lassen sich
-   nur noch mit dem alten Schlüssel einspielen. Den alten Ausdruck erst
+   nur noch mit dem alten Schlüssel einspielen – und wer den alten
+   Schlüssel hat, kann sie weiterhin lesen. Sie verschwinden nach zehn
+   weiteren Backups von selbst; wer sie früher loswerden will, löscht sie
+   per FTP aus `shared/var/backups/`. Den alten Ausdruck erst
    vernichten, wenn das neue Backup vorliegt – oder ihn so lange aufheben,
    wie Sie die alten Backups noch brauchen könnten.
 5. Alle Benutzer erzeugen im Benutzermenü unter „Zweiter Faktor" neue

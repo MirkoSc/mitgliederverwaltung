@@ -66,8 +66,9 @@ final readonly class SchluesselwechselController
         try {
             $schluessel = $this->wechsel()->schritt();
         } catch (SchluesselwechselLaeuftBereits) {
-            // Two tabs: the other one drives the chain; this one only shows it.
-            return $this->antwort($request);
+            // Two tabs: the other one drives the chain; this one only looks
+            // again in a while instead of knocking at the lock in a loop.
+            return $this->antwort($request, verzoegert: true);
         } catch (\Throwable $e) {
             // Only the class goes to the log (CLAUDE.md section 4). Nothing
             // is lost: config.php still holds both keys, the next step goes on.
@@ -81,6 +82,27 @@ final readonly class SchluesselwechselController
         return $this->antwort($request, schluessel: $schluessel);
     }
 
+    /** The new key once more, after the password - until it is confirmed as printed. */
+    public function anzeigen(Request $request): Response
+    {
+        $fehler = $this->passwortFehler($request);
+
+        return $fehler !== null
+            ? $this->antwort($request, fehler: $fehler)
+            : $this->antwort($request, schluessel: $this->wechsel()->schluesselAnzeigen());
+    }
+
+    public function ausgedruckt(Request $request): Response
+    {
+        try {
+            $this->wechsel()->ausgedruckt();
+        } catch (SchluesselwechselLaeuftBereits $e) {
+            return $this->antwort($request, fehler: $e->getMessage());
+        }
+
+        return $this->antwort($request);
+    }
+
     private function passwortFehler(Request $request): ?string
     {
         $userId = $this->dienste->session->userId();
@@ -92,7 +114,9 @@ final readonly class SchluesselwechselController
         if (!$limits->versuch(self::LIMIT, (string) $benutzer->id, RateLimiter::LOGIN_JE_KONTO)) {
             return 'Zu viele Versuche. Bitte warten Sie 15 Minuten und versuchen Sie es dann erneut.';
         }
-        if (!new PasswordHasher()->verify($request->feld('passwort'), $benutzer->passwordHash)) {
+        // untrimmed, as the login reads it
+        $passwort = $request->post['passwort'] ?? '';
+        if (!new PasswordHasher()->verify(is_string($passwort) ? $passwort : '', $benutzer->passwordHash)) {
             return 'Das Passwort stimmt nicht.';
         }
         $limits->reset(self::LIMIT, (string) $benutzer->id);
@@ -104,14 +128,15 @@ final readonly class SchluesselwechselController
      * Always 200: htmx swaps no error answers, and the fragment is what
      * says what went wrong.
      */
-    private function antwort(Request $request, ?string $fehler = null, ?string $schluessel = null): Response
+    private function antwort(Request $request, ?string $fehler = null, ?string $schluessel = null, bool $verzoegert = false): Response
     {
         if (!$request->istHtmx()) {
             return Response::redirect(self::ZIEL);
         }
         $wechsel = $this->wechsel();
         $stand = $wechsel->stand();
-        $laeuft = $wechsel->laeuft();
+        $laeuft = $wechsel->offen();
+        $fertig = !$laeuft && $stand !== null && $stand['phase'] === Schluesselwechsel::PHASE_FERTIG;
 
         return Response::html($this->dienste->view->fragment('admin/einstellungen/schluesselwechsel', [
             'stand' => $stand,
@@ -119,6 +144,9 @@ final readonly class SchluesselwechselController
             // the chain drives itself on; not after an error, so a failing
             // step is not hammered in a loop
             'weiter' => $laeuft && $fehler === null,
+            'verzoegert' => $verzoegert,
+            'fertig' => $fertig,
+            'unbestaetigt' => $fertig && ($stand['ausgedruckt'] ?? false) !== true,
             'wartezeit' => $laeuft && $stand !== null ? $wechsel->wartezeit($stand) : 0,
             'fehler' => $fehler,
             'schluessel' => $schluessel,

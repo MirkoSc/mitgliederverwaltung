@@ -7,16 +7,19 @@
  * view continues an interrupted change the same way.
  *
  * @var array<string, mixed>|null $stand
- * @var bool $laeuft config.php still holds the previous key
+ * @var bool $laeuft a change runs (Schluesselwechsel::offen())
  * @var bool $weiter the next step is requested on its own
+ * @var bool $verzoegert ... after a pause (another tab holds the step)
  * @var int $wartezeit seconds until the final pass may begin
+ * @var bool $fertig the last change is finished
+ * @var bool $unbestaetigt ... and its new key not yet confirmed as printed
  * @var ?string $fehler
- * @var ?string $schluessel the new key (base64) - only in the answer of the step that finished
+ * @var ?string $schluessel the new key (base64) - in the answer of the step
+ *      that finished, and on request with the password until it is printed
  */
 
 use App\Service\Crypto\Schluesselwechsel;
 
-$fertig = $stand !== null && $stand['phase'] === Schluesselwechsel::PHASE_FERTIG;
 $gruppen = $schluessel !== null ? str_split($schluessel, 4) : null;
 $hashes = is_array($stand['hashes'] ?? null) ? $stand['hashes'] : null;
 ?>
@@ -35,7 +38,29 @@ $hashes = is_array($stand['hashes'] ?? null) ? $stand['hashes'] : null;
         <p class="sicherungskarte-hinweis">Getrennt von den Backups aufbewahren, zum Beispiel ausgedruckt bei einem zweiten Vorstandsmitglied.
             Groß- und Kleinschreibung zählen; die Leerzeichen nicht.</p>
     </figure>
-    <p class="hinweis hinweis-warnung">Der neue Schlüssel wird nur dieses eine Mal angezeigt. Drucken Sie ihn jetzt aus oder schreiben Sie ihn ab.</p>
+    <form class="formular" hx-post="/admin/schluesselwechsel/ausgedruckt" hx-target="#schluesselwechsel" hx-swap="innerHTML">
+        <p class="hinweis hinweis-warnung">Drucken Sie den Schlüssel jetzt aus oder schreiben Sie ihn ab. Nach der Bestätigung
+            wird er nicht mehr angezeigt.</p>
+        <label class="feld-haken">
+            <input type="checkbox" name="notiert" value="1" required>
+            Ich habe den neuen Sicherungsschlüssel ausgedruckt oder notiert.
+        </label>
+        <p class="knopfreihe">
+            <button type="submit" class="knopf knopf-haupt">Bestätigen</button>
+        </p>
+    </form>
+<?php elseif ($unbestaetigt): ?>
+    <form class="formular" hx-post="/admin/schluesselwechsel/anzeigen" hx-target="#schluesselwechsel" hx-swap="innerHTML">
+        <p class="hinweis hinweis-warnung">Der neue Sicherungsschlüssel ist noch nicht als ausgedruckt bestätigt. Lassen Sie ihn
+            anzeigen und drucken Sie ihn aus – ohne ihn lassen sich neue Backups nicht einspielen.</p>
+        <div class="feld">
+            <label for="schluesselwechsel-anzeigen-passwort">Ihr Passwort</label>
+            <input id="schluesselwechsel-anzeigen-passwort" name="passwort" type="password" autocomplete="current-password" required>
+        </div>
+        <p class="knopfreihe">
+            <button type="submit" class="knopf knopf-haupt">Schlüssel anzeigen</button>
+        </p>
+    </form>
 <?php endif; ?>
 
 <?php if ($laeuft): ?>
@@ -50,7 +75,7 @@ $hashes = is_array($stand['hashes'] ?? null) ? $stand['hashes'] : null;
             <?php endif; ?>
         </p>
     <?php else: ?>
-        <p role="status"<?php if ($weiter): ?> hx-post="/admin/schluesselwechsel/schritt" hx-trigger="load" hx-target="#schluesselwechsel" hx-swap="innerHTML"<?php endif; ?>>
+        <p role="status"<?php if ($weiter): ?> hx-post="/admin/schluesselwechsel/schritt" hx-trigger="<?= $verzoegert ? 'load delay:3s' : 'load' ?>" hx-target="#schluesselwechsel" hx-swap="innerHTML"<?php endif; ?>>
             <?php if ($stand !== null && $stand['phase'] === Schluesselwechsel::PHASE_UMSCHLUESSELN): ?>
                 Schlüssel werden umgeschlüsselt (Durchgang <?= e($stand['durchgang']) ?>): <?= e(min((int) $stand['erledigt'], (int) $stand['gesamt'])) ?> von <?= e($stand['gesamt']) ?> …
             <?php else: ?>
@@ -90,7 +115,7 @@ $hashes = is_array($stand['hashes'] ?? null) ? $stand['hashes'] : null;
         <ul class="klein">
             <li>Bisherige Backups bleiben mit dem alten Schlüssel verschlüsselt. Erstellen Sie danach ein neues Backup.</li>
             <li>Die Backup-Codes aller Benutzer werden ungültig, gemerkte Geräte werden vergessen.</li>
-            <li>Der neue Schlüssel wird am Ende einmal zum Ausdrucken angezeigt.</li>
+            <li>Der neue Schlüssel wird am Ende zum Ausdrucken angezeigt.</li>
         </ul>
         <div class="feld">
             <label for="schluesselwechsel-passwort">Ihr Passwort</label>

@@ -105,9 +105,30 @@ final class SchluesselwechselSeiteTest extends AppTestCase
         self::assertStringContainsString(implode('</span> <span>', str_split(base64_encode($neu), 4)), $antwort->body);
         self::assertSame([$neu, null], ConfigWriter::schluesselLesen($this->wurzel . '/shared/config.php'));
 
+        $karte = implode('</span> <span>', str_split(base64_encode($neu), 4));
         $nochmal = $this->htmx(HttpMethod::Get, '/admin/schluesselwechsel');
-        self::assertStringNotContainsString(substr(base64_encode($neu), 0, 4) . '</span>', $nochmal->body, 'shown only once');
+        self::assertStringNotContainsString($karte, $nochmal->body, 'not without the password');
+        self::assertStringContainsString('noch nicht als ausgedruckt bestätigt', $nochmal->body);
         self::assertStringContainsString('Zuletzt gewechselt am', $nochmal->body);
+
+        self::assertStringContainsString('Das Passwort stimmt nicht.', $this->htmx(HttpMethod::Post, '/admin/schluesselwechsel/anzeigen', ['passwort' => 'falsch'])->body);
+        self::assertStringContainsString($karte, $this->htmx(HttpMethod::Post, '/admin/schluesselwechsel/anzeigen', ['passwort' => Benutzerdaten::PASSWORT])->body);
+
+        $bestaetigt = $this->htmx(HttpMethod::Post, '/admin/schluesselwechsel/ausgedruckt', ['notiert' => '1']);
+        self::assertStringNotContainsString($karte, $bestaetigt->body);
+        self::assertStringNotContainsString('noch nicht als ausgedruckt bestätigt', $bestaetigt->body);
+        self::assertStringNotContainsString($karte, $this->htmx(HttpMethod::Post, '/admin/schluesselwechsel/anzeigen', ['passwort' => Benutzerdaten::PASSWORT])->body);
+    }
+
+    public function testAPasswordWithSpacesAroundItWorksAsAtTheLogin(): void
+    {
+        $id = Benutzerdaten::anlegen($this->dienste->pdo(), email: 'leer@example.org', rolle: Rolle::Admin, passwort: ' gute-pferde-springen-hoch ');
+        $this->konten->anmelden(new Konto(id: $id, name: 'Erika Beispiel', rolle: Rolle::Admin));
+
+        $antwort = $this->htmx(HttpMethod::Post, '/admin/schluesselwechsel/start', ['passwort' => ' gute-pferde-springen-hoch ', 'verstanden' => '1']);
+
+        self::assertStringNotContainsString('Das Passwort stimmt nicht.', $antwort->body);
+        self::assertNotNull(ConfigWriter::schluesselLesen($this->wurzel . '/shared/config.php')[1]);
     }
 
     public function testWithoutHtmxTheRoutesLeadBackToTheSettings(): void

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Service\Mail\MailSettingsRepository;
+
 /**
  * What the key change (App\Service\Crypto\Schluesselwechsel) reads and
  * writes: every value under the server key that lives in the database -
@@ -16,9 +18,6 @@ namespace App\Repository;
  */
 final readonly class SchluesselwechselRepository
 {
-    /** The setting with the SMTP password (App\Service\Mail\MailSettingsRepository). */
-    public const string SMTP_PASSWORT = 'mail_smtp_passwort_enc';
-
     private const string FORMAT = 'Y-m-d H:i:s';
 
     public function __construct(private \PDO $pdo)
@@ -70,52 +69,21 @@ final readonly class SchluesselwechselRepository
      */
     public function smtpPasswort(): ?string
     {
-        $stmt = $this->pdo->prepare('SELECT value FROM setting WHERE name = ?');
-        $stmt->execute([self::SMTP_PASSWORT]);
-        $roh = $stmt->fetchColumn();
-        if (!is_string($roh)) {
-            return null;
-        }
-        $wert = json_decode($roh, true);
+        $wert = new SettingRepository($this->pdo)->text(MailSettingsRepository::PASSWORT);
 
-        return is_string($wert) && $wert !== '' ? $wert : null;
+        return $wert === '' ? null : $wert;
     }
 
     public function smtpPasswortErsetzen(string $alt, string $neu): bool
     {
-        // Compared on the decoded value: the JSON text of the column may be
-        // spelled differently (escaped slashes) from what PHP would write.
-        $this->pdo->beginTransaction();
-        try {
-            $stmt = $this->pdo->prepare('SELECT value FROM setting WHERE name = ? FOR UPDATE');
-            $stmt->execute([self::SMTP_PASSWORT]);
-            $roh = $stmt->fetchColumn();
-            if (!is_string($roh) || json_decode($roh, true) !== $alt) {
-                $this->pdo->rollBack();
-
-                return false;
-            }
-            $this->pdo->prepare('UPDATE setting SET value = ?, updated_at = ? WHERE name = ?')->execute([
-                json_encode($neu, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-                new \DateTimeImmutable()->format(self::FORMAT),
-                self::SMTP_PASSWORT,
-            ]);
-            $this->pdo->commit();
-
-            return true;
-        } catch (\Throwable $e) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            throw $e;
-        }
+        return new SettingRepository($this->pdo)->ersetzen(MailSettingsRepository::PASSWORT, $alt, $neu);
     }
 
     /**
      * Removes the second-factor values that are HMACs under the old key and
      * so cannot match anything any more: backup codes, remembered devices,
-     * open mail codes - only those created before $vor, so whatever a user
-     * set up under the new key stays.
+     * open mail codes - only those created up to $vor, so whatever a user
+     * set up under the new key after it stays.
      *
      * @return array{backup_codes: int, geraete: int, mail_codes: int}
      */
@@ -124,7 +92,9 @@ final readonly class SchluesselwechselRepository
         $zeit = $vor->format(self::FORMAT);
         $anzahl = [];
         foreach (['backup_codes' => 'mfa_backup_code', 'geraete' => 'trusted_device', 'mail_codes' => 'mfa_email_code'] as $schluessel => $tabelle) {
-            $stmt = $this->pdo->prepare('DELETE FROM ' . $tabelle . ' WHERE created_at < ?');
+            // <=: a row of the very second may be either key's - removed
+            // rather than listed and never working
+            $stmt = $this->pdo->prepare('DELETE FROM ' . $tabelle . ' WHERE created_at <= ?');
             $stmt->execute([$zeit]);
             $anzahl[$schluessel] = $stmt->rowCount();
         }

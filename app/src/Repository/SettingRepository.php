@@ -69,6 +69,36 @@ final readonly class SettingRepository
         ]);
     }
 
+    /**
+     * Replaces the value only while it still is $alt (compared decoded) -
+     * false when somebody changed or removed it meanwhile. For a rewrite
+     * that must not overwrite a newer value (the key change,
+     * App\Service\Crypto\Schluesselwechsel).
+     */
+    public function ersetzen(string $name, mixed $alt, mixed $neu): bool
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('SELECT value FROM setting WHERE name = ? FOR UPDATE');
+            $stmt->execute([$name]);
+            $roh = $stmt->fetchColumn();
+            if (!is_string($roh) || json_decode($roh, true, flags: JSON_THROW_ON_ERROR) !== $alt) {
+                $this->pdo->rollBack();
+
+                return false;
+            }
+            $this->set($name, $neu);
+            $this->pdo->commit();
+
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     public function delete(string $name): void
     {
         $this->pdo->prepare('DELETE FROM setting WHERE name = ?')->execute([$name]);

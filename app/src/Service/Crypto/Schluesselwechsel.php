@@ -11,6 +11,7 @@ use App\Installer\ConfigWriter;
 use App\Repository\SchluesselwechselRepository;
 use App\Service\Audit\AuditLog;
 use App\Service\Backup\BackupErstellung;
+use App\Service\Backup\BackupLaeuftBereits;
 use App\Service\Mail\MailException;
 use App\Service\Mail\ServerKeyGeheimnisSchutz;
 
@@ -81,6 +82,10 @@ final readonly class Schluesselwechsel
      * @param string $statusDir shared/var
      * @param \Closure(): bool $backupLaeuft whether a backup is being made
      * @param (\Closure(): \DateTimeImmutable)|null $clock
+     * @param (\Closure(\Closure(): void): void)|null $ohneBackup runs the
+     *        rewrite of config.php so that no backup can start meanwhile
+     *        (BackupErstellung::ausschliesslich()); throws BackupLaeuftBereits
+     *        when one runs. Null: only $backupLaeuft is asked.
      */
     public function __construct(
         private string $configDatei,
@@ -92,6 +97,7 @@ final readonly class Schluesselwechsel
         private int $gnadenfrist = self::GNADENFRIST,
         private int $portion = self::PORTION,
         private float $portionSekunden = self::PORTION_SEKUNDEN,
+        private ?\Closure $ohneBackup = null,
     ) {
     }
 
@@ -103,6 +109,9 @@ final readonly class Schluesselwechsel
             repo: new SchluesselwechselRepository($d->pdo()),
             audit: $d->audit(),
             backupLaeuft: static fn(): bool => BackupErstellung::aus($d)->laeuft(),
+            ohneBackup: static function (\Closure $arbeit) use ($d): void {
+                BackupErstellung::aus($d)->ausschliesslich($arbeit);
+            },
         ));
     }
 
@@ -136,6 +145,45 @@ final readonly class Schluesselwechsel
     }
 
     /**
+     * Whether there is something for schritt() to do: a change runs, or its
+     * last write went through and only the record of it is missing.
+     */
+    public function offen(): bool
+    {
+        $stand = $this->stand();
+
+        return $this->laeuft() || ($stand !== null && $stand['phase'] !== self::PHASE_FERTIG);
+    }
+
+    /**
+     * The new key once more (base64) - after a finished change, until
+     * somebody confirms it is printed (ausgedruckt()). The answer that
+     * finished the change may have gone to another admin's browser, or
+     * been lost on the way.
+     */
+    public function schluesselAnzeigen(): ?string
+    {
+        $stand = $this->stand();
+        if ($stand === null || $stand['phase'] !== self::PHASE_FERTIG || ($stand['ausgedruckt'] ?? false) === true) {
+            return null;
+        }
+        [$schluessel, $alt] = $this->schluessel();
+
+        return $alt === null && hash_equals((string) $stand['neu'], self::fingerabdruck($schluessel)) ? base64_encode($schluessel) : null;
+    }
+
+    /** Somebody has printed the new key: it is not shown again. */
+    public function ausgedruckt(): void
+    {
+        $this->gesperrt(function (): void {
+            $stand = $this->stand();
+            if ($stand !== null && $stand['phase'] === self::PHASE_FERTIG) {
+                $this->speichern([...$stand, 'ausgedruckt' => true]);
+            }
+        });
+    }
+
+    /**
      * Seconds until the final pass may begin, 0 when it may.
      *
      * @param array<string, mixed> $stand
@@ -156,10 +204,16 @@ final readonly class Schluesselwechsel
     public function starten(?int $userId): void
     {
         $this->gesperrt(function () use ($userId): void {
-            if (($this->backupLaeuft)()) {
-                throw new SchluesselwechselNichtMoeglich('Gerade wird ein Backup erstellt. Bitte warten Sie, bis es fertig ist.');
-            }
             [$schluessel, $alt] = $this->schluessel();
+            $stand = $this->stand();
+            if ($alt === null && $stand !== null && $stand['phase'] !== self::PHASE_FERTIG
+                && hash_equals((string) $stand['neu'], self::fingerabdruck($schluessel))) {
+                // The last change went through without its record - finish
+                // that one instead of starting another.
+                $this->vermerkeAbschluss($stand, $schluessel);
+
+                return;
+            }
 
             if ($alt !== null) {
                 $stand = $this->stand();
@@ -172,7 +226,11 @@ final readonly class Schluesselwechsel
 
             $neu = random_bytes(ServerCrypto::KEY_BYTES);
             try {
-                ConfigWriter::schluesselSchreiben($this->configDatei, $neu, $schluessel);
+                $this->ohneBackupLaufen(function () use ($neu, $schluessel): void {
+                    ConfigWriter::schluesselSchreiben($this->configDatei, $neu, $schluessel);
+                });
+            } catch (BackupLaeuftBereits) {
+                throw new SchluesselwechselNichtMoeglich('Gerade wird ein Backup erstellt. Bitte warten Sie, bis es fertig ist.');
             } catch (\RuntimeException $e) {
                 // The old file stays in place: nothing has changed yet.
                 throw new SchluesselwechselNichtMoeglich($e->getMessage(), previous: $e);
@@ -235,7 +293,8 @@ final readonly class Schluesselwechsel
         }
 
         if ($stand['phase'] === self::PHASE_WARTEN) {
-            if ($jetzt < (int) $stand['seit'] + $this->gnadenfrist) {
+            if ($jetzt < (int) $stand['seit'] + $this->gnadenfrist
+                || (($stand['wartet_auf_backup'] ?? false) === true && ($this->backupLaeuft)())) {
                 $this->speichern([...$stand, 'aktualisiert' => $jetzt]);
 
                 return null;
@@ -351,6 +410,13 @@ final readonly class Schluesselwechsel
      */
     private function abschliessen(array $stand, string $schluessel): string
     {
+        // A request still on the old config.php may have stored a code or
+        // remembered a device under the old key during the waiting time.
+        // Removed too - a code that is listed but cannot work is worse than
+        // one that has to be made again.
+        foreach ($this->repo->zweiterFaktorHashesLoeschen($this->jetzt()->setTimestamp((int) $stand['durchgang_beginn'])) as $art => $anzahl) {
+            $stand['hashes'][$art] = (int) ($stand['hashes'][$art] ?? 0) + $anzahl;
+        }
         // Saved first: should the rewrite fail, the next step repeats the
         // final pass instead of finishing on an older one.
         $this->speichern([...$stand, 'aktualisiert' => $this->jetzt()->getTimestamp()]);
@@ -385,6 +451,24 @@ final readonly class Schluesselwechsel
         ]);
 
         return base64_encode($schluessel);
+    }
+
+    /**
+     * @param \Closure(): void $arbeit
+     *
+     * @throws BackupLaeuftBereits
+     */
+    private function ohneBackupLaufen(\Closure $arbeit): void
+    {
+        if ($this->ohneBackup !== null) {
+            ($this->ohneBackup)($arbeit);
+
+            return;
+        }
+        if (($this->backupLaeuft)()) {
+            throw new BackupLaeuftBereits('Es wird gerade ein Backup erstellt.');
+        }
+        $arbeit();
     }
 
     /**

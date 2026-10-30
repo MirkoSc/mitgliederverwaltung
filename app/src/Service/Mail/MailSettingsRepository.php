@@ -22,7 +22,8 @@ final readonly class MailSettingsRepository
 
     private const string BENUTZER = 'mail_smtp_benutzer';
 
-    private const string PASSWORT = 'mail_smtp_passwort_enc';
+    /** Also rewrapped by the key change (App\Repository\SchluesselwechselRepository). */
+    public const string PASSWORT = 'mail_smtp_passwort_enc';
 
     private const string ABSENDER = 'mail_absender';
 

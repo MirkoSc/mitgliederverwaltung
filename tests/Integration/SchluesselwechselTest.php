@@ -108,6 +108,10 @@ final class SchluesselwechselTest extends DatabaseTestCase
         $wechsel->starten($this->benutzer);
         // a backup code set up under the new key while the chain runs
         $neuerCode = new ServerCrypto(ConfigWriter::schluesselLesen($this->config)[0])->hmac('neu');
+        // ... and one by a request still on the old config.php
+        $this->pdo()->prepare('INSERT INTO trusted_device (user_id, token_hash, created_at, expires_at) VALUES (?, ?, ?, ?)')
+            ->execute([$this->benutzer, new ServerCrypto($this->alterSchluessel)->hmac('spaet'), $this->jetzt->format('Y-m-d H:i:s'), $this->jetzt->modify('+30 days')->format('Y-m-d H:i:s')]);
+        $this->jetzt = $this->jetzt->modify('+2 minutes');
         $this->pdo()->prepare('INSERT INTO mfa_backup_code (user_id, code_hash, created_at) VALUES (?, ?, ?)')
             ->execute([$this->benutzer, $neuerCode, $this->jetzt->modify('+1 minute')->format('Y-m-d H:i:s')]);
 
@@ -182,6 +186,41 @@ final class SchluesselwechselTest extends DatabaseTestCase
         self::assertNull($wechsel->schritt(), 'a finished change does nothing more');
     }
 
+    public function testAStartAfterSuchACrashFinishesTheOldChangeInsteadOfMakingAnotherKey(): void
+    {
+        $wechsel = $this->wechsel();
+        $wechsel->starten($this->benutzer);
+        for ($i = 0; $i < 3; $i++) {
+            $wechsel->schritt();
+        }
+        // pretend the final write went through and its record did not
+        $this->durchlaufen($this->wechsel());
+        $stand = (array) $wechsel->stand();
+        file_put_contents($this->wurzel . '/shared/var/schluesselwechsel.json', json_encode([...$stand, 'phase' => Schluesselwechsel::PHASE_UMSCHLUESSELN]));
+        [$neu] = ConfigWriter::schluesselLesen($this->config);
+        self::assertTrue($wechsel->offen());
+        self::assertFalse($wechsel->laeuft());
+
+        $wechsel->starten($this->benutzer);
+
+        self::assertSame([$neu, null], ConfigWriter::schluesselLesen($this->config));
+        self::assertSame(Schluesselwechsel::PHASE_FERTIG, $wechsel->stand()['phase'] ?? null);
+        self::assertFalse($wechsel->offen());
+    }
+
+    public function testTheNewKeyCanBeShownAgainUntilItIsConfirmedAsPrinted(): void
+    {
+        $wechsel = $this->wechsel();
+        self::assertNull($wechsel->schluesselAnzeigen());
+        $wechsel->starten($this->benutzer);
+        self::assertNull($wechsel->schluesselAnzeigen(), 'not while the change runs');
+        $schluessel = $this->durchlaufen($wechsel);
+
+        self::assertSame($schluessel, $wechsel->schluesselAnzeigen());
+        $wechsel->ausgedruckt();
+        self::assertNull($wechsel->schluesselAnzeigen());
+    }
+
     public function testAValueWrittenUnderTheOldKeyMeanwhileIsCaughtByTheFinalPass(): void
     {
         $wechsel = $this->wechsel(gnadenfrist: 60);
@@ -243,6 +282,9 @@ final class SchluesselwechselTest extends DatabaseTestCase
             $wechsel->schritt();
         }
         self::assertTrue($wechsel->laeuft());
+        self::assertSame(Schluesselwechsel::PHASE_WARTEN, $wechsel->stand()['phase'] ?? null);
+        self::assertTrue($wechsel->stand()['wartet_auf_backup'] ?? null);
+        self::assertSame(1, $wechsel->stand()['durchgang'] ?? null, 'no new pass while it waits for the backup');
 
         $this->backupLaeuft = false;
         $this->durchlaufen($wechsel);

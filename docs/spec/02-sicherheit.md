@@ -62,9 +62,13 @@ Verschlüsselung einzelner Datenbankfelder.
      wartet die Kette 120 s nach dem Start und läuft dann ein zweites Mal
      über alles; erst ein Durchgang, der nach dieser Frist begann, beendet
      sie.
-  4. Abschluss: `config.php` ohne `server_key_alt`. Audit-Einträge bei
-     Start und Abschluss; der neue Schlüssel wird einmal zum Ausdrucken
-     angezeigt.
+  4. Abschluss: Backup-Codes/Geräte, die in der Wartezeit noch unter dem
+     alten Schlüssel entstanden sein können, werden gelöscht, dann
+     `config.php` ohne `server_key_alt`. Audit-Einträge bei Start und
+     Abschluss. Der neue Schlüssel steht in der Antwort des letzten
+     Schritts und lässt sich danach mit Passwort erneut anzeigen, bis ein
+     Admin bestätigt, dass er ausgedruckt ist (die letzte Antwort kann bei
+     einem anderen Admin landen oder verloren gehen).
 
   Bricht die Kette irgendwo ab, ist alles mit dem lesbar, was in
   `config.php` steht; das nächste Öffnen der Einstellungen setzt sie fort.
@@ -74,9 +78,12 @@ Verschlüsselung einzelner Datenbankfelder.
   (Backup-Codes, gemerkte Geräte, offene Mail-Codes), lassen sich nicht
   neu verpacken und werden beim Start gelöscht; Benutzer erzeugen neue
   Backup-Codes. Während des Wechsels startet kein Backup (ein Dump wäre
-  halb alt, halb neu verschlüsselt); bestehende Backups bleiben unter dem
-  alten Schlüssel – nach dem Wechsel ein neues Backup erstellen und den
-  alten Ausdruck erst danach vernichten. Die IP-Hashes im Audit-Log
+  halb alt, halb neu verschlüsselt): `config.php` wird unter der Sperre
+  der Backup-Kette geschrieben (`BackupErstellung::ausschliesslich()`),
+  und deren Start liest `config.php` selbst; der Abschluss wartet auf ein
+  laufendes Backup. Bestehende Backups bleiben unter dem alten Schlüssel –
+  wer ihn hat, kann sie weiterhin öffnen. Nach dem Wechsel ein neues
+  Backup erstellen und den alten Ausdruck erst danach vernichten. Die IP-Hashes im Audit-Log
   (§8) entstehen ab dann unter dem neuen Schlüssel.
 
 ## 3. Anmeldung
