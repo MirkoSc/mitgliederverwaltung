@@ -82,6 +82,26 @@ final class ConfigTest extends TestCase
         Config::fromArray($data);
     }
 
+    public function testThePreviousKeyIsReadOnlyWhileAKeyChangeRuns(): void
+    {
+        self::assertNull(Config::fromArray(self::validData())->serverKeyAlt);
+
+        $alt = random_bytes(Config::SERVER_KEY_BYTES);
+        $config = Config::fromArray([...self::validData(), 'server_key_alt' => base64_encode($alt)]);
+
+        self::assertSame($alt, $config->serverKeyAlt);
+        self::assertSame(self::SERVER_KEY, $config->serverKey);
+        self::assertStringNotContainsString(base64_encode($alt), print_r($config->__debugInfo(), true));
+    }
+
+    public function testAnUnusablePreviousKeyThrowsWithKeyName(): void
+    {
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionMessage('server_key_alt');
+
+        Config::fromArray([...self::validData(), 'server_key_alt' => base64_encode('zu kurz')]);
+    }
+
     public function testDebugOutputHidesTheSecrets(): void
     {
         $dump = print_r(Config::fromArray(self::validData())->__debugInfo(), true);

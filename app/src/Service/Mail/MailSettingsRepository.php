@@ -22,7 +22,8 @@ final readonly class MailSettingsRepository
 
     private const string BENUTZER = 'mail_smtp_benutzer';
 
-    private const string PASSWORT = 'mail_smtp_passwort_enc';
+    /** Also rewrapped by the key change (App\Repository\SchluesselwechselRepository). */
+    public const string PASSWORT = 'mail_smtp_passwort_enc';
 
     private const string ABSENDER = 'mail_absender';
 
@@ -42,7 +43,7 @@ final readonly class MailSettingsRepository
     {
         return $dienste->dienst(self::class, static fn(Dienste $d): self => new self(
             $d->einstellungen(),
-            $d->dienst(GeheimnisSchutz::class, static fn(Dienste $d): GeheimnisSchutz => new ServerKeyGeheimnisSchutz($d->config->serverKey)),
+            $d->dienst(GeheimnisSchutz::class, static fn(Dienste $d): GeheimnisSchutz => new ServerKeyGeheimnisSchutz($d->config->serverKey, $d->config->serverKeyAlt)),
         ));
     }
 

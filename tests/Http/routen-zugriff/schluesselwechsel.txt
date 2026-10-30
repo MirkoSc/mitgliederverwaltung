@@ -1,0 +1,6 @@
+# app/routes/schluesselwechsel.php - changing the server key: admin only.
+GET /admin/schluesselwechsel -> admin.system
+POST /admin/schluesselwechsel/start -> admin.system
+POST /admin/schluesselwechsel/schritt -> admin.system
+POST /admin/schluesselwechsel/anzeigen -> admin.system
+POST /admin/schluesselwechsel/ausgedruckt -> admin.system

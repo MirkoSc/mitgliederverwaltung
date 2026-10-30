@@ -85,6 +85,46 @@ final class BackupErstellungTest extends DatabaseTestCase
         $this->erstellung()->starten();
     }
 
+    public function testNoBackupWhileTheServerKeyIsBeingChanged(): void
+    {
+        $erstellung = new BackupErstellung(
+            $this->backups($this->jetzt),
+            $this->pdo(),
+            new ServerCrypto(random_bytes(ServerCrypto::KEY_BYTES), $this->schluessel),
+            2048,
+        );
+
+        $this->expectException(BackupLaeuftBereits::class);
+        $this->expectExceptionMessage('Server-Schlüssel');
+
+        $erstellung->starten();
+    }
+
+    public function testTheKeyChangeIsAskedThroughConfigPhpNotTheRequestsKey(): void
+    {
+        $erstellung = new BackupErstellung(
+            $this->backups($this->jetzt),
+            $this->pdo(),
+            new ServerCrypto($this->schluessel),
+            2048,
+            schluesselwechselLaeuft: static fn(): bool => true,
+        );
+
+        $this->expectException(BackupLaeuftBereits::class);
+
+        $erstellung->starten();
+    }
+
+    public function testExclusiveWorkRunsOnlyWithoutARunningChain(): void
+    {
+        $erstellung = $this->erstellung();
+        self::assertSame('frei', $erstellung->ausschliesslich(static fn(): string => 'frei'));
+
+        $erstellung->starten();
+        $this->expectException(BackupLaeuftBereits::class);
+        $erstellung->ausschliesslich(static fn(): string => 'nie');
+    }
+
     public function testCancellingRemovesWorkFilesAndState(): void
     {
         $erstellung = $this->erstellung();

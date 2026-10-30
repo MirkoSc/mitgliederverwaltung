@@ -8,6 +8,8 @@
   Datenbank; Suchen, Filtern und Sortieren laufen in SQL.
 - Verschlüsselt (Server-Schlüssel, 02 §2) sind nur: Dateien (Blobs),
   Backups, TOTP-Geheimnisse, SMTP-Passwort. Spalten dafür heißen `*_enc`.
+  Eine neue `*_enc`-Spalte muss in den Schlüsselwechsel (02 §2,
+  `SchluesselwechselRepository`) aufgenommen werden.
 - Datumsfelder als `DATE`, Zeitpunkte als `DATETIME` in lokaler Zeit
   (`Europe/Berlin`).
 - Geld: Integer-Cent (`*_cent`), nie `float`.

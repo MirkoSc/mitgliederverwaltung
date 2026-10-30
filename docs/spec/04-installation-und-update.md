@@ -186,6 +186,10 @@ Einstellungen (`SystemAbschnitt`, Routen in `app/routes/system.php`).
   erst die Verschlüsselung macht die Datei harmlos.
 - `config.php` kommt nie mit ins Backup. Betriebshandbuch: `config.php`
   bzw. den ausgedruckten Sicherungsschlüssel getrennt sichern.
+- Nach einem Schlüsselwechsel (02 §2) brauchen ältere Backups den alten
+  Schlüssel; der Restore fragt ihn wie immer ab. Während des Wechsels
+  startet kein Backup (`BackupErstellung::starten()`), also auch kein
+  Update.
 - Erstellen als Schrittkette (`/admin/backups`), Rotation 10, Download
   gestreamt.
 - Restore im Installer als Schrittkette (Dump häppchenweise mit Offset im

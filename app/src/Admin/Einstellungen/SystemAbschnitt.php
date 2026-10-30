@@ -9,9 +9,11 @@ use App\Domain\Permission;
 
 /**
  * Settings section System (docs/spec/04-installation-und-update.md
- * sections 5 and 7): the system check and the integrity check. Both load
- * themselves through htmx (app/routes/system.php), so the slow parts - the
- * probe of the own domain, the hashing - never hold the settings page back.
+ * sections 5 and 7): the system check and the integrity check, and the
+ * change of the server key (docs/spec/02-sicherheit.md section 2). All load
+ * themselves through htmx (app/routes/system.php, schluesselwechsel.php),
+ * so the slow parts - the probe of the own domain, the hashing - never hold
+ * the settings page back.
  */
 final readonly class SystemAbschnitt implements Abschnitt
 {

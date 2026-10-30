@@ -26,6 +26,13 @@ final readonly class Config
         public string $serverKey,
         public string $cronToken,
         public bool $debug,
+        /**
+         * The previous server key, raw 32 bytes - only while a key change
+         * runs (App\Service\Crypto\Schluesselwechsel): everything is still
+         * readable under it until every value has been wrapped anew. Null
+         * otherwise.
+         */
+        public ?string $serverKeyAlt = null,
     ) {
     }
 
@@ -57,6 +64,7 @@ final readonly class Config
             serverKey: self::serverKey($data),
             cronToken: self::stringValue($data, 'cron_token'),
             debug: self::boolValue($data, 'debug', false),
+            serverKeyAlt: self::lookup($data, 'server_key_alt') === null ? null : self::serverKey($data, 'server_key_alt'),
         );
     }
 
@@ -76,6 +84,7 @@ final readonly class Config
             'serverKey' => '*** server key ***',
             'cronToken' => '***',
             'debug' => $this->debug,
+            'serverKeyAlt' => $this->serverKeyAlt === null ? null : '*** old server key ***',
         ];
     }
 
@@ -108,12 +117,13 @@ final readonly class Config
      *
      * @param array<mixed> $data
      */
-    private static function serverKey(array $data): string
+    private static function serverKey(array $data, string $key = 'server_key'): string
     {
-        $raw = base64_decode(self::stringValue($data, 'server_key'), true);
+        $raw = base64_decode(self::stringValue($data, $key), true);
         if ($raw === false || strlen($raw) !== self::SERVER_KEY_BYTES) {
             throw new ConfigException(sprintf(
-                'Config value server_key must be %d base64 encoded bytes.',
+                'Config value %s must be %d base64 encoded bytes.',
+                $key,
                 self::SERVER_KEY_BYTES,
             ));
         }

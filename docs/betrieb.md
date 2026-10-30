@@ -96,9 +96,47 @@ Regeln:
 - Der Schlüssel wird **nicht** in der Datenbank gespeichert und nicht
   mit dem Backup mitgesichert. Ein verlorener Schlüssel ist nicht zu
   ersetzen: Ohne ihn sind alle Backups und verschlüsselten Dateien
-  unlesbar. Einen neuen Schlüssel gibt es nach der Installation nicht.
-- Die Anwendung verschickt keine Mails mit dem Schlüssel und zeigt ihn nie
-  erneut an.
+  unlesbar.
+- Die Anwendung verschickt keine Mails mit dem Schlüssel und zeigt ihn nur
+  bei der Installation und nach einem Schlüsselwechsel an (dann bis zur
+  Bestätigung „ausgedruckt", nur mit Passwort).
+
+### Schlüssel wechseln
+
+Ist `config.php` oder ein Ausdruck des Sicherungsschlüssels in falsche
+Hände geraten (verlorener Rechner, alter FTP-Zugang, liegengebliebene
+Kopie), wechseln Sie den Schlüssel:
+
+1. **Einstellungen → System → Server-Schlüssel**, Ihr Passwort eingeben,
+   Hinweise bestätigen, „Server-Schlüssel wechseln".
+2. Die Seite offen lassen. Der Wechsel stellt Nachweise,
+   Lastschriftdateien, Authenticator-Apps und das SMTP-Passwort auf den
+   neuen Schlüssel um und wartet dann noch zwei Minuten, um alles ein
+   zweites Mal zu prüfen. Die Anwendung bleibt dabei normal benutzbar.
+   Wird der Wechsel unterbrochen (Seite geschlossen, Verbindung weg), ist
+   nichts verloren: Beim nächsten Öffnen der Einstellungen läuft er an
+   derselben Stelle weiter.
+3. Am Ende zeigt die Seite den **neuen Sicherungsschlüssel** an:
+   ausdrucken oder abschreiben, wie oben doppelt aufbewahren und auf der
+   Seite bestätigen. Bis zu dieser Bestätigung lässt er sich in den
+   Einstellungen mit Ihrem Passwort erneut anzeigen. Die neue `config.php`
+   per FTP herunterladen und die alte Kopie ersetzen.
+4. **Sofort ein neues Backup erstellen.** Alle älteren Backups lassen sich
+   nur noch mit dem alten Schlüssel einspielen – und wer den alten
+   Schlüssel hat, kann sie weiterhin lesen. Sie verschwinden nach zehn
+   weiteren Backups von selbst; wer sie früher loswerden will, löscht sie
+   per FTP aus `shared/var/backups/`. Den alten Ausdruck erst
+   vernichten, wenn das neue Backup vorliegt – oder ihn so lange aufheben,
+   wie Sie die alten Backups noch brauchen könnten.
+5. Alle Benutzer erzeugen im Benutzermenü unter „Zweiter Faktor" neue
+   Backup-Codes: Die alten sind mit dem Wechsel ungültig geworden.
+   Gemerkte Geräte fragen beim nächsten Anmelden wieder nach dem zweiten
+   Faktor.
+
+Während des Wechsels lassen sich kein Backup und kein Update starten.
+`server_key_alt` in `config.php` gibt es nur während eines Wechsels; die
+Zeile nie von Hand entfernen – sonst sind die noch nicht umgestellten
+Dateien verloren.
 
 ---
 
