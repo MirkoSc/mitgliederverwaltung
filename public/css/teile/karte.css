@@ -1,0 +1,120 @@
+/* Page "Karte" (issue #91): the map surface, the markers and the popups.
+   Leaflet's own stylesheet loads before the design system (layout
+   $styles), so these rules win where both style the same element. */
+
+.karte-ermitteln {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--abstand-2) var(--abstand-3);
+}
+
+.karte-filter {
+    margin-bottom: var(--abstand-4);
+}
+
+/* The map is the page: full content width, tall enough to read a town,
+   never taller than the screen. */
+.karte-flaeche {
+    height: clamp(20rem, 62vh, 44rem);
+    margin-bottom: var(--abstand-5);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche-2);
+    font: inherit;
+}
+
+/* OSM tiles are light; in dark mode they are dimmed a little so the map
+   does not glare out of the page. */
+@media (prefers-color-scheme: dark) {
+    :root:not(.modus-barrierefrei) .karte-flaeche .leaflet-tile-pane {
+        filter: brightness(0.82) contrast(1.05);
+    }
+}
+
+/* A marker is a coin in the club colour with the number of members at the
+   address - a household reads as one bigger coin. */
+.karte-punkt {
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--farbe-flaeche);
+    border-radius: 50%;
+    background: var(--farbe-haupt);
+    color: var(--farbe-haupt-text);
+    box-shadow: 0 0 0 1px var(--farbe-haupt), 0 1px 3px rgb(0 0 0 / 0.35);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.karte-punkt-mehr {
+    background: var(--farbe-verein);
+    color: var(--farbe-verein-text);
+    font-size: 0.9375rem;
+}
+
+.karte-punkt:focus-visible {
+    outline: var(--fokus-breite) solid var(--farbe-fokus);
+    outline-offset: var(--fokus-abstand);
+}
+
+.karte-flaeche .leaflet-popup-content-wrapper {
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+    color: var(--farbe-text);
+}
+
+.karte-flaeche .leaflet-popup-tip {
+    background: var(--farbe-flaeche);
+}
+
+.karte-flaeche .leaflet-popup-content {
+    margin: var(--abstand-3) var(--abstand-4);
+    font-size: var(--schrift-basis);
+    line-height: var(--zeilenhoehe);
+}
+
+.karte-popup-anschrift {
+    margin: 0 0 var(--abstand-2);
+    font-weight: 700;
+}
+
+.karte-flaeche .leaflet-container a,
+.karte-flaeche a {
+    color: var(--farbe-link);
+}
+
+.karte-flaeche .leaflet-control-attribution {
+    font-size: 0.75rem;
+}
+
+/* Members at one address: one per line, number beside the name. */
+.karte-mitglieder {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.karte-mitglieder li + li {
+    margin-top: var(--abstand-1);
+}
+
+.karte-abschnitt {
+    margin-bottom: var(--abstand-5);
+}
+
+.karte-abschnitt h2 {
+    margin-bottom: var(--abstand-2);
+}
+
+/* Barrierefrei-Modus: bigger markers with a hard ring, a thicker frame. */
+.modus-barrierefrei .karte-flaeche {
+    border-width: 2px;
+    border-color: var(--farbe-text);
+}
+
+.modus-barrierefrei .karte-punkt {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px #000000;
+    font-size: 1rem;
+}
