@@ -44,8 +44,7 @@ $feld = static function (string $name, string $label, string $wert, int $laenge,
     <?php if ($zustand === WohnortZustand::Gefunden): ?>
         <p class="wohnort-stand"><span class="etikett etikett-ok">gefunden</span> Die Anschrift steht auf der Karte.</p>
         <div class="karte-flaeche wohnort-karte" data-wohnort-karte
-             data-lat="<?= e(number_format((float) $wohnort->lat, 6, '.', '')) ?>"
-             data-lon="<?= e(number_format((float) $wohnort->lon, 6, '.', '')) ?>"
+             data-lat="<?= e(number_format((float) $wohnort->lat, 6, '.', '')) ?>" data-lon="<?= e(number_format((float) $wohnort->lon, 6, '.', '')) ?>"
              data-kacheln="<?= e(KarteController::PFAD_KACHEL . '/{z}/{x}/{y}.png') ?>"
              data-zoom-min="<?= KachelProxy::ZOOM_MIN ?>"
              data-zoom-max="<?= KachelProxy::ZOOM_MAX ?>"
