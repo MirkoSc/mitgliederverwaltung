@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Service\Karte;
 
 /**
- * The answer of the geocoder for one address: found (with coordinates), not
- * found, or a failure of the service. A failure is not stored - the address
- * is asked again later - and carries a short reason without any address in
- * it (CLAUDE.md section 4).
+ * The answer of the geocoder for one address: found (with coordinates),
+ * only approximately found - postcode and town, not the street (issue #108,
+ * with coordinates) -, not found, or a failure of the service. A failure is
+ * not stored - the address is asked again later - and carries a short
+ * reason without any address in it (CLAUDE.md section 4).
  */
 final readonly class GeoErgebnis
 {
@@ -23,6 +24,11 @@ final readonly class GeoErgebnis
     public static function gefunden(float $lat, float $lon): self
     {
         return new self(GeoStatus::Gefunden, $lat, $lon);
+    }
+
+    public static function ungefaehr(float $lat, float $lon): self
+    {
+        return new self(GeoStatus::Ungefaehr, $lat, $lon);
     }
 
     public static function nichtGefunden(): self

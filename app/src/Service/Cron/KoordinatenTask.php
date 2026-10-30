@@ -11,19 +11,24 @@ use App\Service\Karte\Koordinatenermittlung;
  * Looks up the coordinates of a few member addresses per run for the page
  * "Karte" (issue #91, docs/spec/01-plattform.md section 5). Runs on every
  * call, like the mail queue: with a cron every ten minutes, a club's
- * addresses are through within a day, and the admin's button
- * "Jetzt Koordinaten ermitteln" is there for the impatient.
+ * addresses are through within a day or two, and the admin's button
+ * "Jetzt Koordinaten ermitteln" (about one address per second while the
+ * tab stays open) is there for the impatient.
  *
  * The one task that reads member data: the address goes to the geocoder,
  * nothing of it into the result or the log.
  */
 final readonly class KoordinatenTask implements CronTask
 {
-    /** Addresses per run - with one request per second this is ~11 s. */
-    public const int JE_LAUF = 10;
+    /** Addresses per run (issue #108); the time budget usually ends a run first. */
+    public const int JE_LAUF = 20;
 
-    /** Seconds after which a run asks nobody more, well below the 30 s limit. */
-    public const float ZEITBUDGET_S = 12.0;
+    /**
+     * Seconds after which a run starts no further address. One address may
+     * take two requests (street, then the place alone, issue #108), so the
+     * last one started still ends well below the 30 s limit.
+     */
+    public const float ZEITBUDGET_S = 22.0;
 
     public function __construct(private Koordinatenermittlung $ermittlung)
     {

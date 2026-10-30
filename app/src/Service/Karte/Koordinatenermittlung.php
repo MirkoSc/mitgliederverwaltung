@@ -27,7 +27,12 @@ use App\Support\FileLogger;
  *     address, nothing is stored, and the geocoding rests for a while
  *     before it asks again;
  *   - an address with a search address given by hand (issue #106) is asked
- *     with that one, as typed.
+ *     with that one, as typed;
+ *   - one address may take two requests (street, then the place alone,
+ *     issue #108) - the distance holds between both;
+ *   - a point set by hand (issue #108) is never asked and never
+ *     overwritten; "Alle neu ermitteln" forgets every automatic result and
+ *     keeps search addresses and points set by hand.
  *
  * One address on demand (issue #106: "Jetzt suchen", a search address at a
  * member) goes the same way: the same lock, the same distance, the same
@@ -39,7 +44,7 @@ final readonly class Koordinatenermittlung
     public const float ABSTAND_S = 1.1;
 
     /** How long the geocoding rests after a failure of the service. */
-    public const int PAUSE_MINUTEN = 15;
+    public const int PAUSE_MINUTEN = 2;
 
     public const string SETTING_LETZTE_ANFRAGE = 'karte_geocoding_letzte_anfrage';
 
@@ -86,7 +91,7 @@ final readonly class Koordinatenermittlung
         if (!$this->koordinaten->sperren()) {
             $stand = $this->zaehlen($anschriften, $this->koordinaten->alle(), 0, $this->pauseBis($jetzt));
 
-            return new ErmittlungsStand($stand->gesamt, $stand->gefunden, $stand->nichtGefunden, laeuftBereits: true, pauseBis: $stand->pauseBis);
+            return $stand->mit(laeuftBereits: true, pauseBis: $stand->pauseBis);
         }
 
         try {
@@ -120,9 +125,7 @@ final readonly class Koordinatenermittlung
                 }
             }
 
-            $stand = $this->zaehlen($anschriften, $bekannt, $bearbeitet, $pauseBis);
-
-            return new ErmittlungsStand($stand->gesamt, $stand->gefunden, $stand->nichtGefunden, $bearbeitet, pauseBis: $pauseBis, fehler: $fehler);
+            return $this->zaehlen($anschriften, $bekannt, $bearbeitet, $pauseBis)->mit($bearbeitet, pauseBis: $pauseBis, fehler: $fehler);
         } finally {
             $this->koordinaten->freigeben();
         }
@@ -155,26 +158,76 @@ final readonly class Koordinatenermittlung
     }
 
     /**
+     * Sets the point of $anschrift by hand (issue #108): no request, no
+     * lock - an automatic result never overwrites it (GeoAnschriftRepository::
+     * speichern()), not even one the cron is asking for right now.
+     *
+     * @throws \InvalidArgumentException when the coordinates are no coordinates
+     */
+    public function punktSetzen(Anschrift $anschrift, float $lat, float $lon, \DateTimeImmutable $jetzt): void
+    {
+        if (!self::gueltig($lat, $lon)) {
+            throw new \InvalidArgumentException('Latitude must be within -90..90 and longitude within -180..180.');
+        }
+        $this->koordinaten->punktSetzen($anschrift->hash(), $lat, $lon, $jetzt);
+    }
+
+    /**
+     * Removes the point set by hand and asks automatically again now (with
+     * the search address, if there is one) - under the same rules as
+     * "Jetzt suchen".
+     */
+    public function punktEntfernen(Anschrift $anschrift, \DateTimeImmutable $jetzt): HandSuche
+    {
+        return $this->vonHand($anschrift, $jetzt, function () use ($anschrift): void {
+            $this->koordinaten->punktEntfernen($anschrift->hash());
+        }, ueberPunktVonHand: true);
+    }
+
+    /**
+     * "Alle neu ermitteln" (issue #108): forgets every automatic result;
+     * search addresses and points set by hand stay. The asking itself is
+     * the usual chain (ermitteln()) afterwards.
+     *
+     * @return int addresses forgotten
+     */
+    public function alleVergessen(): int
+    {
+        return $this->koordinaten->automatischeVergessen();
+    }
+
+    /** Latitude -90..90, longitude -180..180, both finite. */
+    public static function gueltig(float $lat, float $lon): bool
+    {
+        return is_finite($lat) && is_finite($lon) && abs($lat) <= 90.0 && abs($lon) <= 180.0;
+    }
+
+    /**
      * One address on demand: under the lock (held by somebody else: nothing
-     * changes, Belegt), $aendern writes the search address, then one
-     * request with the usual distance - unless the geocoding rests after a
-     * failure: then the change stays and the next run asks.
+     * changes, Belegt), $aendern writes the change, then one search with
+     * the usual distance - unless the geocoding rests after a failure:
+     * then the change stays and the next run asks. A point set by hand
+     * blocks every search (PunktVonHand, nothing changed) - except for its
+     * own removal ($ueberPunktVonHand).
      *
      * @param \Closure(): void $aendern
      */
-    private function vonHand(Anschrift $anschrift, \DateTimeImmutable $jetzt, \Closure $aendern): HandSuche
+    private function vonHand(Anschrift $anschrift, \DateTimeImmutable $jetzt, \Closure $aendern, bool $ueberPunktVonHand = false): HandSuche
     {
         if (!$this->koordinaten->sperren()) {
             return HandSuche::Belegt;
         }
 
         try {
+            $hash = $anschrift->hash();
+            if (!$ueberPunktVonHand && ($this->koordinaten->eintrag($hash)['status'] ?? null) === GeoStatus::VonHand) {
+                return HandSuche::PunktVonHand;
+            }
             $aendern();
             if ($this->pauseBis($jetzt) !== null) {
                 return HandSuche::Ruht;
             }
 
-            $hash = $anschrift->hash();
             $ergebnis = $this->fragen($anschrift, $this->koordinaten->eintrag($hash)['korrektur'] ?? null);
             if ($ergebnis->istFehler() || $ergebnis->status === null) {
                 $this->pausieren($jetzt, $ergebnis->fehler);
@@ -184,27 +237,33 @@ final readonly class Koordinatenermittlung
 
             $this->koordinaten->speichern($hash, $ergebnis->status, $ergebnis->lat, $ergebnis->lon, $jetzt);
 
-            return $ergebnis->status === GeoStatus::Gefunden ? HandSuche::Gefunden : HandSuche::NichtGefunden;
+            return HandSuche::aus($ergebnis->status);
         } finally {
             $this->koordinaten->freigeben();
         }
     }
 
     /**
-     * One request to the geocoder, after the distance to the last one -
-     * with the search address given by hand when there is one.
+     * The search for one address - with the search address given by hand
+     * when there is one. Each of its requests (one or two) waits for the
+     * distance to the last request and records its own end.
      *
      * @param array{strasse: string, plz: string, ort: string}|null $korrektur
      */
     private function fragen(Anschrift $anschrift, ?array $korrektur): GeoErgebnis
     {
-        $this->abstandHalten();
-        $ergebnis = $korrektur === null
-            ? $this->geocoder->suchen($anschrift)
-            : $this->geocoder->suchen(new Anschrift($korrektur['strasse'], $korrektur['plz'], $korrektur['ort'], $anschrift->land), wortgetreu: true);
-        $this->settings->set(self::SETTING_LETZTE_ANFRAGE, $this->takt->jetzt());
+        $jeAnfrage = function (\Closure $anfrage): HttpAntwort {
+            $this->abstandHalten();
+            try {
+                return $anfrage();
+            } finally {
+                $this->settings->set(self::SETTING_LETZTE_ANFRAGE, $this->takt->jetzt());
+            }
+        };
 
-        return $ergebnis;
+        return $korrektur === null
+            ? $this->geocoder->suchen($anschrift, jeAnfrage: $jeAnfrage)
+            : $this->geocoder->suchen(new Anschrift($korrektur['strasse'], $korrektur['plz'], $korrektur['ort'], $anschrift->land), wortgetreu: true, jeAnfrage: $jeAnfrage);
     }
 
     /** After a failure of the service: rest for a while; the reason is logged, never the address. */
@@ -252,16 +311,22 @@ final readonly class Koordinatenermittlung
      */
     private function zaehlen(array $anschriften, array $bekannt, int $bearbeitet, ?\DateTimeImmutable $pauseBis): ErmittlungsStand
     {
-        $gefunden = 0;
-        $nichtGefunden = 0;
+        $anzahl = ['gefunden' => 0, 'ungefaehr' => 0, 'von_hand' => 0, 'nicht_gefunden' => 0];
         foreach (array_keys($anschriften) as $hash) {
-            match ($bekannt[$hash]['status'] ?? null) {
-                GeoStatus::Gefunden => $gefunden++,
-                GeoStatus::NichtGefunden => $nichtGefunden++,
-                null => null,
-            };
+            $status = $bekannt[$hash]['status'] ?? null;
+            if ($status !== null) {
+                $anzahl[$status->value]++;
+            }
         }
 
-        return new ErmittlungsStand(count($anschriften), $gefunden, $nichtGefunden, $bearbeitet, pauseBis: $pauseBis);
+        return new ErmittlungsStand(
+            count($anschriften),
+            $anzahl['gefunden'],
+            $anzahl['nicht_gefunden'],
+            $bearbeitet,
+            pauseBis: $pauseBis,
+            ungefaehr: $anzahl['ungefaehr'],
+            vonHand: $anzahl['von_hand'],
+        );
     }
 }

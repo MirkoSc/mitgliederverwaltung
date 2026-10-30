@@ -50,7 +50,7 @@ final class WohnortTest extends AppTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::treffer(48.137154, 11.576124);
+        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::trefferFuer($url, 48.137154, 11.576124);
         $this->http = new FakeHttpAbruf(fn(string $url): HttpAntwort => ($this->antwort)($url));
         $http = $this->http;
         $this->dienste->dienst(HttpAbruf::class, static fn(): HttpAbruf => $http);
@@ -165,7 +165,7 @@ final class WohnortTest extends AppTestCase
         $id = $this->mitglied(101, 'Gibtsnichtweg 9');
         $this->geoStatus('Gibtsnichtweg 9', GeoStatus::NichtGefunden);
         $this->antwort = static fn(string $url): HttpAntwort => str_contains($url, 'Am%20Markt')
-            ? FakeHttpAbruf::treffer(49.5, 9.25)
+            ? FakeHttpAbruf::trefferFuer($url, 49.5, 9.25)
             : FakeHttpAbruf::keinTreffer();
         $this->als(Rolle::Vorstand);
         $zurueck = '/app/listen/geburtstage?zeitraum=jahr';

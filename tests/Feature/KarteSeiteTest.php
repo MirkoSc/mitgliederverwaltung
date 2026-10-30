@@ -51,7 +51,7 @@ final class KarteSeiteTest extends AppTestCase
         $this->http = new FakeHttpAbruf(fn(string $url): HttpAntwort => match (true) {
             $this->dienstAus => new HttpAntwort(0),
             str_contains($url, 'tile.openstreetmap.org') => new HttpAntwort(200, FakeHttpAbruf::png(), 'image/png'),
-            default => FakeHttpAbruf::treffer(48.0, 11.0),
+            default => FakeHttpAbruf::trefferFuer($url, 48.0, 11.0),
         });
         $http = $this->http;
         $this->dienste->dienst(HttpAbruf::class, static fn(): HttpAbruf => $http);
@@ -244,7 +244,7 @@ final class KarteSeiteTest extends AppTestCase
 
     public function testTheCronTaskLooksUpAFewAddresses(): void
     {
-        for ($i = 1; $i <= 12; $i++) {
+        for ($i = 1; $i <= KoordinatenTask::JE_LAUF + 5; $i++) {
             $this->mitglied(100 + $i, 'Muster' . $i, 'Weg ' . $i);
         }
 
