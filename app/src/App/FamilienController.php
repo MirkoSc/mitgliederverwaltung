@@ -116,7 +116,8 @@ final readonly class FamilienController
             'formUrl' => $hier->adresse($ansicht->id(), $ansicht->reiter),
             'nurErgebnis' => false,
             'darfPflegen' => $konto?->darf(Permission::MitgliederBearbeiten) === true,
-            'scripts' => ['/js/anschrift.js', '/js/familien.js'],
+            'scripts' => [...MitgliedAnsicht::SKRIPTE, '/js/familien.js'],
+            'styles' => MitgliedAnsicht::STILE,
         ];
 
         $htmx = $r->istHtmx() && $r->header('hx-history-restore-request') !== 'true';

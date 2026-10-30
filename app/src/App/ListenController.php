@@ -108,7 +108,8 @@ final readonly class ListenController
             'einbettung' => $einbettung,
             'geoeffnet' => $geoeffnet,
             'darfMitglied' => $darfMitglied,
-            'scripts' => ['/js/anschrift.js'],
+            'scripts' => MitgliedAnsicht::SKRIPTE,
+            'styles' => MitgliedAnsicht::STILE,
         ];
 
         $htmx = $request->istHtmx() && $request->header('hx-history-restore-request') !== 'true';

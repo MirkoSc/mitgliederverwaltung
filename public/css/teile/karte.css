@@ -130,3 +130,93 @@
     box-shadow: 0 0 0 2px #000000;
     font-size: 1rem;
 }
+
+/* The block "Wohnort auf der Karte" in the tab "Daten" of a member (issue
+   #106, app/views/mitglied/wohnort.php): a quiet sub-section of the
+   address - the state as a line of text with its label, the small map
+   below (the same surface and marker as the big one, only lower), then
+   the link to the big map and the search address. */
+.wohnort {
+    display: grid;
+    gap: var(--abstand-3);
+    margin: var(--abstand-2) 0 0;
+    padding: var(--abstand-4);
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche-2);
+}
+
+.wohnort:focus {
+    outline: none;
+}
+
+.wohnort:focus-visible {
+    outline: var(--fokus-breite) solid var(--farbe-fokus);
+    outline-offset: var(--fokus-abstand);
+}
+
+.wohnort > h4 {
+    margin: 0;
+    font-size: var(--schrift-basis);
+}
+
+.wohnort p {
+    margin: 0;
+}
+
+.wohnort-stand .etikett {
+    margin-right: var(--abstand-2);
+}
+
+.karte-flaeche.wohnort-karte {
+    height: clamp(12rem, 32vh, 16rem);
+    margin: 0;
+}
+
+.wohnort-korrektur > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    color: var(--farbe-link);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.wohnort-korrektur[open] {
+    display: grid;
+    gap: var(--abstand-3);
+}
+
+.wohnort-felder {
+    display: grid;
+    gap: var(--abstand-3) var(--abstand-4);
+}
+
+@media (min-width: 48rem) {
+    .wohnort-felder {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    }
+
+    .wohnort-felder > .feld-breit {
+        grid-column: 1 / -1;
+    }
+}
+
+.wohnort .knopfreihe {
+    margin: 0;
+}
+
+/* Barrierefrei-Modus: one column, a hard frame; the summary reads as the
+   link it is. */
+.modus-barrierefrei .wohnort {
+    border-width: 2px;
+    border-color: var(--farbe-text);
+}
+
+.modus-barrierefrei .wohnort-felder {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.modus-barrierefrei .wohnort-korrektur > summary {
+    text-decoration: underline;
+}

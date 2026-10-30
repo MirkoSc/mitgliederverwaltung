@@ -1,0 +1,3 @@
+# app/routes/wohnort.php - the block "Wohnort auf der Karte" at a member
+# (issue #106): searching and the search address change data.
+POST /app/mitglieder/{id:[0-9]+}/wohnort -> mitglieder.bearbeiten

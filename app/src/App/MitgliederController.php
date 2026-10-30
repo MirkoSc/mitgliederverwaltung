@@ -78,7 +78,8 @@ final readonly class MitgliederController
             'formUrl' => self::formUrl($filter, $ansicht->id(), $ansicht->reiter),
             'nurErgebnis' => false,
             'darfAnlegen' => $view->konto()?->darf(Permission::MitgliederBearbeiten) === true,
-            'scripts' => ['/js/anschrift.js'],
+            'scripts' => MitgliedAnsicht::SKRIPTE,
+            'styles' => MitgliedAnsicht::STILE,
         ];
 
         $htmx = $r->istHtmx() && $r->header('hx-history-restore-request') !== 'true';

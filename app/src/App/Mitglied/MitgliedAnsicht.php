@@ -22,6 +22,16 @@ use App\Repository\MitgliedRepository;
  */
 final readonly class MitgliedAnsicht
 {
+    /**
+     * The scripts every embedding page loads (`scripts` in its render
+     * call): copying the payer's address (anschrift.js) and the small map
+     * of the block "Wohnort auf der Karte" (Leaflet + karte.js, issue #106).
+     */
+    public const array SKRIPTE = ['/js/anschrift.js', '/js/vendor/leaflet/leaflet.js', '/js/karte.js'];
+
+    /** The stylesheets every embedding page loads (`styles`): Leaflet's, for the small map. */
+    public const array STILE = ['/js/vendor/leaflet/leaflet.css'];
+
     public function __construct(private Dienste $dienste)
     {
     }

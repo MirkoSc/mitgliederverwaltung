@@ -25,7 +25,13 @@ use App\Support\FileLogger;
  *     changes (a changed address has another hash);
  *   - a failure of the service is no crash: it is logged without the
  *     address, nothing is stored, and the geocoding rests for a while
- *     before it asks again.
+ *     before it asks again;
+ *   - an address with a search address given by hand (issue #106) is asked
+ *     with that one, as typed.
+ *
+ * One address on demand (issue #106: "Jetzt suchen", a search address at a
+ * member) goes the same way: the same lock, the same distance, the same
+ * rest after a failure - see vonHand().
  */
 final readonly class Koordinatenermittlung
 {
@@ -94,28 +100,22 @@ final readonly class Koordinatenermittlung
             if ($pauseBis === null) {
                 $start = $this->takt->jetzt();
                 foreach ($anschriften as $hash => $anschrift) {
-                    if (isset($bekannt[$hash])) {
+                    if (($bekannt[$hash]['status'] ?? null) !== null) {
                         continue;
                     }
                     if ($bearbeitet >= $hoechstens || $this->takt->jetzt() - $start >= $zeitbudget) {
                         break;
                     }
 
-                    $this->abstandHalten();
-                    $ergebnis = $this->geocoder->suchen($anschrift);
-                    $this->settings->set(self::SETTING_LETZTE_ANFRAGE, $this->takt->jetzt());
-
+                    $ergebnis = $this->fragen($anschrift, $bekannt[$hash]['korrektur'] ?? null);
                     if ($ergebnis->istFehler() || $ergebnis->status === null) {
                         $fehler = $ergebnis->fehler;
-                        $pauseBis = $jetzt->modify(sprintf('+%d minutes', self::PAUSE_MINUTEN));
-                        $this->settings->set(self::SETTING_PAUSE_BIS, $pauseBis->format(self::FORMAT));
-                        // The reason only - never the address (CLAUDE.md section 4).
-                        $this->logger?->append(sprintf('Geocoding paused for %d minutes: %s', self::PAUSE_MINUTEN, $fehler));
+                        $pauseBis = $this->pausieren($jetzt, $fehler);
                         break;
                     }
 
                     $this->koordinaten->speichern($hash, $ergebnis->status, $ergebnis->lat, $ergebnis->lon, $jetzt);
-                    $bekannt[$hash] = ['status' => $ergebnis->status, 'lat' => $ergebnis->lat, 'lon' => $ergebnis->lon];
+                    $bekannt[$hash] = ['status' => $ergebnis->status, 'lat' => $ergebnis->lat, 'lon' => $ergebnis->lon, 'korrektur' => $bekannt[$hash]['korrektur'] ?? null];
                     $bearbeitet++;
                 }
             }
@@ -126,6 +126,96 @@ final readonly class Koordinatenermittlung
         } finally {
             $this->koordinaten->freigeben();
         }
+    }
+
+    /** "Jetzt suchen" at a member: asks for this one address now (with its search address, if any). */
+    public function jetztSuchen(Anschrift $anschrift, \DateTimeImmutable $jetzt): HandSuche
+    {
+        return $this->vonHand($anschrift, $jetzt, static function (): void {
+        });
+    }
+
+    /**
+     * Remembers $suche (street, postcode, town) as the search address of
+     * $anschrift and asks with it now. The member's address stays as it is.
+     */
+    public function korrigieren(Anschrift $anschrift, Anschrift $suche, \DateTimeImmutable $jetzt): HandSuche
+    {
+        return $this->vonHand($anschrift, $jetzt, function () use ($anschrift, $suche, $jetzt): void {
+            $this->koordinaten->korrekturSetzen($anschrift->hash(), $suche->strasse, $suche->plz, $suche->ort, $jetzt);
+        });
+    }
+
+    /** Forgets the search address of $anschrift and asks with the address itself now. */
+    public function korrekturEntfernen(Anschrift $anschrift, \DateTimeImmutable $jetzt): HandSuche
+    {
+        return $this->vonHand($anschrift, $jetzt, function () use ($anschrift): void {
+            $this->koordinaten->vergessen($anschrift->hash());
+        });
+    }
+
+    /**
+     * One address on demand: under the lock (held by somebody else: nothing
+     * changes, Belegt), $aendern writes the search address, then one
+     * request with the usual distance - unless the geocoding rests after a
+     * failure: then the change stays and the next run asks.
+     *
+     * @param \Closure(): void $aendern
+     */
+    private function vonHand(Anschrift $anschrift, \DateTimeImmutable $jetzt, \Closure $aendern): HandSuche
+    {
+        if (!$this->koordinaten->sperren()) {
+            return HandSuche::Belegt;
+        }
+
+        try {
+            $aendern();
+            if ($this->pauseBis($jetzt) !== null) {
+                return HandSuche::Ruht;
+            }
+
+            $hash = $anschrift->hash();
+            $ergebnis = $this->fragen($anschrift, $this->koordinaten->eintrag($hash)['korrektur'] ?? null);
+            if ($ergebnis->istFehler() || $ergebnis->status === null) {
+                $this->pausieren($jetzt, $ergebnis->fehler);
+
+                return HandSuche::Fehler;
+            }
+
+            $this->koordinaten->speichern($hash, $ergebnis->status, $ergebnis->lat, $ergebnis->lon, $jetzt);
+
+            return $ergebnis->status === GeoStatus::Gefunden ? HandSuche::Gefunden : HandSuche::NichtGefunden;
+        } finally {
+            $this->koordinaten->freigeben();
+        }
+    }
+
+    /**
+     * One request to the geocoder, after the distance to the last one -
+     * with the search address given by hand when there is one.
+     *
+     * @param array{strasse: string, plz: string, ort: string}|null $korrektur
+     */
+    private function fragen(Anschrift $anschrift, ?array $korrektur): GeoErgebnis
+    {
+        $this->abstandHalten();
+        $ergebnis = $korrektur === null
+            ? $this->geocoder->suchen($anschrift)
+            : $this->geocoder->suchen(new Anschrift($korrektur['strasse'], $korrektur['plz'], $korrektur['ort'], $anschrift->land), wortgetreu: true);
+        $this->settings->set(self::SETTING_LETZTE_ANFRAGE, $this->takt->jetzt());
+
+        return $ergebnis;
+    }
+
+    /** After a failure of the service: rest for a while; the reason is logged, never the address. */
+    private function pausieren(\DateTimeImmutable $jetzt, string $fehler): \DateTimeImmutable
+    {
+        $pauseBis = $jetzt->modify(sprintf('+%d minutes', self::PAUSE_MINUTEN));
+        $this->settings->set(self::SETTING_PAUSE_BIS, $pauseBis->format(self::FORMAT));
+        // The reason only - never the address (CLAUDE.md section 4).
+        $this->logger?->append(sprintf('Geocoding paused for %d minutes: %s', self::PAUSE_MINUTEN, $fehler));
+
+        return $pauseBis;
     }
 
     /** Waits until the last request is ABSTAND_S ago - whoever sent it. */
@@ -158,7 +248,7 @@ final readonly class Koordinatenermittlung
 
     /**
      * @param array<string, Anschrift> $anschriften
-     * @param array<string, array{status: GeoStatus, lat: ?float, lon: ?float}> $bekannt
+     * @param array<string, array{status: ?GeoStatus, lat: ?float, lon: ?float, korrektur: ?array{strasse: string, plz: string, ort: string}}> $bekannt
      */
     private function zaehlen(array $anschriften, array $bekannt, int $bearbeitet, ?\DateTimeImmutable $pauseBis): ErmittlungsStand
     {

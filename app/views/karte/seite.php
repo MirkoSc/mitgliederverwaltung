@@ -15,6 +15,7 @@
  * @var bool $darfErmitteln
  * @var string $kachelUrl
  * @var string $mitgliedPfad
+ * @var int|null $fokusMitglied the member whose place is centred (link "Auf der großen Karte zeigen", issue #106)
  * @var string|null $csrf
  */
 
@@ -22,10 +23,13 @@ use App\App\KarteController;
 use App\Domain\MitgliederStatus;
 use App\Service\Karte\KachelProxy;
 
-$mitgliederListe = static function (\App\Service\Karte\KartenOrt $ort) use ($mitgliedPfad): string {
+// $zumWohnort: the link opens the member's tab "Daten" at its block
+// "Wohnort auf der Karte", where the search can be corrected (issue #106).
+$mitgliederListe = static function (\App\Service\Karte\KartenOrt $ort, bool $zumWohnort = false) use ($mitgliedPfad): string {
     $html = '<ul class="karte-mitglieder">';
     foreach ($ort->mitglieder as $m) {
-        $html .= '<li><a href="' . e($mitgliedPfad . '?mitglied=' . $m->id) . '">' . e($m->name()) . '</a> '
+        $ziel = $mitgliedPfad . '?mitglied=' . $m->id . ($zumWohnort ? '&reiter=daten#' . \App\App\WohnortController::ANKER : '');
+        $html .= '<li><a href="' . e($ziel) . '">' . e($m->name()) . '</a> '
             . '<span class="nummer">' . e((string) $m->mitgliedsnummer) . '</span>'
             . ($m->aktiv ? '' : ' <span class="etikett">passiv</span>') . '</li>';
     }
@@ -110,7 +114,7 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
                 </thead>
                 <tbody>
                     <?php foreach ($ansicht->gefunden as $ort): ?>
-                        <tr data-lat="<?= e(number_format((float) $ort->lat, 6, '.', '')) ?>" data-lon="<?= e(number_format((float) $ort->lon, 6, '.', '')) ?>">
+                        <tr<?= $fokusMitglied !== null && in_array($fokusMitglied, array_map(static fn($m): int => $m->id, $ort->mitglieder), true) ? ' data-fokus' : '' ?> data-lat="<?= e(number_format((float) $ort->lat, 6, '.', '')) ?>" data-lon="<?= e(number_format((float) $ort->lon, 6, '.', '')) ?>">
                             <td class="liste-titel" data-karte-anschrift><?= e($ort->anschrift->text()) ?></td>
                             <td class="zahl" data-label="Anzahl" data-karte-anzahl><?= count($ort->mitglieder) ?></td>
                             <td data-label="Mitglieder" data-karte-mitglieder><?= $mitgliederListe($ort) ?></td>
@@ -123,7 +127,7 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
 </section>
 
 <?php foreach ([
-    ['nicht-gefunden', 'Nicht gefundene Anschriften', $ansicht->nichtGefunden, 'Der Kartendienst kennt diese Anschriften nicht. Eine Korrektur am Mitglied (z. B. Straße oder PLZ) lässt sie neu suchen.'],
+    ['nicht-gefunden', 'Nicht gefundene Anschriften', $ansicht->nichtGefunden, 'Der Kartendienst kennt diese Anschriften nicht. Beim Mitglied (Reiter „Daten“, „Wohnort auf der Karte“) lässt sich eine andere Anschrift nur für die Suche angeben.'],
     ['offen', 'Noch nicht ermittelt', $ansicht->offen, 'Diese Anschriften kommen in den nächsten Durchläufen dran.'],
 ] as [$schluessel, $titel, $orte, $erklaerung]): ?>
     <?php if ($orte !== []): ?>
@@ -142,7 +146,7 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
                         <?php foreach ($orte as $ort): ?>
                             <tr>
                                 <td class="liste-titel"><?= e($ort->anschrift->text()) ?></td>
-                                <td data-label="Mitglieder"><?= $mitgliederListe($ort) ?></td>
+                                <td data-label="Mitglieder"><?= $mitgliederListe($ort, $schluessel === 'nicht-gefunden') ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
