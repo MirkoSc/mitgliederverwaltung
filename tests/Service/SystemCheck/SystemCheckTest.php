@@ -386,8 +386,154 @@ final class SystemCheckTest extends TestCase
         self::assertSame([], $gefragt);
 
         $keys = $this->keys(new SystemCheck(null, null, $probe)->all('https://verein.example'));
-        self::assertSame('config_exposure', end($keys));
+        self::assertSame(['config_exposure', 'user_ini_exposure'], array_slice($keys, -2));
+        self::assertCount(2, $gefragt);
+    }
+
+    /**
+     * @param array<string, string> $headers
+     * @param list<string> $gefragt receives every URL the probe was asked for
+     *
+     * @return \Closure(string): ?array{status: int, headers: array<string, string>}
+     */
+    private static function headerProbe(?array $headers, array &$gefragt = [], int $status = 200): \Closure
+    {
+        return static function (string $url) use ($headers, $status, &$gefragt): ?array {
+            $gefragt[] = $url;
+
+            return $headers === null ? null : ['status' => $status, 'headers' => $headers];
+        };
+    }
+
+    /** @return array<string, string> what web/.htaccess sends */
+    private static function vollstaendigeHeader(): array
+    {
+        return [
+            'content-security-policy' => "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'",
+            'strict-transport-security' => 'max-age=15768000',
+            'x-frame-options' => 'DENY',
+            'x-content-type-options' => 'nosniff',
+            'referrer-policy' => 'strict-origin-when-cross-origin',
+        ];
+    }
+
+    private static function headerCheck(?array $headers, array &$gefragt = []): CheckResult
+    {
+        return new SystemCheck(null, null, null, null, self::headerProbe($headers, $gefragt))
+            ->securityHeaders('https://verein.example/');
+    }
+
+    public function testCompleteSecurityHeadersAreOkAndTheLoginPageIsAsked(): void
+    {
+        $gefragt = [];
+        $result = self::headerCheck(self::vollstaendigeHeader(), $gefragt);
+
+        self::assertSame(['https://verein.example/anmelden'], $gefragt);
+        self::assertSame('security_headers', $result->key);
+        self::assertSame(CheckStatus::Ok, $result->status);
+        self::assertSame('vollständig', $result->actual);
+    }
+
+    public function testEachMissingHeaderIsNamedAndWarns(): void
+    {
+        foreach (['strict-transport-security' => 'Strict-Transport-Security', 'x-frame-options' => 'X-Frame-Options', 'x-content-type-options' => 'X-Content-Type-Options'] as $key => $name) {
+            $headers = self::vollstaendigeHeader();
+            unset($headers[$key]);
+            $result = self::headerCheck($headers);
+
+            self::assertSame(CheckStatus::Warn, $result->status, $name);
+            self::assertSame($name . ' fehlt', $result->actual);
+            self::assertStringContainsString('web/.htaccess', $result->detail);
+            self::assertStringContainsString('Vorlage aus dem Release', $result->detail);
+        }
+    }
+
+    public function testAMissingModuleDropsEverythingAndRatesFail(): void
+    {
+        $result = self::headerCheck([]);
+
+        self::assertSame(CheckStatus::Fail, $result->status);
+        foreach (['Content-Security-Policy fehlt', 'Strict-Transport-Security fehlt', 'X-Frame-Options fehlt', 'X-Content-Type-Options fehlt'] as $text) {
+            self::assertStringContainsString($text, $result->actual);
+        }
+    }
+
+    public function testXPoweredByIsAWarning(): void
+    {
+        $result = self::headerCheck(self::vollstaendigeHeader() + ['x-powered-by' => 'PHP/8.5.0']);
+
+        self::assertSame(CheckStatus::Warn, $result->status);
+        self::assertSame('X-Powered-By wird gesendet', $result->actual);
+        self::assertStringNotContainsString('8.5.0', implode(' ', $result->toArray()), 'values stay out of the page');
+    }
+
+    public function testAWeakScriptSrcFails(): void
+    {
+        foreach ([
+            "default-src 'self'; script-src 'self' 'unsafe-inline'",
+            "default-src 'self'; script-src 'self' 'unsafe-eval'",
+            "default-src 'self'; script-src *",
+            "default-src 'self'; script-src https://cdn.example",
+            "default-src 'self'",
+            "script-srcx 'self'",
+        ] as $csp) {
+            $headers = ['content-security-policy' => $csp] + self::vollstaendigeHeader();
+            $result = self::headerCheck($headers);
+
+            self::assertSame(CheckStatus::Fail, $result->status, $csp);
+            self::assertStringContainsString('script-src', $result->actual, $csp);
+        }
+    }
+
+    public function testHeaderNamesAreMatchedCaseInsensitively(): void
+    {
+        $headers = [];
+        foreach (self::vollstaendigeHeader() as $name => $wert) {
+            $headers[strtoupper($name)] = $wert;
+        }
+
+        self::assertSame(CheckStatus::Ok, self::headerCheck($headers)->status);
+    }
+
+    public function testNoAnswerToTheHeaderProbeIsOnlyAWarning(): void
+    {
+        $result = self::headerCheck(null);
+
+        self::assertSame(CheckStatus::Warn, $result->status);
+        self::assertSame('keine Antwort', $result->actual);
+    }
+
+    public function testTheHeaderCheckJoinsOnlyWithAHeaderProbeAndAnOrigin(): void
+    {
+        $gefragt = [];
+        $probe = self::headerProbe(self::vollstaendigeHeader(), $gefragt);
+
+        self::assertNotContains('security_headers', $this->keys(new SystemCheck()->all('https://verein.example')));
+        self::assertNotContains('security_headers', $this->keys(new SystemCheck(null, null, null, null, $probe)->all()));
+        self::assertSame([], $gefragt);
+
+        $keys = $this->keys(new SystemCheck(null, null, null, null, $probe)->all('https://verein.example'));
+        self::assertSame('security_headers', end($keys));
         self::assertCount(1, $gefragt);
+    }
+
+    public function testUserIniIsOnlyAFindingWhenServed(): void
+    {
+        $gefragt = [];
+        $served = new SystemCheck(null, null, self::probe(200, $gefragt))->userIniExposure('https://verein.example');
+
+        self::assertSame(['https://verein.example/.user.ini'], $gefragt);
+        self::assertSame(CheckStatus::Warn, $served->status);
+        self::assertSame('abrufbar (HTTP 200)', $served->actual);
+
+        foreach ([401, 403, 404, 410] as $status) {
+            $result = new SystemCheck(null, null, self::probe($status))->userIniExposure('https://verein.example');
+            self::assertSame(CheckStatus::Ok, $result->status, (string) $status);
+        }
+
+        $none = new SystemCheck(null, null, self::probe(null))->userIniExposure('https://verein.example');
+        self::assertSame(CheckStatus::Warn, $none->status);
+        self::assertSame('keine Antwort', $none->actual);
     }
 
     /**

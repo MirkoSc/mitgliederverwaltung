@@ -238,7 +238,7 @@ echten Daten installiert, das Repository öffentlich.
 | I-06 | Vendored htmx mit Version/Lizenz/Prüfsumme | ✓ (2.0.10, SHA-256 in README, `VendorAssetsTest`) | `public/js/vendor/README.md` |
 | I-07 | Header erreichen bestehende Installationen beim Update | ✓ mit Einschränkung | `ReleaseSwitcher::refreshDocrootFiles()` (ersetzt nur, wenn die Datei der Vorlage des Vorgänger-Release gleicht), aufgerufen in `UpdateService::finish()` Z. 326; Shim über `refreshShim()`. Einschränkungen: **I-B01**, **I-B02** |
 | I-08 | HTTP→HTTPS-Umleitung | ✓ (Shim, nur GET/HEAD, nicht `/cron`, nicht localhost/IP/Fremdport, Notschalter `shared/https_umleitung_aus.flag`; `X-Forwarded-Proto` kann die Umleitung nur für die eigene Anfrage abschalten) | `docker/web/index.php` = `ReleaseSwitcher::SHIM` (Byte-Gleichheit per `ShimContentTest`) |
-| I-09 | Header tatsächlich am Host vorhanden (Systemcheck/Selbsttest) | ✗ | **I-B01** → #81 |
+| I-09 | Header tatsächlich am Host vorhanden (Systemcheck/Selbsttest) | ✓ | `SystemCheck::securityHeaders()` und `userIniExposure()` (Einstellungen → System), Abruf über `CurlHeaderProbe` wie der Selbsttest des Updaters; `SystemCheckTest`, `SystemcheckSeiteTest` (#81) |
 | I-10 | `Cache-Control: no-store` auf allen Seiten mit Mitgliederdaten (inkl. htmx-Partials, JSON der Schrittketten) | ✓ | Jede `/app`- und `/admin`-Route läuft durch `LoginGuard::check()` → `Session::start()` mit `cache_limiter=nocache` (`Cache-Control: no-store, no-cache, must-revalidate`, `Session::OPTIONEN`); `Response` setzt kein eigenes `Cache-Control`, überschreibt also nichts |
 | I-11 | `no-store` auf Downloads: xlsx/csv-Exporte, Nachweis-Dateien, pain.008, Backup | ✓ | `ListenExport.php:44`, `NachweisController.php:133`, `EinzugController.php:179`, `BackupController.php:128` |
 | I-12 | Back/Forward-Cache zeigt nach Abmelden keine Mitgliederseite | ✓ mit Härtung | `no-store` + neue Session-ID beim Abmelden (`Session::destroy()`) – siehe **I-B03** |
@@ -294,7 +294,7 @@ Test.
 | H-12 | niedrig | Actions im Release-Workflow nicht per Commit-SHA gepinnt | offen → #79 |
 | F-11 | niedrig | Server-Schlüssel nicht wechselbar | offen → #80 |
 | F-12 | niedrig | Audit-Hash-Kette ungeschlüsselt (DB-Schreiber kann sie neu rechnen) | ⚠ akzeptiert: DB-Zugriff ist ohnehin Vollzugriff (E-11); Folge-Issue möglich |
-| I-B01 | niedrig | niemand prüft, ob die Security-Header am Host ankommen | offen → #81; bis dahin einmal `curl -I` von Hand |
+| I-B01 | niedrig | niemand prüft, ob die Security-Header am Host ankommen | erledigt (#81): Systemcheck-Zeile „Sicherheits-Header am Server“ |
 | C-F4 | Härtung | Doku zu `Erweiterung::recht()` | ✓ behoben |
 | E-21 | Härtung | Markdown-Links `//host` | ✓ behoben |
 | E-23 | Härtung | Import prüft Länge von `bemerkung` nicht | ✓ behoben |

@@ -10,7 +10,9 @@ use App\Http\Response;
 use App\Service\Integritaet\CodeIntegritaet;
 use App\Service\Integritaet\IntegritaetPruefungLaeuftBereits;
 use App\Service\Integritaet\IntegritaetPruefungNichtMoeglich;
+use App\Service\SystemCheck\CurlHeaderProbe;
 use App\Service\SystemCheck\CurlStatusProbe;
+use App\Service\SystemCheck\HeaderProbe;
 use App\Service\SystemCheck\StatusProbe;
 use App\Service\SystemCheck\SystemCheck;
 
@@ -40,6 +42,7 @@ final readonly class SystemController
             varDir: $paths->varDir(),
             statusProbe: $this->dienste->dienst(StatusProbe::class, static fn(): StatusProbe => new CurlStatusProbe())(...),
             sharedDir: $paths->sharedDir(),
+            headerProbe: $this->dienste->dienst(HeaderProbe::class, static fn(): HeaderProbe => new CurlHeaderProbe())(...),
         );
 
         return Response::html($this->dienste->view->fragment('admin/einstellungen/systemcheck', [
