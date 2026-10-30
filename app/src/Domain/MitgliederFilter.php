@@ -84,13 +84,20 @@ final readonly class MitgliederFilter
 
     /**
      * The words of the search text. Blanks and commas separate: "Muster,
-     * Erika" finds Erika Mustermann like "erika muster".
+     * Erika" finds Erika Mustermann like "erika muster". A full stop at the
+     * end of a word is dropped ("Hauptstr." finds "Hauptstraße"); a word
+     * of nothing but full stops is no word.
      *
      * @return list<string>
      */
     public function woerter(): array
     {
-        return preg_split('/[\s,]+/u', $this->text, flags: PREG_SPLIT_NO_EMPTY) ?: [];
+        $woerter = preg_split('/[\s,]+/u', $this->text, flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return array_values(array_filter(
+            array_map(static fn(string $wort): string => rtrim($wort, '.'), $woerter),
+            static fn(string $wort): bool => $wort !== '',
+        ));
     }
 
     /** True when something narrows the list (the sort order does not). */

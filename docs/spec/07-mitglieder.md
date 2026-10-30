@@ -224,9 +224,27 @@ SQL.
 | `funktion` | id, name, mit_lizenz, sortierung, aktiv |
 
 - „Ehemalig" ist berechnet: `austrittsdatum <= heute`.
-- **Suche**: ein Suchfeld über Nachname, Vorname, Mitgliedsnummer, Ort,
-  E-Mail per SQL `LIKE`, live über htmx. Jedes Wort der Eingabe muss in
-  einem der Felder vorkommen („max muster" findet Max Mustermann).
+- **Suche** (#88): ein Suchfeld, live über htmx, in SQL (`LIKE`, Prepared
+  Statements, kein Volltextindex). Die Eingabe wird in Wörter zerlegt
+  (Leerzeichen, Komma); **jedes Wort muss in irgendeinem Feld passen**,
+  die Reihenfolge ist egal („Hauptstr 12 Musterort", „Müller 1980").
+  Groß-/Kleinschreibung egal; ein Punkt am Wortende entfällt
+  („Hauptstr." findet „Hauptstraße"). Felder: Nachname, Vorname,
+  Mitgliedsnummer, Straße, PLZ, Ort, E-Mail, Telefon, Handy,
+  Kontoinhaber, Bemerkung sowie
+  - **IBAN**: ohne Leerzeichen und ohne Groß-/Kleinschreibung verglichen,
+    ein Teilstück genügt; gilt für Wörter aus mindestens vier Buchstaben/
+    Ziffern (kürzere Stücke träfen fast jede IBAN),
+  - **Geburtsdatum**: ein Wort, das ein gültiges Datum ist (`1.2.1980`,
+    `01.02.1980`, `1980-02-01`, `1.2.80`), vergleicht exakt; zwei Ziffern
+    für das Jahr zählen zum laufenden Jahrhundert, außer das läge in der
+    Zukunft. Eine vierstellige Zahl passt zusätzlich auf das Geburtsjahr.
+  Die Suche ist mit allen Filtern kombinierbar.
+- **Filter Beitragsart**: „X" findet die Mitglieder mit der Beitragsart X
+  **und** die Mitglieder der Familien, deren Zahler (Rolle `zahler`) X hat
+  (sie zahlen ja darüber, §3). Wer nur über die Familie gefunden wird,
+  trägt in der Trefferliste den Vermerk „über Familie <Name>"
+  (`MitgliedZeile::$ueberFamilie`); wer selbst X hat, trägt keinen.
 
 Umsetzung der Mitglieder-Seite (#18): `GET/POST /app/mitglieder`
 (`App\App\MitgliederController`, Liste in `MitgliederListeRepository`,
@@ -290,4 +308,7 @@ Hinweis-Funktion: jede Zeile der Tabelle §6 positiv und negativ, Grenzfälle
 Änderung erzeugt keine Version; Zurückholen hängt eine neue Version an und
 lässt alte unverändert; Zurückholen bei gelöschter Familie. Mitgliedsnummer
 eindeutig, nächste freie Nummer. IBAN-Prüfziffer. Suche findet über alle
-Suchfelder, Groß-/Kleinschreibung egal. Rechte-Matrix §9 serverseitig.
+Suchfelder, Groß-/Kleinschreibung egal; Geburtsdatum in mehreren
+Schreibweisen, IBAN mit/ohne Leerzeichen und als Teilstück, Adresse mit Name,
+Bemerkung, Wort ohne Treffer; Filter Beitragsart findet Zahler und
+Familienmitglieder. Rechte-Matrix §9 serverseitig.

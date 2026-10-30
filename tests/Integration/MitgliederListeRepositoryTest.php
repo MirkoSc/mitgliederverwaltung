@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
+use App\Domain\FamilienRolle;
 use App\Domain\Mitglied;
 use App\Domain\MitgliederFilter;
 use App\Domain\VersionsAnlass;
 use App\Repository\AbteilungRepository;
 use App\Repository\BeitragsartRepository;
+use App\Repository\FamilieRepository;
 use App\Repository\MitgliederListeRepository;
 use App\Repository\MitgliedRepository;
 use App\Service\Migration\Migrator;
@@ -281,5 +283,141 @@ final class MitgliederListeRepositoryTest extends DatabaseTestCase
         self::assertSame(1, $alle->seiten());
         self::assertSame(1, $alle->seite, 'all on one page');
         self::assertFalse($alle->hatNaechste());
+    }
+
+    private function suchBeispiele(): void
+    {
+        $this->anlegen(new Mitglied(
+            3001, 'Müller', vorname: 'Anna', strasse: 'Hauptstraße 12', plz: '12345', ort: 'Musterort',
+            geburtsdatum: new \DateTimeImmutable('1980-02-01'),
+            iban: 'DE89 3704 0044 0532 0130 00', kontoinhaber: 'Peter Zahler',
+            bemerkung: 'Passiv wegen Umzug', telefon: '0123 4567',
+        ));
+        $this->anlegen(new Mitglied(
+            3002, 'Müller', vorname: 'Karl', strasse: 'Bahnhofstraße 3', plz: '54321', ort: 'Beispielstadt',
+            geburtsdatum: new \DateTimeImmutable('1975-11-30'), handy: '0171 99',
+        ));
+        $this->anlegen(new Mitglied(
+            3003, 'Probe', vorname: 'Max', strasse: 'Hauptstraße 14', ort: 'Musterort',
+            geburtsdatum: new \DateTimeImmutable('2010-02-01'), email: 'max@example.org',
+        ));
+    }
+
+    /** @return list<string> */
+    private function nummern(string $text): array
+    {
+        $seite = $this->liste->seite(MitgliederFilter::aus(['text' => $text, 'sortierung' => 'nummer']), $this->heute);
+
+        return array_map(static fn($z): string => (string) $z->mitgliedsnummer, $seite->zeilen);
+    }
+
+    public function testTheDateOfBirthIsFoundInEveryWritingAsAnExactDate(): void
+    {
+        $this->suchBeispiele();
+
+        foreach (['1.2.1980', '01.02.1980', '1980-02-01', '1.2.80', '01.02.1980.'] as $schreibweise) {
+            self::assertSame(['3001'], $this->nummern($schreibweise), $schreibweise);
+        }
+        self::assertSame(['3003'], $this->nummern('1.2.10'), 'two digits of the year: not in the future');
+        self::assertSame([], $this->nummern('2.2.1980'), 'another day is no hit');
+        self::assertSame([], $this->nummern('31.02.1980'), 'no valid date');
+        self::assertSame(['3001'], $this->nummern('Anna 01.02.1980'));
+        self::assertSame([], $this->nummern('Karl 01.02.1980'));
+    }
+
+    public function testAFourDigitNumberAlsoMatchesTheYearOfBirth(): void
+    {
+        $this->suchBeispiele();
+
+        self::assertSame(['3001'], $this->nummern('Müller 1980'));
+        self::assertSame(['3002'], $this->nummern('Müller 1975'));
+        self::assertSame(['3001'], $this->nummern('1980 Musterort'), 'the year of birth and a place');
+        self::assertSame(['3003'], $this->nummern('2010 Musterort'));
+        self::assertSame([], $this->nummern('Müller 1999'));
+    }
+
+    public function testTheIbanIsComparedWithoutBlanksAndCaseAndAPieceIsEnough(): void
+    {
+        $this->suchBeispiele();
+
+        self::assertSame(['3001'], $this->nummern('DE89370400440532013000'), 'whole IBAN without blanks');
+        self::assertSame(['3001'], $this->nummern('de89370400440532013000'), 'lower case');
+        self::assertSame(['3001'], $this->nummern('DE89 3704 0044 0532 0130 00'), 'with blanks: every group is a piece');
+        self::assertSame(['3001'], $this->nummern('013000'), 'last digits');
+        self::assertSame(['3001'], $this->nummern('0044'), 'a piece in the middle');
+        self::assertSame([], $this->nummern('DE00'), 'not an IBAN of a member');
+    }
+
+    public function testAnAddressCombinesWithTheName(): void
+    {
+        $this->suchBeispiele();
+
+        self::assertSame(['3001', '3003'], $this->nummern('Hauptstr Musterort'));
+        self::assertSame(['3001'], $this->nummern('Hauptstr 12 Musterort'));
+        self::assertSame(['3001'], $this->nummern('Hauptstr. 12 Musterort'), 'a full stop at the end of a word is ignored');
+        self::assertSame(['3001'], $this->nummern('Müller Hauptstr'));
+        self::assertSame(['3002'], $this->nummern('Müller Bahnhof 54321'));
+        self::assertSame(['3001'], $this->nummern('hauptstraße 12345'), 'postcode, case does not matter');
+    }
+
+    public function testRemarkAccountHolderAndPhoneAreSearched(): void
+    {
+        $this->suchBeispiele();
+
+        self::assertSame(['3001'], $this->nummern('Umzug'), 'Bemerkung');
+        self::assertSame(['3001'], $this->nummern('Zahler'), 'Kontoinhaber');
+        self::assertSame(['3001'], $this->nummern('4567'), 'Telefon');
+        self::assertSame(['3002'], $this->nummern('0171'), 'Handy');
+    }
+
+    public function testAWordWithoutAHitFindsNothing(): void
+    {
+        $this->suchBeispiele();
+
+        self::assertSame([], $this->nummern('Müller Nirgendwo'));
+        self::assertSame([], $this->nummern('Nirgendwo'));
+        self::assertSame(['3001', '3002', '3003'], $this->nummern('...'), 'nothing but full stops is no word: no restriction');
+    }
+
+    /** Payer "Familie Muster" has the fee type; the family members find it through the payer. */
+    public function testTheFeeTypeAlsoFindsTheMembersOfFamiliesWhosePayerHasIt(): void
+    {
+        $familien = new FamilieRepository($this->pdo());
+        $familie = $familien->anlegen('Familie Muster');
+        $andere = $familien->anlegen('Familie Zwei');
+        $art = $this->beitragsart('Aktiv');
+
+        $this->anlegen(new Mitglied(
+            4001, 'Muster', vorname: 'Paula', beitragsartId: $this->beitragsart('Familie'),
+            familieId: $familie->id, familieRolle: FamilienRolle::Zahler,
+        ));
+        $this->anlegen(new Mitglied(4002, 'Muster', vorname: 'Tom', familieId: $familie->id, familieRolle: FamilienRolle::Kind));
+        $this->anlegen(new Mitglied(4003, 'Muster', vorname: 'Eva', familieId: $familie->id, familieRolle: FamilienRolle::Elternteil, beitragsartId: $art));
+        $this->anlegen(new Mitglied(
+            4004, 'Zwei', vorname: 'Zora', beitragsartId: $art, familieId: $andere->id, familieRolle: FamilienRolle::Zahler,
+        ));
+        $this->anlegen(new Mitglied(4005, 'Zwei', vorname: 'Kai', familieId: $andere->id, familieRolle: FamilienRolle::Kind));
+        $this->anlegen(new Mitglied(4006, 'Allein', vorname: 'Ali', beitragsartId: $this->beitragsart('Familie')));
+
+        $zeilen = $this->liste->seite(
+            MitgliederFilter::aus(['beitragsart' => (string) $this->beitragsart('Familie'), 'sortierung' => 'nummer']),
+            $this->heute,
+        )->zeilen;
+
+        self::assertSame([4001, 4002, 4003, 4006], array_map(static fn($z): int => $z->mitgliedsnummer, $zeilen));
+        // Eva has her own fee type "Aktiv" but belongs to the family of the payer.
+        self::assertSame(['', 'über Familie Muster', 'über Familie Muster', ''], array_map(static fn($z): string => $z->familienHinweis(), $zeilen));
+        self::assertSame('Familie Muster', $zeilen[2]->ueberFamilie);
+
+        // The other fee type: Zora herself, and Kai through her family - not the Musters.
+        $aktiv = $this->liste->seite(MitgliederFilter::aus(['beitragsart' => (string) $art, 'sortierung' => 'nummer']), $this->heute);
+        self::assertSame([4003, 4004, 4005], array_map(static fn($z): int => $z->mitgliedsnummer, $aktiv->zeilen));
+        self::assertSame(['', '', 'über Familie Zwei'], array_map(static fn($z): string => $z->familienHinweis(), $aktiv->zeilen));
+        self::assertSame(3, $aktiv->gesamt, 'the count includes the family members');
+
+        // No filter on the fee type: nobody is marked.
+        foreach ($this->liste->seite(MitgliederFilter::aus([]), $this->heute)->zeilen as $zeile) {
+            self::assertSame('', $zeile->familienHinweis());
+        }
     }
 }

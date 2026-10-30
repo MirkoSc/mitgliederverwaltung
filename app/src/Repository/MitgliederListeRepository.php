@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Domain\FamilienRolle;
 use App\Domain\MitgliederFilter;
 use App\Domain\MitgliederSeite;
 use App\Domain\MitgliederSortierung;
@@ -15,12 +16,23 @@ use App\Domain\MitgliedZeile;
  * 8): search, filters, sort order and paging in SQL, and only the columns
  * the list shows - not complete members (that is MitgliedRepository).
  *
- * The search field looks in Nachname, Vorname, Mitgliedsnummer, Ort and
- * E-Mail with `LIKE`; every word of the text must occur in one of them, so
- * "max muster" finds Max Mustermann. Case does not matter (collation).
+ * The search field looks in the name, number, address, contact, bank and
+ * remark fields with `LIKE`, and in the date of birth; every word of the
+ * text must match in one of them, so "max muster" finds Max Mustermann and
+ * "Müller 1980" finds the Müller born in 1980 (07 section 8). Case does not
+ * matter (collation).
  */
 final readonly class MitgliederListeRepository
 {
+    /** The text columns a search word may occur in ("mitgliedsnummer" is a number, see wortBedingung()). */
+    private const array SUCHSPALTEN = [
+        'm.nachname', 'm.vorname', 'm.strasse', 'm.plz', 'm.ort', 'm.email',
+        'm.telefon', 'm.handy', 'm.kontoinhaber', 'm.bemerkung',
+    ];
+
+    /** Shortest word compared with the IBAN: a piece of two characters would hit nearly every IBAN. */
+    private const int IBAN_MINDESTLAENGE = 4;
+
     public function __construct(private \PDO $pdo)
     {
     }
@@ -44,9 +56,14 @@ final readonly class MitgliederListeRepository
 
         $stmt = $this->pdo->prepare(sprintf(
             'SELECT m.id, m.mitgliedsnummer, m.nachname, m.vorname, m.plz, m.ort, m.aktiv, m.austrittsdatum,
-                    COALESCE(b.name, \'\') AS beitragsart
-             FROM mitglied m LEFT JOIN beitragsart b ON b.id = m.beitragsart_id%s
+                    COALESCE(b.name, \'\') AS beitragsart, %s AS ueber_familie
+             FROM mitglied m LEFT JOIN beitragsart b ON b.id = m.beitragsart_id
+                  LEFT JOIN familie f ON f.id = m.familie_id%s
              ORDER BY %s%s',
+            // Found only through the family: the fee type is not the member's own.
+            $filter->beitragsartId === null
+                ? "''"
+                : sprintf("CASE WHEN m.beitragsart_id <=> %d THEN '' ELSE COALESCE(f.name, '') END", $filter->beitragsartId),
             $bedingung,
             self::reihenfolge($filter),
             $proSeite === 0 ? '' : sprintf(' LIMIT %d OFFSET %d', $proSeite, ($seite - 1) * $proSeite),
@@ -70,6 +87,7 @@ final readonly class MitgliederListeRepository
                     ehemalig: $z['austrittsdatum'] !== null && (string) $z['austrittsdatum'] <= $heute,
                     beitragsart: (string) $z['beitragsart'],
                     abteilungen: $abteilungen[(int) $z['id']] ?? [],
+                    ueberFamilie: (string) $z['ueber_familie'],
                 ),
                 $zeilen,
             ),
@@ -90,8 +108,9 @@ final readonly class MitgliederListeRepository
         $werte = [];
 
         foreach ($filter->woerter() as $wort) {
-            $bedingungen[] = '(m.nachname LIKE ? OR m.vorname LIKE ? OR CAST(m.mitgliedsnummer AS CHAR) LIKE ? OR m.ort LIKE ? OR m.email LIKE ?)';
-            array_push($werte, ...array_fill(0, 5, '%' . addcslashes($wort, '%_\\') . '%'));
+            [$bedingung, $wortWerte] = self::wortBedingung($wort, $stichtag);
+            $bedingungen[] = $bedingung;
+            array_push($werte, ...$wortWerte);
         }
         if ($filter->abteilungId !== null) {
             $bedingungen[] = 'EXISTS (SELECT 1 FROM mitglied_abteilung ma WHERE ma.mitglied_id = m.id AND ma.abteilung_id = ?)';
@@ -102,8 +121,11 @@ final readonly class MitgliederListeRepository
             $werte[] = $filter->status === MitgliederStatus::Aktiv ? 1 : 0;
         }
         if ($filter->beitragsartId !== null) {
-            $bedingungen[] = 'm.beitragsart_id = ?';
-            $werte[] = $filter->beitragsartId;
+            // The members of a family pay through its payer: a fee type
+            // also finds the members of the families whose payer has it.
+            $bedingungen[] = '(m.beitragsart_id = ? OR (m.familie_id IS NOT NULL AND EXISTS (
+                SELECT 1 FROM mitglied z WHERE z.familie_id = m.familie_id AND z.familie_rolle = ? AND z.beitragsart_id = ?)))';
+            array_push($werte, $filter->beitragsartId, FamilienRolle::Zahler->value, $filter->beitragsartId);
         }
         if (!$filter->mitEhemaligen) {
             $bedingungen[] = '(m.austrittsdatum IS NULL OR m.austrittsdatum > ?)';
@@ -111,6 +133,62 @@ final readonly class MitgliederListeRepository
         }
 
         return [$bedingungen === [] ? '' : ' WHERE ' . implode(' AND ', $bedingungen), $werte];
+    }
+
+    /**
+     * The condition one search word must fulfil: it occurs in a text
+     * column or the member number, or - when it looks like one - it is the
+     * date of birth, the year of birth or a piece of the IBAN.
+     *
+     * @return array{string, list<string|int>}
+     */
+    private static function wortBedingung(string $wort, \DateTimeImmutable $stichtag): array
+    {
+        $muster = '%' . addcslashes($wort, '%_\\') . '%';
+        $teile = array_map(static fn(string $spalte): string => $spalte . ' LIKE ?', self::SUCHSPALTEN);
+        $teile[] = 'CAST(m.mitgliedsnummer AS CHAR) LIKE ?';
+        $werte = array_fill(0, count($teile), $muster);
+
+        // IBAN: without blanks and independent of case, a piece is enough.
+        if (preg_match('/^[A-Za-z0-9]{' . self::IBAN_MINDESTLAENGE . ',}$/D', $wort) === 1) {
+            $teile[] = "UPPER(REPLACE(m.iban, ' ', '')) LIKE ?";
+            $werte[] = '%' . strtoupper($wort) . '%';
+        }
+
+        $datum = self::geburtsdatum($wort, $stichtag);
+        if ($datum !== null) {
+            $teile[] = 'm.geburtsdatum = ?';
+            $werte[] = $datum;
+        } elseif (preg_match('/^[0-9]{4}$/D', $wort) === 1) {
+            $teile[] = 'm.geburtsdatum BETWEEN ? AND ?';
+            array_push($werte, $wort . '-01-01', $wort . '-12-31');
+        }
+
+        return ['(' . implode(' OR ', $teile) . ')', $werte];
+    }
+
+    /**
+     * The date a word stands for (`1.2.1980`, `01.02.1980`, `1980-02-01`,
+     * `1.2.80`) as `YYYY-MM-DD`, or null when it is no valid date. A year
+     * of two digits is in this century unless that lies in the future
+     * (born "80" is 1980, born "10" is 2010).
+     */
+    private static function geburtsdatum(string $wort, \DateTimeImmutable $stichtag): ?string
+    {
+        if (preg_match('/^([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{4}|[0-9]{2})$/D', $wort, $t) === 1) {
+            [$tag, $monat, $jahr] = [(int) $t[1], (int) $t[2], $t[3]];
+        } elseif (preg_match('/^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})$/D', $wort, $t) === 1) {
+            [$tag, $monat, $jahr] = [(int) $t[3], (int) $t[2], $t[1]];
+        } else {
+            return null;
+        }
+
+        if (strlen($jahr) === 2) {
+            $jahr = (int) $jahr + 2000 > (int) $stichtag->format('Y') ? 1900 + (int) $jahr : 2000 + (int) $jahr;
+        }
+        $jahr = (int) $jahr;
+
+        return checkdate($monat, $tag, $jahr) ? sprintf('%04d-%02d-%02d', $jahr, $monat, $tag) : null;
     }
 
     /** The ORDER BY of the chosen column; the name and the number settle ties. */
