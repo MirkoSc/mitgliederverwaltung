@@ -394,7 +394,8 @@ final class MitgliederSeiteTest extends AppTestCase
         self::assertNotFalse($vorherige);
         self::assertTrue($vorherige < $stand && $stand < $select && $select < $naechste, 'order in the pager');
         self::assertStringContainsString('<label for="filter-anzahl">Je Seite</label>', $nav);
-        self::assertStringContainsString('<button type="submit" form="mitglieder-form" class="knopf knopf-still">Übernehmen</button>', $nav);
+        self::assertStringNotContainsString('Übernehmen', $nav, 'the change applies at once, "Suchen" sends it without a script');
+        self::assertStringContainsString('<select id="filter-anzahl" name="anzahl" form="mitglieder-form">', $nav);
         self::assertStringNotContainsString('je Seite 50', $nav, 'the select says it');
 
         // A larger size with one page keeps the pager, or "Alle" could not be left again.

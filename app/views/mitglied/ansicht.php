@@ -13,8 +13,8 @@
  *
  * The heading takes the focus when the member was just opened, the chosen
  * tab when a tab was switched (htmx focuses [autofocus] after a swap) - in
- * the Barrierefrei-Modus the member stands below the list, so a keyboard
- * user lands right in it.
+ * the Barrierefrei-Modus the member replaces the list on the whole width,
+ * so a keyboard user lands right in it.
  *
  * @var \App\Domain\Mitglied|null $mitglied
  * @var \App\App\Mitglied\Einbettung|null $einbettung

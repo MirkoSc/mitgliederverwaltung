@@ -12,7 +12,7 @@ Gesamtexport mit Häkchen „Ehemalige einschließen".
 - Jede Liste: Tabelle am PC, Karten am Handy, Klick auf eine Zeile
   öffnet das Mitglied **in der Listenseite selbst** (Baustein aus 06 §5:
   links die Liste, rechts die Person mit allen Reitern und „Schließen";
-  am Handy als eigene Ansicht, im Barrierefrei-Modus unter der Liste).
+  am Handy als eigene Ansicht, im Barrierefrei-Modus über die ganze Breite statt der Liste).
   Adresse: `/app/listen/<liste>?<Filter>&mitglied=<id>&reiter=<reiter>` –
   Filter, Zeitraum, Sortierung und Seite bleiben beim Öffnen, Sortieren,
   Blättern und nach dem Speichern erhalten; die Formulare der Person

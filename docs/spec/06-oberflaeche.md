@@ -163,7 +163,7 @@ nichts Wesentliches.
 | Schrift | deutlich größer (Grundschrift ~150 %), größere Zeilenabstände |
 | Kontrast | sehr hoher Kontrast, kein grauer Text, deutliche Rahmen um Felder und Knöpfe; heller Hintergrund unabhängig vom Dunkelmodus |
 | Bedienflächen | große Knöpfe und Klickflächen, Knöpfe immer mit Text, keine reinen Symbole |
-| Aufbau | Mitglied öffnet sich unter der Liste statt daneben, seine Überschrift bekommt den Fokus (§5); Formulare einspaltig; Listen mit weniger Spalten und größeren Zeilen |
+| Aufbau | Mitglied öffnet sich über die ganze Breite statt neben der Liste („Zurück zur Liste“), seine Überschrift bekommt den Fokus (§5); Formulare einspaltig; Listen mit weniger Spalten und größeren Zeilen |
 | Bewegung | keine Animationen, nichts erscheint nur beim Darüberfahren mit der Maus |
 | Tastatur | vollständig mit Tastatur bedienbar, sehr deutlicher Fokusrahmen |
 | Zeit | Leerlaufzeit der Sitzung 60 statt 30 Minuten, Warnung mit „Weiterarbeiten" vor dem Abmelden |
@@ -247,9 +247,10 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
   Zurück-Link mit diesem Text auch am PC zurück (statt „Schließen"); er
   fragt mit `fokus=zurueck` nach dem Fokus, den die Seite auf ihre eigene
   Überschrift legt.
-- **Barrierefrei-Modus (PC):** Das Mitglied steht unter der Liste (eine
-  Spalte, kräftige Linie davor), „Schließen" schließt es; am Handy wie
-  sonst eine eigene Ansicht mit „Zurück zur Liste".
+- **Barrierefrei-Modus (PC):** Wie am Handy ersetzt das geöffnete
+  Mitglied die Liste und nutzt die ganze Breite; „Zurück zur Liste" führt
+  zurück (mit Suche, Filter und Seite). Das gilt überall, wo der Baustein
+  eingebettet ist (Mitglieder, Listen, Familien).
 
 ## Pflicht-Tests
 
