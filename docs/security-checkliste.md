@@ -20,7 +20,8 @@ Checkliste von Vereinsbelege; Tresor-Zeilen entfallen (E-11).
   parallel prüfen.
 
 **Letzter Durchlauf:** 2026-10-29 (Issue #37), Stand `main` 93f103d plus
-die Korrekturen des PRs zu #37. Die Anwendung war zu diesem Zeitpunkt mit
+die Korrekturen des PRs zu #37; Release-Signatur nachgetragen am
+2026-10-30 (bb57f6f). Die Anwendung war zu diesem Zeitpunkt mit
 echten Daten installiert, das Repository öffentlich.
 
 ## Automatisierte Prüfungen (laufen in CI)
@@ -190,7 +191,7 @@ echten Daten installiert, das Repository öffentlich.
 | F-08 | Fehlschlag sicher: falscher Schlüssel/Manipulation → Exception, nie „kürzere Datei" | ✓ | `CryptoException` überall; `BlobService::openRead()` liefert nur authentifizierte Blöcke, das Ende wird erzwungen; `BackupCipher::kopfPruefen()` scheitert vor dem ersten geschriebenen Byte |
 | F-09 | Schlüssel nie in Logs/Dumps/Traces | ✓ | `__debugInfo()` in `Config`, `ServerCrypto`, `FileKey`; `#[\SensitiveParameter]`; `bootstrap.php`/`setup.php` setzen `zend.exception_ignore_args`; `Kernel` loggt nur Klasse/Meldung/Pfad |
 | F-10 | Server-Schlüssel 32 Byte aus `random_bytes`, base64 in `config.php`, einmal zum Ausdrucken gezeigt | ✓ | `Installer/ConfigWriter::neuerServerSchluessel()`, `InstallController::admin()/schluessel()` |
-| F-11 | Schlüsselwechsel nach Kompromittierung möglich | ✗ niedrig | weder Code noch Spec; Restore übernimmt immer den alten Schlüssel (`InstallController::wiederherstellen()`) |
+| F-11 | Schlüsselwechsel nach Kompromittierung möglich | ✗ niedrig | weder Code noch Spec; Restore übernimmt immer den alten Schlüssel (`InstallController::wiederherstellen()`) → #80 |
 | F-12 | Audit-Log manipulationserkennend (Hash-Kette) | ⚠ niedrig | `Audit/AuditLog::hashBilden()`: ungeschlüsseltes SHA-256 – erkennt nur naive Änderungen; Abschneiden am Ende nicht erkannt (Spec 02 §8, bewusst) |
 | F-13 | IP im Audit-Log nur als HMAC unter dem Server-Schlüssel | ✓ | `AuditLog::protokollieren()` (Schlüsseltrennung s. F-07) |
 | F-14 | Backup als Ganzes verschlüsselt, nur mit Schlüssel lesbar; abgeschnitten/verändert/verlängert = Fehler; secretstream-Zustand im Statusfile verschlüsselt | ✓ | `Backup/BackupCipher::verschluesseln()/entschluesseln()`, `zustandVerpacken()` |
@@ -210,8 +211,8 @@ echten Daten installiert, das Repository öffentlich.
 | H-08 | Update: feste Quelle (eigenes Repo), nur https, Port 443, keine Credentials, jeder Redirect-Sprung geprüft (max. 5), TLS-Prüfung an | ✓ | `ReleaseDownloader::pruefeQuelle()/pruefeUrl()/folgeWeiterleitungen()`, `CURLOPT_FOLLOWLOCATION=false`, `CURLOPT_PROTOCOLS_STR=https`, `follow_location=0` |
 | H-09 | Prüfsumme; Liste gehört zur Zielversion; kein Downgrade (in `download` **und** `extract`) | ✓ | `UpdateService::pruefeEchtheit()`, `versionDerListe()`, `check()` |
 | H-10 | Zip-Slip beim Entpacken des Releases | ✓ | `ReleaseDownloader::extractTo()` (`ZipArchive::extractTo()` entfernt `../`/führende `/`, legt keine Symlinks an) + ZIP-Prüfsumme aus dem eigenen Repo |
-| H-11 | Update/setup.php: **Echtheit** (Signatur) statt nur Integrität | ✗ mittel | `Update/ReleaseSignatur::PUBLIC_KEY = ''`; Releases v0.1.0/v0.1.1 ohne `.sig`; Secret `RELEASE_SIGNING_KEY` offenbar nicht gesetzt |
-| H-12 | Release-Pipeline gegen Lieferketten-Angriffe | ⚠ niedrig | `.github/workflows/release.yml`: Secret nur im `publish`-Job, `permissions` minimal ✓; aber Actions per veränderlichem Tag (`@v2`/`@v4`), Drittanbieter-Actions im Job mit `contents: write` und Signatur-Secret, kein Environment-Schutz |
+| H-11 | Update/setup.php: **Echtheit** (Signatur) statt nur Integrität | ✓ (#37) | `Update/ReleaseSignatur::PUBLIC_KEY` gesetzt (Commit bb57f6f), Secret `RELEASE_SIGNING_KEY` im Release-Workflow; ab v0.1.3 mit `checksums.txt.sig`, Updater und `setup.php` nehmen nur noch signierte Releases an |
+| H-12 | Release-Pipeline gegen Lieferketten-Angriffe | ⚠ niedrig | `.github/workflows/release.yml`: Secret nur im `publish`-Job, `permissions` minimal ✓; aber Actions per veränderlichem Tag (`@v2`/`@v4`), Drittanbieter-Actions im Job mit `contents: write` und Signatur-Secret, kein Environment-Schutz → #79 |
 | H-13 | Wartungs-Flag + `rename()`-Umschaltung, Shim als Konstante, Flag bleibt bis Selbsttest, alter Shim zurück bei Fehler | ✓ | `ReleaseSwitcher::switchTo()/rollback()/SHIM`, `UpdateService::finish()`, `ShimContentTest` |
 | H-14 | Schrittfolge der Update-Kette serverseitig erzwungen | ⚠ Härtung | `UpdateService::step()` prüft nur `zielVersion` – `switch` ist z. B. ohne `backup` aufrufbar |
 | H-15 | `setup.php` sperrt/löscht sich nach der Installation | ⚠ Härtung | Löschen in `InstallController::abschliessen()` ✓ (sonst Hinweis); Sperre in `bin/setup.template.php` hängt nur an `is_dir(current)` |
@@ -237,7 +238,7 @@ echten Daten installiert, das Repository öffentlich.
 | I-06 | Vendored htmx mit Version/Lizenz/Prüfsumme | ✓ (2.0.10, SHA-256 in README, `VendorAssetsTest`) | `public/js/vendor/README.md` |
 | I-07 | Header erreichen bestehende Installationen beim Update | ✓ mit Einschränkung | `ReleaseSwitcher::refreshDocrootFiles()` (ersetzt nur, wenn die Datei der Vorlage des Vorgänger-Release gleicht), aufgerufen in `UpdateService::finish()` Z. 326; Shim über `refreshShim()`. Einschränkungen: **I-B01**, **I-B02** |
 | I-08 | HTTP→HTTPS-Umleitung | ✓ (Shim, nur GET/HEAD, nicht `/cron`, nicht localhost/IP/Fremdport, Notschalter `shared/https_umleitung_aus.flag`; `X-Forwarded-Proto` kann die Umleitung nur für die eigene Anfrage abschalten) | `docker/web/index.php` = `ReleaseSwitcher::SHIM` (Byte-Gleichheit per `ShimContentTest`) |
-| I-09 | Header tatsächlich am Host vorhanden (Systemcheck/Selbsttest) | ✗ | **I-B01** |
+| I-09 | Header tatsächlich am Host vorhanden (Systemcheck/Selbsttest) | ✗ | **I-B01** → #81 |
 | I-10 | `Cache-Control: no-store` auf allen Seiten mit Mitgliederdaten (inkl. htmx-Partials, JSON der Schrittketten) | ✓ | Jede `/app`- und `/admin`-Route läuft durch `LoginGuard::check()` → `Session::start()` mit `cache_limiter=nocache` (`Cache-Control: no-store, no-cache, must-revalidate`, `Session::OPTIONEN`); `Response` setzt kein eigenes `Cache-Control`, überschreibt also nichts |
 | I-11 | `no-store` auf Downloads: xlsx/csv-Exporte, Nachweis-Dateien, pain.008, Backup | ✓ | `ListenExport.php:44`, `NachweisController.php:133`, `EinzugController.php:179`, `BackupController.php:128` |
 | I-12 | Back/Forward-Cache zeigt nach Abmelden keine Mitgliederseite | ✓ mit Härtung | `no-store` + neue Session-ID beim Abmelden (`Session::destroy()`) – siehe **I-B03** |
@@ -279,7 +280,7 @@ Test.
 |---|---|---|---|
 | A-23 / C-F1 / J-B01 | mittel | Audit-Log ohne Benutzer-/Rollenänderungen, Passwort-Fehlschläge, Passwortwechsel/-Reset, Abmeldung | ✓ behoben |
 | A-05 | mittel | Kontozähler (Anmeldung, Passwort vergessen) per Akzent-Variante der Adresse umgehbar; IPv6 je Adresse | ✓ behoben |
-| H-11 | mittel | Release-Signatur nicht aktiv (`ReleaseSignatur::PUBLIC_KEY` leer) | offen – braucht den Maintainer, siehe unten |
+| H-11 | mittel | Release-Signatur nicht aktiv (`ReleaseSignatur::PUBLIC_KEY` leer) | ✓ behoben (bb57f6f, ab v0.1.3) |
 | A-17 | niedrig | Reset-/Einladungslinks und Codes im Klartext in `mail_queue.body` | ✓ behoben |
 | C-F2 / H-04 | niedrig | Download von Lastschriftdatei und Backup nicht protokolliert | ✓ behoben |
 | C-F3 | niedrig | „Ehrung vermerken" nur mit `listen.sehen` | ✓ behoben |
@@ -290,10 +291,10 @@ Test.
 | H-07 / D-25 | niedrig | Klartext-Upload-Chunks ohne Aufräumen | ✓ behoben (Cron) |
 | I-B02 | niedrig | `.htaccess`/`.user.ini` nach fehlgeschlagenem Selbsttest nicht zurückgestellt | ✓ behoben |
 | A-19 | niedrig | „Passwort vergessen" verrät über die Laufzeit (sofortiger SMTP-Versand), ob ein Konto existiert | ⚠ akzeptiert: wenige Konten, Rate-Limit je IP und Konto; Versand über den Cron hieße bis zu 10 min Wartezeit auf den Link |
-| H-12 | niedrig | Actions im Release-Workflow nicht per Commit-SHA gepinnt | offen → Folge-Issue |
-| F-11 | niedrig | Server-Schlüssel nicht wechselbar | offen → Folge-Issue |
+| H-12 | niedrig | Actions im Release-Workflow nicht per Commit-SHA gepinnt | offen → #79 |
+| F-11 | niedrig | Server-Schlüssel nicht wechselbar | offen → #80 |
 | F-12 | niedrig | Audit-Hash-Kette ungeschlüsselt (DB-Schreiber kann sie neu rechnen) | ⚠ akzeptiert: DB-Zugriff ist ohnehin Vollzugriff (E-11); Folge-Issue möglich |
-| I-B01 | niedrig | niemand prüft, ob die Security-Header am Host ankommen | offen → Folge-Issue (Systemcheck); bis dahin einmal `curl -I` von Hand |
+| I-B01 | niedrig | niemand prüft, ob die Security-Header am Host ankommen | offen → #81; bis dahin einmal `curl -I` von Hand |
 | C-F4 | Härtung | Doku zu `Erweiterung::recht()` | ✓ behoben |
 | E-21 | Härtung | Markdown-Links `//host` | ✓ behoben |
 | E-23 | Härtung | Import prüft Länge von `bemerkung` nicht | ✓ behoben |
@@ -302,20 +303,20 @@ Test.
 | J-B05 | Härtung | `display_errors` nur in `.user.ini` | ✓ behoben (Bootstrap) |
 | F-07, H-14, H-15, I-B03, B-13 | Härtung | Schlüsseltrennung Audit-HMAC, Update-Schrittfolge serverseitig, übrig gebliebene `setup.php`, `Clear-Site-Data`, „überall abmelden" | offen, optional |
 
-## Release-Signatur einschalten (H-11, einmalig, Maintainer)
+## Release-Signatur (H-11)
 
-Solange `ReleaseSignatur::PUBLIC_KEY` leer ist, prüfen Updater und
-`setup.php` nur die Prüfsumme aus derselben Quelle wie das ZIP. Wer das
-GitHub-Konto übernimmt, könnte ein verändertes Release ausliefern.
+Eingeschaltet seit Commit bb57f6f, erstes signiertes Release v0.1.3. Der
+Release-Workflow signiert `checksums.txt` mit dem Secret
+`RELEASE_SIGNING_KEY`; Updater und `setup.php` prüfen gegen
+`ReleaseSignatur::PUBLIC_KEY` und nehmen ein Release ohne gültige Signatur
+nicht an. Der geheime Schlüssel liegt nur als GitHub-Secret und beim
+Maintainer, nie im Repository.
 
-1. Schlüsselpaar erzeugen (lokal, mit Docker):
-   `docker compose run --rm --no-deps app php tools/release-signatur.php schluessel /var/www/html/current/signatur.key`
-   – die Datei `signatur.key` nie committen (sie liegt im Repo-Ordner,
-   danach löschen).
-2. Inhalt der Datei auf GitHub als Secret `RELEASE_SIGNING_KEY` anlegen
-   (Settings → Secrets and variables → Actions).
-3. Den ausgegebenen öffentlichen Schlüssel in
-   `ReleaseSignatur::PUBLIC_KEY` eintragen lassen (ein PR), danach ein
-   Release erzeugen und einspielen. Dieses erste signierte Update wird noch
-   ohne Signaturprüfung angenommen, alle weiteren nur noch mit.
-4. Danach den Update-Kanal auf `stable` stellen.
+- **Schlüssel verloren oder kompromittiert:** neues Paar mit
+  `tools/release-signatur.php schluessel <datei>` erzeugen, Secret ersetzen,
+  neuen öffentlichen Schlüssel in `ReleaseSignatur::PUBLIC_KEY` eintragen.
+  Eine Installation mit dem alten Schlüssel nimmt das nächste Release dann
+  nicht mehr an – sie braucht einmal `setup.php` des neuen Releases (oder
+  das ZIP per FTP), danach läuft der Updater wieder.
+- Nächster Schritt im Betrieb: ein geprüftes Release auf GitHub als
+  „latest" markieren und die Installation auf den Kanal `stable` stellen.
