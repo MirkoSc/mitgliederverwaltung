@@ -11,4 +11,8 @@ ini_set('zend.exception_string_param_max_len', '0');
 error_reporting(E_ALL);
 date_default_timezone_set('Europe/Berlin');
 
+// No test talks to an external service (issue #91): the real HTTP client
+// of the map sends nothing while this is defined.
+define('MV_OHNE_NETZ', true);
+
 require dirname(__DIR__) . '/vendor/autoload.php';
