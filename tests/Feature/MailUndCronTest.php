@@ -72,7 +72,7 @@ final class MailUndCronTest extends AppTestCase
 
         $seite = $this->get('/admin')->body;
 
-        self::assertStringContainsString('<h2 id="titel-mail">Mail</h2>', $seite);
+        self::assertStringContainsString('<h2 id="titel-mail" tabindex="-1">Mail</h2>', $seite);
         self::assertStringContainsString('action="/admin/mail/test"', $seite);
     }
 

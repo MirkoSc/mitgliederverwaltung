@@ -100,7 +100,12 @@ umgeschaltet statt verlinkt.
 6. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
    (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
-   Systemcheck – übernommen).
+   Systemcheck – übernommen). Links (PC) bzw. oben (Handy, waagerecht
+   wischbar) klebt ein **Inhaltsverzeichnis** (`verzeichnis`, aus den
+   sichtbaren Abschnitten erzeugt, normale Anker-Links; Abschnittsüberschriften
+   haben `tabindex="-1"` und bekommen nach dem Klick den Fokus).
+   `public/js/inhaltsverzeichnis.js` markiert den aktuellen Abschnitt mit
+   `aria-current="true"`.
 7. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
    **Barrierefrei-Modus an/aus**, Abmelden.
 

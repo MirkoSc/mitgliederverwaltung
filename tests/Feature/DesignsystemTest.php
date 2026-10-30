@@ -55,6 +55,9 @@ final class DesignsystemTest extends AppTestCase
     {
         $vorlage = (string) file_get_contents(dirname(__DIR__, 2) . '/app/views/admin/designsystem.php');
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/css/app.css');
+        foreach (glob(dirname(__DIR__, 2) . '/public/css/teile/*.css') ?: [] as $teil) {
+            $css .= "\n" . (string) file_get_contents($teil);
+        }
         preg_match_all('/class="([^"<]+)"/', $vorlage, $treffer);
 
         $fehlend = [];

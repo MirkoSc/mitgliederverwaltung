@@ -423,6 +423,19 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
         </li>
     </ul>
 
+    <h3>Inhaltsverzeichnis</h3>
+    <p>Auf langen Seiten mit Abschnitten (Einstellungen): <code>mit-verzeichnis</code> um
+        <code>verzeichnis</code> (<code>nav</code> mit Anker-Links, <code>data-inhaltsverzeichnis</code>) und
+        <code>verzeichnis-inhalt</code>. Es klebt beim Scrollen, am PC links, am Handy als wischbare Leiste oben;
+        <code>/js/inhaltsverzeichnis.js</code> markiert den aktuellen Abschnitt mit <code>aria-current="true"</code>.</p>
+    <nav class="verzeichnis" aria-label="Beispiel-Verzeichnis">
+        <ul>
+            <li><a href="<?= e($link([], 'muster-weiteres')) ?>" aria-current="true">Verein</a></li>
+            <li><a href="<?= e($link([], 'muster-weiteres')) ?>">Abteilungen</a></li>
+            <li><a href="<?= e($link([], 'muster-weiteres')) ?>">Beitragsarten</a></li>
+        </ul>
+    </nav>
+
     <h3>Ladeanzeige</h3>
     <p>htmx blendet Elemente mit <code>htmx-indicator</code> ein, solange eine Anfrage läuft. Zur Ansicht hier
         dauerhaft sichtbar:</p>
