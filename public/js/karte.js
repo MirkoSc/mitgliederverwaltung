@@ -83,6 +83,34 @@
     }
 
     /**
+     * Places at the same point become one marker: an approximate address
+     * sits on the middle of its town (issue #108), so many of them share
+     * one coordinate - drawn one by one, only the top marker could be seen
+     * and tapped. Same point = equal to about a metre (5 decimals). The
+     * marker counts all members; `teile` keeps every address with its
+     * members for the popup. Order of first appearance is kept.
+     */
+    function zusammenfassen(orte) {
+        const nachPunkt = new Map();
+        for (const ort of orte) {
+            const schluessel = ort.lat.toFixed(5) + ',' + ort.lon.toFixed(5);
+            const gruppe = nachPunkt.get(schluessel);
+            const teil = { anschrift: ort.anschrift, anzahl: ort.anzahl, element: ort.element, genauigkeit: ort.genauigkeit };
+            if (gruppe === undefined) {
+                nachPunkt.set(schluessel, Object.assign({}, ort, { teile: [teil] }));
+                continue;
+            }
+            gruppe.teile.push(teil);
+            gruppe.anzahl += ort.anzahl;
+            gruppe.fokus = gruppe.fokus || ort.fokus;
+            gruppe.genauigkeit = gruppe.genauigkeit === ort.genauigkeit ? gruppe.genauigkeit : '';
+            gruppe.anschrift = gruppe.teile.length + ' Anschriften';
+        }
+
+        return Array.from(nachPunkt.values());
+    }
+
+    /**
      * The one place of a small map from its data-* attributes (lat, lon,
      * titel), or null when the coordinates are no coordinates.
      */
@@ -165,7 +193,7 @@
             return;
         }
 
-        const orte = orteAus(Array.from(tabelle.querySelectorAll('tbody tr')).map((zeile) => ({
+        const orte = zusammenfassen(orteAus(Array.from(tabelle.querySelectorAll('tbody tr')).map((zeile) => ({
             lat: zeile.dataset.lat,
             lon: zeile.dataset.lon,
             anschrift: (zeile.querySelector('[data-karte-anschrift]') || {}).textContent || '',
@@ -173,7 +201,7 @@
             element: zeile.querySelector('[data-karte-mitglieder]'),
             fokus: zeile.hasAttribute('data-fokus'),
             genauigkeit: zeile.dataset.genauigkeit || '',
-        })));
+        }))));
         if (orte.length === 0) {
             flaeche.hidden = true;
             return;
@@ -187,19 +215,22 @@
         for (const ort of orte) {
             const punkt = neuerPunkt(L, ort);
 
+            // Every address at this point with its members (usually one).
             punkt.bindPopup(() => {
                 const inhalt = document.createElement('div');
                 inhalt.className = 'karte-popup';
-                const kopf = document.createElement('p');
-                kopf.className = 'karte-popup-anschrift';
-                kopf.textContent = ort.anschrift + (GENAUIGKEIT[ort.genauigkeit] ? ' (' + GENAUIGKEIT[ort.genauigkeit] + ')' : '');
-                inhalt.appendChild(kopf);
-                if (ort.element) {
-                    inhalt.appendChild(ort.element.firstElementChild ? ort.element.firstElementChild.cloneNode(true) : document.createElement('ul'));
+                for (const teil of ort.teile) {
+                    const kopf = document.createElement('p');
+                    kopf.className = 'karte-popup-anschrift';
+                    kopf.textContent = teil.anschrift + (GENAUIGKEIT[teil.genauigkeit] ? ' (' + GENAUIGKEIT[teil.genauigkeit] + ')' : '');
+                    inhalt.appendChild(kopf);
+                    if (teil.element) {
+                        inhalt.appendChild(teil.element.firstElementChild ? teil.element.firstElementChild.cloneNode(true) : document.createElement('ul'));
+                    }
                 }
 
                 return inhalt;
-            });
+            }, { maxHeight: 320 });
             punkt.addTo(karte);
             grenzen.push([ort.lat, ort.lon]);
             if (ort.fokus && fokus === null) {
@@ -239,6 +270,12 @@
         L.tileLayer(flaeche.dataset.kacheln, {
             minZoom: zoomMin,
             maxZoom: zoomMax,
+            // Tiles come through this server; asking for new ones only when
+            // the finger lets go (Leaflet's phone default, set for every
+            // device) keeps dragging smooth, and a wider ring of kept tiles
+            // means less grey at the edges when it goes back.
+            updateWhenIdle: true,
+            keepBuffer: 4,
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende',
         }).addTo(karte);
 
@@ -488,6 +525,6 @@
 
     // Node (tests/js) loads the same file for the pure helpers above.
     if (typeof module === 'object' && module.exports) {
-        module.exports = { punktText, punktGroesse, punktTitel, orteAus, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter };
+        module.exports = { punktText, punktGroesse, punktTitel, orteAus, zusammenfassen, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter };
     }
 })();

@@ -79,6 +79,12 @@
     font-weight: 700;
 }
 
+/* Several addresses at one point (approximate ones share the middle of
+   their town): each address starts a little apart from the one before. */
+.karte-popup .karte-mitglieder + .karte-popup-anschrift {
+    margin-top: var(--abstand-3);
+}
+
 .karte-flaeche .leaflet-container a,
 .karte-flaeche a {
     color: var(--farbe-link);
