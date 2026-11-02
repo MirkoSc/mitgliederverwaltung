@@ -85,9 +85,11 @@ umgeschaltet statt verlinkt.
    aktuellen Mitglieder auf einer OpenStreetMap-Karte (Leaflet, vendored).
    Oben der Stand („x von y Anschriften gefunden"), für den Admin der Knopf
    „Jetzt Koordinaten ermitteln", ein einfacher Filter (Abteilung,
-   aktiv/passiv, per GET). Ein Marker je Anschrift mit der Zahl der
-   Mitglieder dort; Klick bzw. Enter zeigt Namen und Nummern mit Link zum
-   Mitglied. Darunter dieselben Anschriften als Tabelle (die Marker
+   aktiv/passiv, per GET). Ein Marker je Punkt mit der Zahl der
+   Mitglieder dort; Anschriften am selben Punkt (vor allem ungefähre, die
+   alle auf der Ortsmitte liegen) teilen sich einen Marker, sonst wäre nur
+   der oberste zu sehen. Klick bzw. Enter zeigt jede Anschrift mit Namen
+   und Nummern und Link zum Mitglied. Darunter dieselben Anschriften als Tabelle (die Marker
    entstehen aus deren Zeilen), dazu „Nicht gefundene Anschriften",
    „Noch nicht ermittelt" und „Ohne Anschrift" mit Links – damit ist die
    Seite ohne Karte und im Barrierefrei-Modus vollständig nutzbar.

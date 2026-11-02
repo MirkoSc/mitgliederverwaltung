@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { punktText, punktGroesse, punktTitel, orteAus, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter } = require('../../public/js/karte.js');
+const { punktText, punktGroesse, punktTitel, orteAus, zusammenfassen, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter } = require('../../public/js/karte.js');
 
 test('a marker shows how many members live at the address', () => {
     assert.equal(punktText(1), '1');
@@ -92,4 +92,32 @@ test('the fields of a point by hand take a decimal comma and refuse anything els
     assert.equal(punktAusFeldern('50,1,2', '9'), null);
     assert.equal(feldText(50.03290012), '50.032900');
     assert.equal(feldText(-9.5), '-9.500000');
+});
+
+test('places at the same point become one marker with every address and all members', () => {
+    const orte = zusammenfassen(orteAus([
+        { lat: '50.025967', lon: '9.129987', anschrift: 'Am Hang 12, 12345 Musterort', anzahl: '2', genauigkeit: 'ungefaehr' },
+        { lat: '49.990000', lon: '9.150000', anschrift: 'Hauptstraße 1, 12345 Musterort', anzahl: '1' },
+        { lat: '50.0259669', lon: '9.1299873', anschrift: 'Talweg 3, 12345 Musterort', anzahl: '3', genauigkeit: 'ungefaehr' },
+    ]));
+
+    assert.equal(orte.length, 2);
+    assert.equal(orte[0].anzahl, 5, 'the members of both addresses');
+    assert.equal(orte[0].anschrift, '2 Anschriften');
+    assert.deepEqual(orte[0].teile.map((t) => t.anschrift), ['Am Hang 12, 12345 Musterort', 'Talweg 3, 12345 Musterort']);
+    assert.equal(orte[0].genauigkeit, 'ungefaehr', 'both approximate: the marker says so');
+    assert.equal(orte[1].anzahl, 1);
+    assert.equal(orte[1].teile.length, 1);
+    assert.equal(orte[1].anschrift, 'Hauptstraße 1, 12345 Musterort');
+});
+
+test('a shared point of an exact and an approximate address is not called approximate, and keeps the focus', () => {
+    const orte = zusammenfassen(orteAus([
+        { lat: '50.1', lon: '9.1', anschrift: 'A', anzahl: '1', genauigkeit: 'ungefaehr' },
+        { lat: '50.1', lon: '9.1', anschrift: 'B', anzahl: '1', fokus: true },
+    ]));
+
+    assert.equal(orte.length, 1);
+    assert.equal(orte[0].genauigkeit, '');
+    assert.equal(orte[0].fokus, true);
 });
