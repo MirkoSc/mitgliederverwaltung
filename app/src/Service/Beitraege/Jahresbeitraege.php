@@ -76,19 +76,18 @@ final readonly class Jahresbeitraege
     public function erzeugen(int $jahr, ?int $von, ?\DateTimeImmutable $jetzt = null): ErzeugenErgebnis
     {
         $jetzt ??= new \DateTimeImmutable('now', new \DateTimeZone(Datum::ZEITZONE));
-        $stichtag = new \DateTimeImmutable(sprintf('%04d-01-01', $jahr), new \DateTimeZone(Datum::ZEITZONE));
 
         $arten = [];
         foreach ($this->beitragsarten->alle() as $art) {
             $arten[(int) $art->id] = $art;
         }
 
-        return Zeilen::transaktion($this->pdo, function () use ($jahr, $von, $jetzt, $stichtag, $arten): ErzeugenErgebnis {
+        return Zeilen::transaktion($this->pdo, function () use ($jahr, $von, $jetzt, $arten): ErzeugenErgebnis {
             $neu = 0;
             $vorhanden = 0;
             foreach ($this->mitglieder->alle(true) as $mitglied) {
                 $art = $mitglied->beitragsartId === null ? null : ($arten[$mitglied->beitragsartId] ?? null);
-                $beitrag = self::fuer($mitglied, $art, $jahr, $stichtag, $von, $jetzt);
+                $beitrag = self::fuer($mitglied, $art, $jahr, $von, $jetzt);
                 if ($beitrag === null) {
                     continue;
                 }
@@ -200,23 +199,44 @@ final readonly class Jahresbeitraege
         });
     }
 
+    /**
+     * The amount "Beiträge erzeugen" would give the member for that year,
+     * null when it gives none: no fee type or one of 0 €, former on 1
+     * January, or joining after that year. Also the projection of the fee
+     * distribution (08 section 2b).
+     */
+    public static function vorschlag(Mitglied $mitglied, ?Beitragsart $art, int $jahr): ?int
+    {
+        if ($art === null || $art->betragCent <= 0 || !self::istImJahrMitglied($mitglied, $jahr)) {
+            return null;
+        }
+        $betrag = self::anteiligerBetrag($art->betragCent, $mitglied->eintrittsdatum, $jahr);
+
+        return $betrag > 0 ? $betrag : null;
+    }
+
+    /** Member in that year: not former on 1 January and not joining after the year. */
+    public static function istImJahrMitglied(Mitglied $mitglied, int $jahr): bool
+    {
+        return !$mitglied->istEhemalig(self::stichtag($jahr))
+            && ($mitglied->eintrittsdatum === null || (int) $mitglied->eintrittsdatum->format('Y') <= $jahr);
+    }
+
+    /** 1 January of the year - the key date of the fee (08 section 2). */
+    public static function stichtag(int $jahr): \DateTimeImmutable
+    {
+        return new \DateTimeImmutable(sprintf('%04d-01-01', $jahr), new \DateTimeZone(Datum::ZEITZONE));
+    }
+
     private static function fuer(
         Mitglied $mitglied,
         ?Beitragsart $art,
         int $jahr,
-        \DateTimeImmutable $stichtag,
         ?int $von,
         \DateTimeImmutable $jetzt,
     ): ?Jahresbeitrag {
-        if ($art === null || $art->betragCent <= 0 || $mitglied->istEhemalig($stichtag)) {
-            return null;
-        }
-        if ($mitglied->eintrittsdatum !== null && (int) $mitglied->eintrittsdatum->format('Y') > $jahr) {
-            return null;
-        }
-
-        $betrag = self::anteiligerBetrag($art->betragCent, $mitglied->eintrittsdatum, $jahr);
-        if ($betrag <= 0) {
+        $betrag = self::vorschlag($mitglied, $art, $jahr);
+        if ($art === null || $betrag === null) {
             return null;
         }
 
