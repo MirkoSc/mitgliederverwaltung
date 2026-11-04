@@ -84,6 +84,7 @@ $statusEtikett = require __DIR__ . '/status-etikett.php';
             <input type="hidden" name="jahr" value="<?= e($jahr) ?>">
             <button type="submit" class="knopf knopf-haupt" aria-describedby="erzeugen-hilfe">Beiträge für <?= e($jahr) ?> erzeugen</button>
         </form>
+        <a class="knopf" href="<?= e(BeitraegeController::verteilungsAdresse($jahr)) ?>">Verteilung <?= e($jahr) ?> ansehen</a>
         <?php if ($gesamt > 0): ?>
             <a class="knopf knopf-still" href="<?= e(BeitragsjahrController::loeschAdresse($jahr)) ?>">Beiträge <?= e($jahr) ?> löschen</a>
         <?php endif; ?>

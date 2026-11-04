@@ -116,6 +116,31 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
   „gelöscht". Audit `beitraege.jahr_geloescht` mit Jahr, Anzahlen, Summe,
   Einzug-IDs und Zahl der Dateien.
 
+## 2b. Verteilung der Beiträge
+
+Seite `/app/beitraege/verteilung?jahr=` (`beitraege.verwalten`), verlinkt
+im Abschnitt „Jahresbeiträge" („Verteilung <Jahr> ansehen"): was das Jahr
+an Beiträgen bringt – Summe, **nach Beitragsart** (Anzahl, Summe, Anteil)
+und **nach Abteilung** (Mitglieder, Summe, Anteil). Nur Zahlen, keine
+Namen. `App\Service\Beitraege\Beitragsverteilung`, rein berechnet aus
+Mitgliedern, Beitragsarten, Abteilungen und den Jahresbeiträgen.
+
+- **Grundlage**: Hat das Jahr Jahresbeiträge, zählen deren Beträge in
+  jedem Status (offen, im Einzug, bezahlt). Hat es keine, wird
+  **hochgerechnet**, so wie „Erzeugen" sie anlegen würde
+  (`Jahresbeitraege::vorschlag()`, gleiche Regeln inkl. anteilig); die Seite
+  sagt, welcher Fall vorliegt.
+- **Beitragsart**: die heutige des Mitglieds (ein Jahresbeitrag speichert
+  sie nicht); ohne eine die Zeile „ohne Beitragsart".
+- **Abteilung**: Ein Beitrag wird gleichmäßig auf die Abteilungen des
+  Mitglieds geteilt. Der Beitrag eines **Familien-Zahlers** wird zuerst
+  gleichmäßig auf ihn und die Familienmitglieder des Jahres **ohne eigenen
+  Beitrag** geteilt, dann je Person auf ihre Abteilungen. Ohne Abteilung:
+  Zeile „ohne Abteilung". Geteilt wird in Cent nach größtem Rest – die
+  Abteilungen ergeben zusammen genau die Gesamtsumme. „Mitglieder" zählt
+  jede Person, die zur Abteilung beiträgt. Aktive Abteilungen stehen immer
+  da (auch mit 0 €), inaktive nur mit Betrag.
+
 ## 3. Einzug
 
 Ablauf auf **einer** Seite (06 §2), von oben nach unten:
@@ -281,3 +306,8 @@ Dateien) und nichts anderer Jahre, ein Einzug mit mehreren Jahren bleibt;
 Audit-Eintrag; danach ist „Bestand leeren" wieder möglich. Mehrfach-bezahlt
 setzt genau die gewählten, ein nicht mehr offener ändert nichts;
 Bereichslogik in `tests/js/beitraege-auswahl.test.js`.
+Zu §2b: Hochrechnung wie Erzeugen (ehemalig, späterer Eintritt, anteilig,
+beitragsfrei); erzeugte Beiträge zählen mit ihrem Betrag; Teilung über
+mehrere Abteilungen und über die Familie (ohne Mitglieder mit eigenem
+Beitrag); Abteilungen und Beitragsarten ergeben je die Gesamtsumme;
+Vorstand und Nur lesen bekommen 403.
