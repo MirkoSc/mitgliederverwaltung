@@ -16,7 +16,6 @@ use App\Http\Request;
 use App\Http\Response;
 use App\Repository\FamilieRepository;
 use App\Repository\MitgliedRepository;
-use App\Repository\MitgliedsnummerVergebenException;
 use App\Repository\VersionKonfliktException;
 use App\Service\Mitglied\HinweisLader;
 use App\Service\Storage\BlobService;
@@ -67,7 +66,7 @@ final readonly class MitgliedController
         return self::PFAD_LISTE . '/' . $id . '/loeschen';
     }
 
-    /** "Neues Mitglied": the empty form with the next free number (07 section 1). */
+    /** "Neues Mitglied": the empty form, showing the number the member will probably get (07 section 1). */
     public function neu(Request $r): Response
     {
         return $this->formularSeite(MitgliedFormular::neu($this->mitglieder->naechsteNummer()), null, Einbettung::ausAnfrage($r));
@@ -76,16 +75,13 @@ final readonly class MitgliedController
     public function anlegen(Request $r): Response
     {
         $einbettung = Einbettung::ausAnfrage($r);
-        $formular = MitgliedFormular::gelesen($r->post, new Mitglied(1, ''), $this->listen());
+        $formular = MitgliedFormular::gelesen($r->post, new Mitglied(0, ''), $this->listen());
         if ($formular->mitglied === null) {
             return $this->formularSeite($formular, null, $einbettung, 422);
         }
 
-        try {
-            $ergebnis = $this->mitglieder->speichern($formular->mitglied, VersionsAnlass::angelegt(), $this->dienste->session->userId());
-        } catch (MitgliedsnummerVergebenException) {
-            return $this->formularSeite($this->nummerVergeben($formular), null, $einbettung, 422);
-        }
+        // The repository gives out the member number (07 section 1).
+        $ergebnis = $this->mitglieder->speichern($formular->mitglied, VersionsAnlass::angelegt(), $this->dienste->session->userId());
 
         return $this->fertig($ergebnis->mitglied, 'Mitglied angelegt.', $einbettung);
     }
@@ -108,8 +104,6 @@ final readonly class MitgliedController
         $mitglied = $formular->mitglied->mit(['version' => self::version($r, $gespeichert)]);
         try {
             $ergebnis = $this->mitglieder->speichern($mitglied, VersionsAnlass::geaendert(), $this->dienste->session->userId());
-        } catch (MitgliedsnummerVergebenException) {
-            return $this->formularSeite($this->nummerVergeben($formular), $mitglied, $einbettung, 422);
         } catch (VersionKonfliktException) {
             $aktuell = $this->mitglieder->finde($gespeichert->id ?? 0);
             if ($aktuell === null) {
@@ -224,19 +218,6 @@ final readonly class MitgliedController
             'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen),
             'einbettung' => $einbettung ?? Einbettung::mitgliederSeite(),
         ];
-    }
-
-    private function nummerVergeben(MitgliedFormular $formular): MitgliedFormular
-    {
-        $nummer = (int) $formular->wert('mitgliedsnummer');
-        $andere = $this->mitglieder->findeNachNummer($nummer);
-
-        return $formular->mitFehler('mitgliedsnummer', sprintf(
-            'Die Nummer %d hat schon %s. Die nächste freie Nummer ist %d.',
-            $nummer,
-            $andere === null ? 'ein anderes Mitglied' : $andere->anzeigeName(),
-            $this->mitglieder->naechsteNummer(),
-        ));
     }
 
     private function fertig(Mitglied $mitglied, string $meldung, Einbettung $einbettung): Response

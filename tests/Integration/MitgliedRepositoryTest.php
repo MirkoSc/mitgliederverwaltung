@@ -209,10 +209,19 @@ final class MitgliedRepositoryTest extends DatabaseTestCase
         } catch (MitgliedsnummerVergebenException) {
         }
 
-        // Changeable to a free number.
+        // Still changeable at repository level (the import keys on it).
         $this->repo->speichern($b->mit(['mitgliedsnummer' => 99]), VersionsAnlass::geaendert(), 1);
         self::assertSame('B', $this->repo->findeNachNummer(99)?->nachname);
         self::assertSame(100, $this->repo->naechsteNummer());
+    }
+
+    public function testANewMemberWithoutANumberGetsTheHighestPlusOne(): void
+    {
+        $erste = $this->anlegen(new Mitglied(0, 'Erste'));
+        self::assertSame(1, $erste->mitgliedsnummer);
+        $this->anlegen(new Mitglied(40, 'Vierzig'));
+        self::assertSame(41, $this->anlegen(new Mitglied(0, 'Danach'))->mitgliedsnummer);
+        self::assertSame(1, $this->repo->versionen((int) $erste->id)[0]->daten['mitgliedsnummer']);
     }
 
     public function testSearchFindsOverAllFieldsRegardlessOfCase(): void
@@ -323,7 +332,7 @@ final class MitgliedRepositoryTest extends DatabaseTestCase
         self::assertCount(3, $ergebnis->hinweise);
     }
 
-    public function testRestoreKeepsTheCurrentNumberWhenTheOldOneIsTakenNow(): void
+    public function testRestoreNeverChangesTheMemberNumber(): void
     {
         $a = $this->anlegen(new Mitglied(10, 'A'));
         $this->repo->speichern($a->mit(['mitgliedsnummer' => 11]), VersionsAnlass::geaendert(), 1);
@@ -332,7 +341,7 @@ final class MitgliedRepositoryTest extends DatabaseTestCase
         $ergebnis = $this->repo->wiederherstellen((int) $a->id, 1, 1);
 
         self::assertSame(11, $ergebnis->mitglied->mitgliedsnummer);
-        self::assertCount(1, $ergebnis->hinweise);
+        self::assertCount(0, $ergebnis->hinweise);
     }
 
     public function testRestoringTheCurrentStateWritesNoVersion(): void

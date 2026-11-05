@@ -39,13 +39,12 @@ final class MitgliedFormularTest extends TestCase
         return MitgliedFormular::gelesen($post, $basis ?? new Mitglied(1, ''), self::listen());
     }
 
-    public function testNumberAndSurnameAreAllItNeeds(): void
+    public function testSurnameIsAllItNeeds(): void
     {
-        $formular = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Musterfrau']);
+        $formular = self::lesen(['nachname' => 'Musterfrau']);
 
         self::assertSame([], $formular->fehler);
         self::assertNotNull($formular->mitglied);
-        self::assertSame(412, $formular->mitglied->mitgliedsnummer);
         self::assertSame('Musterfrau', $formular->mitglied->nachname);
         self::assertSame('D', $formular->mitglied->land, 'the default country');
         self::assertTrue($formular->mitglied->aktiv);
@@ -53,35 +52,24 @@ final class MitgliedFormularTest extends TestCase
         self::assertNull($formular->mitglied->eintrittsdatum, 'empty = unknown');
     }
 
-    public function testMissingNumberAndSurnameAreErrors(): void
+    public function testMissingSurnameIsAnError(): void
     {
-        $formular = self::lesen(['mitgliedsnummer' => ' ', 'nachname' => '  ', 'vorname' => 'Erika']);
+        $formular = self::lesen(['nachname' => '  ', 'vorname' => 'Erika']);
 
         self::assertNull($formular->mitglied);
-        self::assertSame(['mitgliedsnummer', 'nachname'], array_keys($formular->fehler));
+        self::assertSame(['nachname'], array_keys($formular->fehler));
         self::assertSame('Erika', $formular->wert('vorname'), 'what was typed stays');
     }
 
-    /** @return iterable<string, array{string, int|null}> */
-    public static function nummern(): iterable
+    public function testThePostedNumberIsNeverTaken(): void
     {
-        yield 'plain' => ['412', 412];
-        yield 'leading zeros' => ['0087', 87];
-        yield 'largest' => ['4294967295', 4294967295];
-        yield 'zero' => ['0', null];
-        yield 'too large' => ['4294967296', null];
-        yield 'letters' => ['41a', null];
-        yield 'negative' => ['-5', null];
-        yield 'decimal' => ['4.5', null];
-    }
+        $neu = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Muster'], new Mitglied(0, ''));
+        self::assertSame(0, $neu->mitglied?->mitgliedsnummer, 'a new member stays without a number until saved');
+        self::assertSame([], $neu->fehler);
 
-    #[DataProvider('nummern')]
-    public function testTheMemberNumberIsAWholeNumberFromOne(string $eingabe, ?int $erwartet): void
-    {
-        $formular = self::lesen(['mitgliedsnummer' => $eingabe, 'nachname' => 'Muster']);
-
-        self::assertSame($erwartet, $formular->mitglied?->mitgliedsnummer);
-        self::assertSame($erwartet === null, $formular->fehler('mitgliedsnummer') !== null);
+        $alt = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Muster'], new Mitglied(87, 'Alt', id: 3));
+        self::assertSame(87, $alt->mitglied?->mitgliedsnummer);
+        self::assertSame('87', $alt->wert('mitgliedsnummer'));
     }
 
     public function testDatesAreReadFromTheDateInputAndFromTypedGermanDates(): void
@@ -108,7 +96,7 @@ final class MitgliedFormularTest extends TestCase
     public function testAllFieldsOfTheSpecAreRead(): void
     {
         $formular = self::lesen([
-            'mitgliedsnummer' => '7', 'anrede' => 'Frau', 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
+            'mitgliedsnummer' => '999', 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
             'namenszusatz' => 'von', 'geschlecht' => 'w', 'geburtsdatum' => '1979-05-14', 'strasse' => 'Wiesenweg   3',
             'plz' => '12345', 'ort' => 'Musterstadt', 'land' => 'at', 'telefon' => '0123 4567', 'handy' => '0170 1234567',
             'email' => 'erika@example.org', 'eintrittsdatum' => '2001-01-01', 'austrittsdatum' => '2030-12-31',
@@ -121,7 +109,7 @@ final class MitgliedFormularTest extends TestCase
         $m = $formular->mitglied;
         self::assertNotNull($m);
         self::assertSame([
-            'mitgliedsnummer' => 7, 'anrede' => 'Frau', 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
+            'mitgliedsnummer' => 1, 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
             'namenszusatz' => 'von', 'geschlecht' => 'w', 'geburtsdatum' => '1979-05-14', 'strasse' => 'Wiesenweg 3',
             'plz' => '12345', 'ort' => 'Musterstadt', 'land' => 'AT', 'telefon' => '0123 4567', 'handy' => '0170 1234567',
             'email' => 'erika@example.org', 'eintrittsdatum' => '2001-01-01', 'austrittsdatum' => '2030-12-31',

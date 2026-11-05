@@ -33,7 +33,6 @@ final readonly class Mitglied
         public int $mitgliedsnummer,
         public string $nachname,
         public string $vorname = '',
-        public string $anrede = '',
         public string $titel = '',
         public string $namenszusatz = '',
         public ?Geschlecht $geschlecht = null,
@@ -145,7 +144,6 @@ final readonly class Mitglied
     {
         return [
             'mitgliedsnummer' => $this->mitgliedsnummer,
-            'anrede' => $this->anrede,
             'titel' => $this->titel,
             'vorname' => $this->vorname,
             'nachname' => $this->nachname,
@@ -201,7 +199,6 @@ final readonly class Mitglied
             mitgliedsnummer: $zahl('mitgliedsnummer') ?? $aktuell->mitgliedsnummer,
             nachname: $text('nachname', $aktuell->nachname),
             vorname: $text('vorname'),
-            anrede: $text('anrede'),
             titel: $text('titel'),
             namenszusatz: $text('namenszusatz'),
             geschlecht: Geschlecht::tryFrom($text('geschlecht')),

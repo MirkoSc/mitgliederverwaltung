@@ -201,6 +201,15 @@ final class ImportLeserTest extends TestCase
         self::assertSame('Beispiel', $datei->eintraege[0]->mitglied->nachname);
     }
 
+    public function testTheDroppedColumnAnredeIsIgnoredWithoutAMessage(): void
+    {
+        $datei = ImportLeser::lesen("mitgliedsnummer;anrede;nachname\n1;Frau;Beispiel\n", $this->stammdaten());
+
+        self::assertTrue($datei->istFehlerfrei());
+        self::assertSame([], $datei->unbekannteSpalten);
+        self::assertSame('Beispiel', $datei->eintraege[0]->mitglied->nachname);
+    }
+
     public function testABomWindowsLineEndingsAndEmptyLinesAreTolerated(): void
     {
         $csv = "\xEF\xBB\xBFmitgliedsnummer;nachname\r\n1;Beispiel\r\n\r\n2;Muster\r\n";

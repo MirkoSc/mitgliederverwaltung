@@ -65,7 +65,7 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 
   | Gruppe | Felder |
   |---|---|
-  | Person | Mitgliedsnummer, Anrede, Titel, Vorname, Nachname, Namenszusatz, Geschlecht, Geburtsdatum |
+  | Person | Mitgliedsnummer, ~~Anrede~~ (entfällt, Mirko 05.11.2026; DROP COLUMN im nächsten Release), Titel, Vorname, Nachname, Namenszusatz, Geschlecht, Geburtsdatum |
   | Anschrift | Straße, PLZ, Ort, Land |
   | Kontakt | Telefon, Handy, E-Mail |
   | Mitgliedschaft | Eintrittsdatum, Austrittsdatum + Grund, aktiv/passiv, Abteilungen (0..n) |

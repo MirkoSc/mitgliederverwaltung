@@ -20,7 +20,6 @@ final class MitgliedTest extends TestCase
             mitgliedsnummer: 4711,
             nachname: 'Mustermann',
             vorname: 'Erika',
-            anrede: 'Frau',
             titel: 'Dr.',
             namenszusatz: 'von',
             geschlecht: Geschlecht::W,

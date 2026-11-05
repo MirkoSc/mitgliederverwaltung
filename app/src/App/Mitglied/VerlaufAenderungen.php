@@ -23,7 +23,6 @@ final class VerlaufAenderungen
     /** Label per key of Mitglied::daten(), in the order of the form. */
     private const array FELDER = [
         'mitgliedsnummer' => 'Mitgliedsnummer',
-        'anrede' => 'Anrede',
         'titel' => 'Titel',
         'vorname' => 'Vorname',
         'nachname' => 'Nachname',

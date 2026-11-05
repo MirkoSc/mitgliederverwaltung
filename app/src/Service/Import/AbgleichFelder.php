@@ -19,7 +19,6 @@ final readonly class AbgleichFelder
 {
     private const array NAMEN = [
         'mitgliedsnummer' => 'Mitgliedsnummer',
-        'anrede' => 'Anrede',
         'titel' => 'Titel',
         'vorname' => 'Vorname',
         'nachname' => 'Nachname',
