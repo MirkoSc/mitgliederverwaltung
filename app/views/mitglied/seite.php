@@ -16,7 +16,7 @@
     <?php if ($mitglied !== null): ?>
         <p><?= e($mitglied->anzeigeName()) ?>, <span class="nummer">Nr. <?= e($mitglied->mitgliedsnummer) ?></span></p>
     <?php else: ?>
-        <p>Pflicht sind nur Mitgliedsnummer und Nachname. Was fehlt, können Sie später ergänzen.</p>
+        <p>Pflicht ist nur der Nachname; die Mitgliedsnummer wird beim Speichern vergeben. Was fehlt, können Sie später ergänzen.</p>
     <?php endif; ?>
 </div>
 

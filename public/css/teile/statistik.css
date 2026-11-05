@@ -48,6 +48,7 @@
 }
 
 .kennzahl {
+    min-width: 0;
     display: flex;
     flex-direction: column-reverse;
     justify-content: flex-end;
@@ -64,6 +65,9 @@
 }
 
 .kennzahl dt {
+    /* Long words ("Durchschnittsalter") must not leave a narrow tile. */
+    overflow-wrap: anywhere;
+    hyphens: auto;
     color: var(--farbe-gedaempft);
     font-size: var(--schrift-klein);
 }
