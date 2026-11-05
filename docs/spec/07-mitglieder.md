@@ -5,13 +5,13 @@ perfekt**, **Hinweise statt Sperren** (CLAUDE.md).
 
 ## 1. Mitglied
 
-Felder (alle optional außer Mitgliedsnummer und Nachname – auch hier
-gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
+Felder (alle optional außer dem Nachnamen; die Mitgliedsnummer vergibt der
+Server – auch hier gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 
 | Gruppe | Felder |
 |---|---|
 | Person | Mitgliedsnummer, Titel, Vorname, Nachname, Namenszusatz, Geschlecht (`m`/`w`/`d`), Geburtsdatum |
-| Anschrift | Straße, PLZ, Ort, Land. Gespeichert wird der ISO-3166-1-alpha-2-Code (Default `DE`), angezeigt der deutsche Name. Das Formularfeld ist ein Eingabefeld mit Vorschlagsliste aller Länder (Deutschland, Nachbarländer, Rest alphabetisch; Tippen filtert). Verstanden werden Name, ISO-Code und die alten Kfz-Kennzeichen (`D`, `A`, `CH`, `F` …); eine unbekannte Eingabe meldet „Land nicht gefunden“ (Eingabeprüfung, keine fachliche Sperre). Datenquelle `app/data/laender.php` (aus `i18n-iso-countries`, MIT; `tools/laender-erzeugen.mjs`), API `App\Support\Laender`. Migration 300 hat `D` auf `DE` umgestellt; alte Versionen mit `D` gelten als `DE`. Die Geocode-Hashes (`geo_anschrift`) bleiben gültig, weil `Anschrift::normalisiert()` Deutschland weiter als `D` hasht |
+| Anschrift | Straße, PLZ, Ort, Land. Gespeichert wird der ISO-3166-1-alpha-2-Code (Default `DE`), angezeigt der deutsche Name. Das Formularfeld ist ein Eingabefeld mit Vorschlagsliste aller Länder (Deutschland, Nachbarländer, Rest alphabetisch; Tippen filtert). Verstanden werden Name, ISO-Code, die alten Kfz-Kennzeichen (`D`, `A`, `CH`, `F` …) und einige Alpha-3-Codes (`DEU`, `AUT` …). Eine neu getippte unbekannte Eingabe meldet „Land nicht gefunden“ (Eingabeprüfung, sie passt nicht in die Spalte); ein schon gespeicherter unbekannter Wert (Altdaten, z. B. `CDN`) bleibt beim Speichern unverändert, angezeigt wird er roh, dazu der Hinweis „Land unbekannt“ (§6). Datenquelle `app/data/laender.php` (aus `i18n-iso-countries`, MIT; `tools/laender-erzeugen.mjs`), API `App\Support\Laender` (`Laender::STANDARD` = `DE` ist die einzige Quelle des Defaults). Migration 300 hat die alten Kfz-Kennzeichen (`D`, `A`, `F`, `UK` …) auf ISO umgestellt; alte Versionen mit `D` gelten als `DE`. Alpha-3-Codes wurden bewusst nicht umgestellt (sie werden beim nächsten Speichern des Mitglieds zu ISO). Die Geocode-Hashes (`geo_anschrift`, auch Punkte „von Hand“) bleiben gültig: `Anschrift::normalisiert()` hasht das Land so, wie es vor der Umstellung gespeichert war (`Laender::kennzeichenImHash()`: ein von Migration 300 erzeugter ISO-Code wird wieder zum Kennzeichen, `AT` → `A`, alles andere bleibt) |
 | Kontakt | Telefon, Handy, E-Mail |
 | Mitgliedschaft | Eintrittsdatum (oder „unbekannt"), Austrittsdatum, Austrittsgrund (Freitext, Auswahlvorschläge „Austritt", „verstorben"), aktiv/passiv (Häkchen), Abteilungen (0..n) |
 | Beitrag | Beitragsart (oder keine), Zahlart (`lastschrift`/`selbst`), IBAN, BIC (optional), Kontoinhaber falls abweichend, Mandatsreferenz, Mandatsdatum |
@@ -81,7 +81,8 @@ dasselbe Formular unter `GET /app/mitglieder/neu`. Gespeichert wird per
 Weiterleitung auf `/app/mitglieder?mitglied={id}` mit dem Ergebnis als
 Meldung. Blockiert wird nur bei fehlendem
 Nachnamen, einem unlesbaren Datum (`TT.MM.JJJJ` und
-`JJJJ-MM-TT` werden gelesen) und einer Versionskollision (das Formular
+`JJJJ-MM-TT` werden gelesen), einem neu getippten unbekannten Land und
+einer Versionskollision (das Formular
 kommt mit den eigenen Eingaben und der aktuellen Version zurück; erneutes
 Speichern gilt). Familie und Rolle sind keine Felder dieses Formulars, sie
 bleiben beim Speichern erhalten (§3). Abteilungen, Funktionen und
@@ -113,12 +114,11 @@ und Reiter Daten, nicht bei Familien) ist das Feld Straße eine Combobox nach
 WAI-ARIA (`public/js/anschrift-vorschlaege.js`): ab 3 Zeichen und 300 ms
 Tipp-Pause klappen unter dem Feld bis zu 5 Vorschläge auf (Maus, Finger
 oder Pfeiltasten/Eingabe/Escape). Eine Auswahl füllt Straße mit
-Hausnummer, PLZ, Ort und Land (ISO-Code) – je nur, wenn der Vorschlag einen
-Wert dafür hat; gespeichert wird erst mit dem Formular. Das Land-Feld ist
-das Element `[data-land-iso]` des Formulars, sonst das Feld `land` (ein
-`<select>` nur, wenn es den Code als Option hat); danach erhält das
-Formular das Ereignis `anschrift-vorschlag` (`detail` = gefüllte Werte).
-Gefragt wird per `POST /app/anschrift/vorschlaege` (Felder `strasse`,
+Hausnummer, PLZ, Ort und Land (der Name der Länderliste zum ISO-Code) – je
+nur, wenn der Vorschlag einen Wert dafür hat; gespeichert wird erst mit dem
+Formular. Die Liste zeigt das Land nur im Ausland, mit Namen. Als Bias geht
+die Mitte aller Punkte der Karte mit (`GeoAnschriftRepository::mitte()`,
+`AVG` in SQL). Gefragt wird per `POST /app/anschrift/vorschlaege` (Felder `strasse`,
 `plz`, `ort`; Recht `mitglieder.bearbeiten`, JSON, CSRF wie jeder POST,
 60 Anfragen je Konto und Minute, `App\App\AnschriftController`); der
 Server fragt Photon (01 §8). Ohne Skript bleibt es das normale Formular;
@@ -274,6 +274,7 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 | Beitragsfrei ohne Grund | Regel `beitragsfrei`, Bemerkung leer |
 | Eintrittsdatum unbekannt | Eintrittsdatum fehlt |
 | Pflichtangaben für BLSV fehlen | Geschlecht oder Geburtsdatum fehlt |
+| Land unbekannt (#127) | gespeichertes Land ist kein bekanntes Land (Altdaten, z. B. `CDN`), nicht ehemalig |
 | Anschrift auf der Karte nicht gefunden (#108) | Anschrift auf der Karte „nicht gefunden", nicht ehemalig |
 | Anschrift auf der Karte nur ungefähr gefunden (#108) | Anschrift auf der Karte „ungefähr" (nur PLZ und Ort gefunden), nicht ehemalig |
 
@@ -315,8 +316,11 @@ Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
 - „Lastschrift mit falscher BIC": eine leere BIC ist kein Hinweis (die Bank
   findet sich über die IBAN); verglichen wird nur bei gültiger deutscher IBAN
   und bekannter Bank, sonst nur die Form.
-- Ehemalige: nur „Kein Beitrag" nimmt sie aus; die übrigen Regeln gelten
-  unverändert.
+- „Land unbekannt" (#127): `Laender::code()` kennt den gespeicherten Wert
+  nicht (leer gilt als Deutschland); `HinweisArt::reiter()` = `daten`. Der
+  Hinweis nennt nur den Ländercode, keine Personendaten.
+- Ehemalige: „Kein Beitrag", „Land unbekannt" und die Karten-Hinweise nehmen
+  sie aus; die übrigen Regeln gelten unverändert.
 
 ## 7. Versionen
 

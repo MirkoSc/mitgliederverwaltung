@@ -23,9 +23,6 @@ final readonly class Mitglied
 {
     use Kopierbar;
 
-    /** The country a new member gets (07 section 1). */
-    public const string LAND_DEFAULT = 'DE';
-
     /**
      * @param list<int> $abteilungIds departments (07 section 2), 0..n
      * @param list<int> $funktionIds functions (07 section 4), 0..n
@@ -41,7 +38,7 @@ final readonly class Mitglied
         public string $strasse = '',
         public string $plz = '',
         public string $ort = '',
-        public string $land = self::LAND_DEFAULT,
+        public string $land = Laender::STANDARD,
         public string $telefon = '',
         public string $handy = '',
         public string $email = '',
@@ -207,7 +204,7 @@ final readonly class Mitglied
             strasse: $text('strasse'),
             plz: $text('plz'),
             ort: $text('ort'),
-            land: Laender::iso($text('land', self::LAND_DEFAULT)), // old versions hold the licence-plate code ("D")
+            land: Laender::iso($text('land', Laender::STANDARD)), // old versions hold the licence-plate code ("D")
             telefon: $text('telefon'),
             handy: $text('handy'),
             email: $text('email'),

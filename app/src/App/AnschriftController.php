@@ -43,7 +43,7 @@ final readonly class AnschriftController
     {
         $limits = new RateLimiter(new RateLimitRepository($this->dienste->pdo()), 60);
         if (!$limits->versuch(self::LIMIT, (string) $this->dienste->session->userId(), self::JE_MINUTE)) {
-            return Response::json(['vorschlaege' => [], 'fehler' => 'Zu viele Anfragen. Bitte warten Sie einen Moment.'], 429);
+            return Response::json(['vorschlaege' => []], 429);
         }
 
         return Response::json([

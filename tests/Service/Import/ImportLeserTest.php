@@ -254,4 +254,19 @@ final class ImportLeserTest extends TestCase
         self::assertSame([], $datei->eintraege);
         self::assertStringContainsString('mehr als 20.000 Zeilen', $datei->fehler[0]->text);
     }
+
+    /** 07 section 1, 10 section 2: an unknown short code is old data and is kept; a long one does not fit. */
+    public function testTheCountryIsStoredAsIsoAndAnUnknownShortCodeIsKept(): void
+    {
+        $land = fn(string $wert): ImportDatei => ImportLeser::lesen("mitgliedsnummer;nachname;land\n1;Muster;$wert\n", $this->stammdaten());
+
+        self::assertSame('AT', $land('A')->eintraege[0]->mitglied->land);
+        self::assertSame('CH', $land('Schweiz')->eintraege[0]->mitglied->land);
+        self::assertSame('CDN', $land('CDN')->eintraege[0]->mitglied->land);
+        self::assertTrue($land('CDN')->istFehlerfrei());
+
+        $lang = $land('Atlantis');
+        self::assertFalse($lang->istFehlerfrei());
+        self::assertStringContainsString('Das Land „Atlantis“ gibt es nicht', self::texte($lang)[0]);
+    }
 }

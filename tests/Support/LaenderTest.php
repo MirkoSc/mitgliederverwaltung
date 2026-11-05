@@ -50,4 +50,34 @@ final class LaenderTest extends TestCase
         self::assertSame($vorher, new Anschrift('Hauptstr. 1', '12345', 'Musterstadt', 'D')->hash());
         self::assertSame($vorher, new Anschrift('Hauptstr. 1', '12345', 'Musterstadt')->hash());
     }
+
+    /**
+     * Migration 300 rewrote every old licence-plate code (A -> AT, UK -> GB
+     * ...); the hash must still be the one the first release built from the
+     * old code, or the rows of geo_anschrift - points by hand too - are lost.
+     */
+    public function testEveryCountryRewrittenByMigration300KeepsItsGeocodeHash(): void
+    {
+        $sql = (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/300_land_iso.sql');
+        preg_match_all("/SET land = '([A-Z]{2})' WHERE land (?:= '([A-Z]+)'|IN \\('([A-Z]+)')/", $sql, $treffer, PREG_SET_ORDER);
+        self::assertGreaterThanOrEqual(18, count($treffer));
+
+        foreach ($treffer as $t) {
+            $iso = $t[1];
+            $alt = $t[2] !== '' ? $t[2] : $t[3];
+            $vorher = hash('sha256', 'weg 1|1010|wien|' . $alt);
+            self::assertSame($vorher, new Anschrift('Weg 1', '1010', 'Wien', $iso)->hash(), "$alt -> $iso");
+            self::assertSame($vorher, new Anschrift('Weg 1', '1010', 'Wien', $alt)->hash(), $alt);
+            self::assertSame($alt, Laender::kennzeichenImHash($iso));
+        }
+    }
+
+    public function testValuesMigration300LeftAloneKeepTheirHash(): void
+    {
+        foreach (['CH', 'NL', 'DEU', 'CDN'] as $wert) {
+            self::assertSame(hash('sha256', 'weg 1|1010|wien|' . $wert), new Anschrift('Weg 1', '1010', 'Wien', strtolower($wert))->hash(), $wert);
+        }
+        self::assertSame('DE', new Anschrift('Weg 1', '1010', 'Wien', 'DEU')->land, 'the page and the geocoder get the ISO code');
+        self::assertSame('Österreich', Laender::name('AUT'));
+    }
 }

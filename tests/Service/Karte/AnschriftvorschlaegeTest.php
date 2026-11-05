@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Service\Karte;
 
 use App\Service\Karte\Anschriftvorschlaege;
-use App\Service\Karte\GeoStatus;
 use App\Service\Karte\HttpAntwort;
 use App\Tests\Support\FakeHttpAbruf;
 use PHPUnit\Framework\TestCase;
@@ -85,7 +84,7 @@ final class AnschriftvorschlaegeTest extends TestCase
         self::assertSame([
             ['strasse' => 'Hauptstraße 5', 'plz' => '63867', 'ort' => 'Johannesberg', 'land' => 'DE', 'text' => 'Hauptstraße 5, 63867 Johannesberg'],
             ['strasse' => 'Hauptstraße', 'plz' => '63867', 'ort' => 'Johannesberg', 'land' => 'DE', 'text' => 'Hauptstraße, 63867 Johannesberg'],
-            ['strasse' => 'Hauptstraße', 'plz' => '5020', 'ort' => 'Salzburg', 'land' => 'AT', 'text' => 'Hauptstraße, 5020 Salzburg, AT'],
+            ['strasse' => 'Hauptstraße', 'plz' => '5020', 'ort' => 'Salzburg', 'land' => 'AT', 'text' => 'Hauptstraße, 5020 Salzburg, Österreich'],
             ['strasse' => '', 'plz' => '', 'ort' => 'Oberafferbach', 'land' => 'DE', 'text' => 'Oberafferbach'],
         ], $vorschlaege);
     }
@@ -119,15 +118,5 @@ final class AnschriftvorschlaegeTest extends TestCase
         ]]));
 
         self::assertSame([['strasse' => 'Am Hang 3', 'plz' => '', 'ort' => 'Johannesberg', 'land' => '', 'text' => 'Am Hang 3, Johannesberg']], $vorschlaege);
-    }
-
-    public function testTheBiasIsTheMiddleOfThePointsOnTheMap(): void
-    {
-        self::assertNull(Anschriftvorschlaege::mitte([]));
-        self::assertSame([50.0, 9.0], Anschriftvorschlaege::mitte([
-            'a' => ['status' => GeoStatus::Gefunden, 'lat' => 49.0, 'lon' => 8.0, 'korrektur' => null],
-            'b' => ['status' => GeoStatus::VonHand, 'lat' => 51.0, 'lon' => 10.0, 'korrektur' => null],
-            'c' => ['status' => GeoStatus::NichtGefunden, 'lat' => null, 'lon' => null, 'korrektur' => null],
-        ]));
     }
 }

@@ -38,6 +38,9 @@ final class ImportLeser
         'funktionen', 'lizenznummer', 'bemerkung',
     ];
 
+    /** Width of mitglied.land: an unknown country code up to this length is taken as it is. */
+    private const int LAND_UNBEKANNT_MAX = 3;
+
     /** Longest value per text column - what the database column holds. */
     private const array MAXIMUM = [
         'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
@@ -241,11 +244,16 @@ final class ImportLeser
         $austrittsdatum = $datum('austrittsdatum');
         $mandatsdatum = $datum('mandatsdatum');
 
-        // Name, ISO code or old licence-plate code; empty is Germany (07 section 1).
-        $land = Mitglied::LAND_DEFAULT;
+        // Name, ISO code or old licence-plate code; empty is Germany. An
+        // unknown code of up to three characters (old data such as "CDN") is
+        // taken as it is - a hint says so; anything longer does not fit the
+        // column (07 section 1, 10 section 2).
+        $land = Laender::STANDARD;
         if ($text('land') !== '') {
             $land = Laender::code($text('land'));
-            if ($land === null) {
+            if ($land === null && mb_strlen($text('land')) <= self::LAND_UNBEKANNT_MAX) {
+                $land = $text('land');
+            } elseif ($land === null) {
                 $fehler[] = sprintf('Das Land „%s“ gibt es nicht. Erlaubt sind der deutsche Name, der ISO-Code (zum Beispiel AT) oder das alte Kennzeichen (zum Beispiel A).', $text('land'));
             }
         }

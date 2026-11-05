@@ -14,6 +14,7 @@ use App\Service\Karte\GeoStatus;
 use App\Support\Banken;
 use App\Support\Bic;
 use App\Support\Iban;
+use App\Support\Laender;
 
 /**
  * The member hints of docs/spec/07-mitglieder.md section 6 as a pure
@@ -174,6 +175,11 @@ final class Hinweise
                 $mitglied->geburtsdatum === null ? 'das Geburtsdatum' : null,
             ]);
             $melden(HinweisArt::BlsvAngabenFehlen, sprintf('Für die BLSV-Meldung fehlt %s. Bitte ergänzen.', implode(' und ', $fehlt)));
+        }
+
+        // Old data may hold a country the list does not know ("CDN", issue #127).
+        if (trim($mitglied->land) !== '' && Laender::code($mitglied->land) === null && !$mitglied->istEhemalig($tag)) {
+            $melden(HinweisArt::LandUnbekannt, sprintf('Das Land „%s“ ist unbekannt. Bitte im Reiter „Daten“ ein Land aus der Liste wählen.', $mitglied->land));
         }
 
         // The map (issue #108): only what the search left to fix by hand.

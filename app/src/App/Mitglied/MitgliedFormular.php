@@ -14,11 +14,12 @@ use App\Support\Laender;
  * The member form, tab "Daten" (docs/spec/07-mitglieder.md section 1):
  * the values it shows and reading back what it sent.
  *
- * Only two things block a save: a missing or unusable member number and a
- * missing surname (07 section 1, "Pflichtfelder nur Nummer + Nachname"), plus
- * a date the server cannot read - keeping it would silently lose what was
- * typed. Everything else is saved as entered; what looks wrong becomes a
- * hint, never an error (CLAUDE.md "Hinweise statt Sperren").
+ * Only a few things block a save: a missing surname and, as input checks,
+ * a date the server cannot read or a newly typed country it does not know -
+ * keeping either would silently lose what was typed. The member number is
+ * no field: the server gives it out (07 section 1). Everything else is
+ * saved as entered; what looks wrong becomes a hint, never an error
+ * (CLAUDE.md "Hinweise statt Sperren").
  *
  * The family and its role are not fields of this form: they are kept from
  * the member as it is stored (families are maintained in the member on
@@ -133,10 +134,16 @@ final readonly class MitgliedFormular
         // The member number is not read from the post: it is given out when
         // a member is saved first and never changes (07 section 1).
         $werte['mitgliedsnummer'] = $basis->mitgliedsnummer < 1 ? '' : (string) $basis->mitgliedsnummer;
-        $land = Mitglied::LAND_DEFAULT;
+        // Name or code becomes the ISO code. A value the list does not know
+        // is kept only when it is the stored one (old data such as "CDN" -
+        // a hint says so); a newly typed one is an input error, it would
+        // not fit the column (07 section 1).
+        $land = Laender::STANDARD;
         if ($werte['land'] !== '') {
             $land = Laender::code($werte['land']);
-            if ($land === null) {
+            if ($land === null && mb_strtoupper($werte['land']) === mb_strtoupper(trim($basis->land))) {
+                $land = $basis->land;
+            } elseif ($land === null) {
                 $fehler['land'] = 'Land nicht gefunden. Bitte aus der Liste wählen oder den Ländercode (zum Beispiel AT) eintragen.';
             }
         }

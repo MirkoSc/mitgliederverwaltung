@@ -15,16 +15,33 @@ final class Laender
 {
     public const string STANDARD = 'DE';
 
-    /** Licence-plate codes (and a few other spellings) that are no ISO alpha-2 code. */
+    /**
+     * Licence-plate codes of the former software that are no ISO alpha-2
+     * code - exactly the ones migrations/300_land_iso.sql rewrote in the
+     * member table. Each ISO code appears once, so kennzeichenImHash() can
+     * map back.
+     */
     private const array KFZ = [
         'D' => 'DE', 'A' => 'AT', 'F' => 'FR', 'B' => 'BE', 'L' => 'LU', 'I' => 'IT', 'E' => 'ES',
         'UK' => 'GB', 'H' => 'HU', 'FL' => 'LI', 'S' => 'SE', 'N' => 'NO', 'P' => 'PT', 'SLO' => 'SI',
-        'USA' => 'US', 'IRL' => 'IE', 'FIN' => 'FI', 'RUS' => 'RU', 'GBR' => 'GB', 'DEU' => 'DE',
-        'AUT' => 'AT', 'CHE' => 'CH', 'FRA' => 'FR', 'NLD' => 'NL', 'BEL' => 'BE', 'ITA' => 'IT', 'ESP' => 'ES',
+        'USA' => 'US', 'IRL' => 'IE', 'FIN' => 'FI', 'RUS' => 'RU',
+    ];
+
+    /**
+     * Further spellings that are understood but were never rewritten in
+     * the database (alpha-3 codes); a stored one stays until the member is
+     * saved again.
+     */
+    private const array WEITERE = [
+        'GBR' => 'GB', 'DEU' => 'DE', 'AUT' => 'AT', 'CHE' => 'CH', 'FRA' => 'FR', 'NLD' => 'NL',
+        'BEL' => 'BE', 'ITA' => 'IT', 'ESP' => 'ES',
     ];
 
     /** @var array<string, string>|null code => German name, in the order of the selection */
     private static ?array $liste = null;
+
+    /** @var array<string, string>|null ISO code => licence-plate code of KFZ */
+    private static ?array $zurueck = null;
 
     /** @var array<string, string>|null lower-case name => code */
     private static ?array $nachName = null;
@@ -43,8 +60,8 @@ final class Laender
         if (isset(self::liste()[$gross])) {
             return $gross;
         }
-        if (isset(self::KFZ[$gross])) {
-            return self::KFZ[$gross];
+        if (isset(self::KFZ[$gross]) || isset(self::WEITERE[$gross])) {
+            return self::KFZ[$gross] ?? self::WEITERE[$gross];
         }
         if (self::$nachName === null) {
             self::$nachName = [];
@@ -71,6 +88,25 @@ final class Laender
     public static function iso(string $wert): string
     {
         return self::code($wert) ?? $wert;
+    }
+
+    /**
+     * The country as the address hash of the map holds it
+     * (App\Service\Karte\Anschrift): the value as the first release stored
+     * it. An ISO code that migration 300 made from a licence-plate code
+     * goes back to that code ("AT" -> "A", "DE" -> "D"); everything else
+     * stays as stored, upper case ("CH", "DEU", "CDN"). So the coordinates
+     * found before the switch to ISO codes stay valid. '' stays ''.
+     */
+    public static function kennzeichenImHash(string $wert): string
+    {
+        $gross = mb_strtoupper(trim($wert));
+        if (isset(self::KFZ[$gross])) {
+            return $gross;
+        }
+        self::$zurueck ??= array_flip(self::KFZ);
+
+        return self::$zurueck[$gross] ?? $gross;
     }
 
     /**
