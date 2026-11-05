@@ -344,7 +344,7 @@ final class MitgliederSeiteTest extends AppTestCase
         self::assertStringContainsString('Anschrift des Zahlers (Max Mustermann):', $daten);
         self::assertStringContainsString('Hauptstraße 5', $daten);
         self::assertStringContainsString('54321 Zahlerdorf', $daten);
-        self::assertMatchesRegularExpression('#data-anschrift-uebernehmen\s+data-strasse="Hauptstraße 5" data-plz="54321"\s+data-ort="Zahlerdorf" data-land="D"#', $daten);
+        self::assertMatchesRegularExpression('#data-anschrift-uebernehmen\s+data-strasse="Hauptstraße 5" data-plz="54321"\s+data-ort="Zahlerdorf" data-land="Deutschland"#', $daten);
         self::assertStringContainsString('src="/js/anschrift.js', $daten);
         self::assertSame('Nebenweg 2', $repo->finde((int) $kind->id)?->strasse, 'nothing is saved by showing it');
 

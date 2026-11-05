@@ -27,6 +27,7 @@ use App\App\WohnortController;
 use App\Domain\Geschlecht;
 use App\Domain\Zahlart;
 use App\Support\Iban;
+use App\Support\Laender;
 
 $neu = $mitglied?->id === null;
 // Cancelling and deleting lead back to the page the member was opened on.
@@ -129,7 +130,12 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?= $text('strasse', 'Straße und Hausnummer', 'feld-breit') ?>
     <?= $text('plz', 'PLZ', 'feld-kurz', null, 'inputmode="numeric"') ?>
     <?= $text('ort', 'Ort') ?>
-    <?= $text('land', 'Land', 'feld-kurz', 'Leer lassen für Deutschland (D).') ?>
+    <?= $text('land', 'Land', '', 'Tippen filtert die Liste. Leer lassen für Deutschland.', 'list="m-laender"') ?>
+    <datalist id="m-laender">
+        <?php foreach (Laender::auswahl() as $landName): ?>
+            <option value="<?= e($landName) ?>"></option>
+        <?php endforeach; ?>
+    </datalist>
     <?php if (isset($wohnort) && !$neu): ?>
         <?php $wohnortFormular = 'wohnort-formular'; require __DIR__ . '/wohnort.php'; ?>
     <?php endif; ?>

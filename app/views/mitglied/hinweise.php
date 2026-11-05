@@ -19,6 +19,7 @@
  */
 
 use App\Service\Mitglied\HinweisArt;
+use App\Support\Laender;
 ?>
 <?php if ($hinweise !== []): ?>
     <div class="hinweis hinweis-warnung" id="mitglied-hinweise">
@@ -37,7 +38,7 @@ use App\Service\Mitglied\HinweisArt;
                             <?php if ($darfBearbeiten && $offenerReiter === 'daten'): ?>
                                 <button type="button" class="knopf" data-anschrift-uebernehmen
                                         data-strasse="<?= e($zahler->strasse) ?>" data-plz="<?= e($zahler->plz) ?>"
-                                        data-ort="<?= e($zahler->ort) ?>" data-land="<?= e($zahler->land) ?>">Anschrift des Zahlers übernehmen</button>
+                                        data-ort="<?= e($zahler->ort) ?>" data-land="<?= e(Laender::name($zahler->land)) ?>">Anschrift des Zahlers übernehmen</button>
                                 <p class="anschrift-stand" role="status"></p>
                             <?php elseif ($darfBearbeiten): ?>
                                 <p><a <?= $einbettung->link($einbettung->adresse($mitgliedId, 'daten'), 'reiter') ?>>Zu den Daten, um die Anschrift zu übernehmen</a></p>

@@ -52,7 +52,7 @@ Weil der Übergang länger dauern kann, gibt es zwei Arten:
   kaputtes Datum, ungültiges Geschlecht/`aktiv`/Zahlart, Familie ohne Rolle
   und umgekehrt, zu lange Werte, falsche Spaltenzahl. Mit Fehlern wird
   **nichts** importiert, auch nicht die fehlerfreien Zeilen.
-- Leere `land` = `D`, leere `zahlart` = `lastschrift` (wie beim neuen
+- `land`: deutscher Name, ISO-Code oder altes Kfz-Kennzeichen (gespeichert wird ISO); unbekannt = Fehlerzeile. Leere `land` = `DE`, leere `zahlart` = `lastschrift` (wie beim neuen
   Mitglied), leere `aktiv` = aktiv. Eine Familie ohne `familie_name` heißt
   „Familie <Nachname des ersten Mitglieds>“.
 - Die Vorschau zeigt Mitglieder, Familien, Mitglieder je Abteilung, die
@@ -110,7 +110,7 @@ früheren Fassungen `tools/altdaten-umwandeln.*` stehen in der
 Git-Historie). Die Zuordnungsregeln (Spalten, Beitragskombinationen,
 Familienrollen) stehen in `docs/fachlichkeit.md` §8. Eine Datei für einen
 späteren Abgleich (§4) wird ebenso lokal im Importformat (§2) erstellt –
-UTF-8, `land` höchstens 3 Zeichen (`D` statt „Deutschland").
+UTF-8, `land` als Name, ISO-Code oder Kfz-Kennzeichen (`Deutschland`, `DE` und `D` sind gleich).
 
 ## 4. Abgleich mit einer späteren Datei
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Karte;
 
+use App\Support\Laender;
+
 /**
  * A postal address as the map sees it (issue #91): street, postcode, town
  * and country - never a name. Two members with the same address in another
@@ -12,8 +14,15 @@ namespace App\Service\Karte;
  */
 final readonly class Anschrift
 {
-    /** Country of the member table when the field is empty (07: default "D"). */
-    public const string LAND_STANDARD = 'D';
+    /** Country of the member table when the field is empty (07: default "DE"). */
+    public const string LAND_STANDARD = Laender::STANDARD;
+
+    /**
+     * Germany keeps the token of the first release in the hash, so the
+     * coordinates found before the switch from "D" to ISO codes (issue #127)
+     * stay valid; no other country was in use then.
+     */
+    private const string LAND_IM_HASH_DEUTSCHLAND = 'D';
 
     public string $strasse;
 
@@ -28,8 +37,8 @@ final readonly class Anschrift
         $this->strasse = self::bereinigen($strasse);
         $this->plz = self::bereinigen($plz);
         $this->ort = self::bereinigen($ort);
-        $land = strtoupper(self::bereinigen($land));
-        $this->land = $land === '' ? self::LAND_STANDARD : $land;
+        $land = self::bereinigen($land);
+        $this->land = $land === '' ? self::LAND_STANDARD : mb_strtoupper(Laender::iso($land));
     }
 
     /** Without postcode and town there is nothing a geocoder could find. */
@@ -49,7 +58,7 @@ final readonly class Anschrift
         $strasse = (string) preg_replace('/str(\.|asse\b)/u', 'straße', $strasse);
         $strasse = (string) preg_replace('/\s*-\s*/u', '-', $strasse);
 
-        return implode('|', [$strasse, mb_strtolower($this->plz), mb_strtolower($this->ort), $this->land]);
+        return implode('|', [$strasse, mb_strtolower($this->plz), mb_strtolower($this->ort), $this->land === self::LAND_STANDARD ? self::LAND_IM_HASH_DEUTSCHLAND : $this->land]);
     }
 
     /**
@@ -77,7 +86,7 @@ final readonly class Anschrift
         $ort = trim($this->plz . ' ' . $this->ort);
         $teile = array_values(array_filter([$this->strasse, $ort], static fn(string $t): bool => $t !== ''));
         if ($this->land !== self::LAND_STANDARD) {
-            $teile[] = $this->land;
+            $teile[] = Laender::name($this->land);
         }
 
         return implode(', ', $teile);

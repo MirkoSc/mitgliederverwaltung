@@ -39,7 +39,7 @@ $gruppen = [
     'Anschrift' => [
         'Straße und Hausnummer' => $mitglied->strasse,
         'PLZ und Ort' => trim($mitglied->plz . ' ' . $mitglied->ort),
-        'Land' => $mitglied->land,
+        'Land' => \App\Support\Laender::name($mitglied->land),
     ],
     'Kontakt' => [
         'Telefon' => $mitglied->telefon,
