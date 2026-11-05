@@ -72,11 +72,22 @@ final class Markdown
         return implode("\n", $ausgabe);
     }
 
+    /**
+     * One line of plain text with **bold** as the only markup - the texts of
+     * the help (docs/spec/12-hilfe.md section 2), where a link or a heading
+     * has no place. Escaped first, like html().
+     */
+    public static function fett(string $text): string
+    {
+        $sicher = htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        return preg_replace('/\*\*(.+?)\*\*/u', '<strong>$1</strong>', $sicher) ?? $sicher;
+    }
+
     /** Escapes first, then marks up: the markers themselves are not escaped characters. */
     private static function inline(string $zeile): string
     {
-        $sicher = htmlspecialchars($zeile, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $fett = preg_replace('/\*\*(.+?)\*\*/u', '<strong>$1</strong>', $sicher) ?? $sicher;
+        $fett = self::fett($zeile);
 
         return preg_replace_callback(
             self::LINK,

@@ -60,14 +60,21 @@ return [
   Fehler (Test, §7).
 - `text` und `tipp` sind reiner Text; einzige Auszeichnung ist `**fett**`
   für Bezeichnungen der Oberfläche. Ausgegeben wird escaped (über
-  `App\Support\Markdown`, ohne die Ausgabe der Rechtstexte zu ändern).
+  `App\Support\Markdown::fett()`, ohne die Ausgabe der Rechtstexte zu
+  ändern).
 - Ein Schritt mit `bild` hat zwei Bilder (§6):
   `public/img/hilfe/<slug>/<NN>-normal.png` und
   `public/img/hilfe/<slug>/<NN>-barrierefrei.png`, `NN` = Nummer des
   Schritts, zweistellig, ab `01`.
-- `tools/hilfe-anleitungen.php` gibt alle Anleitungen als JSON aus
-  (`slug`, `titel`, `recht`, Nummern der Schritte mit `bild`) – so liest das
-  Screenshot-Skript dieselben Daten wie die Anwendung.
+- `tools/hilfe-anleitungen.php [<verzeichnis>]` gibt alle Anleitungen als
+  JSON aus – so liest das Screenshot-Skript dieselben Daten wie die
+  Anwendung. Eine Liste in Reihenfolge der Dateien, je Anleitung
+  `{"slug": "mitglied-anlegen", "titel": "…", "recht": "mitglieder.bearbeiten"
+  oder null, "bilder": [1, 4]}` (`bilder` = Nummern der Schritte mit
+  `bild`). Eine ungültige Datei: Grund auf STDERR, Exit-Code 1.
+- Geladen wird über `App\Service\Hilfe\Anleitungen` (#114), streng: eine
+  ungültige Datei wirft `UngueltigeAnleitung` statt übersprungen zu werden;
+  zwei Dateien mit demselben `slug` sind ebenfalls ein Fehler.
 
 ## 3. Darstellung
 

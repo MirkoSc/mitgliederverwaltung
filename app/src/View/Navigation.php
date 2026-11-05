@@ -32,6 +32,7 @@ final class Navigation
     public const string ZWEITER_FAKTOR = '/app/konto/zweiter-faktor';
     public const string BARRIEREFREI = '/app/konto/barrierefrei';
     public const string WEITERARBEITEN = '/app/konto/weiterarbeiten';
+    public const string HILFE = '/app/hilfe';
     public const string ABMELDEN = '/abmelden';
 
     /**
@@ -54,8 +55,9 @@ final class Navigation
 
     /**
      * The user menu (06 section 2): own password, second factor, the
-     * Barrierefrei-Modus switch and logging out - things every account does
-     * for itself, so none of them needs a right.
+     * Barrierefrei-Modus switch, the help (12 section 1, issue #114) and
+     * logging out - things every account does for itself, so none of them
+     * needs a right.
      *
      * @return list<NavItem>
      */
@@ -69,6 +71,7 @@ final class Navigation
                 self::BARRIEREFREI,
                 methode: HttpMethod::Post,
             ),
+            new NavItem('Hilfe', self::HILFE),
             new NavItem('Abmelden', self::ABMELDEN, methode: HttpMethod::Post),
         ];
     }

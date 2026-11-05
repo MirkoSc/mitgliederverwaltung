@@ -49,10 +49,26 @@ final class NavigationTest extends TestCase
     {
         $menue = Navigation::benutzermenue(new Konto(1, 'V', Rolle::Vorstand));
 
-        self::assertSame(['Passwort ändern', 'Zweiter Faktor', 'Barrierefrei-Modus einschalten', 'Abmelden'], self::labels($menue));
+        self::assertSame(['Passwort ändern', 'Zweiter Faktor', 'Barrierefrei-Modus einschalten', 'Hilfe', 'Abmelden'], self::labels($menue));
         self::assertSame(HttpMethod::Post, $menue[2]->methode, 'switching is a write');
-        self::assertSame(HttpMethod::Post, $menue[3]->methode, 'logging out is a write');
+        self::assertSame(HttpMethod::Post, $menue[4]->methode, 'logging out is a write');
         self::assertSame('Barrierefrei-Modus ausschalten', Navigation::benutzermenue(new Konto(1, 'V', Rolle::Vorstand, barrierefrei: true))[2]->label);
+    }
+
+    /** 12 section 1: the help sits in the user menu, right before "Abmelden", for every role. */
+    public function testTheHelpComesRightBeforeLoggingOut(): void
+    {
+        foreach (Rolle::cases() as $rolle) {
+            $menue = Navigation::benutzermenue(new Konto(1, 'K', $rolle));
+            $hilfe = $menue[count($menue) - 2];
+
+            self::assertSame('Hilfe', $hilfe->label);
+            self::assertSame('/app/hilfe', $hilfe->href);
+            self::assertSame(HttpMethod::Get, $hilfe->methode);
+            self::assertTrue($hilfe->sichtbarFuer(new Konto(1, 'K', $rolle)));
+            self::assertTrue($hilfe->istAktiv('/app/hilfe/mitglied-anlegen'), 'a guide keeps the entry marked');
+        }
+        self::assertNotContains('Hilfe', self::labels(Navigation::haupt()), 'no eighth main area');
     }
 
     public function testBothRolesStartWithTheMembers(): void
