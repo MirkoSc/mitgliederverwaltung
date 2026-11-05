@@ -49,4 +49,13 @@ final class MarkdownTest extends TestCase
     {
         self::assertSame('', Markdown::html(''));
     }
+
+    /** The texts of the help (12 section 2): escaped, **bold** and nothing else. */
+    public function testBoldOnlyEscapesAndKeepsEverythingElsePlain(): void
+    {
+        self::assertSame(
+            'Wählen Sie <strong>Mitglied speichern</strong> &amp; &lt;b&gt;x&lt;/b&gt; # [Link](/app) - Punkt',
+            Markdown::fett('Wählen Sie **Mitglied speichern** & <b>x</b> # [Link](/app) - Punkt'),
+        );
+    }
 }

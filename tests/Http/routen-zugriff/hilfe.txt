@@ -1,0 +1,4 @@
+# app/routes/hilfe.php - the help (issue #114, 12 section 1): every
+# logged-in account; the right of each guide is checked by the controller.
+GET /app/hilfe -> angemeldet
+GET /app/hilfe/{slug:[a-z0-9-]+} -> angemeldet

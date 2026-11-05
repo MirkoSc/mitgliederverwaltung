@@ -1,0 +1,191 @@
+/*
+ * The help (issue #114, docs/spec/12-hilfe.md section 3): a guide as a
+ * numbered sequence of steps, and the keyboard box of the overview.
+ * Tokens from app.css only; the Barrierefrei-Modus - the reader the help is
+ * written for first - gets larger numbers, more room and pictures across
+ * the whole width.
+ *
+ * The one distinct thing is the step number: a solid disc in the colour of
+ * the main action, joined to the next one by a line - a route to follow
+ * from the first step to the last.
+ */
+
+.anleitung-zurueck {
+    margin: 0 0 var(--abstand-3);
+}
+
+/* The steps. A real <ol> for screen readers; the numbers are drawn by a
+   counter so they can be large. Step text one size above the body text,
+   so every em below (number, line) is measured in that size. */
+.anleitung {
+    --hilfe-nummer: 2.25em;
+
+    counter-reset: schritt;
+    display: grid;
+    gap: var(--abstand-5);
+    margin: 0 0 var(--abstand-6);
+    padding: 0;
+    list-style: none;
+}
+
+.anleitung-schritt {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--hilfe-nummer) minmax(0, 1fr);
+    column-gap: var(--abstand-4);
+    align-items: start;
+    counter-increment: schritt;
+    font-size: var(--schrift-h3);
+}
+
+.anleitung-schritt > * {
+    grid-column: 2;
+}
+
+.anleitung-schritt::before {
+    content: counter(schritt);
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    display: grid;
+    place-items: center;
+    width: var(--hilfe-nummer);
+    height: var(--hilfe-nummer);
+    border-radius: 50%;
+    background: var(--farbe-haupt);
+    color: var(--farbe-haupt-text);
+    font-weight: 780;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The line from one number down to the next. */
+.anleitung-schritt:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: calc(var(--hilfe-nummer) + var(--abstand-1));
+    bottom: calc(var(--abstand-1) - var(--abstand-5));
+    left: calc(var(--hilfe-nummer) / 2 - 1px);
+    border-left: 2px solid var(--farbe-rand);
+}
+
+.anleitung-text {
+    max-width: var(--text-breite);
+    margin: 0;
+    /* The text starts level with the middle of its number. */
+    padding-top: calc((var(--hilfe-nummer) - 1lh) / 2);
+}
+
+.anleitung-tipp {
+    margin: var(--abstand-3) 0 0;
+}
+
+/* .hinweis sets a leading <strong> as a block of its own (a title); in a
+   tip it is a label of the interface inside the sentence. */
+.anleitung-tipp strong:first-child {
+    display: inline;
+    margin: 0;
+}
+
+/* At most the width of the content, framed so a screenshot does not melt
+   into the page. */
+.anleitung-bild {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-top: var(--abstand-4);
+    border: 1px solid var(--farbe-rand-feld);
+    border-radius: var(--radius-klein);
+    background: var(--farbe-flaeche);
+}
+
+.anleitung-weiter {
+    display: grid;
+    gap: var(--abstand-2);
+    padding-top: var(--abstand-4);
+    border-top: 1px solid var(--farbe-rand);
+}
+
+.anleitung-weiter p {
+    margin: 0;
+}
+
+/* The keyboard box of the overview. */
+.hilfe-tastatur {
+    max-width: 48rem;
+    margin-top: var(--abstand-6);
+}
+
+.hilfe-tasten {
+    display: grid;
+    gap: var(--abstand-3);
+    margin: 0;
+}
+
+.hilfe-tasten > div {
+    display: grid;
+    gap: var(--abstand-1);
+}
+
+.hilfe-tasten dt {
+    font-weight: 650;
+}
+
+.hilfe-tasten dd {
+    margin: 0;
+}
+
+.hilfe-tastatur kbd,
+.anleitung kbd {
+    display: inline-block;
+    min-width: 1.75em;
+    padding: 0 0.4em;
+    border: 1px solid var(--farbe-rand-feld);
+    border-bottom-width: 3px;
+    border-radius: var(--radius-klein);
+    background: var(--farbe-flaeche-2);
+    color: var(--farbe-text);
+    font: inherit;
+    font-weight: 650;
+    line-height: 1.5;
+    text-align: center;
+}
+
+@media (min-width: 48rem) {
+    .hilfe-tasten > div {
+        grid-template-columns: 12rem minmax(0, 1fr);
+        gap: var(--abstand-4);
+    }
+}
+
+/* ------------------------------------------------- Barrierefrei-Modus */
+
+.modus-barrierefrei .anleitung {
+    --hilfe-nummer: 2.75em;
+
+    gap: var(--abstand-6);
+}
+
+.modus-barrierefrei .anleitung-schritt::before {
+    outline: 3px solid var(--farbe-text);
+    outline-offset: 2px;
+}
+
+.modus-barrierefrei .anleitung-schritt:not(:last-child)::after {
+    bottom: calc(var(--abstand-1) - var(--abstand-6));
+    border-left: 3px solid var(--farbe-text);
+}
+
+/* Pictures across the whole width of the page, below the number - and
+   above the line, which passes under them. */
+.modus-barrierefrei .anleitung-bild {
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
+    width: 100%;
+    border: 2px solid var(--farbe-rand);
+}
+
+.modus-barrierefrei .hilfe-tastatur kbd,
+.modus-barrierefrei .anleitung kbd {
+    border-width: 2px 2px 4px;
+}

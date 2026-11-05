@@ -41,6 +41,9 @@ final class DesignsystemTest extends AppTestCase
             'formular-aktionen', 'class="suche"', 'class="filter"', 'class="liste"', 'aria-sort="ascending"',
             'data-label="Nr."', 'class="blaettern"', 'class="leer"', 'class="geteilt"', 'class="abschnitt"',
             'class="auswahl"', 'htmx-indicator', 'class="laedt',
+            // The help (issue #114, 12 section 3).
+            'class="anleitung"', 'class="anleitung-schritt"', 'anleitung-tipp', 'class="anleitung-weiter"',
+            'class="abschnitt hilfe-tastatur"', 'class="hilfe-tasten"',
         ] as $baustein) {
             self::assertStringContainsString($baustein, $seite, $baustein);
         }
