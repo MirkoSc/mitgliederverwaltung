@@ -6,6 +6,7 @@ namespace App\Service\Import;
 
 use App\Domain\FamilienRolle;
 use App\Domain\Geschlecht;
+use App\Support\Laender;
 use App\Domain\Herkunft;
 use App\Domain\Mitglied;
 use App\Domain\Zahlart;
@@ -40,7 +41,7 @@ final class ImportLeser
     /** Longest value per text column - what the database column holds. */
     private const array MAXIMUM = [
         'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
-        'austrittsgrund' => 255, 'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 3,
+        'austrittsgrund' => 255, 'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 60,
         'telefon' => 50, 'handy' => 50, 'email' => 254, 'iban' => 34, 'bic' => 11,
         'kontoinhaber' => 140, 'mandatsreferenz' => 35, 'lizenznummer' => 64,
         'familie' => 64, 'familie_name' => 150, 'bemerkung' => 10000,
@@ -240,6 +241,15 @@ final class ImportLeser
         $austrittsdatum = $datum('austrittsdatum');
         $mandatsdatum = $datum('mandatsdatum');
 
+        // Name, ISO code or old licence-plate code; empty is Germany (07 section 1).
+        $land = Mitglied::LAND_DEFAULT;
+        if ($text('land') !== '') {
+            $land = Laender::code($text('land'));
+            if ($land === null) {
+                $fehler[] = sprintf('Das Land „%s“ gibt es nicht. Erlaubt sind der deutsche Name, der ISO-Code (zum Beispiel AT) oder das alte Kennzeichen (zum Beispiel A).', $text('land'));
+            }
+        }
+
         $aktiv = true;
         if ($text('aktiv') !== '') {
             if (!in_array($text('aktiv'), ['0', '1'], true)) {
@@ -315,8 +325,7 @@ final class ImportLeser
             strasse: $text('strasse'),
             plz: $text('plz'),
             ort: $text('ort'),
-            // An empty country is the default country, as for a new member (07 section 1).
-            land: $text('land') === '' ? Mitglied::LAND_DEFAULT : $text('land'),
+            land: (string) $land,
             telefon: $text('telefon'),
             handy: $text('handy'),
             email: $text('email'),

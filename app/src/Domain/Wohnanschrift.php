@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain;
 
+use App\Support\Laender;
+
 /**
  * Street, postcode, town and country of a member - what the families page
  * compares and copies (docs/spec/07-mitglieder.md section 3, issue #92).
@@ -40,9 +42,9 @@ final readonly class Wohnanschrift
     public function text(): string
     {
         $ort = trim(trim($this->plz) . ' ' . trim($this->ort));
-        $land = trim($this->land);
+        $land = Laender::iso(trim($this->land));
         $teile = array_filter(
-            [trim($this->strasse), $ort, $land === '' || $land === Mitglied::LAND_DEFAULT ? '' : $land],
+            [trim($this->strasse), $ort, $land === '' || $land === Mitglied::LAND_DEFAULT ? '' : Laender::name($land)],
             static fn(string $teil): bool => $teil !== '',
         );
 
@@ -56,14 +58,15 @@ final readonly class Wohnanschrift
      */
     public function felder(): array
     {
-        return ['strasse' => $this->strasse, 'plz' => $this->plz, 'ort' => $this->ort, 'land' => $this->land];
+        return ['strasse' => $this->strasse, 'plz' => $this->plz, 'ort' => $this->ort, 'land' => Laender::iso(trim($this->land))];
     }
 
     private function schluessel(): string
     {
+        // "D" (old data) and "DE" are the same country.
         return implode('|', array_map(
             static fn(string $teil): string => mb_strtolower(trim($teil)),
-            [$this->strasse, $this->plz, $this->ort, $this->land],
+            [$this->strasse, $this->plz, $this->ort, Laender::iso(trim($this->land))],
         ));
     }
 }

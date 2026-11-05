@@ -14,6 +14,7 @@ use App\Repository\FamilieRepository;
 use App\Repository\FunktionRepository;
 use App\Repository\JahresbeitragRepository;
 use App\Repository\MitgliedRepository;
+use App\Support\Laender;
 
 /**
  * "Alle Mitglieder" (docs/spec/09-listen-und-exporte.md section 5): one row
@@ -143,7 +144,7 @@ final class AlleMitgliederListe implements Liste
                 'strasse' => $m->strasse,
                 'plz' => $m->plz,
                 'ort' => $m->ort,
-                'land' => $m->land,
+                'land' => Laender::name($m->land),
                 'telefon' => $m->telefon,
                 'handy' => $m->handy,
                 'email' => $m->email,

@@ -6,6 +6,7 @@ namespace App\App\Mitglied;
 
 use App\Domain\FamilienRolle;
 use App\Domain\Geschlecht;
+use App\Support\Laender;
 use App\Domain\MitgliedVersion;
 use App\Domain\Zahlart;
 use App\Support\Datum;
@@ -73,6 +74,11 @@ final class VerlaufAenderungen
         foreach (self::FELDER as $schluessel => $bezeichnung) {
             $vorher = $alt->daten[$schluessel] ?? null;
             $nachher = $neu->daten[$schluessel] ?? null;
+            if ($schluessel === 'land') {
+                // Old versions hold the licence-plate code ("D"), new ones "DE".
+                $vorher = is_string($vorher) ? Laender::iso($vorher) : $vorher;
+                $nachher = is_string($nachher) ? Laender::iso($nachher) : $nachher;
+            }
             if ($vorher === $nachher) {
                 continue;
             }
@@ -95,6 +101,7 @@ final class VerlaufAenderungen
             'familie_id' => self::name($wert, $namen['familie'] ?? null, 'Familie'),
             'beitragsart_id' => self::name($wert, $namen['beitragsart'] ?? null, 'Beitragsart'),
             'aktiv' => $wert === true ? 'aktiv' : 'passiv',
+            'land' => is_string($wert) && $wert !== '' ? Laender::name($wert) : self::LEER,
             'geschlecht' => is_string($wert) ? (Geschlecht::tryFrom($wert)?->bezeichnung() ?? $wert) : self::LEER,
             'zahlart' => is_string($wert) ? (Zahlart::tryFrom($wert)?->bezeichnung() ?? $wert) : self::LEER,
             'familie_rolle' => is_string($wert) ? (FamilienRolle::tryFrom($wert)?->bezeichnung() ?? $wert) : self::LEER,

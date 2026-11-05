@@ -49,7 +49,7 @@ final class AnschriftTest extends TestCase
     public function testTheTextNamesTheCountryOnlyAbroad(): void
     {
         self::assertSame('Hauptstraße 1, 12345 Musterstadt', new Anschrift('Hauptstraße 1', '12345', 'Musterstadt')->text());
-        self::assertSame('Dorfweg 3, 6020 Innsbruck, A', new Anschrift('Dorfweg 3', '6020', 'Innsbruck', 'A')->text());
+        self::assertSame('Dorfweg 3, 6020 Innsbruck, Österreich', new Anschrift('Dorfweg 3', '6020', 'Innsbruck', 'A')->text());
         self::assertSame('Musterstadt', new Anschrift('', '', 'Musterstadt')->text());
     }
 }

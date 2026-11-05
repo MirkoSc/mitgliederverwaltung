@@ -68,7 +68,7 @@ final class ImportLeserTest extends TestCase
         self::assertSame([1], $m->funktionIds);
         self::assertSame("Zeile 1\nZeile 2", $m->bemerkung);
         self::assertSame(Herkunft::Import, $m->herkunft);
-        self::assertSame('D', $m->land, 'an empty country is the default country');
+        self::assertSame('DE', $m->land, 'an empty country is the default country');
         self::assertNull($m->familieId);
         self::assertNull($datei->eintraege[0]->familie);
     }

@@ -70,11 +70,11 @@ final class GeocoderTest extends TestCase
     public function testAnUnknownCountryCodeGoesAsCountryName(): void
     {
         $http = new FakeHttpAbruf(static fn(): HttpAntwort => FakeHttpAbruf::keinTreffer());
-        new Geocoder($http, 'ua')->suchen(new Anschrift('', '', 'Vaduz', 'Liechtenstein'));
+        new Geocoder($http, 'ua')->suchen(new Anschrift('', '', 'Vaduz', 'Atlantis'));
 
         self::assertCount(1, $http->anfragen, 'without a street there is only the query for the place');
         $abfrage = self::abfrage($http->urls()[0]);
-        self::assertSame('LIECHTENSTEIN', $abfrage['country']);
+        self::assertSame('ATLANTIS', $abfrage['country']);
         self::assertArrayNotHasKey('countrycodes', $abfrage);
         self::assertArrayNotHasKey('street', $abfrage);
     }

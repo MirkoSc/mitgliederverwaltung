@@ -8,6 +8,7 @@ use App\Domain\Geschlecht;
 use App\Domain\Mitglied;
 use App\Domain\Zahlart;
 use App\Support\Iban;
+use App\Support\Laender;
 
 /**
  * The member form, tab "Daten" (docs/spec/07-mitglieder.md section 1):
@@ -34,7 +35,7 @@ final readonly class MitgliedFormular
      */
     public const array LAENGEN = [
         'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
-        'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 3, 'telefon' => 50, 'handy' => 50,
+        'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 60, 'telefon' => 50, 'handy' => 50,
         'email' => 254, 'austrittsgrund' => 255, 'iban' => 42, 'bic' => 11, 'kontoinhaber' => 140,
         'mandatsreferenz' => 35, 'lizenznummer' => 64, 'bemerkung' => 10000,
     ];
@@ -80,6 +81,7 @@ final readonly class MitgliedFormular
             }
         }
         $werte['iban'] = $m->iban === '' ? '' : Iban::anzeigen($m->iban);
+        $werte['land'] = Laender::name($m->land); // the form shows the name, the field takes name or code
 
         return new self($werte, $m->abteilungIds, $m->funktionIds, mitglied: $m);
     }
@@ -131,6 +133,13 @@ final readonly class MitgliedFormular
         // The member number is not read from the post: it is given out when
         // a member is saved first and never changes (07 section 1).
         $werte['mitgliedsnummer'] = $basis->mitgliedsnummer < 1 ? '' : (string) $basis->mitgliedsnummer;
+        $land = Mitglied::LAND_DEFAULT;
+        if ($werte['land'] !== '') {
+            $land = Laender::code($werte['land']);
+            if ($land === null) {
+                $fehler['land'] = 'Land nicht gefunden. Bitte aus der Liste wählen oder den Ländercode (zum Beispiel AT) eintragen.';
+            }
+        }
         if ($werte['nachname'] === '') {
             $fehler['nachname'] = 'Bitte den Nachnamen eintragen.';
         }
@@ -161,7 +170,7 @@ final readonly class MitgliedFormular
             'strasse' => $werte['strasse'],
             'plz' => $werte['plz'],
             'ort' => $werte['ort'],
-            'land' => $werte['land'] === '' ? Mitglied::LAND_DEFAULT : mb_strtoupper($werte['land']),
+            'land' => $land,
             'telefon' => $werte['telefon'],
             'handy' => $werte['handy'],
             'email' => $werte['email'],

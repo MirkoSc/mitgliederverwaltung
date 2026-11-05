@@ -6,6 +6,7 @@ namespace App\Domain;
 
 use App\Support\Alter;
 use App\Support\Iban;
+use App\Support\Laender;
 
 /**
  * A member (docs/spec/07-mitglieder.md sections 1 and 8) as
@@ -23,7 +24,7 @@ final readonly class Mitglied
     use Kopierbar;
 
     /** The country a new member gets (07 section 1). */
-    public const string LAND_DEFAULT = 'D';
+    public const string LAND_DEFAULT = 'DE';
 
     /**
      * @param list<int> $abteilungIds departments (07 section 2), 0..n
@@ -206,7 +207,7 @@ final readonly class Mitglied
             strasse: $text('strasse'),
             plz: $text('plz'),
             ort: $text('ort'),
-            land: $text('land', self::LAND_DEFAULT),
+            land: Laender::iso($text('land', self::LAND_DEFAULT)), // old versions hold the licence-plate code ("D")
             telefon: $text('telefon'),
             handy: $text('handy'),
             email: $text('email'),

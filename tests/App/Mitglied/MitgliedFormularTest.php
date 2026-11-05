@@ -46,10 +46,22 @@ final class MitgliedFormularTest extends TestCase
         self::assertSame([], $formular->fehler);
         self::assertNotNull($formular->mitglied);
         self::assertSame('Musterfrau', $formular->mitglied->nachname);
-        self::assertSame('D', $formular->mitglied->land, 'the default country');
+        self::assertSame('DE', $formular->mitglied->land, 'the default country');
         self::assertTrue($formular->mitglied->aktiv);
         self::assertSame(Zahlart::Lastschrift, $formular->mitglied->zahlart);
         self::assertNull($formular->mitglied->eintrittsdatum, 'empty = unknown');
+    }
+
+    public function testTheCountryIsUnderstoodAsNameOrCodeAndStoredAsIso(): void
+    {
+        foreach (['Österreich', 'AT', 'a', 'österreich'] as $eingabe) {
+            $formular = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Musterfrau', 'land' => $eingabe]);
+            self::assertSame('AT', $formular->mitglied?->land, $eingabe);
+        }
+
+        $unbekannt = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Musterfrau', 'land' => 'Atlantis']);
+        self::assertNull($unbekannt->mitglied);
+        self::assertStringContainsString('Land nicht gefunden', $unbekannt->fehler['land']);
     }
 
     public function testMissingSurnameIsAnError(): void
@@ -194,7 +206,7 @@ final class MitgliedFormularTest extends TestCase
         $formular = MitgliedFormular::neu(1034);
 
         self::assertSame('1034', $formular->wert('mitgliedsnummer'));
-        self::assertSame('D', $formular->wert('land'));
+        self::assertSame('Deutschland', $formular->wert('land'));
         self::assertSame('1', $formular->wert('aktiv'));
         self::assertSame('', $formular->wert('nachname'));
     }

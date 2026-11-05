@@ -11,7 +11,7 @@ gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 | Gruppe | Felder |
 |---|---|
 | Person | Mitgliedsnummer, Titel, Vorname, Nachname, Namenszusatz, Geschlecht (`m`/`w`/`d`), Geburtsdatum |
-| Anschrift | Straße, PLZ, Ort, Land (Default `D`) |
+| Anschrift | Straße, PLZ, Ort, Land. Gespeichert wird der ISO-3166-1-alpha-2-Code (Default `DE`), angezeigt der deutsche Name. Das Formularfeld ist ein Eingabefeld mit Vorschlagsliste aller Länder (Deutschland, Nachbarländer, Rest alphabetisch; Tippen filtert). Verstanden werden Name, ISO-Code und die alten Kfz-Kennzeichen (`D`, `A`, `CH`, `F` …); eine unbekannte Eingabe meldet „Land nicht gefunden“ (Eingabeprüfung, keine fachliche Sperre). Datenquelle `app/data/laender.php` (aus `i18n-iso-countries`, MIT; `tools/laender-erzeugen.mjs`), API `App\Support\Laender`. Migration 300 hat `D` auf `DE` umgestellt; alte Versionen mit `D` gelten als `DE`. Die Geocode-Hashes (`geo_anschrift`) bleiben gültig, weil `Anschrift::normalisiert()` Deutschland weiter als `D` hasht |
 | Kontakt | Telefon, Handy, E-Mail |
 | Mitgliedschaft | Eintrittsdatum (oder „unbekannt"), Austrittsdatum, Austrittsgrund (Freitext, Auswahlvorschläge „Austritt", „verstorben"), aktiv/passiv (Häkchen), Abteilungen (0..n) |
 | Beitrag | Beitragsart (oder keine), Zahlart (`lastschrift`/`selbst`), IBAN, BIC (optional), Kontoinhaber falls abweichend, Mandatsreferenz, Mandatsdatum |
