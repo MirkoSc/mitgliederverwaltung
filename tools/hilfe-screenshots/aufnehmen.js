@@ -38,7 +38,9 @@ const INIT_SKRIPT = () => {
     const stil = '*,*::before,*::after{animation:none!important;transition:none!important;'
         + 'scroll-behavior:auto!important;caret-color:transparent!important}'
         + '[data-hilfe-markiert]{outline:4px solid #e0004d!important;outline-offset:3px!important;'
-        + 'box-shadow:0 0 0 8px rgba(224,0,77,.28)!important}';
+        + 'box-shadow:0 0 0 8px rgba(224,0,77,.28)!important}'
+        + '[data-hilfe-markiert=innen]{outline-offset:-4px!important;'
+        + 'box-shadow:inset 0 0 0 10px rgba(224,0,77,.28)!important}';
     const einfuegen = () => {
         const element = document.createElement('style');
         element.textContent = stil;
@@ -49,6 +51,63 @@ const INIT_SKRIPT = () => {
     } else {
         document.addEventListener('DOMContentLoaded', einfuegen);
     }
+};
+
+/**
+ * Runs in the page for markiere(): makes sure the element is really to be
+ * seen with its frame - not at the very edge of the window and not hidden
+ * under a bar that stays in place (the save bar of a form) or something
+ * else on top of it - and frames it. When that does not work out, the
+ * recording fails: a picture with a hidden mark helps nobody.
+ * Where a scrolling box around it would cut the frame off (the row of tabs,
+ * the opened member next to the list), the frame goes inside the element.
+ */
+const MARKIEREN = (knoten) => {
+    const RAND = 8; // outline-offset 3 px + outline 4 px
+    const rahmen = () => knoten.getBoundingClientRect();
+    const frei = () => {
+        const r = rahmen();
+        if (r.top - RAND < 0 || r.bottom + RAND > window.innerHeight) {
+            return false;
+        }
+        const oben = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return oben !== null && (oben === knoten || knoten.contains(oben) || oben.contains(knoten));
+    };
+    if (!frei()) {
+        knoten.scrollIntoView({ block: 'center', inline: 'nearest' });
+    }
+    if (!frei()) {
+        // A bar that stays in place can only be uncovered from the top.
+        for (const box of [document.scrollingElement, ...document.querySelectorAll('*')]) {
+            if (box !== null && box.scrollTop > 0) {
+                box.scrollTop = 0;
+            }
+        }
+        if (!frei()) {
+            knoten.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+    }
+    if (!frei()) {
+        const r = rahmen();
+        const oben = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        const was = oben === null ? 'nichts' : `${oben.tagName.toLowerCase()}.${[...oben.classList].join('.')}`;
+        throw new Error(`Das markierte Element ist verdeckt oder nicht ganz zu sehen (oben y=${Math.round(r.top)}, unten y=${Math.round(r.bottom)}, darüber: ${was}).`);
+    }
+
+    const r = rahmen();
+    let innen = false;
+    for (let box = knoten.parentElement; box !== null && box !== document.body; box = box.parentElement) {
+        const stil = getComputedStyle(box);
+        if (stil.overflowX === 'visible' && stil.overflowY === 'visible') {
+            continue;
+        }
+        const b = box.getBoundingClientRect();
+        if (r.top - RAND < b.top || r.left - RAND < b.left || r.right + RAND > b.right || r.bottom + RAND > b.bottom) {
+            innen = true;
+            break;
+        }
+    }
+    knoten.setAttribute('data-hilfe-markiert', innen ? 'innen' : '');
 };
 
 function warte(ms) {
@@ -186,7 +245,7 @@ async function ablaufAusfuehren({ kontext, aufnahme, erwartet, pruefen }) {
 
     const markiere = async (element) => {
         await element.scrollIntoViewIfNeeded();
-        await element.evaluate((knoten) => knoten.setAttribute('data-hilfe-markiert', ''));
+        await element.evaluate(MARKIEREN);
     };
 
     const foto = async (nr) => {
@@ -249,7 +308,12 @@ async function main() {
     console.log(`Anwendung: ${basis} (Projekt ${optionen.projekt})${optionen.pruefen ? ', nur prüfen' : ''}`);
 
     const { chromium } = playwrightLaden();
-    const browser = await chromium.launch();
+    // The context's locale sets the language of the pages; date fields
+    // follow the locale of the browser process - German, as for the users.
+    const browser = await chromium.launch({
+        args: ['--lang=de-DE'],
+        env: { ...process.env, LANG: 'de_DE.UTF-8', LANGUAGE: 'de', LC_ALL: 'de_DE.UTF-8' },
+    });
     const fehler = [];
     const geschrieben = [];
 
