@@ -25,6 +25,7 @@ final class IbanTest extends TestCase
         yield 'Germany' => ['DE89370400440532013000'];
         yield 'Germany, second example' => ['DE02120300000000202051'];
         yield 'with spaces and lower case' => ['de02 1203 0000 0000 2020 51'];
+        yield 'Great Britain, second example' => ['GB82WEST12345698765432'];
         yield 'Austria' => ['AT611904300234573201'];
         yield 'Netherlands' => ['NL91ABNA0417164300'];
         yield 'Great Britain, letters inside' => ['GB29NWBK60161331926819'];

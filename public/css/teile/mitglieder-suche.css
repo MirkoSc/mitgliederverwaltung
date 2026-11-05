@@ -1,0 +1,65 @@
+/* "Erweiterte Suche" on the page Mitglieder (07 section 8): a <details>
+   with one field per column. One column on a phone, a grid on the PC. */
+.suche-erweitert {
+    border: 1px solid var(--farbe-rand);
+    border-radius: var(--radius);
+    background: var(--farbe-flaeche);
+}
+
+.suche-erweitert > summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    padding: 0 var(--abstand-3);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.suche-erweitert[open] > summary {
+    border-bottom: 1px solid var(--farbe-rand);
+}
+
+.suche-erweitert-felder {
+    display: grid;
+    gap: var(--abstand-3);
+    padding: var(--abstand-3);
+}
+
+/* A range (from - to): the two fields side by side, also on a phone. */
+.suche-bereich {
+    display: grid;
+    gap: var(--abstand-1);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.suche-bereich > legend {
+    padding: 0;
+    margin-bottom: var(--abstand-1);
+    font-weight: 650;
+}
+
+.suche-bereich-paar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--abstand-2);
+}
+
+@media (min-width: 48rem) {
+    .suche-erweitert-felder {
+        grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+        gap: var(--abstand-3) var(--abstand-4);
+    }
+}
+
+/* The Barrierefrei-Modus: fields one under the other, the big targets stay readable. */
+.modus-barrierefrei .suche-erweitert-felder {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.modus-barrierefrei .suche-erweitert,
+.modus-barrierefrei .suche-erweitert[open] > summary {
+    border-width: 2px;
+}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Verein;
 
+use App\Support\Iban;
+
 /**
  * The club data of docs/spec/11-vereinsdaten.md section 1 except the
  * associations and the logo: one value per field, all optional, all plain

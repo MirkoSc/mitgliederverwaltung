@@ -14,6 +14,7 @@
  * @var \App\Domain\MitgliederSeite $ergebnis
  * @var list<\App\Domain\Abteilung> $abteilungen
  * @var list<\App\Domain\Beitragsart> $beitragsarten
+ * @var list<\App\Domain\Funktion> $funktionen
  * @var \App\Domain\Mitglied|null $mitglied
  * @var \App\App\Mitglied\GeoeffnetesMitglied $ansicht the opened member (building block, 06 section 5)
  * @var \Closure $url
@@ -35,7 +36,7 @@
         <form class="suche" id="mitglieder-form" method="post" action="<?= e($formUrl) ?>" role="search"
               hx-post="<?= e($formUrl) ?>" hx-target="#mitglieder-ergebnis" hx-swap="innerHTML"
               hx-indicator="#suche-laedt" hx-sync="this:replace"
-              hx-trigger="input changed delay:300ms from:#suche-text, change from:#filter-abteilung, change from:#filter-status, change from:#filter-beitragsart, change from:#filter-ehemalige, change from:#mitglieder-ergebnis, submit">
+              hx-trigger="input changed delay:300ms from:#suche-text, change from:#filter-abteilung, change from:#filter-status, change from:#filter-beitragsart, change from:#filter-ehemalige, input delay:300ms from:#suche-erweitert, change from:#mitglieder-ergebnis, submit">
             <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
             <div class="feld suche-feld">
                 <label for="suche-text">Mitglied suchen</label>
@@ -78,6 +79,81 @@
                 <a class="knopf knopf-still" href="<?= e(\App\App\MitgliederController::PFAD . ($mitglied !== null ? '?mitglied=' . $mitglied->id : '')) ?>">Filter zurücksetzen</a>
                 <span class="laedt htmx-indicator" id="suche-laedt">Suche läuft …</span>
             </div>
+            <?php
+            $e = $filter->erweitert;
+            // A text field of the extended search; the value goes back into the form, never into an address.
+            $textfeld = static function (string $name, string $titel, string $wert, string $typ = 'text') {
+                return '<div class="feld"><label for="erweitert-' . e($name) . '">' . e($titel) . '</label>'
+                    . '<input id="erweitert-' . e($name) . '" name="' . e($name) . '" type="' . $typ . '" value="' . e($wert) . '" autocomplete="off"></div>';
+            };
+            // Two fields "from - to" in one group for the screen reader.
+            $bereich = static function (string $name, string $titel, string $art, ?string $von, ?string $bis, string $typ = 'date') {
+                $attr = $typ === 'number' ? ' min="0" max="150" inputmode="numeric"' : '';
+                $feld = static fn(string $suffix, string $label, ?string $wert): string => '<div class="feld"><label for="erweitert-' . e($name) . '-' . $suffix . '">' . e($label) . '</label>'
+                    . '<input id="erweitert-' . e($name) . '-' . $suffix . '" name="' . e($name) . '_' . $suffix . '" type="' . $typ . '"' . $attr . ' value="' . e($wert ?? '') . '" autocomplete="off"></div>';
+
+                return '<fieldset class="suche-bereich"><legend>' . e($titel) . '</legend><div class="suche-bereich-paar">'
+                    . $feld('von', $art === 'alter' ? 'von (Jahre)' : 'von', $von) . $feld('bis', $art === 'alter' ? 'bis (Jahre)' : 'bis', $bis)
+                    . '</div></fieldset>';
+            };
+            $auswahl = static function (string $name, string $titel, string $gewaehlt, array $optionen, string $alle) {
+                $html = '<div class="feld"><label for="erweitert-' . e($name) . '">' . e($titel) . '</label><select id="erweitert-' . e($name) . '" name="' . e($name) . '">'
+                    . '<option value="">' . e($alle) . '</option>';
+                foreach ($optionen as $wert => $text) {
+                    $html .= '<option value="' . e((string) $wert) . '"' . ((string) $wert === $gewaehlt ? ' selected' : '') . '>' . e($text) . '</option>';
+                }
+
+                return $html . '</select></div>';
+            };
+            ?>
+            <?php /* Open when a field is filled, so a search in progress is never hidden. The
+                     values travel in the body only (hx-post/POST), see MitgliederFilter::parameter(). */ ?>
+            <details class="suche-erweitert" id="suche-erweitert"<?= $e->istLeer() ? '' : ' open' ?>>
+                <summary>Erweiterte Suche</summary>
+                <div class="suche-erweitert-felder">
+                    <?= $textfeld('nachname', 'Nachname', $e->nachname) ?>
+                    <?= $textfeld('vorname', 'Vorname', $e->vorname) ?>
+                    <?= $textfeld('strasse', 'Straße', $e->strasse) ?>
+                    <?= $textfeld('plz', 'PLZ', $e->plz) ?>
+                    <?= $textfeld('ort', 'Ort', $e->ort) ?>
+                    <?= $textfeld('email', 'E-Mail', $e->email) ?>
+                    <?= $textfeld('telefon', 'Telefon oder Handy', $e->telefon) ?>
+                    <?= $textfeld('iban', 'IBAN', $e->iban) ?>
+                    <?= $textfeld('bemerkung', 'Bemerkung', $e->bemerkung) ?>
+                    <?= $textfeld('mitgliedsnummer', 'Mitgliedsnummer (genau)', (string) ($e->mitgliedsnummer ?? ''), 'number') ?>
+                    <?= $auswahl('geschlecht', 'Geschlecht', $e->geschlecht, [
+                        ...array_column(
+                            array_map(static fn($g): array => [$g->value, $g->bezeichnung()], \App\Domain\Geschlecht::cases()),
+                            1,
+                            0,
+                        ),
+                        \App\Domain\ErweiterteSuche::OHNE_ANGABE => 'ohne Angabe',
+                    ], 'Alle') ?>
+                    <?= $auswahl('funktion', 'Funktion', (string) ($e->funktionId ?? ''), array_combine(
+                        array_map(static fn($f): int => (int) $f->id, $funktionen),
+                        array_map(static fn($f): string => $f->name . ($f->aktiv ? '' : ' (nicht mehr aktiv)'), $funktionen),
+                    ), 'Alle Funktionen') ?>
+                    <?= $auswahl('zahlart', 'Zahlart', $e->zahlart?->value ?? '', array_column(
+                        array_map(static fn($z): array => [$z->value, $z->bezeichnung()], \App\Domain\Zahlart::cases()),
+                        1,
+                        0,
+                    ), 'Alle Zahlarten') ?>
+                    <?= $auswahl('familie', 'Familie', $e->familie, [
+                        \App\Domain\ErweiterteSuche::MIT_FAMILIE => 'In einer Familie',
+                        \App\Domain\ErweiterteSuche::OHNE_FAMILIE => 'Ohne Familie',
+                        ...array_column(
+                            array_map(static fn($r): array => [$r->value, 'Rolle: ' . $r->bezeichnung()], \App\Domain\FamilienRolle::cases()),
+                            1,
+                            0,
+                        ),
+                    ], 'Alle') ?>
+                    <?= $bereich('alter', 'Alter (heute)', 'alter', isset($e->alterVon) ? (string) $e->alterVon : null, isset($e->alterBis) ? (string) $e->alterBis : null, 'number') ?>
+                    <?= $bereich('geburt', 'Geburtsdatum', 'datum', $e->geburtVon, $e->geburtBis) ?>
+                    <?= $bereich('eintritt', 'Eintritt', 'datum', $e->eintrittVon, $e->eintrittBis) ?>
+                    <?= $bereich('austritt', 'Austritt', 'datum', $e->austrittVon, $e->austrittBis) ?>
+                </div>
+                <p class="feld-hinweis suche-erweitert-hinweis" id="suche-erweitert-hinweis">Alle ausgefüllten Felder müssen zugleich passen, auch zusammen mit dem Suchtext. Texte finden auch Teilstücke, Groß- und Kleinschreibung ist egal. Wer einen Austritt sucht, sieht automatisch auch Ehemalige.</p>
+            </details>
         </form>
 
         <?php /* The live region; a search updates its text (ergebnis.php). */ ?>

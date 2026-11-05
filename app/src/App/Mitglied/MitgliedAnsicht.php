@@ -7,6 +7,7 @@ namespace App\App\Mitglied;
 use App\Dienste;
 use App\Http\Request;
 use App\Repository\MitgliedRepository;
+use App\Support\Datum;
 
 /**
  * The opened member as a building block (docs/spec/06-oberflaeche.md
@@ -25,9 +26,11 @@ final readonly class MitgliedAnsicht
     /**
      * The scripts every embedding page loads (`scripts` in its render
      * call): copying the payer's address (anschrift.js) and the small map
-     * of the block "Wohnort auf der Karte" (Leaflet + karte.js, issue #106).
+     * of the block "Wohnort auf der Karte" (Leaflet + karte.js, issue #106),
+     * address suggestions in the form (anschrift-vorschlaege.js, issue #127)
+     * and the IBAN/BIC check of the form (bankverbindung.js).
      */
-    public const array SKRIPTE = ['/js/anschrift.js', '/js/vendor/leaflet/leaflet.js', '/js/karte.js'];
+    public const array SKRIPTE = ['/js/anschrift.js', '/js/anschrift-vorschlaege.js', '/js/vendor/leaflet/leaflet.js', '/js/karte.js', '/js/bankverbindung.js'];
 
     /** The stylesheets every embedding page loads (`styles`): Leaflet's, for the small map. */
     public const array STILE = ['/js/vendor/leaflet/leaflet.css'];
@@ -86,7 +89,7 @@ final readonly class MitgliedAnsicht
         foreach (MitgliedErweiterungen::abschnitte()->alle($this->dienste, $konto) as $abschnitt) {
             $abschnitte[] = $view->fragment($abschnitt->template(), [...$abschnitt->daten($id), ...$gemeinsam]);
         }
-        $ehemalig = $mitglied->istEhemalig(new \DateTimeImmutable('today'));
+        $ehemalig = $mitglied->istEhemalig(Datum::heute());
 
         $html = $view->fragment('mitglied/ansicht', [
             'mitglied' => $mitglied,
@@ -97,6 +100,8 @@ final readonly class MitgliedAnsicht
             'abschnitte' => $abschnitte,
             'statusText' => $ehemalig ? 'ehemalig' : ($mitglied->aktiv ? 'aktiv' : 'passiv'),
             'statusKlasse' => $ehemalig ? 'etikett-fehler' : ($mitglied->aktiv ? 'etikett-ok' : ''),
+            // A leaving date still to come: noted, the person is a member until then (07 section 1).
+            'austrittVermerkt' => $ehemalig ? null : $mitglied->austrittsdatum,
             'fokus' => $fokus,
         ]);
 

@@ -13,6 +13,12 @@ final class Datum
 {
     public const string ZEITZONE = 'Europe/Berlin';
 
+    /** Today, midnight, local time. */
+    public static function heute(): \DateTimeImmutable
+    {
+        return new \DateTimeImmutable('today', self::zone());
+    }
+
     /** "31.12.2026"; '' for null and ''. */
     public static function anzeigen(\DateTimeInterface|string|null $wert): string
     {

@@ -79,20 +79,20 @@ final class AbgleichVergleichTest extends TestCase
         self::assertFalse($vergleich->istLeer());
     }
 
-    public function testManualAndFormerMembersAreNeverMissing(): void
+    public function testManualMembersAFutureLeavingAndFormerMembersWithFeesAreNeverMissing(): void
     {
         $datei = $this->datei(self::zeile(1));
         $bestand = [
             self::importiert(1),
             self::importiert(2, ['herkunft' => Herkunft::Manuell]),
             self::importiert(3, ['austrittsdatum' => new \DateTimeImmutable('2025-12-31')]),
-            // Leaving in the future counts as having left already: the date is set.
-            self::importiert(4, ['austrittsdatum' => new \DateTimeImmutable('2099-12-31')]),
+            // Leaving noted for later: nothing to do, the date is set.
+            self::importiert(4, ['austrittsdatum' => new \DateTimeImmutable('2026-03-01')]),
         ];
 
-        $vergleich = AbgleichVergleich::aus($datei, $bestand, [], []);
+        $vergleich = AbgleichVergleich::aus($datei, $bestand, [], [103 => true], new \DateTimeImmutable('2026-02-28'));
 
-        self::assertSame([], $vergleich->fehlt);
+        self::assertSame([], $vergleich->fehlt, 'not 2 (by hand), 3 (former with a fee), 4 (leaves tomorrow)');
         self::assertTrue($vergleich->istLeer());
     }
 
@@ -105,14 +105,21 @@ final class AbgleichVergleichTest extends TestCase
         self::assertCount(1, $vergleich->geaendert);
     }
 
-    public function testOnlyMembersWithoutAnnualFeesMayBeDeleted(): void
+    public function testOnlyFormerMembersWithoutAnnualFeesMayBeDeletedTheOthersOnlyLeave(): void
     {
         $datei = $this->datei(self::zeile(9));
+        $bestand = [
+            self::importiert(1),
+            self::importiert(2),
+            self::importiert(3, ['austrittsdatum' => new \DateTimeImmutable('2026-02-28')]),
+        ];
 
-        $vergleich = AbgleichVergleich::aus($datei, [self::importiert(1), self::importiert(2)], [], [101 => true]);
+        $vergleich = AbgleichVergleich::aus($datei, $bestand, [], [101 => true], new \DateTimeImmutable('2026-02-28'));
 
-        self::assertFalse($vergleich->fehlt[0]->kannLoeschen, 'member 1 (id 101) has a fee');
-        self::assertTrue($vergleich->fehlt[1]->kannLoeschen);
+        self::assertSame([1, 2, 3], array_map(static fn($f): int => $f->mitglied->mitgliedsnummer, $vergleich->fehlt));
+        self::assertFalse($vergleich->fehlt[0]->kannLoeschen, 'member 1 has not left (and has a fee)');
+        self::assertFalse($vergleich->fehlt[1]->kannLoeschen, 'member 2 has not left: it may only leave, fee or not');
+        self::assertTrue($vergleich->fehlt[2]->kannLoeschen, 'member 3 left today and has no fee');
     }
 
     public function testTheIbanAndBicAreComparedAsTheyAreStored(): void
@@ -141,6 +148,26 @@ final class AbgleichVergleichTest extends TestCase
         $ziel = AbgleichVergleich::zielDaten($vergleich->geaendert[0]->eintrag, null, $bestand[1], $datei->spalten);
         self::assertSame('Altstadt', $ziel['ort']);
         self::assertSame(1, $ziel['beitragsart_id']);
+    }
+
+    public function testAMissingBicIsFilledInFromTheIban(): void
+    {
+        // In the file: an empty BIC. Without a column bic at all: the member's own IBAN.
+        $datei = $this->datei('1;Name1;Vorname1;Altstadt;1;09;Aktiv;DE89370400440532013000;;;;');
+        $vergleich = AbgleichVergleich::aus($datei, [self::importiert(1, ['iban' => 'DE89370400440532013000'])], [], []);
+        self::assertSame(['bic' => ['', 'COBADEFFXXX']], $vergleich->geaendert[0]->felder);
+
+        $ohneSpalte = ImportLeser::lesen("mitgliedsnummer;nachname;vorname;aktiv;abteilungen\n1;Name1;Vorname1;1;09\n", new ImportStammdaten(
+            [new Abteilung('Fußball', '09', 20, true, 2)],
+            [],
+            [],
+        ));
+        $bestand = self::importiert(1, ['iban' => 'DE89370400440532013000']);
+        $vergleich = AbgleichVergleich::aus($ohneSpalte, [$bestand], [], []);
+        self::assertSame(['bic' => ['', 'COBADEFFXXX']], $vergleich->geaendert[0]->felder);
+
+        $mitBic = AbgleichVergleich::aus($ohneSpalte, [$bestand->mit(['bic' => 'INGDDEFFXXX'])], [], []);
+        self::assertSame(1, $mitBic->unveraendert, 'a BIC that is there stays');
     }
 
     public function testFamiliesAreMatchedByKeyAndANewKeyIsANewFamily(): void

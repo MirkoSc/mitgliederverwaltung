@@ -116,7 +116,7 @@ final readonly class EinzugController
             $einzug->anzahl === 1 ? '1 Beitrag' : $einzug->anzahl . ' Beiträge',
             Geld::anzeigen($einzug->summeCent),
         );
-        $fruehestens = Bankarbeitstage::naechster(self::heute());
+        $fruehestens = Bankarbeitstage::naechster(Datum::heute());
         $achtung = match (true) {
             $faellig < $fruehestens => sprintf(
                 'Die Fälligkeit %s liegt vor dem nächsten Bankarbeitstag (%s).',
@@ -265,10 +265,5 @@ final readonly class EinzugController
             'meldung' => $meldung,
             'startseite' => Navigation::BEITRAEGE,
         ], Area::App), 404);
-    }
-
-    private static function heute(): \DateTimeImmutable
-    {
-        return new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
     }
 }

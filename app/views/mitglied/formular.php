@@ -6,15 +6,15 @@
  * "Daten" and on the page "Neues Mitglied"; markup from the design system
  * (formular-zweispaltig, feld, feldgruppe, formular-aktionen).
  *
- * Only Mitgliedsnummer and Nachname are required. Hints below a field say
- * what an empty field means instead of forcing a value.
+ * Only Nachname is required (the Mitgliedsnummer is given out by the server).
+ * Hints below a field say what an empty field means instead of forcing a value.
  *
  * @var \App\App\Mitglied\MitgliedFormular $formular
  * @var \App\App\Mitglied\Auswahllisten $listen
  * @var \App\Domain\Mitglied|null $mitglied the stored member, null for a new one
  * @var \App\Domain\Familie|null $familie
  * @var string $aktion
- * @var bool $darfLoeschen
+ * @var bool $darfLoeschen admin and a former member (07 section 1)
  * @var \App\App\Mitglied\Einbettung|null $einbettung the page the member is shown on (MitgliedAnsicht)
  * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (tab "Daten" only, issue #106)
  * @var string|null $csrf
@@ -26,7 +26,9 @@ use App\App\MitgliedController;
 use App\App\WohnortController;
 use App\Domain\Geschlecht;
 use App\Domain\Zahlart;
+use App\Support\Banken;
 use App\Support\Iban;
+use App\Support\Laender;
 
 $neu = $mitglied?->id === null;
 // Cancelling and deleting lead back to the page the member was opened on.
@@ -80,6 +82,10 @@ $funktionen = $listen->funktionenFuer($mitglied?->funktionIds ?? []);
 $beitragsarten = $listen->beitragsartenFuer($mitglied?->beitragsartId);
 $nummer = $formular->wert('mitgliedsnummer');
 $ibanUngueltig = $formular->wert('iban') !== '' && !Iban::istGueltig($formular->wert('iban'));
+// Bank and BIC check of the server; public/js/bankverbindung.js shows the
+// same while typing (07 section 1). A hint only, saving stays possible.
+$bank = Banken::fuerIban($formular->wert('iban'));
+$bicFehler = Banken::bicFehler($formular->wert('bic'), $formular->wert('iban'));
 
 $mandatsdatumDefault = $formular->wert('eintrittsdatum') !== '' ? null : $listen->vereinsMandatsdatum;
 $mandatsdatumHilfe = match (true) {
@@ -108,7 +114,13 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?php endif; ?>
 
     <h3>Person</h3>
-    <?= $text('mitgliedsnummer', 'Mitgliedsnummer', 'feld-kurz', $neu ? 'Die nächste freie Nummer ist eingetragen; Sie können sie ändern.' : null, 'inputmode="numeric" required') ?>
+    <div class="feld feld-kurz">
+        <span id="m-mitgliedsnummer-label">Mitgliedsnummer</span>
+        <p id="m-mitgliedsnummer" aria-labelledby="m-mitgliedsnummer-label"><strong><?= e($nummer === '' ? 'wird beim Speichern vergeben' : $nummer) ?></strong></p>
+        <?php if ($neu): ?>
+            <p class="feld-hinweis">Wird beim Speichern vergeben<?= $nummer === '' ? '' : ' (voraussichtlich ' . e($nummer) . ')' ?> und lässt sich danach nicht mehr ändern.</p>
+        <?php endif; ?>
+    </div>
     <div class="feld feld-kurz">
         <label for="m-geschlecht">Geschlecht</label>
         <select <?= $attribute('geschlecht') ?>>
@@ -118,7 +130,6 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
             <?php endforeach; ?>
         </select>
     </div>
-    <?= $text('anrede', 'Anrede') ?>
     <?= $text('titel', 'Titel') ?>
     <?= $text('vorname', 'Vorname') ?>
     <?= $text('nachname', 'Nachname', '', null, 'required') ?>
@@ -126,10 +137,16 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?= $datum('geburtsdatum', 'Geburtsdatum') ?>
 
     <h3>Anschrift</h3>
-    <?= $text('strasse', 'Straße und Hausnummer', 'feld-breit') ?>
+    <?php /* Address suggestions while typing (issue #127): public/js/anschrift-vorschlaege.js. */ ?>
+    <?= $text('strasse', 'Straße und Hausnummer', 'feld-breit', null, 'data-anschrift-vorschlaege="' . e(\App\App\AnschriftController::PFAD) . '"') ?>
     <?= $text('plz', 'PLZ', 'feld-kurz', null, 'inputmode="numeric"') ?>
     <?= $text('ort', 'Ort') ?>
-    <?= $text('land', 'Land', 'feld-kurz', 'Leer lassen für Deutschland (D).') ?>
+    <?= $text('land', 'Land', '', 'Tippen filtert die Liste. Leer lassen für Deutschland.', 'list="m-laender"') ?>
+    <datalist id="m-laender">
+        <?php foreach (Laender::auswahl() as $landCode => $landName): ?>
+            <option value="<?= e($landName) ?>" data-iso="<?= e($landCode) ?>"></option>
+        <?php endforeach; ?>
+    </datalist>
     <?php if (isset($wohnort) && !$neu): ?>
         <?php $wohnortFormular = 'wohnort-formular'; require __DIR__ . '/wohnort.php'; ?>
     <?php endif; ?>
@@ -182,12 +199,16 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     </fieldset>
     <div class="feld">
         <label for="m-iban">IBAN</label>
-        <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false"<?= $ibanUngueltig ? ' aria-invalid="true" aria-describedby="m-iban-hinweis"' : '' ?>>
-        <?php if ($ibanUngueltig): ?>
-            <p class="feld-fehler" id="m-iban-hinweis">Die Prüfziffer passt nicht. Bitte die IBAN vom Kontoauszug abschreiben – gespeichert wird sie trotzdem.</p>
-        <?php endif; ?>
+        <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-iban-hinweis" data-bank-adresse="<?= e(Banken::PFAD) ?>"<?= $ibanUngueltig ? ' aria-invalid="true"' : '' ?>>
+        <p class="feld-fehler" id="m-iban-hinweis" aria-live="polite"<?= $ibanUngueltig ? '' : ' hidden' ?>><?= $ibanUngueltig ? Iban::FEHLER_PRUEFZIFFER : '' ?></p>
     </div>
-    <?= $text('bic', 'BIC', 'feld-kurz', 'Nur nötig für Konten im Ausland.', 'spellcheck="false"') ?>
+    <div class="feld feld-kurz">
+        <label for="m-bic">BIC</label>
+        <input type="text" id="m-bic" name="bic" value="<?= e($formular->wert('bic')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['bic'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-bic-hinweis m-bic-bank m-bic-hilfe"<?= $bicFehler !== null ? ' aria-invalid="true"' : '' ?>>
+        <p class="feld-fehler" id="m-bic-hinweis" aria-live="polite"<?= $bicFehler === null ? ' hidden' : '' ?>><?= e($bicFehler ?? '') ?></p>
+        <p class="feld-hinweis" id="m-bic-bank" aria-live="polite"<?= $bank === null ? ' hidden' : '' ?>><?= e($bank === null ? '' : 'Bank: ' . $bank->name) ?></p>
+        <p class="feld-hinweis" id="m-bic-hilfe">Bei einer deutschen IBAN wird die BIC ergänzt, wenn das Feld leer ist.</p>
+    </div>
     <?= $text('kontoinhaber', 'Kontoinhaber', 'feld-breit', 'Nur eintragen, wenn das Konto nicht dem Mitglied gehört.') ?>
     <?= $text('mandatsreferenz', 'Mandatsreferenz', '', 'Leer lassen: es gilt die Mitgliedsnummer' . ($nummer !== '' && ctype_digit($nummer) ? ' (' . (int) $nummer . ')' : '') . '.') ?>
     <?= $datum('mandatsdatum', 'Mandatsdatum', $mandatsdatumHilfe) ?>
@@ -227,8 +248,18 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     </form>
 <?php endif; ?>
 
-<?php if ($darfLoeschen && $loeschAdresse !== null): ?>
+<?php if (!$neu): ?>
+    <?php /* Leaving instead of deleting (07 section 1): "Mitglied ausgetreten"
+             while no leaving date is set, else "Austritt zurücknehmen";
+             deleting (admin) only once the member is a former one. */ ?>
     <p class="knopfreihe">
-        <a class="knopf knopf-gefahr" href="<?= e($loeschAdresse) ?>">Mitglied löschen</a>
+        <?php if ($mitglied->austrittsdatum === null): ?>
+            <a class="knopf" href="<?= e($einbettung->mitRueckweg(MitgliedController::austrittAdresse((int) $mitglied->id))) ?>">Mitglied ausgetreten</a>
+        <?php else: ?>
+            <a class="knopf" href="<?= e($einbettung->mitRueckweg(MitgliedController::zuruecknehmenAdresse((int) $mitglied->id))) ?>">Austritt zurücknehmen</a>
+        <?php endif; ?>
+        <?php if ($darfLoeschen && $loeschAdresse !== null): ?>
+            <a class="knopf knopf-gefahr" href="<?= e($loeschAdresse) ?>">Mitglied löschen</a>
+        <?php endif; ?>
     </p>
 <?php endif; ?>

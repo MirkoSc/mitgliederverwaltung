@@ -12,6 +12,9 @@
  * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (issue #106), without buttons
  */
 
+use App\Support\Banken;
+use App\Support\Iban;
+
 /** Names of the chosen entries, in the order of the settings. */
 $namen = static function (array $ids, array $liste): string {
     $gewaehlt = array_filter($liste, static fn(object $eintrag): bool => in_array($eintrag->id, $ids, true));
@@ -29,7 +32,6 @@ $gruppen = [
     'Person' => [
         'Mitgliedsnummer' => (string) $mitglied->mitgliedsnummer,
         'Geschlecht' => $mitglied->geschlecht?->bezeichnung() ?? '',
-        'Anrede' => $mitglied->anrede,
         'Titel' => $mitglied->titel,
         'Vorname' => $mitglied->vorname,
         'Nachname' => $mitglied->nachname,
@@ -39,7 +41,7 @@ $gruppen = [
     'Anschrift' => [
         'Straße und Hausnummer' => $mitglied->strasse,
         'PLZ und Ort' => trim($mitglied->plz . ' ' . $mitglied->ort),
-        'Land' => $mitglied->land,
+        'Land' => \App\Support\Laender::name($mitglied->land),
     ],
     'Kontakt' => [
         'Telefon' => $mitglied->telefon,
@@ -57,8 +59,9 @@ $gruppen = [
     'Beitrag' => [
         'Beitragsart' => $beitragsart,
         'Zahlart' => $mitglied->zahlart->bezeichnung(),
-        'IBAN' => $mitglied->iban,
+        'IBAN' => Iban::anzeigen($mitglied->iban),
         'BIC' => $mitglied->bic,
+        'Bank' => Banken::fuerIban($mitglied->iban)?->name ?? '',
         'Kontoinhaber' => $mitglied->kontoinhaber,
         'Mandatsreferenz' => $mitglied->effektiveMandatsreferenz(),
         'Mandatsdatum' => datum($mitglied->effektivesMandatsdatum($listen->vereinsMandatsdatum)),

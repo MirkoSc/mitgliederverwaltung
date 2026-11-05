@@ -64,8 +64,9 @@ final readonly class FunktionRepository
      */
     public function zuordnungen(?int $funktionId, \DateTimeImmutable $stichtag): array
     {
-        $bedingungen = ['(m.austrittsdatum IS NULL OR m.austrittsdatum > ?)'];
-        $werte = [Zeilen::fuerDatum($stichtag)];
+        [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('m', $stichtag);
+        $bedingungen = [$nichtAusgetreten];
+        $werte = [$tag];
         if ($funktionId !== null) {
             $bedingungen[] = 'f.id = ?';
             $werte[] = $funktionId;

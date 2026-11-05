@@ -170,9 +170,9 @@ $alle = static function (string $gruppe, string $wofuer): void { ?>
 
             <h3 id="abgleich-fehlt">Fehlt in der Datei</h3>
             <p>
-                Importiert, aber in der neuen Datei nicht mehr enthalten. Angehakte Mitglieder treten aus –
-                oder werden ganz gelöscht, wenn „ganz löschen“ angehakt ist. Von Hand angelegte und bereits
-                ausgetretene Mitglieder stehen hier nie.
+                Importiert, aber in der neuen Datei nicht mehr enthalten. Wer noch Mitglied ist, kann nur
+                austreten; ganz löschen lassen sich nur ehemalige Mitglieder ohne Jahresbeiträge. Von Hand
+                angelegte Mitglieder und solche mit vermerktem künftigem Austritt stehen hier nie.
             </p>
             <?php if ($v->fehlt === []): ?>
                 <p class="leer">Kein importiertes Mitglied fehlt in der Datei.</p>
@@ -200,10 +200,14 @@ $alle = static function (string $gruppe, string $wofuer): void { ?>
                                 <?php $m = $zeile->mitglied; ?>
                                 <tr>
                                     <td>
-                                        <label class="feld-haken">
-                                            <input type="checkbox" name="austritt" value="<?= e($m->mitgliedsnummer) ?>">
-                                            Austreten<span class="nur-lesehilfe">: Nr. <?= e($m->mitgliedsnummer) ?></span>
-                                        </label>
+                                        <?php if ($zeile->kannLoeschen): ?>
+                                            <span class="gedaempft">ausgetreten am <?= e(datum($m->austrittsdatum)) ?></span>
+                                        <?php else: ?>
+                                            <label class="feld-haken">
+                                                <input type="checkbox" name="austritt" value="<?= e($m->mitgliedsnummer) ?>">
+                                                Austreten<span class="nur-lesehilfe">: Nr. <?= e($m->mitgliedsnummer) ?></span>
+                                            </label>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="Nr."><span class="nummer"><?= e($m->mitgliedsnummer) ?></span></td>
                                     <td class="liste-titel"><?= e($m->anzeigeName()) ?></td>
@@ -215,7 +219,7 @@ $alle = static function (string $gruppe, string $wofuer): void { ?>
                                                 ganz löschen<span class="nur-lesehilfe">: Nr. <?= e($m->mitgliedsnummer) ?></span>
                                             </label>
                                         <?php else: ?>
-                                            <span class="gedaempft">nicht möglich, hat Jahresbeiträge</span>
+                                            <span class="gedaempft">erst nach dem Austritt</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>

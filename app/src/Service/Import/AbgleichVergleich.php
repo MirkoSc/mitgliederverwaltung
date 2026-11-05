@@ -6,6 +6,8 @@ namespace App\Service\Import;
 
 use App\Domain\Herkunft;
 use App\Domain\Mitglied;
+use App\Support\Banken;
+use App\Support\Datum;
 use App\Support\Iban;
 
 /**
@@ -14,7 +16,11 @@ use App\Support\Iban;
  * matched by member number.
  *
  *  - neu: in the file, not in the application;
- *  - fehlt: imported here (origin `import`), not in the file, not yet left;
+ *  - fehlt: imported here (origin `import`), not in the file, and either
+ *    not left (no leaving date: may only leave) or former (leaving date
+ *    reached, no annual fees: may be deleted) - the rule of 07 section 1,
+ *    deleting is for former members only. A leaving date still ahead or a
+ *    former member with fees: nothing to do, not shown;
  *  - geaendert: in both, with different values;
  *  - unveraendert: in both, nothing differs (only counted).
  *
@@ -50,9 +56,11 @@ final readonly class AbgleichVergleich
      * @param list<Mitglied> $bestand all members, former ones included
      * @param array<string, int> $familien id of the family per key of the old software (`familie.import_schluessel`)
      * @param array<int, true> $mitBeitrag ids of the members with at least one annual fee
+     * @param \DateTimeInterface|null $heute the day "former" is judged on; default today
      */
-    public static function aus(ImportDatei $datei, array $bestand, array $familien, array $mitBeitrag): self
+    public static function aus(ImportDatei $datei, array $bestand, array $familien, array $mitBeitrag, ?\DateTimeInterface $heute = null): self
     {
+        $heute ??= new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
         $nachNummer = [];
         foreach ($bestand as $mitglied) {
             $nachNummer[$mitglied->mitgliedsnummer] = $mitglied;
@@ -80,10 +88,15 @@ final readonly class AbgleichVergleich
 
         $fehlt = [];
         foreach ($nachNummer as $nummer => $mitglied) {
-            if (isset($inDatei[$nummer]) || $mitglied->herkunft !== Herkunft::Import || $mitglied->austrittsdatum !== null) {
+            if (isset($inDatei[$nummer]) || $mitglied->herkunft !== Herkunft::Import) {
                 continue;
             }
-            $fehlt[$nummer] = new AbgleichFehlt($mitglied, !isset($mitBeitrag[(int) $mitglied->id]));
+            $ehemalig = $mitglied->istEhemalig($heute);
+            $hatBeitrag = isset($mitBeitrag[(int) $mitglied->id]);
+            if ($mitglied->austrittsdatum !== null && (!$ehemalig || $hatBeitrag)) {
+                continue;
+            }
+            $fehlt[$nummer] = new AbgleichFehlt($mitglied, $ehemalig);
         }
 
         ksort($neu);
@@ -116,7 +129,7 @@ final readonly class AbgleichVergleich
         $daten = [
             ...$eintrag->mitglied->daten(),
             'iban' => Iban::normalisieren($eintrag->mitglied->iban),
-            'bic' => strtoupper((string) preg_replace('/\s+/u', '', $eintrag->mitglied->bic)),
+            'bic' => Banken::bicErgaenzen($eintrag->mitglied->bic, $eintrag->mitglied->iban),
             'familie_id' => $familie,
         ];
         if ($vorhanden === null || $spalten === []) {
@@ -129,6 +142,9 @@ final readonly class AbgleichVergleich
                 $daten[$feld] = $bisher[$feld] ?? null;
             }
         }
+        // A missing BIC is filled in from the bank of a German IBAN, also
+        // when the file has no column for it (10 section 4).
+        $daten['bic'] = Banken::bicErgaenzen((string) $daten['bic'], (string) $daten['iban']);
 
         return $daten;
     }

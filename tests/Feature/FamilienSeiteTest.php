@@ -294,7 +294,7 @@ final class FamilienSeiteTest extends AppTestCase
         self::assertWeiterleitungNach('/app/familien?familie=' . $f, $antwort);
 
         $petra = $this->repo()->finde((int) $eltern->id);
-        self::assertSame(['Am Hang 1', '12345', 'Beispielstadt', 'D'], [$petra?->strasse, $petra?->plz, $petra?->ort, $petra?->land]);
+        self::assertSame(['Am Hang 1', '12345', 'Beispielstadt', 'DE'], [$petra?->strasse, $petra?->plz, $petra?->ort, $petra?->land]);
         self::assertSame(2, $petra?->version, 'one new version');
         self::assertSame('geaendert', $this->repo()->versionen((int) $eltern->id)[0]->anlass->text);
         self::assertSame(1, $this->repo()->finde((int) $kind->id)?->version, 'Lena already had the address - no version');

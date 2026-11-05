@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Karte;
 
+use App\Support\Laender;
+
 /**
  * Coordinates for an address from the OpenStreetMap geocoder Nominatim
  * (issue #91). Server side only. What leaves the server is the address -
@@ -29,20 +31,6 @@ final readonly class Geocoder
 {
     public const string URL = 'https://nominatim.openstreetmap.org/search';
 
-    /**
-     * The country field of the member table holds the codes of the old
-     * software (licence-plate style, "D", "A", "CH"); Nominatim wants ISO
-     * codes. Anything else goes to the geocoder as a free country name.
-     */
-    private const array LAENDER = [
-        'D' => 'de', 'DE' => 'de', 'A' => 'at', 'AT' => 'at', 'CH' => 'ch', 'F' => 'fr', 'FR' => 'fr',
-        'I' => 'it', 'IT' => 'it', 'NL' => 'nl', 'B' => 'be', 'BE' => 'be', 'L' => 'lu', 'LU' => 'lu',
-        'DK' => 'dk', 'PL' => 'pl', 'CZ' => 'cz', 'E' => 'es', 'ES' => 'es', 'GB' => 'gb', 'UK' => 'gb',
-        'H' => 'hu', 'HU' => 'hu', 'FL' => 'li', 'LI' => 'li', 'S' => 'se', 'SE' => 'se', 'N' => 'no',
-        'NO' => 'no', 'P' => 'pt', 'PT' => 'pt', 'GR' => 'gr', 'SK' => 'sk', 'SLO' => 'si', 'SI' => 'si',
-        'HR' => 'hr', 'RO' => 'ro', 'BG' => 'bg', 'TR' => 'tr', 'USA' => 'us', 'US' => 'us',
-    ];
-
     public function __construct(private HttpAbruf $http, private string $userAgent)
     {
     }
@@ -66,9 +54,10 @@ final readonly class Geocoder
         if ($anschrift->ort !== '') {
             $abfrage['city'] = self::ort($anschrift, $wortgetreu);
         }
-        $code = self::LAENDER[$anschrift->land] ?? null;
+        // The member's country is an ISO alpha-2 code, which is what Nominatim wants.
+        $code = Laender::code($anschrift->land);
         if ($code !== null) {
-            $abfrage['countrycodes'] = $code;
+            $abfrage['countrycodes'] = strtolower($code);
         } else {
             $abfrage['country'] = $anschrift->land;
         }

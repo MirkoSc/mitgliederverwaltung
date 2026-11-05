@@ -39,49 +39,66 @@ final class MitgliedFormularTest extends TestCase
         return MitgliedFormular::gelesen($post, $basis ?? new Mitglied(1, ''), self::listen());
     }
 
-    public function testNumberAndSurnameAreAllItNeeds(): void
+    public function testSurnameIsAllItNeeds(): void
     {
-        $formular = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Musterfrau']);
+        $formular = self::lesen(['nachname' => 'Musterfrau']);
 
         self::assertSame([], $formular->fehler);
         self::assertNotNull($formular->mitglied);
-        self::assertSame(412, $formular->mitglied->mitgliedsnummer);
         self::assertSame('Musterfrau', $formular->mitglied->nachname);
-        self::assertSame('D', $formular->mitglied->land, 'the default country');
+        self::assertSame('DE', $formular->mitglied->land, 'the default country');
         self::assertTrue($formular->mitglied->aktiv);
         self::assertSame(Zahlart::Lastschrift, $formular->mitglied->zahlart);
         self::assertNull($formular->mitglied->eintrittsdatum, 'empty = unknown');
     }
 
-    public function testMissingNumberAndSurnameAreErrors(): void
+    public function testTheCountryIsUnderstoodAsNameOrCodeAndStoredAsIso(): void
     {
-        $formular = self::lesen(['mitgliedsnummer' => ' ', 'nachname' => '  ', 'vorname' => 'Erika']);
+        foreach (['Österreich', 'AT', 'a', 'österreich'] as $eingabe) {
+            $formular = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Musterfrau', 'land' => $eingabe]);
+            self::assertSame('AT', $formular->mitglied?->land, $eingabe);
+        }
+
+        $unbekannt = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Musterfrau', 'land' => 'Atlantis']);
+        self::assertNull($unbekannt->mitglied);
+        self::assertStringContainsString('Land nicht gefunden', $unbekannt->fehler['land']);
+    }
+
+    public function testAnUnknownCountryAlreadyStoredIsKept(): void
+    {
+        $basis = new Mitglied(87, 'Alt', land: 'CDN', id: 3);
+        $formular = MitgliedFormular::aus($basis);
+        self::assertSame('CDN', $formular->wert('land'), 'shown as it is');
+
+        foreach (['CDN', 'cdn'] as $eingabe) {
+            $gelesen = self::lesen(['nachname' => 'Alt', 'land' => $eingabe], $basis);
+            self::assertSame([], $gelesen->fehler, $eingabe);
+            self::assertSame('CDN', $gelesen->mitglied?->land);
+        }
+
+        $anderes = self::lesen(['nachname' => 'Alt', 'land' => 'XYZ'], $basis);
+        self::assertArrayHasKey('land', $anderes->fehler, 'another unknown value is still an input error');
+        self::assertSame('CA', self::lesen(['nachname' => 'Alt', 'land' => 'Kanada'], $basis)->mitglied?->land);
+    }
+
+    public function testMissingSurnameIsAnError(): void
+    {
+        $formular = self::lesen(['nachname' => '  ', 'vorname' => 'Erika']);
 
         self::assertNull($formular->mitglied);
-        self::assertSame(['mitgliedsnummer', 'nachname'], array_keys($formular->fehler));
+        self::assertSame(['nachname'], array_keys($formular->fehler));
         self::assertSame('Erika', $formular->wert('vorname'), 'what was typed stays');
     }
 
-    /** @return iterable<string, array{string, int|null}> */
-    public static function nummern(): iterable
+    public function testThePostedNumberIsNeverTaken(): void
     {
-        yield 'plain' => ['412', 412];
-        yield 'leading zeros' => ['0087', 87];
-        yield 'largest' => ['4294967295', 4294967295];
-        yield 'zero' => ['0', null];
-        yield 'too large' => ['4294967296', null];
-        yield 'letters' => ['41a', null];
-        yield 'negative' => ['-5', null];
-        yield 'decimal' => ['4.5', null];
-    }
+        $neu = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Muster'], new Mitglied(0, ''));
+        self::assertSame(0, $neu->mitglied?->mitgliedsnummer, 'a new member stays without a number until saved');
+        self::assertSame([], $neu->fehler);
 
-    #[DataProvider('nummern')]
-    public function testTheMemberNumberIsAWholeNumberFromOne(string $eingabe, ?int $erwartet): void
-    {
-        $formular = self::lesen(['mitgliedsnummer' => $eingabe, 'nachname' => 'Muster']);
-
-        self::assertSame($erwartet, $formular->mitglied?->mitgliedsnummer);
-        self::assertSame($erwartet === null, $formular->fehler('mitgliedsnummer') !== null);
+        $alt = self::lesen(['mitgliedsnummer' => '412', 'nachname' => 'Muster'], new Mitglied(87, 'Alt', id: 3));
+        self::assertSame(87, $alt->mitglied?->mitgliedsnummer);
+        self::assertSame('87', $alt->wert('mitgliedsnummer'));
     }
 
     public function testDatesAreReadFromTheDateInputAndFromTypedGermanDates(): void
@@ -108,7 +125,7 @@ final class MitgliedFormularTest extends TestCase
     public function testAllFieldsOfTheSpecAreRead(): void
     {
         $formular = self::lesen([
-            'mitgliedsnummer' => '7', 'anrede' => 'Frau', 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
+            'mitgliedsnummer' => '999', 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
             'namenszusatz' => 'von', 'geschlecht' => 'w', 'geburtsdatum' => '1979-05-14', 'strasse' => 'Wiesenweg   3',
             'plz' => '12345', 'ort' => 'Musterstadt', 'land' => 'at', 'telefon' => '0123 4567', 'handy' => '0170 1234567',
             'email' => 'erika@example.org', 'eintrittsdatum' => '2001-01-01', 'austrittsdatum' => '2030-12-31',
@@ -121,7 +138,7 @@ final class MitgliedFormularTest extends TestCase
         $m = $formular->mitglied;
         self::assertNotNull($m);
         self::assertSame([
-            'mitgliedsnummer' => 7, 'anrede' => 'Frau', 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
+            'mitgliedsnummer' => 1, 'titel' => 'Dr.', 'vorname' => 'Erika', 'nachname' => 'Musterfrau',
             'namenszusatz' => 'von', 'geschlecht' => 'w', 'geburtsdatum' => '1979-05-14', 'strasse' => 'Wiesenweg 3',
             'plz' => '12345', 'ort' => 'Musterstadt', 'land' => 'AT', 'telefon' => '0123 4567', 'handy' => '0170 1234567',
             'email' => 'erika@example.org', 'eintrittsdatum' => '2001-01-01', 'austrittsdatum' => '2030-12-31',
@@ -177,7 +194,7 @@ final class MitgliedFormularTest extends TestCase
         $gespeichert = new Mitglied(
             mitgliedsnummer: 87, nachname: 'Mustermann', vorname: 'Max', geschlecht: Geschlecht::M,
             geburtsdatum: new \DateTimeImmutable('2012-11-02'), aktiv: false, abteilungIds: [1], beitragsartId: 8,
-            iban: 'DE89370400440532013000', funktionIds: [5, 6], bemerkung: "zwei\nZeilen", id: 3, version: 2,
+            iban: 'DE89370400440532013000', bic: 'COBADEFFXXX', funktionIds: [5, 6], bemerkung: "zwei\nZeilen", id: 3, version: 2,
         );
 
         $formular = MitgliedFormular::aus($gespeichert);
@@ -189,12 +206,24 @@ final class MitgliedFormularTest extends TestCase
         self::assertSame($gespeichert->daten(), self::lesen($post, $gespeichert)->mitglied?->daten(), 'an unchanged form is no change');
     }
 
+    public function testAnEmptyBicIsFilledInFromAGermanIban(): void
+    {
+        $m = self::lesen(['mitgliedsnummer' => '1', 'nachname' => 'Muster', 'iban' => 'DE89 3704 0044 0532 0130 00', 'bic' => ''])->mitglied;
+        self::assertSame('COBADEFFXXX', $m?->bic);
+
+        $m = self::lesen(['mitgliedsnummer' => '1', 'nachname' => 'Muster', 'iban' => 'DE89 3704 0044 0532 0130 00', 'bic' => 'ingd deff'])->mitglied;
+        self::assertSame('INGDDEFF', $m?->bic, 'a BIC typed stays, even one that does not fit (hint only)');
+
+        $m = self::lesen(['mitgliedsnummer' => '1', 'nachname' => 'Muster', 'iban' => 'AT611904300234573201', 'bic' => ''])->mitglied;
+        self::assertSame('', $m?->bic, 'only German IBANs');
+    }
+
     public function testANewFormCarriesTheNextNumber(): void
     {
         $formular = MitgliedFormular::neu(1034);
 
         self::assertSame('1034', $formular->wert('mitgliedsnummer'));
-        self::assertSame('D', $formular->wert('land'));
+        self::assertSame('Deutschland', $formular->wert('land'));
         self::assertSame('1', $formular->wert('aktiv'));
         self::assertSame('', $formular->wert('nachname'));
     }

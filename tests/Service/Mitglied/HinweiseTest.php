@@ -377,6 +377,21 @@ final class HinweiseTest extends TestCase
         self::assertSame([], self::arten($kind, [$zahler, $kind]), 'a family counts as a way to pay');
     }
 
+    // Land unbekannt (issue #127)
+
+    public function testAnUnknownStoredCountryIsHintedUnlessFormer(): void
+    {
+        $unbekannt = self::mitglied(['land' => 'CDN']);
+
+        self::assertSame([HinweisArt::LandUnbekannt], self::arten($unbekannt));
+        self::assertStringContainsString('„CDN“', Hinweise::fuer($unbekannt, new HinweisKontext(self::tag(), [], [], self::beitragsarten()))[0]->text);
+        self::assertSame('daten', HinweisArt::LandUnbekannt->reiter());
+        self::assertSame([], self::arten($unbekannt->mit(['austrittsdatum' => self::tag('2026-01-01')])), 'former');
+        foreach (['DE', 'AT', 'D', 'DEU', ''] as $land) {
+            self::assertSame([], self::arten(self::mitglied(['land' => $land])), "known: '$land'");
+        }
+    }
+
     // Lastschrift ohne gültige IBAN
 
     public function testDirectDebitNeedsAValidIban(): void
@@ -410,6 +425,29 @@ final class HinweiseTest extends TestCase
         self::assertContains(HinweisArt::LastschriftOhneIban, self::arten($eigener, [$zahler, $eigener]), 'with a fee of their own they pay');
         $falsch = self::person(2, FamilienRolle::Kind, ['iban' => 'DE00123456789012345678']);
         self::assertContains(HinweisArt::LastschriftOhneIban, self::arten($falsch, [$zahler, $falsch]), 'a wrong IBAN is wrong for everybody');
+    }
+
+    // Lastschrift mit falscher BIC
+
+    public function testAWrongBicIsHintedForDirectDebit(): void
+    {
+        $m = self::mitglied(['zahlart' => Zahlart::Lastschrift, 'iban' => 'DE89370400440532013000']);
+
+        self::assertSame([], self::arten($m), 'no BIC is fine');
+        self::assertSame([], self::arten($m->mit(['bic' => 'COBADEFFXXX'])), 'the bank of the IBAN');
+        self::assertSame([], self::arten($m->mit(['bic' => 'coba de ff'])), '8 characters, spaces and case are fine');
+        self::assertSame([HinweisArt::LastschriftMitFalscherBic], self::arten($m->mit(['bic' => 'COBADE'])), 'wrong shape');
+        self::assertSame([HinweisArt::LastschriftMitFalscherBic], self::arten($m->mit(['bic' => 'INGDDEFFXXX'])), 'another bank');
+        self::assertSame([], self::arten($m->mit(['bic' => 'INGDDEFFXXX', 'zahlart' => Zahlart::Selbst])), 'pays by themselves');
+        self::assertSame([], self::arten($m->mit(['iban' => 'AT611904300234573201', 'bic' => 'BKAUATWWXXX'])), 'a foreign IBAN is not compared');
+    }
+
+    public function testTheBicTextNamesTheRightBic(): void
+    {
+        $m = self::mitglied(['iban' => 'DE89370400440532013000', 'bic' => 'INGDDEFFXXX']);
+        $kontext = new HinweisKontext(self::tag(), [], [], self::beitragsarten());
+
+        self::assertStringContainsString('COBADEFFXXX', Hinweise::fuer($m, $kontext)[0]->text);
     }
 
     // Beitragsfrei ohne Grund
@@ -479,7 +517,7 @@ final class HinweiseTest extends TestCase
         foreach (HinweisArt::cases() as $art) {
             self::assertNotSame('', $art->bezeichnung());
         }
-        self::assertCount(18, HinweisArt::cases(), 'one per row of the table in 07 section 6');
+        self::assertCount(20, HinweisArt::cases(), 'one per row of the table in 07 section 6');
     }
 
     /**

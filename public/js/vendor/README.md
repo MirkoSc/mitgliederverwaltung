@@ -73,3 +73,28 @@ und hält sie zwischen (`App\Service\Karte\KachelProxy`). Der Browser spricht
 keinen fremden Host an, die CSP bleibt `'self'`. Die Marker sind
 `L.divIcon` mit eigenem CSS (`public/css/teile/karte.css`); die Bilder unter
 `images/` liegen nur bei, weil `leaflet.css` auf sie verweist.
+
+## Chart.js
+
+| | |
+|---|---|
+| Version | 4.6.1 |
+| Datei | `chartjs/chart.umd.min.js` |
+| SHA-256 | `87364cc2b2a76a6684929e7d6b80b18a897794db38400caff1fcf1791c6925d2` |
+| Quelle | `https://registry.npmjs.org/chart.js/-/chart.js-4.6.1.tgz`, Datei `package/dist/chart.umd.min.js` |
+| Projekt | <https://www.chartjs.org/> · <https://github.com/chartjs/Chart.js> |
+| Lizenz | MIT (`chartjs/LICENSE.md`) – GPL-verträglich |
+
+Für die Seite „Statistik" (Issue #127, 09 §7), nur dort eingebunden. Geprüft:
+der npm-Tarball stimmt mit dem Shasum der Registry überein
+(`40a924bc0b92544ed66fa3f4873981152fc62c52`), die Datei darin hat die
+Prüfsumme oben. Das UMD-Bündel enthält seine einzige Abhängigkeit
+(`@kurkle/color`, MIT) bereits; reines JavaScript, aktiv gepflegt, kein
+`eval`/`new Function`. Die einzigen URLs in der Datei sind Kommentare/Texte
+(chartjs.org, das Repository von `@kurkle/color`) – nichts wird geladen. Am
+Ende steht ein relativer `sourceMappingURL=chart.umd.min.js.map`; die
+Map-Datei wird nicht ausgeliefert. CSP: Chart.js zeichnet in ein `<canvas>`
+und setzt dessen Größe über `element.style` (CSSOM) und die Attribute
+`width`/`height` – kein `<style>`-Element, kein `style`-Attribut als HTML,
+also verträglich mit `style-src 'self'`. Die Farben kommen aus den Tokens
+(`public/css/teile/statistik.css`), gezeichnet wird ohne Animation.

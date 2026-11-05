@@ -20,7 +20,11 @@ nur Dateien.
 
 Datenschutz (für die Datenschutzerklärung): Schutz durch Zugangskontrolle
 mit zweitem Faktor, HTTPS, verschlüsselte Dateien und Backups; keine
-Verschlüsselung einzelner Datenbankfelder.
+Verschlüsselung einzelner Datenbankfelder. Externe Dienste (01 §8): der
+Server schickt Anschriften ohne Namen an Nominatim/OpenStreetMap (Karte)
+und beim Tippen im Mitgliedsformular die eingegebenen Anschriftteile an
+Photon (komoot GmbH, Anschriftvorschläge, #127); der Browser spricht keinen
+fremden Host an. Vorlage: `docs/betrieb.md` §11.
 
 ## 2. Server-Schlüssel und Dateiverschlüsselung
 
@@ -234,7 +238,9 @@ Verschlüsselung einzelner Datenbankfelder.
 
   Jede Route unter `/admin` verlangt ein `admin.*`-Recht, jede unter
   `/app` eine Anmeldung; öffentlich sind nur `/`, `/anmelden…`,
-  `/abmelden`, `/impressum`, `/datenschutz` (E-F3,
+  `/abmelden`, `/impressum`, `/datenschutz`, das Vereinslogo
+  `/logo/{groesse}` und `/manifest.webmanifest` (PWA, #127: nur Vereinsname
+  und Logo-Adressen) (E-F3,
   `tests/Http/RoutenZugriffTest.php`).
 
 ## 7. Web-Sicherheit
@@ -262,6 +268,12 @@ Verschlüsselung einzelner Datenbankfelder.
 - **Daten im Browser**: Mitgliederdaten nie in localStorage,
   sessionStorage, IndexedDB oder einem Service-Worker-Cache;
   `Cache-Control: no-store` auf allen Seiten mit Mitgliederdaten.
+  Der Service Worker der installierbaren App (`public/sw.js`, 06 §6) hat
+  **keinen** Cache, keinen `fetch`-Handler und keinen Speicher – jede
+  Anfrage geht wie ohne ihn ans Netz (`tests/js/pwa.test.js`). Er wird
+  mit `Cache-Control: no-cache` ausgeliefert. Das Manifest
+  `/manifest.webmanifest` ist öffentlich und enthält nur Vereinsname und
+  Logo-URLs (stehen ohnehin auf der Anmeldeseite).
 - Ausgaben escapen (`e()`), SQL nur mit Prepared Statements.
 - **Logs**: keine Mitgliederdaten in Logs, Fehlermeldungen, Dateinamen
   oder URLs (Mitgliedsnummer bzw. ID genügt). Passwörter nie loggen.

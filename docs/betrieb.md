@@ -357,6 +357,21 @@ alten Software wird in einer Merge-Ansicht verglichen; je Zeile wählen
 Sie, was übernommen wird. Jeder Abgleich wird im Verlauf des Mitglieds
 vermerkt.
 
+### Bankdaten aktualisieren
+
+Bankname und BIC zu einer deutschen IBAN stehen in `app/data/banken.php`
+(aus der Bankleitzahlendatei der Deutschen Bundesbank, über das npm-Paket
+`bankdata-germany`, Lizenz MIT; Stand im Kopf der Datei). Die Bundesbank
+ändert die Datei viermal im Jahr; aktualisiert wird mit einem Release, nicht
+auf dem Server. Auf dem Entwicklungsrechner:
+
+    npm pack bankdata-germany@latest
+    tar -xzf bankdata-germany-*.tgz
+    php tools/banken-erzeugen.php package
+
+Änderungen, die erst später gelten (`next.json` des Pakets), übernimmt das
+Skript, sobald ihr Stichtag erreicht ist (oder mit `--mit-naechsten`).
+
 ---
 
 ## 10. Einzug (Lastschrift)
@@ -440,6 +455,16 @@ Daten als Auftragsverarbeiter; [Auftragsverarbeitungsvertrag: Hinweis].
 Die Anwendung versendet nur Mails an Benutzer der Anwendung (Anmeldung,
 Sicherheitshinweise). Mitgliederdaten werden nicht per Mail versendet,
 sofern nicht [ausdrücklich geregelt].
+
+## Karten- und Anschriftdienste
+Für die Mitgliederkarte fragt der Server der Anwendung die Anschriften der
+Mitglieder (Straße, PLZ, Ort, Land – ohne Namen) beim Dienst Nominatim der
+OpenStreetMap Foundation ab und lädt Kartenbilder von deren Kachelserver.
+Beim Eintippen einer Anschrift im Mitgliedsformular schickt der Server die
+eingegebenen Anschriftteile (Straße, PLZ, Ort – ohne Namen) an den Dienst
+Photon der komoot GmbH, um Vorschläge zu zeigen. Die Browser der Benutzer
+sprechen keinen dieser Dienste selbst an; die Dienste sehen nur den Server
+des Vereins.
 
 ## Speicherdauer
 [z. B. Mitgliederdaten bis [X] Jahre nach Austritt; Backups werden in der

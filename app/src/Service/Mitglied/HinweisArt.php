@@ -26,9 +26,11 @@ enum HinweisArt: string
     case KindIst18 = 'kind-ist-18';
     case KeinBeitrag = 'kein-beitrag';
     case LastschriftOhneIban = 'lastschrift-ohne-iban';
+    case LastschriftMitFalscherBic = 'lastschrift-mit-falscher-bic';
     case BeitragsfreiOhneGrund = 'beitragsfrei-ohne-grund';
     case EintrittsdatumUnbekannt = 'eintrittsdatum-unbekannt';
     case BlsvAngabenFehlen = 'blsv-angaben-fehlen';
+    case LandUnbekannt = 'land-unbekannt';
     case KarteNichtGefunden = 'karte-nicht-gefunden';
     case KarteUngefaehr = 'karte-ungefaehr';
 
@@ -40,7 +42,7 @@ enum HinweisArt: string
     public function reiter(): ?string
     {
         return match ($this) {
-            self::KarteNichtGefunden, self::KarteUngefaehr => 'daten',
+            self::KarteNichtGefunden, self::KarteUngefaehr, self::LandUnbekannt => 'daten',
             default => null,
         };
     }
@@ -62,9 +64,11 @@ enum HinweisArt: string
             self::KindIst18 => 'Kind ist 18',
             self::KeinBeitrag => 'Kein Beitrag',
             self::LastschriftOhneIban => 'Lastschrift ohne gültige IBAN',
+            self::LastschriftMitFalscherBic => 'Lastschrift mit falscher BIC',
             self::BeitragsfreiOhneGrund => 'Beitragsfrei ohne Grund',
             self::EintrittsdatumUnbekannt => 'Eintrittsdatum unbekannt',
             self::BlsvAngabenFehlen => 'Pflichtangaben für BLSV fehlen',
+            self::LandUnbekannt => 'Land unbekannt',
             self::KarteNichtGefunden => 'Anschrift auf der Karte nicht gefunden',
             self::KarteUngefaehr => 'Anschrift auf der Karte nur ungefähr gefunden',
         };

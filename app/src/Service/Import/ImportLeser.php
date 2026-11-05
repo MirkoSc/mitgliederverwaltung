@@ -6,9 +6,11 @@ namespace App\Service\Import;
 
 use App\Domain\FamilienRolle;
 use App\Domain\Geschlecht;
+use App\Support\Laender;
 use App\Domain\Herkunft;
 use App\Domain\Mitglied;
 use App\Domain\Zahlart;
+use App\Support\Banken;
 use App\Support\Datum;
 use App\Support\Iban;
 
@@ -28,7 +30,7 @@ final class ImportLeser
 {
     /** The columns of the format, in the order of the table in 10 section 2. */
     public const array SPALTEN = [
-        'mitgliedsnummer', 'anrede', 'titel', 'vorname', 'nachname', 'namenszusatz', 'geschlecht',
+        'mitgliedsnummer', 'titel', 'vorname', 'nachname', 'namenszusatz', 'geschlecht',
         'geburtsdatum', 'eintrittsdatum', 'austrittsdatum', 'austrittsgrund',
         'strasse', 'plz', 'ort', 'land', 'telefon', 'handy', 'email',
         'aktiv', 'abteilungen', 'beitragsart', 'zahlart', 'iban', 'bic', 'kontoinhaber',
@@ -36,10 +38,13 @@ final class ImportLeser
         'funktionen', 'lizenznummer', 'bemerkung',
     ];
 
+    /** Width of mitglied.land: an unknown country code up to this length is taken as it is. */
+    private const int LAND_UNBEKANNT_MAX = 3;
+
     /** Longest value per text column - what the database column holds. */
     private const array MAXIMUM = [
-        'anrede' => 32, 'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
-        'austrittsgrund' => 255, 'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 3,
+        'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
+        'austrittsgrund' => 255, 'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 60,
         'telefon' => 50, 'handy' => 50, 'email' => 254, 'iban' => 34, 'bic' => 11,
         'kontoinhaber' => 140, 'mandatsreferenz' => 35, 'lizenznummer' => 64,
         'familie' => 64, 'familie_name' => 150, 'bemerkung' => 10000,
@@ -84,7 +89,8 @@ final class ImportLeser
                 implode('“, „', $fehlt),
             ));
         }
-        $unbekannt = array_values(array_diff($kopf, self::SPALTEN, ['']));
+        // "anrede" was dropped (07 section 1); old files still carry it, silently ignored.
+        $unbekannt = array_values(array_diff($kopf, self::SPALTEN, ['', 'anrede']));
 
         $eintraege = [];
         $fehler = [];
@@ -238,6 +244,20 @@ final class ImportLeser
         $austrittsdatum = $datum('austrittsdatum');
         $mandatsdatum = $datum('mandatsdatum');
 
+        // Name, ISO code or old licence-plate code; empty is Germany. An
+        // unknown code of up to three characters (old data such as "CDN") is
+        // taken as it is - a hint says so; anything longer does not fit the
+        // column (07 section 1, 10 section 2).
+        $land = Laender::STANDARD;
+        if ($text('land') !== '') {
+            $land = Laender::code($text('land'));
+            if ($land === null && mb_strlen($text('land')) <= self::LAND_UNBEKANNT_MAX) {
+                $land = $text('land');
+            } elseif ($land === null) {
+                $fehler[] = sprintf('Das Land „%s“ gibt es nicht. Erlaubt sind der deutsche Name, der ISO-Code (zum Beispiel AT) oder das alte Kennzeichen (zum Beispiel A).', $text('land'));
+            }
+        }
+
         $aktiv = true;
         if ($text('aktiv') !== '') {
             if (!in_array($text('aktiv'), ['0', '1'], true)) {
@@ -306,7 +326,6 @@ final class ImportLeser
             mitgliedsnummer: $nummer,
             nachname: $text('nachname'),
             vorname: $text('vorname'),
-            anrede: $text('anrede'),
             titel: $text('titel'),
             namenszusatz: $text('namenszusatz'),
             geschlecht: $geschlecht,
@@ -314,8 +333,7 @@ final class ImportLeser
             strasse: $text('strasse'),
             plz: $text('plz'),
             ort: $text('ort'),
-            // An empty country is the default country, as for a new member (07 section 1).
-            land: $text('land') === '' ? Mitglied::LAND_DEFAULT : $text('land'),
+            land: (string) $land,
             telefon: $text('telefon'),
             handy: $text('handy'),
             email: $text('email'),
@@ -327,7 +345,8 @@ final class ImportLeser
             beitragsartId: $beitragsartId,
             zahlart: $zahlart,
             iban: Iban::normalisieren($text('iban')),
-            bic: $text('bic'),
+            // An empty BIC is filled in from the bank of a German IBAN.
+            bic: Banken::bicErgaenzen($text('bic'), $text('iban')),
             kontoinhaber: $text('kontoinhaber'),
             mandatsreferenz: $text('mandatsreferenz'),
             mandatsdatum: $mandatsdatum,

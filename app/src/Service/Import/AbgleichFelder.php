@@ -6,6 +6,7 @@ namespace App\Service\Import;
 
 use App\Domain\FamilienRolle;
 use App\Domain\Geschlecht;
+use App\Support\Laender;
 use App\Domain\Zahlart;
 use App\Support\Datum;
 
@@ -19,7 +20,6 @@ final readonly class AbgleichFelder
 {
     private const array NAMEN = [
         'mitgliedsnummer' => 'Mitgliedsnummer',
-        'anrede' => 'Anrede',
         'titel' => 'Titel',
         'vorname' => 'Vorname',
         'nachname' => 'Nachname',
@@ -86,6 +86,7 @@ final readonly class AbgleichFelder
         $text = match ($feld) {
             'geburtsdatum', 'eintrittsdatum', 'austrittsdatum', 'mandatsdatum' => Datum::anzeigen((string) $wert),
             'aktiv' => $wert === true ? 'aktiv' : 'passiv',
+            'land' => Laender::name((string) $wert),
             'geschlecht' => Geschlecht::tryFrom((string) $wert)?->bezeichnung() ?? (string) $wert,
             'zahlart' => Zahlart::tryFrom((string) $wert)?->bezeichnung() ?? (string) $wert,
             'familie_rolle' => FamilienRolle::tryFrom((string) $wert)?->bezeichnung() ?? (string) $wert,

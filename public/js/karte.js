@@ -5,6 +5,12 @@
 // "Auf der großen Karte zeigen" at a member, issue #106) is centred and
 // its popup opened.
 //
+// Zoom grouping (issue #127): places closer than ~40 px on screen are one
+// group marker with the sum of the members (click zooms to their extent);
+// from zoom 17 nothing is grouped and places at the very same point are
+// fanned out in a ring or spiral, each with a line to the real point.
+// Redrawn on every zoomend.
+//
 // Also the small map of the block "Wohnort auf der Karte" in an opened
 // member (issue #106, [data-wohnort-karte]): one marker, street level.
 // The member is swapped in by htmx, so it is built again after every swap.
@@ -32,6 +38,99 @@
 
     /** Zoom of one place: about the street and its neighbours. */
     const STRASSE_ZOOM = 17;
+
+    /** From this zoom on nothing is grouped any more; identical points are fanned out. */
+    const FAECHER_ZOOM = 17;
+
+    /** Two places closer than this on screen (px) become one group marker. */
+    const GRUPPEN_RADIUS = 40;
+
+    /** Distance (px) between fanned-out markers, and the radius of the first ring. */
+    const FAECHER_ABSTAND = 40;
+
+    /**
+     * Groups points by their distance on screen (issue #127): greedy, in
+     * the given order - a point joins the first group whose first point is
+     * closer than $radius, else it starts a new group. A point is
+     * {x, y, anzahl} (pixel coordinates at the current zoom). A group is
+     * {punkte, anzahl (sum of the members), x, y (weighted centre)}.
+     */
+    function gruppiere(punkte, radius) {
+        const gruppen = [];
+        for (const punkt of punkte) {
+            let ziel = gruppen.find((g) => Math.hypot(g.ankerX - punkt.x, g.ankerY - punkt.y) < radius);
+            if (ziel === undefined) {
+                ziel = { punkte: [], anzahl: 0, ankerX: punkt.x, ankerY: punkt.y, summeX: 0, summeY: 0, gewicht: 0 };
+                gruppen.push(ziel);
+            }
+            const anzahl = Number(punkt.anzahl) || 0;
+            const gewicht = Math.max(1, anzahl);
+            ziel.punkte.push(punkt);
+            ziel.anzahl += anzahl;
+            ziel.summeX += punkt.x * gewicht;
+            ziel.summeY += punkt.y * gewicht;
+            ziel.gewicht += gewicht;
+        }
+
+        return gruppen.map((g) => ({ punkte: g.punkte, anzahl: g.anzahl, x: g.summeX / g.gewicht, y: g.summeY / g.gewicht }));
+    }
+
+    /**
+     * Places with the same coordinates (five decimals, about a metre) as
+     * stacks, in the order of first appearance.
+     */
+    function stapel(orte) {
+        const nachSchluessel = new Map();
+        for (const ort of orte) {
+            const schluessel = ort.lat.toFixed(5) + '|' + ort.lon.toFixed(5);
+            if (!nachSchluessel.has(schluessel)) {
+                nachSchluessel.set(schluessel, []);
+            }
+            nachSchluessel.get(schluessel).push(ort);
+        }
+
+        return Array.from(nachSchluessel.values());
+    }
+
+    /**
+     * Pixel offsets [dx, dy] around the real point for $n fanned-out
+     * markers: a ring up to eight, then a spiral. One place stays on the point.
+     */
+    function faecherPositionen(n, abstand) {
+        const schritt = abstand || FAECHER_ABSTAND;
+        if (n <= 1) {
+            return [[0, 0]];
+        }
+        const ergebnis = [];
+        if (n <= 8) {
+            const radius = Math.max(schritt, schritt / (2 * Math.sin(Math.PI / n)));
+            for (let i = 0; i < n; i++) {
+                const winkel = -Math.PI / 2 + (2 * Math.PI * i) / n;
+                ergebnis.push([Math.cos(winkel) * radius, Math.sin(winkel) * radius]);
+            }
+
+            return ergebnis;
+        }
+        // Spiral: the arc between two neighbours stays about one step.
+        let winkel = -Math.PI / 2;
+        for (let i = 0; i < n; i++) {
+            const radius = schritt + (schritt * (winkel + Math.PI / 2)) / (2 * Math.PI);
+            ergebnis.push([Math.cos(winkel) * radius, Math.sin(winkel) * radius]);
+            winkel += schritt / radius;
+        }
+
+        return ergebnis;
+    }
+
+    /** Sum of the members of several places. */
+    function summeMitglieder(orte) {
+        return orte.reduce((summe, ort) => summe + (Number(ort.anzahl) || 0), 0);
+    }
+
+    /** Name of a group marker: how many addresses and members it holds. */
+    function gruppenTitel(anschriften, mitglieder) {
+        return anschriften + ' Anschriften, ' + mitglieder + (mitglieder === 1 ? ' Mitglied' : ' Mitglieder') + ' – Klick vergrößert';
+    }
 
     /** The number on a marker: how many members live at the address. */
     function punktText(anzahl) {
@@ -80,34 +179,6 @@
         }
 
         return orte;
-    }
-
-    /**
-     * Places at the same point become one marker: an approximate address
-     * sits on the middle of its town (issue #108), so many of them share
-     * one coordinate - drawn one by one, only the top marker could be seen
-     * and tapped. Same point = equal to about a metre (5 decimals). The
-     * marker counts all members; `teile` keeps every address with its
-     * members for the popup. Order of first appearance is kept.
-     */
-    function zusammenfassen(orte) {
-        const nachPunkt = new Map();
-        for (const ort of orte) {
-            const schluessel = ort.lat.toFixed(5) + ',' + ort.lon.toFixed(5);
-            const gruppe = nachPunkt.get(schluessel);
-            const teil = { anschrift: ort.anschrift, anzahl: ort.anzahl, element: ort.element, genauigkeit: ort.genauigkeit };
-            if (gruppe === undefined) {
-                nachPunkt.set(schluessel, Object.assign({}, ort, { teile: [teil] }));
-                continue;
-            }
-            gruppe.teile.push(teil);
-            gruppe.anzahl += ort.anzahl;
-            gruppe.fokus = gruppe.fokus || ort.fokus;
-            gruppe.genauigkeit = gruppe.genauigkeit === ort.genauigkeit ? gruppe.genauigkeit : '';
-            gruppe.anschrift = gruppe.teile.length + ' Anschriften';
-        }
-
-        return Array.from(nachPunkt.values());
     }
 
     /**
@@ -193,7 +264,7 @@
             return;
         }
 
-        const orte = zusammenfassen(orteAus(Array.from(tabelle.querySelectorAll('tbody tr')).map((zeile) => ({
+        const orte = orteAus(Array.from(tabelle.querySelectorAll('tbody tr')).map((zeile) => ({
             lat: zeile.dataset.lat,
             lon: zeile.dataset.lon,
             anschrift: (zeile.querySelector('[data-karte-anschrift]') || {}).textContent || '',
@@ -201,7 +272,7 @@
             element: zeile.querySelector('[data-karte-mitglieder]'),
             fokus: zeile.hasAttribute('data-fokus'),
             genauigkeit: zeile.dataset.genauigkeit || '',
-        }))));
+        })));
         if (orte.length === 0) {
             flaeche.hidden = true;
             return;
@@ -210,42 +281,118 @@
         const karte = neueKarte(L, flaeche);
         const zoomMax = karte.getMaxZoom();
 
-        const grenzen = [];
-        let fokus = null;
-        for (const ort of orte) {
-            const punkt = neuerPunkt(L, ort);
+        const grenzen = orte.map((ort) => [ort.lat, ort.lon]);
+        const ebene = L.layerGroup().addTo(karte);
+        const faecherZoom = Math.min(FAECHER_ZOOM, zoomMax);
+        const fokusOrt = orte.find((ort) => ort.fokus) || null;
+        // The place whose popup is open (or asked for by the focus link):
+        // it is opened again after every redraw.
+        let offen = fokusOrt;
+        let zeichnet = false;
 
-            // Every address at this point with its members (usually one).
-            punkt.bindPopup(() => {
-                const inhalt = document.createElement('div');
-                inhalt.className = 'karte-popup';
-                for (const teil of ort.teile) {
-                    const kopf = document.createElement('p');
-                    kopf.className = 'karte-popup-anschrift';
-                    kopf.textContent = teil.anschrift + (GENAUIGKEIT[teil.genauigkeit] ? ' (' + GENAUIGKEIT[teil.genauigkeit] + ')' : '');
-                    inhalt.appendChild(kopf);
-                    if (teil.element) {
-                        inhalt.appendChild(teil.element.firstElementChild ? teil.element.firstElementChild.cloneNode(true) : document.createElement('ul'));
-                    }
+        function popupInhalt(ort) {
+            const inhalt = document.createElement('div');
+            inhalt.className = 'karte-popup';
+            const kopf = document.createElement('p');
+            kopf.className = 'karte-popup-anschrift';
+            kopf.textContent = ort.anschrift + (GENAUIGKEIT[ort.genauigkeit] ? ' (' + GENAUIGKEIT[ort.genauigkeit] + ')' : '');
+            inhalt.appendChild(kopf);
+            if (ort.element) {
+                inhalt.appendChild(ort.element.firstElementChild ? ort.element.firstElementChild.cloneNode(true) : document.createElement('ul'));
+            }
+
+            return inhalt;
+        }
+
+        /** The marker of one place; at a fanned-out position it gets a line to the real point. */
+        function ortMarker(ort, lage, mitLinie) {
+            const punkt = neuerPunkt(L, Object.assign({}, ort, { lat: lage.lat, lon: lage.lng }));
+            punkt.bindPopup(() => popupInhalt(ort), { maxHeight: 320 });
+            punkt.on('popupopen', () => { offen = ort; });
+            punkt.on('popupclose', () => {
+                if (!zeichnet && offen === ort) {
+                    offen = null;
                 }
+            });
+            if (mitLinie) {
+                L.polyline([[ort.lat, ort.lon], lage], { className: 'karte-faecher-linie', interactive: false }).addTo(ebene);
+            }
+            punkt.addTo(ebene);
 
-                return inhalt;
-            }, { maxHeight: 320 });
-            punkt.addTo(karte);
-            grenzen.push([ort.lat, ort.lon]);
-            if (ort.fokus && fokus === null) {
-                fokus = { ort, punkt };
+            return punkt;
+        }
+
+        /** A group marker: the sum of its members, a click zooms to their extent. */
+        function gruppenMarker(mitglieder, lage) {
+            const punkt = neuerPunkt(L, {
+                lat: lage.lat,
+                lon: lage.lng,
+                anzahl: summeMitglieder(mitglieder),
+                titel: gruppenTitel(mitglieder.length, summeMitglieder(mitglieder)),
+                klasse: 'karte-punkt-gruppe',
+                gross: true,
+            });
+            punkt.on('click', () => {
+                karte.fitBounds(mitglieder.map((ort) => [ort.lat, ort.lon]), { padding: [48, 48], maxZoom: zoomMax });
+            });
+            punkt.addTo(ebene);
+        }
+
+        function zeichnen() {
+            const zoom = karte.getZoom();
+            zeichnet = true;
+            ebene.clearLayers();
+            let offenerPunkt = null;
+            const merken = (ort, punkt) => {
+                if (ort === offen) {
+                    offenerPunkt = punkt;
+                }
+            };
+
+            if (zoom >= faecherZoom) {
+                for (const haufen of stapel(orte)) {
+                    if (haufen.length === 1) {
+                        merken(haufen[0], ortMarker(haufen[0], L.latLng(haufen[0].lat, haufen[0].lon), false));
+                        continue;
+                    }
+                    const mitte = karte.project(L.latLng(haufen[0].lat, haufen[0].lon), zoom);
+                    const lagen = faecherPositionen(haufen.length);
+                    haufen.forEach((ort, i) => {
+                        const lage = karte.unproject(mitte.add(L.point(lagen[i][0], lagen[i][1])), zoom);
+                        merken(ort, ortMarker(ort, lage, true));
+                    });
+                    L.circleMarker([haufen[0].lat, haufen[0].lon], { radius: 3, className: 'karte-faecher-anker', interactive: false }).addTo(ebene);
+                }
+            } else {
+                const punkte = orte.map((ort) => {
+                    const pixel = karte.project(L.latLng(ort.lat, ort.lon), zoom);
+
+                    return { x: pixel.x, y: pixel.y, anzahl: ort.anzahl, ort };
+                });
+                for (const gruppe of gruppiere(punkte, GRUPPEN_RADIUS)) {
+                    if (gruppe.punkte.length === 1) {
+                        const ort = gruppe.punkte[0].ort;
+                        merken(ort, ortMarker(ort, L.latLng(ort.lat, ort.lon), false));
+                        continue;
+                    }
+                    gruppenMarker(gruppe.punkte.map((p) => p.ort), karte.unproject(L.point(gruppe.x, gruppe.y), zoom));
+                }
+            }
+            zeichnet = false;
+            if (offenerPunkt !== null) {
+                offenerPunkt.openPopup();
             }
         }
 
-        if (fokus !== null) {
-            karte.setView([fokus.ort.lat, fokus.ort.lon], Math.min(STRASSE_ZOOM, zoomMax));
-            fokus.punkt.openPopup();
+        karte.on('zoomend', zeichnen);
+        if (fokusOrt !== null) {
+            karte.setView([fokusOrt.lat, fokusOrt.lon], faecherZoom);
         } else if (grenzen.length === 1) {
             karte.setView(grenzen[0], Math.min(15, zoomMax));
         } else {
             karte.fitBounds(grenzen, { padding: [24, 24], maxZoom: Math.min(16, zoomMax) });
         }
+        zeichnen();
     }
 
     /**
@@ -284,8 +431,8 @@
 
     /** A marker: a coin with the number of members, named by the address. */
     function neuerPunkt(L, ort, mehr) {
-        const groesse = punktGroesse(ort.anzahl);
-        const titel = punktTitel(ort.anschrift, ort.anzahl, ort.genauigkeit);
+        const groesse = ort.gross ? 40 : punktGroesse(ort.anzahl);
+        const titel = ort.titel || punktTitel(ort.anschrift, ort.anzahl, ort.genauigkeit);
         // The number as a text node - never markup built from data.
         const zahl = document.createElement('span');
         zahl.textContent = punktText(ort.anzahl);
@@ -297,7 +444,7 @@
             icon: L.divIcon({
                 // An approximate dot is drawn hollow (issue #108); the
                 // title says it in words as well.
-                className: 'karte-punkt' + (ort.anzahl > 1 ? ' karte-punkt-mehr' : '') + (ort.genauigkeit === 'ungefaehr' ? ' karte-punkt-ungefaehr' : ''),
+                className: 'karte-punkt' + (ort.anzahl > 1 ? ' karte-punkt-mehr' : '') + (ort.klasse ? ' ' + ort.klasse : '') + (ort.genauigkeit === 'ungefaehr' ? ' karte-punkt-ungefaehr' : ''),
                 html: zahl,
                 iconSize: [groesse, groesse],
             }),
@@ -525,6 +672,6 @@
 
     // Node (tests/js) loads the same file for the pure helpers above.
     if (typeof module === 'object' && module.exports) {
-        module.exports = { punktText, punktGroesse, punktTitel, orteAus, zusammenfassen, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter };
+        module.exports = { gruppiere, stapel, faecherPositionen, summeMitglieder, gruppenTitel, punktText, punktGroesse, punktTitel, orteAus, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter };
     }
 })();

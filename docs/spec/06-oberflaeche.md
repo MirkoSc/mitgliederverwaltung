@@ -26,13 +26,13 @@ eigenständig nach dem Skill `frontend-design` gestaltet.
 
 ## 2. Seitenaufbau (Vorschlag)
 
-Sieben Bereiche in der Hauptnavigation, mehr nicht („Karte" kam mit #91,
-„Familien" mit #92 dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
+Sieben Bereiche in der Hauptnavigation (Punkte 1–7), dazu das Benutzermenü (Punkt 8), mehr nicht („Karte" kam mit #91,
+„Familien" mit #92, „Statistik" mit #127 dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
 umgeschaltet statt verlinkt.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Mitglieder  Familien  Listen  Karte  Beiträge*  Einstellungen*  [Ben.]│
+│ Mitglieder Familien Listen Karte Statistik Beiträge* Einstellungen*  │
 └──────────────────────────────────────────────────────────────────────┘
 * nur Admin
 ```
@@ -41,7 +41,10 @@ umgeschaltet statt verlinkt.
    - Suchfeld (Name, Anschrift, Kontakt, IBAN, Geburtsdatum …, 07 §8)
      mit Live-Ergebnis und einer Beschreibung, wonach gesucht wird
      (`aria-describedby`), darunter die Liste; einfache Filter
-     (Abteilung, aktiv/passiv, Beitragsart, Ehemalige anzeigen). „Je
+     (Abteilung, aktiv/passiv, Beitragsart, Ehemalige anzeigen) und der
+     aufklappbaren **Erweiterten Suche** (ein Feld je Spalte, alle UND,
+     07 §8; Handy: Felder untereinander, PC: Raster; von–bis als
+     `fieldset/legend`). „Je
      Seite" (50, 100, 200, Alle) steht in der Blätterleiste unter der Liste.
    - Klick auf ein Mitglied öffnet es **auf derselben Seite** (am PC
      rechts neben der Liste, am Handy als eigene Ansicht mit „Zurück").
@@ -95,6 +98,16 @@ umgeschaltet statt verlinkt.
    Seite ohne Karte und im Barrierefrei-Modus vollständig nutzbar.
    Hinweis „© OpenStreetMap-Mitwirkende" auf der Karte. Keine Änderung an
    der Datenschutzerklärung (mit Mirko abgestimmt).
+   Gruppierung nach Zoomstufe (#127, eigene Umsetzung in `karte.js`, keine
+   Cluster-Bibliothek): Anschriften, die auf dem Bildschirm näher als etwa
+   40 px beieinander liegen, sind ein größerer Gruppen-Marker mit der Summe
+   der Mitglieder; Klick zoomt auf deren Ausdehnung, bis die Gruppe zerfällt.
+   Ab Zoom 17 wird nicht mehr gruppiert; Anschriften mit denselben
+   Koordinaten (fünf Nachkommastellen, z. B. Straßenmitte) werden in einem
+   Kreis bzw. einer Spirale um den echten Punkt **aufgefächert**, mit dünner
+   Linie zum Punkt, jeder einzeln anklickbar mit eigenem Popup. Neu
+   gezeichnet wird bei jedem `zoomend`. Die kleine Karte am Mitglied
+   (ein Marker) bleibt unverändert.
    Mit `?mitglied=<id>` (Link „Auf der großen Karte zeigen" am Mitglied,
    #106) zentriert die Karte dessen Anschrift und öffnet ihren Marker; die
    Links unter „Nicht gefundene Anschriften" führen direkt in den Reiter
@@ -112,11 +125,18 @@ umgeschaltet statt verlinkt.
    Häkchen; danach läuft dieselbe Schrittkette wie beim Knopf
    (`POST /app/karte/neu-ermitteln`, `admin.system`, ohne Skript zurück auf
    die Seite mit Meldung, der Cron sucht weiter).
-5. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
+5. **Statistik** (#127, alle Rollen, `listen.sehen`) – Reiter
+   „Mitglieder" (Anzahlen: Kennzahlen, Altersgruppen, Wohnorte, Abteilungen,
+   Familien, Mitgliedsdauer, Ein- und Austritte) und, nur für den Admin
+   (`beitraege.verwalten`), „Beiträge" (Geld je Jahr; die frühere
+   „Verteilung der Beiträge"). Je Auswertung ein Diagramm (Chart.js,
+   vendored) über der aufklappbaren Tabelle mit denselben Zahlen; ohne JS
+   und im Barrierefrei-Modus nur die Tabellen. Details 09 §7.
+6. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
    „bezahlt setzen".
-6. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
+7. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
    (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
    Systemcheck – übernommen). Links (PC) bzw. oben (Handy, waagerecht
@@ -125,12 +145,28 @@ umgeschaltet statt verlinkt.
    haben `tabindex="-1"` und bekommen nach dem Klick den Fokus).
    `public/js/inhaltsverzeichnis.js` markiert den aktuellen Abschnitt mit
    `aria-current="true"`.
-7. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
+8. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
    **Barrierefrei-Modus an/aus**, **Hilfe** (bebilderte Anleitungen, 12;
    kein eigener Bereich der Hauptnavigation), Abmelden.
 
 Was die Rolle nicht darf, wird nicht angezeigt **und** serverseitig
 abgelehnt (02 §6).
+
+**Kopfleiste beim Scrollen:** Der Kopf (Logo, Benutzermenü,
+Hauptnavigation) klebt oben (`position: sticky`). Am PC (ab 48rem) ist er
+immer sichtbar. Am Handy (unter 48rem) gleitet er beim Runterscrollen weg,
+sobald die Seite um mehr als seine Höhe gescrollt ist, und kommt beim
+kleinsten Hochscrollen sofort zurück; nie weg, solange das Benutzermenü
+offen ist oder der Fokus im Kopf liegt. Im Barrierefrei-Modus und bei
+`prefers-reduced-motion` bleibt er immer stehen, ohne Animation (das CSS
+sichert das auch ohne Skript). `public/js/kopfleiste.js` setzt dafür die
+Klasse `kopf-versteckt` am `<html>` (Entscheidung in `sollVerstecken()`,
+getestet in `tests/js/kopfleiste.test.js`) und misst die Kopfhöhe per
+`ResizeObserver` in die CSS-Variable `--kopf-hoehe` (CSSOM). Alles, was
+oben klebt (`geteilt-detail`, `verzeichnis`) oder angesprungen wird
+(`scroll-margin-top` für Anker, Abschnitte, fokussierte Felder), rechnet
+mit `--kopf-versatz` (Kopfhöhe, 0 solange er weg ist). Beim Drucken klebt
+der Kopf nicht.
 
 ## 3. Muster
 
@@ -276,6 +312,27 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
   zurück (mit Suche, Filter und Seite). Das gilt überall, wo der Baustein
   eingebettet ist (Mitglieder, Listen, Familien).
 
+## 6. Installierbare App (PWA)
+
+Die Anwendung lässt sich am Handy und PC als App installieren („Zum
+Startbildschirm hinzufügen"), sonst ändert sich nichts:
+
+- **Manifest** `GET /manifest.webmanifest` (öffentlich, `no-cache`,
+  `App\PublicPages\ManifestController`): `name` = Vereinsname, `short_name`
+  = Kurzname (auf 15 Zeichen gekürzt), ohne Vereinsdaten
+  „Mitgliederverwaltung"/„Mitglieder"; `id` und `start_url` `/app`,
+  `scope` `/`, `display` `standalone`, Farben des Designsystems (hell).
+  Icons aus dem Vereinslogo (`/logo/icon192`, `/logo/icon512`,
+  `/logo/maskable`, 11 §2), ohne Logo `public/icon.svg`. Jede Seite
+  (auch die Anmeldung) verlinkt es und setzt `<meta name="theme-color">`.
+- **Service Worker** `public/sw.js` (Scope `/`, `Cache-Control: no-cache`),
+  registriert von `public/js/pwa.js` nur im sicheren Kontext (HTTPS,
+  localhost). Er speichert **nichts** und beantwortet keine Anfrage
+  selbst (02 §7) – kein Offline-Betrieb.
+- Wartungsmodus: Manifest und Service Worker sind nicht freigeschaltet und
+  bekommen während eines Updates die 503-Seite; der Browser behält dann
+  den bisherigen Worker. Shim und `index.php` bleiben unverändert.
+
 ## Pflicht-Tests
 
 `CspComplianceTest` (kein Inline-JS, kein `hx-on`), Routen-Zugriffsmatrix
@@ -287,5 +344,8 @@ Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite
 `zurueck` fällt auf die Mitglieder-Seite zurück; Fokus) –
 `MitgliedAnsichtTest`, `EinbettungTest`; Familien-Seite (#92) mit dem
 Mitglied an Stelle der Familie, „Zurück zur Familie", Fokus –
-`FamilienSeiteTest`; manuelle Prüfliste
+`FamilienSeiteTest`; installierbare App (Manifest öffentlich mit
+Vereinsname und Logo-Icons, `sw.js` mit `no-cache`, ohne Cache) –
+`PwaTest`, `tests/js/pwa.test.js`; Kopfleiste – `tests/js/kopfleiste.test.js`;
+manuelle Prüfliste
 je UI-PR: 360 px Handy, PC, PC im Barrierefrei-Modus (nur Tastatur).

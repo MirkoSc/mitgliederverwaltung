@@ -12,6 +12,8 @@ use App\Domain\MitgliedVersion;
 use App\Domain\SpeicherErgebnis;
 use App\Domain\VersionsAnlass;
 use App\Domain\Zahlart;
+use App\Support\Bic;
+use App\Support\Datum;
 use App\Support\Iban;
 
 /**
@@ -29,7 +31,7 @@ final readonly class MitgliedRepository
 {
     /** The member columns in the order speichern() writes them. */
     private const array SPALTEN = [
-        'mitgliedsnummer', 'anrede', 'titel', 'vorname', 'nachname', 'namenszusatz', 'geschlecht',
+        'mitgliedsnummer', 'titel', 'vorname', 'nachname', 'namenszusatz', 'geschlecht',
         'geburtsdatum', 'strasse', 'plz', 'ort', 'land', 'telefon', 'handy', 'email', 'eintrittsdatum',
         'austrittsdatum', 'austrittsgrund', 'aktiv', 'beitragsart_id', 'zahlart', 'iban', 'bic',
         'kontoinhaber', 'mandatsreferenz', 'mandatsdatum', 'familie_id', 'familie_rolle', 'lizenznummer',
@@ -56,7 +58,7 @@ final readonly class MitgliedRepository
         return (int) $this->pdo->query('SELECT COUNT(*) FROM mitglied')->fetchColumn();
     }
 
-    /** Member number for a new member: the highest + 1 (07 section 1). */
+    /** Member number for a new member: the highest + 1 (07 section 1). Given out by speichern(). */
     public function naechsteNummer(): int
     {
         return (int) $this->pdo->query('SELECT COALESCE(MAX(mitgliedsnummer), 0) + 1 FROM mitglied')->fetchColumn();
@@ -83,8 +85,9 @@ final readonly class MitgliedRepository
             array_push($werte, ...array_fill(0, 5, '%' . addcslashes($wort, '%_\\') . '%'));
         }
         if (!$mitEhemaligen) {
-            $bedingungen[] = '(austrittsdatum IS NULL OR austrittsdatum > ?)';
-            $werte[] = Zeilen::fuerDatum($stichtag ?? new \DateTimeImmutable());
+            [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('', $stichtag ?? Datum::heute());
+            $bedingungen[] = $nichtAusgetreten;
+            $werte[] = $tag;
         }
 
         return $this->mehrere(
@@ -103,6 +106,31 @@ final readonly class MitgliedRepository
     public function alle(bool $mitEhemaligen = false, ?\DateTimeImmutable $stichtag = null): array
     {
         return $this->suche('', $mitEhemaligen, $stichtag, PHP_INT_MAX);
+    }
+
+    /**
+     * The members with these ids by id, their rows locked until the
+     * transaction ends (call inside one) - in id order, so two callers
+     * never wait for each other crosswise. For the direct debit (08
+     * section 3) and a deletion by the reconciliation (10 section 4): a
+     * member saved meanwhile waits, aendern() locks the row first.
+     *
+     * @param list<int> $ids
+     * @return array<int, Mitglied>
+     */
+    public function mitIdsZumAendern(array $ids): array
+    {
+        $ids = array_values(array_unique($ids));
+        sort($ids);
+        $gefunden = [];
+        foreach (array_chunk($ids, 1000) as $teil) {
+            $sql = 'SELECT * FROM mitglied WHERE id IN (' . Zeilen::platzhalter(count($teil)) . ') ORDER BY id FOR UPDATE';
+            foreach ($this->mehrere($sql, $teil) as $mitglied) {
+                $gefunden[(int) $mitglied->id] = $mitglied;
+            }
+        }
+
+        return $gefunden;
     }
 
     /**
@@ -140,24 +168,40 @@ final readonly class MitgliedRepository
     ): SpeicherErgebnis {
         $mitglied = $mitglied->mit([
             'iban' => Iban::normalisieren($mitglied->iban),
-            'bic' => strtoupper((string) preg_replace('/\s+/u', '', $mitglied->bic)),
+            'bic' => Bic::normalisieren($mitglied->bic),
         ]);
         $zeit = Zeilen::fuerZeitpunkt($jetzt);
 
-        try {
-            return Zeilen::transaktion(
-                $this->pdo,
-                fn(): SpeicherErgebnis => $mitglied->id === null
-                    ? $this->einfuegen($mitglied, $anlass, $userId, $zeit)
-                    : $this->aendern($mitglied, $anlass, $userId, $zeit),
-            );
-        } catch (\PDOException $fehler) {
-            // Two saves racing for the same number: the unique key decides.
-            if (($fehler->errorInfo[1] ?? null) === 1062 && str_contains($fehler->getMessage(), 'uq_mitglied_nummer')) {
-                throw new MitgliedsnummerVergebenException($mitglied->mitgliedsnummer);
-            }
+        // A new member without a number (0) gets the highest + 1 here; two
+        // saves racing for it are told apart by the unique key, the loser
+        // simply asks again (07 section 1).
+        $automatisch = $mitglied->id === null && $mitglied->mitgliedsnummer < 1;
+        for ($versuch = 1;; $versuch++) {
+            try {
+                return Zeilen::transaktion(
+                    $this->pdo,
+                    function () use ($mitglied, $automatisch, $anlass, $userId, $zeit): SpeicherErgebnis {
+                        if ($automatisch) {
+                            $mitglied = $mitglied->mit(['mitgliedsnummer' => $this->naechsteNummer()]);
+                        }
 
-            throw $fehler;
+                        return $mitglied->id === null
+                            ? $this->einfuegen($mitglied, $anlass, $userId, $zeit)
+                            : $this->aendern($mitglied, $anlass, $userId, $zeit);
+                    },
+                );
+            } catch (\PDOException $fehler) {
+                // Two saves racing for the same number: the unique key decides.
+                if (($fehler->errorInfo[1] ?? null) === 1062 && str_contains($fehler->getMessage(), 'uq_mitglied_nummer')) {
+                    if ($automatisch && $versuch < 5) {
+                        continue;
+                    }
+
+                    throw new MitgliedsnummerVergebenException($mitglied->mitgliedsnummer);
+                }
+
+                throw $fehler;
+            }
         }
     }
 
@@ -165,7 +209,7 @@ final readonly class MitgliedRepository
      * "Zurückholen" (07 section 7): takes the values of version $nr as a NEW
      * version at the end; the old versions stay untouched. What no longer
      * exists - the family, the fee type, a department or function - stays
-     * empty, and so does the member number when another member has it now;
+     * empty; the member number always stays the current one;
      * each such case is reported in SpeicherErgebnis::$hinweise.
      *
      * @throws \OutOfBoundsException member or version not found
@@ -204,16 +248,8 @@ final readonly class MitgliedRepository
                 $alt = $alt->mit(['funktionIds' => $funktionen]);
                 $hinweise[] = 'Nicht mehr vorhandene Funktionen wurden weggelassen.';
             }
-            if ($alt->mitgliedsnummer !== $aktuell->mitgliedsnummer) {
-                $andere = $this->findeNachNummer($alt->mitgliedsnummer);
-                if ($andere !== null && $andere->id !== $mitgliedId) {
-                    $alt = $alt->mit(['mitgliedsnummer' => $aktuell->mitgliedsnummer]);
-                    $hinweise[] = sprintf(
-                        'Die Mitgliedsnummer %d hat inzwischen ein anderes Mitglied; die aktuelle Nummer bleibt.',
-                        $version->daten['mitgliedsnummer'] ?? 0,
-                    );
-                }
-            }
+            // The member number never changes (07 section 1).
+            $alt = $alt->mit(['mitgliedsnummer' => $aktuell->mitgliedsnummer]);
 
             $ergebnis = $this->speichern($alt, VersionsAnlass::wiederhergestellt($nr), $userId, $jetzt);
 
@@ -537,7 +573,7 @@ final readonly class MitgliedRepository
     private static function werte(Mitglied $m): array
     {
         return [
-            $m->mitgliedsnummer, $m->anrede, $m->titel, $m->vorname, $m->nachname, $m->namenszusatz,
+            $m->mitgliedsnummer, $m->titel, $m->vorname, $m->nachname, $m->namenszusatz,
             $m->geschlecht?->value, Zeilen::fuerDatum($m->geburtsdatum), $m->strasse, $m->plz, $m->ort, $m->land,
             $m->telefon, $m->handy, $m->email, Zeilen::fuerDatum($m->eintrittsdatum),
             Zeilen::fuerDatum($m->austrittsdatum), $m->austrittsgrund, (int) $m->aktiv, $m->beitragsartId,
@@ -558,7 +594,6 @@ final readonly class MitgliedRepository
             mitgliedsnummer: (int) $z['mitgliedsnummer'],
             nachname: (string) $z['nachname'],
             vorname: (string) $z['vorname'],
-            anrede: (string) $z['anrede'],
             titel: (string) $z['titel'],
             namenszusatz: (string) $z['namenszusatz'],
             geschlecht: $z['geschlecht'] === null ? null : Geschlecht::tryFrom((string) $z['geschlecht']),

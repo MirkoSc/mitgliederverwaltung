@@ -44,7 +44,7 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
             <p>Es gibt noch keine Mitglieder.</p>
         <?php else: ?>
             <p>Kein Mitglied passt zu dieser Suche. Prüfen Sie die Schreibweise oder lockern Sie die Filter.</p>
-            <?php if (!$filter->mitEhemaligen): ?>
+            <?php if (!$filter->zeigtEhemalige()): ?>
                 <p class="klein">Ehemalige Mitglieder sind ausgeblendet. Mit „Ehemalige anzeigen“ erscheinen sie in der Liste.</p>
             <?php endif; ?>
         <?php endif; ?>
@@ -52,7 +52,7 @@ $kopf = static function (MitgliederSortierung $spalte, string $titel, string $kl
 <?php else: ?>
     <div class="tabelle-rahmen">
         <table class="liste">
-            <caption><?= e($ergebnis->gesamt === 1 ? '1 Mitglied' : $ergebnis->gesamt . ' Mitglieder') ?><?= $filter->mitEhemaligen ? '' : ' (ohne Ehemalige)' ?>, sortiert nach <?= e($filter->sortierung->bezeichnung()) ?><?= $filter->absteigend ? ', absteigend' : '' ?></caption>
+            <caption><?= e($ergebnis->gesamt === 1 ? '1 Mitglied' : $ergebnis->gesamt . ' Mitglieder') ?><?= $filter->zeigtEhemalige() ? '' : ' (ohne Ehemalige)' ?>, sortiert nach <?= e($filter->sortierung->bezeichnung()) ?><?= $filter->absteigend ? ', absteigend' : '' ?></caption>
             <thead>
                 <tr>
                     <?= $kopf(MitgliederSortierung::Name, 'Name') ?>

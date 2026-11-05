@@ -344,7 +344,7 @@ final class MitgliederSeiteTest extends AppTestCase
         self::assertStringContainsString('Anschrift des Zahlers (Max Mustermann):', $daten);
         self::assertStringContainsString('Hauptstraße 5', $daten);
         self::assertStringContainsString('54321 Zahlerdorf', $daten);
-        self::assertMatchesRegularExpression('#data-anschrift-uebernehmen\s+data-strasse="Hauptstraße 5" data-plz="54321"\s+data-ort="Zahlerdorf" data-land="D"#', $daten);
+        self::assertMatchesRegularExpression('#data-anschrift-uebernehmen\s+data-strasse="Hauptstraße 5" data-plz="54321"\s+data-ort="Zahlerdorf" data-land="Deutschland"#', $daten);
         self::assertStringContainsString('src="/js/anschrift.js', $daten);
         self::assertSame('Nebenweg 2', $repo->finde((int) $kind->id)?->strasse, 'nothing is saved by showing it');
 
@@ -451,5 +451,58 @@ final class MitgliederSeiteTest extends AppTestCase
         self::assertStringContainsString('Muster, Tom</a> <span class="klein gedaempft">über Familie Muster</span>', $antwort->body);
         self::assertSame(1, substr_count($antwort->body, 'über Familie Muster'), 'the payer is not marked');
         self::assertStringContainsString('2 Mitglieder gefunden.', $antwort->body);
+    }
+
+    public function testTheExtendedSearchIsADetailsElementOpenOnlyWhenAFieldIsFilled(): void
+    {
+        $this->als(Rolle::Vorstand);
+
+        $zu = $this->get('/app/mitglieder')->body;
+        self::assertStringContainsString('<details class="suche-erweitert" id="suche-erweitert">', $zu);
+        self::assertStringContainsString('<summary>Erweiterte Suche</summary>', $zu);
+        self::assertStringContainsString('<legend>Alter (heute)</legend>', $zu);
+        self::assertStringContainsString('<legend>Austritt</legend>', $zu);
+        self::assertStringContainsString('for="erweitert-nachname"', $zu);
+
+        $offen = $this->htmx(['nachname' => 'Muster'], 'mitglieder-bereich')->body;
+        self::assertStringContainsString('<details class="suche-erweitert" id="suche-erweitert" open>', $offen);
+        self::assertStringContainsString('id="erweitert-nachname" name="nachname" type="text" value="Muster"', $offen);
+    }
+
+    /** CLAUDE.md section 4: the personal fields of the extended search never reach an address. */
+    public function testTheExtendedSearchWorksThroughThePostAndLeavesNoNameInAnAddress(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $felder = [
+            'nachname' => 'Mustermann', 'strasse' => 'Beispielweg', 'geburt_von' => '1970-01-01', 'alter_von' => '0',
+            'geschlecht' => '', 'ehemalige' => '0',
+        ];
+
+        foreach (['mitglieder-ergebnis', 'mitglieder-bereich'] as $ziel) {
+            $antwort = $this->htmx($felder, $ziel);
+            self::assertStringNotContainsString('Beispiel, Karl', $antwort->body);
+            preg_match_all('/(?:href|hx-post|action)="([^"]*)"/', $antwort->body, $adressen);
+            foreach ($adressen[1] as $adresse) {
+                foreach (['Mustermann', 'Beispielweg', 'nachname', 'strasse', 'geburt_von', '1970', 'alter_von'] as $teil) {
+                    self::assertStringNotContainsString($teil, $adresse);
+                }
+            }
+            foreach (array_keys($antwort->headers) as $name) {
+                self::assertNotContains(strtolower((string) $name), ['location', 'hx-push-url', 'hx-replace-url', 'hx-location', 'hx-redirect']);
+            }
+        }
+        $ergebnis = $this->htmx(['nachname' => 'Mustermann', 'strasse' => 'Beispielweg', 'ehemalige' => '0'], 'mitglieder-ergebnis');
+        self::assertStringContainsString('Mustermann, Erika', $ergebnis->body);
+        self::assertStringContainsString('1 Mitglied gefunden.', $ergebnis->body);
+    }
+
+    public function testAChoiceOfTheExtendedSearchNarrowsTheList(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $antwort = $this->htmx(['zahlart' => 'selbst', 'ehemalige' => '0'], 'mitglieder-ergebnis');
+
+        self::assertStringContainsString('Kein Mitglied passt', $antwort->body);
+        $alle = $this->htmx(['zahlart' => 'lastschrift', 'ehemalige' => '0'], 'mitglieder-ergebnis');
+        self::assertStringContainsString('Mustermann, Erika', $alle->body);
     }
 }

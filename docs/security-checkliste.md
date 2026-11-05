@@ -95,7 +95,7 @@ echten Daten installiert, das Repository öffentlich.
 |---|---|---|---|
 | C-01 | Jede Route deklariert `Zugriff` (Pflichtargument), und der Guard entsteht aus derselben Deklaration | ✓ | `Http/Router::add()`, `Http/Routen::add()` (Reihenfolge Ersatz → Cron-Token → CSRF → LoginGuard außen), `LoginGuard::pruefe()/darf()` |
 | C-02 | Alle Deklarationen sind geprüft und festgeschrieben | ✓ | `tests/Http/routen-zugriff/*.txt`, `RoutenZugriffTest::testEveryRouteDeclarationIsReviewed`. Der Test setzt den Ersatz-Handler hinter den echten Guard. |
-| C-03 | Öffentlich sind nur `/`, `/anmelden…`, `/abmelden`, `/impressum`, `/datenschutz`, `/logo/{groesse}` (11), dazu `/cron` per Token | ✓ | `RoutenZugriffTest::testOnlyTheWayInAndTheLegalPagesArePublic`/`…OnlyTheCronIsDeclaredCron`. `Routen::cronToken()` vergleicht mit `hash_equals`. `/logo` prüft die Größe gegen eine Whitelist (`LogoController::anzeigen`). |
+| C-03 | Öffentlich sind nur `/`, `/anmelden…`, `/abmelden`, `/impressum`, `/datenschutz`, `/logo/{groesse}` (11), `/manifest.webmanifest` (06 §6, nur Vereinsname + Logo-URLs), dazu `/cron` per Token | ✓ | `RoutenZugriffTest::testOnlyTheWayInAndTheLegalPagesArePublic`/`…OnlyTheCronIsDeclaredCron`. `Routen::cronToken()` vergleicht mit `hash_equals`. `/logo` prüft die Größe gegen eine Whitelist (`LogoController::anzeigen`). |
 | C-04 | Der Installer ist nur erreichbar, solange `config.php` fehlt | ✓ | `bootstrap.php`/`Anwendung::installation()`: getrennter Kernel. Die Freigabe ist an die Session gebunden (`InstallToken::isReleased()`), jeder POST hat CSRF. Einzelheiten gehören zum Bereich Installer. |
 | C-05 | Jede `/admin`-Route verlangt ein `admin.*`-Recht | ✓ | `RoutenZugriffTest::testEveryAdminRouteNeedsAnAdminRight`, `Permission::istAdmin()`. Auch der Wartungs-Bypass in `public/index.php` öffnet nur `/admin*` (Guard gilt weiter) und `/anmelden`. |
 | C-06 | Jede `/app`-Route verlangt eine Anmeldung, ohne eingerichteten 2. Faktor ist nur dessen Einrichtung erreichbar | ✓ | `RoutenZugriffTest::testEveryAppRouteNeedsALogin`, `LoginGuard::check()` (`istEinrichtung`) |
@@ -105,15 +105,16 @@ echten Daten installiert, das Repository öffentlich.
 | C-10 | htmx-Header (`HX-Target`, `HX-Request`) umgehen keine Prüfung | ✓ | `MitgliederController::seite()`: Der Header wählt nur das Fragment aus. Die Daten sind schon nach Konto gefiltert, alle drei Antworten zeigen dieselbe Menge. Auch das Fragment `SystemController::systemcheck` liegt hinter `admin.system`. |
 | C-11 | Liste „Selbst kassieren“ nur mit `beitraege.sehen` (Ansicht und Export; seit 30.10.2026 alle drei Rollen) | ✓ | `SelbstKassierenListe::recht()`. Ohne das Recht liefern `ListenController::anzeigen/exportieren` über `Listen::registry()->finde(…, $konto)` 404. `SelbstKassierenTest` |
 | C-12 | Beitragsspalten im Gesamtexport nur mit `beitraege.sehen`, auch beim Sortieren (seit 30.10.2026 alle drei Rollen; der Vorstand sieht IBAN und Mandat ohnehin je Mitglied, 02 §6) | ✓ | `AlleMitgliederListe::ergebnis()` (`$mitBeitrag` = `beitraege.sehen`). `ListenAnsicht::aus()` sortiert nur nach gelieferten Spalten. `GesamtexportBlsvTest` |
-| C-13 | Vorstand löscht keine Mitglieder und keine Nachweise, auf keinem Weg | ✓ | `mitglied.php`/`nachweise.php`: `mitglieder.loeschen`. Die anderen Löschwege (Abgleich „löschen“, „Bestand leeren“) verlangen `admin.import`. Familie/Verlauf löschen nichts außer einer leeren Familie. |
+| C-13 | Vorstand löscht keine Mitglieder und keine Nachweise, auf keinem Weg | ✓ | `mitglied.php`/`nachweise.php`: `mitglieder.loeschen`. Löschen eines Mitglieds (#127) nur, wenn es ehemalig ist, und nur mit eingetippter Mitgliedsnummer – beides serverseitig in `MitgliedController::loeschen()` geprüft (sonst 409 bzw. 422, nichts gelöscht; `MitgliedAustrittTest`). Austritt eintragen/zurücknehmen ist eine normale Änderung (`mitglieder.bearbeiten`, neue Version, Audit nur ID und Version). Die anderen Löschwege (Abgleich „löschen“, „Bestand leeren“) verlangen `admin.import`; der Abgleich löscht ebenfalls nur Ehemalige (→ C-17). Familie/Verlauf löschen nichts außer einer leeren Familie. |
 | C-14 | Vorstand und Nur lesen öffnen weder Einstellungen noch Benutzer, System, Import, Audit, Update, Backup oder Designsystem | ✓ | alle `admin.*`. `RoutenZugriffTest::testSpotChecksAgainstTheSpec`, `testNeitherBoardNorReadOnlyReachesAnyAdminRoute` (jede `/admin`-Route 403), `RolleTest::testOnlyTheAdminHoldsAdminRights` |
 | C-15 | IDOR Nachweis-Datei: nur über das eigene Mitglied erreichbar | ✓ | `NachweisController::datei()/loeschen()` prüfen `nachweis->mitgliedId === {id}`. Die Blob-ID kommt nur aus der Nachweis-Zeile, nie vom Client. |
 | C-16 | IDOR Lastschriftdatei: nur über den eigenen Einzug erreichbar | ✓ | `EinzugController::datei()` → `Einzuege::datei()` liest `einzug.datei_blob_id`, nie eine Blob-ID aus dem Request. |
 | C-16a | Mehrere bezahlt / Jahr löschen (#90): jede ID serverseitig geprüft, keine Blob-ID aus dem Request, Löschen nur mit Bestätigungswort | ✓ | `Jahresbeitraege::mehrereBezahltVonHand()` sperrt jede gewählte Zeile und bricht ab, wenn eine fehlt oder nicht offen ist (alles oder nichts). `BeitragsjahrLoeschen::loeschen()` prüft „LÖSCHEN“ serverseitig und liest Einzüge und Dateien aus der Datenbank. Audit `beitraege.bezahlt`, `beitraege.jahr_geloescht` (nur Zahlen und IDs). |
 | C-16b | Familien-Seite (#92): Änderungen nur mit `mitglieder.bearbeiten`, jede Person serverseitig gegen die Familie geprüft, kein Name in der URL | ✓ | `app/routes/familien.php` (Zugriffsmatrix `familien.txt`). `FamilienController::familieUndPerson()` nimmt eine Person nur, wenn sie in der Familie der Route ist; `FamilienPflege::anschriftUebernehmen()` ändert nur Personen dieser Familie, die Quelle muss dazugehören. Suchtexte (Familien- und Personennamen) reisen nur im POST-Body. Audit `familie.anschrift_uebernommen` mit IDs, ohne Anschrift. `FamilienSeiteTest` (403 für „Nur lesen“ auf jeder Änderung) |
-| C-17 | Import/Abgleich: keine Job-IDs vom Client | ✓ | `ImportController`: Es gibt je eine Kette (Singleton-Status), der Client schickt nur Mitgliedsnummern als Auswahl. |
+| C-16c | Einzug nie von ausgetretenen Mitgliedern (#127): erreichtes Austrittsdatum ⇒ nicht einziehbar, auch wenn zwischen Zusammenstellen und Erzeugen ausgetreten | ✓ | `Einzuege::kandidat()` prüft `istEhemalig()` als Erstes; `erzeugen()` prüft jede gewählte Zeile darüber erneut unter Sperre. Rücklastschrift und Verwerfen führen nur zurück auf `offen`, neu eingezogen wird nur über `erzeugen()`. `EinzuegeTest` |
+| C-17 | Import/Abgleich: keine Job-IDs vom Client; Löschen nur Ehemaliger | ✓ | `ImportController`: Es gibt je eine Kette (Singleton-Status), der Client schickt nur Mitgliedsnummern als Auswahl. `Abgleich::starten()` teilt neu ein und bindet jede Zeile an die dabei geprüfte Mitglieds-ID; „löschen“ für ein nicht ehemaliges Mitglied (auch per manipuliertem POST) lehnt den Start ab (#127). Der Schritt prüft auf der gesperrten Zeile erneut (ehemalig, keine Jahresbeiträge), sonst übersprungen. `AbgleichTest::testOnlyFormerMembersWithoutAnnualFeesCanBeDeletedTheOthersOnlyLeave`, `…LeavingWasTakenBackSinceTheStartIsSkipped` |
 | C-18 | Backup-Download: kein Pfad über `{name}` | ✓ | `BackupService::path()`: Regex `NAME` plus `is_file`. Ein Name mit angehängtem `\n` (Regex ohne `D`) findet keine Datei, als Härtung trotzdem `D` ergänzen. |
-| C-19 | Keine zustandsändernden GETs | ✓ | Alle GET-Handler gelesen. Lösch-GETs (`/loeschen`, `/admin/import/leeren`) zeigen nur die Rückfrage. `/cron` ist token-geschützt und mit Absicht ein GET. HEAD und unbekannte Methoden laufen als GET (`HttpMethod::fromString`) und sind damit harmlos. |
+| C-19 | Keine zustandsändernden GETs | ✓ | Alle GET-Handler gelesen. Lösch-GETs (`/loeschen`, auch `?schritt=2`, `/admin/import/leeren`) und `/austritt`, `/austritt-zuruecknehmen` zeigen nur die Rückfrage bzw. das Formular. `/cron` ist token-geschützt und mit Absicht ein GET. HEAD und unbekannte Methoden laufen als GET (`HttpMethod::fromString`) und sind damit harmlos. |
 | C-20 | CSRF auf jeder POST-Route, zentral, auch für htmx, JSON-Ketten und Uploads | ✓ | `CsrfSchutz::noetig()` (jede Nicht-GET-Methode außer Cron), `Session::checkCsrf()` (Feld `_csrf` oder Header `X-CSRF-Token`, nie aus der Query, ein Array wird abgewiesen). Das Layout setzt `hx-headers`. Multipart (Nachweis, Logo, Import) trägt `_csrf`. `RoutenZugriffTest::testEveryWritingRouteWantsACsrfToken` |
 | C-21 | Kein Mass Assignment am Mitgliederformular | ✓ | `MitgliedFormular::gelesen()` liest eine feste Feldliste auf das gespeicherte Mitglied. `herkunft`, `familieId/Rolle`, `id` und Zeitstempel bleiben unverändert. `version` dient nur als optimistische Sperre (`MitgliedRepository` Z. 324–330). An Jahresbeiträge kommt das Formular nicht heran. „Wer/wann“ bei Nachweis, Ehrung und Vermerk setzt der Server. |
 | C-22 | Offene Weiterleitungen über `zurueck`/`weiter` | ✓ | `App\App\Mitglied\Einbettung::istSicher()` (#86; Pfad nur `/app` plus Segmente aus `[a-z0-9-]`, also kein `//`, kein `\`, kein `..`, kein Schema; Query nur `[A-Za-z0-9_=&%.+-]`) – genutzt von `Einbettung::ausAnfrage()` für alle Formulare eines geöffneten Mitglieds und von `BeitraegeController::sichereAdresse()`; ohne gültiges `zurueck` gilt die Mitglieder-Seite. `EinzugController::zurueck()` erlaubt nur den exakten eigenen Pfad. `AnmeldungController::weiter()` lässt nur Pfade zu, kein `//` und keinen `\`. `LoginGuard::weiter()` übernimmt nur den Pfad. `UpdateController` hat bewusst keinen Parameter. |
@@ -264,13 +265,13 @@ echten Daten installiert, das Repository öffentlich.
 | J-08 | Mails ohne Mitgliederdaten; Sicherheitsmails (neues Gerät, Passwort, 2FA, Backup-Codes) nur feste Sätze; Betreffzeilen fest; SMTP-Fehler nur mit Code | ✓ | `app/views/mail/*.php`, `Kontomails.php:32–40, 79–150`, `SmtpTransport.php` |
 | J-09 | Audit-Log ohne Mitgliederdaten (nur Mitgliedsnummer/IDs/Zähler), IP nur als HMAC | ✓ | `AuditLog::protokollieren()` Z. 56; alle 26 Aufrufe geprüft |
 | J-10 | Audit-Log deckt die Spec-Ereignisse ab (02 §8: Anmeldungen, Benutzer- und Rollenänderungen …) | ✓ (#37) | siehe A-23 |
-| J-11 | Mitgliedersuche: Suchtext nur im POST-Body, nie in URL/History (`hx-push-url` ohne Text) | ✓ | `MitgliederController` (`urlBauer()`, `formUrl()`), `MitgliederFilter::parameter()`, `mitglieder/bereich.php`, `bereich-link.php` |
+| J-11 | Mitgliedersuche: Suchtext und alle Textfelder der erweiterten Suche (#127: Namen, Straße, PLZ, Ort, E-Mail, Telefon, IBAN, Bemerkung, Mitgliedsnummer, Alters- und Datumsbereiche) nur im POST-Body, nie in URL/History (`hx-push-url` ohne Text); in der URL nur Auswahlwerte (IDs, Geschlecht, Zahlart, Familie) | ✓ | `MitgliederController` (`urlBauer()`, `formUrl()`), `MitgliederFilter::parameter()`, `ErweiterteSuche::parameter()`, `mitglieder/bereich.php`, `bereich-link.php` |
 | J-12 | Listen-Filter in der URL | ✓ (nur Auswahl/Jahr/Datum/Haken – `Listen/FilterArt.php`, kein Freitext) | `listen/liste.php:104` |
 | J-13 | Familiensuche `?q=` in `/app/mitglieder/{id}/familie` | ✓ (#37) | Familiensuche per POST mit CSRF (`app/routes/familie.php`), `q` nur aus dem Body |
 | J-14 | Download-Dateinamen ohne Personendaten | ✓ Listen-Exporte (`*::dateiname()`), pain.008 (`lastschrift-<jahr>-<id>.xml`); ✗ Nachweis-Dateien | **J-B03** |
 | J-15 | Seitentitel (Browser-History) ohne Namen | ✓ | „Mitglieder", „Mitglied bearbeiten" (`MitgliedController.php:188`) |
 | J-16 | Einmal-Tokens (Reset/Einladung) verlassen sofort die URL | ✓ | `AnmeldungController::tokenAusLink()` (Token in Session, 303 auf nackten Pfad) |
-| J-17 | Keine Mitgliederdaten in localStorage/sessionStorage/IndexedDB/Service Worker/Cache API | ✓ | grep über `public/js/*.js`: keine Treffer; kein Service Worker |
+| J-17 | Keine Mitgliederdaten in localStorage/sessionStorage/IndexedDB/Service Worker/Cache API | ✓ | grep über `public/js/*.js`: keine Treffer. Service Worker `public/sw.js` (PWA, #127) ohne Cache, ohne `fetch`-Handler, ohne Speicher – `tests/js/pwa.test.js`; ausgeliefert mit `no-cache` (`StaticFileHandler::NO_LONG_CACHE`, `PwaTest`) |
 | J-18 | htmx-History-Cache | ✓ | htmx 2.0.10 speichert Snapshots in `sessionStorage` („htmx-history-cache"); bei `historyCacheSize:0` löscht es den Schlüssel und speichert nichts (`zt()` in `htmx.min.js`). Back-Navigation lädt per `HX-History-Restore-Request` neu, `MitgliederController::seite()` liefert dann die ganze Seite. Kein `hx-history`-Attribut nötig |
 | J-19 | Flash-Meldungen (liegen in der Session-Datei) ohne Mitgliederdaten | ✓ mit Ausnahme | Ausnahme Familienname, **J-B04** |
 | J-20 | `autocomplete` an sensiblen Feldern | ✓ | Mitgliederformular (`mitglied/formular.php:54`, IBAN Z. 174 `off`), Suche `off`, Passwörter `current-/new-password`, Codes `one-time-code` |
@@ -281,7 +282,9 @@ Geprüft beim Bau der Seite „Karte" (2026-10-30), Abschnitte C, E, I und J
 für die neuen Routen erneut durchgegangen; K-10 bis K-14 beim Wohnort am
 Mitglied (#106, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft;
 K-15 bis K-20 bei PLZ-Prüfung, Punkt von Hand und „Alle neu ermitteln"
-(#108, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft.
+(#108, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft;
+K-21 bis K-25 bei den Anschriftvorschlägen (#127, 2026-11-05) ergänzt,
+C, E, I und J dafür erneut geprüft.
 
 | ID | Prüfung | Ergebnis | Fundstelle |
 |---|---|---|---|
@@ -305,6 +308,11 @@ K-15 bis K-20 bei PLZ-Prüfung, Punkt von Hand und „Alle neu ermitteln"
 | K-18 | Audit ohne Anschrift und ohne Koordinaten | ✓ | `mitglied.karten_punkt_geaendert` nur Mitglieds-ID + `punkt` gesetzt/entfernt, `karte.neu_ermittelt` nur die Anzahl; `WohnortTest::testAPointSetByHandIsSavedShownAndAuditedWithoutCoordinates` |
 | K-19 | Ein Punkt von Hand löst keine Anfrage nach außen aus; die Startmitte der kleinen Karte kommt aus vorhandenen Daten | ✓ | `Kartenmitte`; `WohnortTest::testWithoutADotTheSmallMapOpensWhereOtherMembersOfThePostcodeLive` |
 | K-20 | Hinweise „Anschrift auf der Karte …" ohne Anschrift im Text; Liste lädt den Geo-Status mit einer Abfrage | ✓ | `Hinweise::fuer()`, `HinweisLader::fuerAlle()`; Link nur mit ID und Reiter |
+| K-21 | Anschriftvorschläge (#127): neue Route `POST /app/anschrift/vorschlaege` deklariert (`mitglieder.bearbeiten`, JSON), CSRF zentral (Token als Header und Feld), „Nur lesen" → 403, anonym → 401 | ✓ | `app/routes/anschrift.php`, `tests/Http/routen-zugriff/anschrift.txt`, `Feature\AnschriftvorschlaegeTest` |
+| K-22 | Kein SSRF zu Photon: URL fest (`Anschriftvorschlaege::URL`), Eingaben nur als URL-kodierte Query-Parameter (`q`, Bias `lat`/`lon` als Zahl), nur HTTPS, keine Weiterleitungen, Antwort auf 2 MB begrenzt (`CurlHttpAbruf`), JSON-Tiefe 16, Timeout 3 s | ✓ | `Anschriftvorschlaege::url()/auswerten()`, `CurlHttpAbruf`; `Service\Karte\AnschriftvorschlaegeTest` |
+| K-23 | Suchtext nie in URL, Log oder Audit; an Photon nur Straße/PLZ/Ort, nie Name oder Mitgliedsnummer; Fehler = leere Liste | ✓ | Text nur im POST-Body; `Anschriftvorschlaege` loggt nichts; `AnschriftvorschlaegeTest::testFailuresAndOddAnswersGiveAnEmptyList` |
+| K-24 | Kein Massenabruf bei Photon über die Route | ✓ | 60 Anfragen je Konto und Minute (`RateLimiter`, Tabelle `rate_limit`), Skript fragt erst ab 3 Zeichen nach 300 ms Pause; `AnschriftvorschlaegeTest::testSixtyRequestsAMinutePerAccount` |
+| K-25 | Vorschläge im Browser ohne HTML aus Daten, nichts gespeichert | ✓ | `anschrift-vorschlaege.js` setzt den Text per `textContent`, kein Speicher im Browser |
 
 ## L – Hilfe (#114)
 
@@ -319,6 +327,30 @@ für die neuen Routen erneut durchgegangen.
 | L-04 | `require` nur auf Dateien aus dem festen Verzeichnis `app/data/hilfe/` mit Namen `NN-slug.php`, in eigenem Scope | ✓ | `Anleitungen::alle()`/`::laden()` (vgl. E-18) |
 | L-05 | Texte escaped; Roh-HTML nur aus `Markdown::fett()` (erst escapen, dann nur `<strong>`), kein Link, kein `style=` | ✓ | `app/views/hilfe/anleitung.php`; `HilfeTest::testTheStepsAreAnOrderedListWithEscapedText`, `MarkdownTest::testBoldOnlyEscapesAndKeepsEverythingElsePlain` |
 | L-06 | Keine Mitgliederdaten auf den Seiten; Bilder sind statische Dateien unter `public/img/hilfe/` und zeigen nur Beispieldaten (Abnahme in #119) | ✓ | `StaticFileHandler` (C-27), 12 §4 Nr. 8, §9 |
+
+## M – Bankverbindung (#127)
+
+Geprüft beim Prüfen von IBAN/BIC im Formular (2026-11-05); Abschnitte C, E,
+I und J für die neue Route erneut durchgegangen.
+
+| ID | Prüfung | Ergebnis | Fundstelle |
+|---|---|---|---|
+| M-01 | Neue Route `GET /app/bank/{blz}` deklariert (`mitglieder.bearbeiten`, JSON), nur lesend; „Nur lesen" → 403 | ✓ | `app/routes/bank.php`, `tests/Http/routen-zugriff/bank.txt`, `BankverbindungTest::testOnlyWhoEditsMembersMayAsk` |
+| M-02 | Die IBAN verlässt das Formular nicht vor dem Speichern: die Prüfziffer rechnet der Browser, an den Server geht nur die Bankleitzahl (kennzeichnet eine Bank, kein Mitglied); nichts davon in Log oder Audit | ✓ | `public/js/bankverbindung.js` (`blz()`), `app/routes/bank.php` |
+| M-03 | Kein Pfad aus der Anfrage: die BLZ wird nur als Schlüssel im geladenen Array gesucht (`[1-9]\d{7}`), die Datendatei ist fest | ✓ | `Support/Banken::fuerBlz()`, `app/data/banken.php` |
+| M-04 | Bankname und BIC im HTML escaped, im Skript nur über `textContent`/`value` | ✓ | `app/views/mitglied/formular.php`, `daten-lesen.php`, `bankverbindung.js` |
+| M-05 | Antworten nur im Speicher der Seite, nichts in `localStorage` o. Ä. (§4) | ✓ | `bankverbindung.js` (`banken`) |
+
+## S – Statistik (#127)
+
+Geprüft beim Bau der Seite „Statistik" (2026-11-05); Abschnitte C, E, I
+und J für die neuen Routen erneut durchgegangen.
+
+| ID | Prüfung | Ergebnis | Fundstelle |
+|---|---|---|---|
+| S-01 | Neue Routen nur lesend und deklariert: `GET /app/statistik` (`listen.sehen`), `GET /app/statistik/beitraege` (`beitraege.verwalten`); die alte Adresse `/app/beitraege/verteilung` bleibt `beitraege.verwalten` und leitet nur auf einen festen Pfad weiter (kein offener Redirect, `jahr` nur als vierstellige Zahl) | ✓ | `app/routes/statistik.php`, `tests/Http/routen-zugriff/statistik.txt`, `StatistikSeiteTest` |
+| S-02 | Nur Anzahlen und Summen, keine Namen, keine Mitgliedsnummern; Ortsnamen und PLZ nur als Gruppen (Top 10, Rest „Sonstige") | ✓ | `StatistikSeiteTest` (kein Name im HTML) |
+| S-03 | Chart.js vendored mit Prüfsumme, nur auf dieser Seite geladen; kein `eval`, Stile nur per CSSOM, Daten aus der serverseitig escapten Tabelle (`data-wert` Zahlen, Beschriftung als `textContent`) – CSP unverändert | ✓ | `public/js/vendor/README.md`, `VendorAssetsTest`, `CspComplianceTest`, `public/js/statistik.js` |
 
 ## Befunde des Durchlaufs 2026-10-29
 

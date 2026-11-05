@@ -5,13 +5,13 @@ perfekt**, **Hinweise statt Sperren** (CLAUDE.md).
 
 ## 1. Mitglied
 
-Felder (alle optional außer Mitgliedsnummer und Nachname – auch hier
-gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
+Felder (alle optional außer dem Nachnamen; die Mitgliedsnummer vergibt der
+Server – auch hier gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 
 | Gruppe | Felder |
 |---|---|
-| Person | Mitgliedsnummer, Anrede, Titel, Vorname, Nachname, Namenszusatz, Geschlecht (`m`/`w`/`d`), Geburtsdatum |
-| Anschrift | Straße, PLZ, Ort, Land (Default `D`) |
+| Person | Mitgliedsnummer, Titel, Vorname, Nachname, Namenszusatz, Geschlecht (`m`/`w`/`d`), Geburtsdatum |
+| Anschrift | Straße, PLZ, Ort, Land. Gespeichert wird der ISO-3166-1-alpha-2-Code (Default `DE`), angezeigt der deutsche Name. Das Formularfeld ist ein Eingabefeld mit Vorschlagsliste aller Länder (Deutschland, Nachbarländer, Rest alphabetisch; Tippen filtert). Verstanden werden Name, ISO-Code, die alten Kfz-Kennzeichen (`D`, `A`, `CH`, `F` …) und einige Alpha-3-Codes (`DEU`, `AUT` …). Eine neu getippte unbekannte Eingabe meldet „Land nicht gefunden“ (Eingabeprüfung, sie passt nicht in die Spalte); ein schon gespeicherter unbekannter Wert (Altdaten, z. B. `CDN`) bleibt beim Speichern unverändert, angezeigt wird er roh, dazu der Hinweis „Land unbekannt“ (§6). Datenquelle `app/data/laender.php` (aus `i18n-iso-countries`, MIT; `tools/laender-erzeugen.mjs`), API `App\Support\Laender` (`Laender::STANDARD` = `DE` ist die einzige Quelle des Defaults). Migration 300 hat die alten Kfz-Kennzeichen (`D`, `A`, `F`, `UK` …) auf ISO umgestellt; alte Versionen mit `D` gelten als `DE`. Alpha-3-Codes wurden bewusst nicht umgestellt (sie werden beim nächsten Speichern des Mitglieds zu ISO). Die Geocode-Hashes (`geo_anschrift`, auch Punkte „von Hand“) bleiben gültig: `Anschrift::normalisiert()` hasht das Land so, wie es vor der Umstellung gespeichert war (`Laender::kennzeichenImHash()`: ein von Migration 300 erzeugter ISO-Code wird wieder zum Kennzeichen, `AT` → `A`, alles andere bleibt) |
 | Kontakt | Telefon, Handy, E-Mail |
 | Mitgliedschaft | Eintrittsdatum (oder „unbekannt"), Austrittsdatum, Austrittsgrund (Freitext, Auswahlvorschläge „Austritt", „verstorben"), aktiv/passiv (Häkchen), Abteilungen (0..n) |
 | Beitrag | Beitragsart (oder keine), Zahlart (`lastschrift`/`selbst`), IBAN, BIC (optional), Kontoinhaber falls abweichend, Mandatsreferenz, Mandatsdatum |
@@ -19,19 +19,58 @@ gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 | Funktionen | Häkchen je Funktion (§4), Übungsleiter-Lizenznummer |
 | Sonstiges | Bemerkung (Freitext, mehrzeilig) |
 
-- **Mitgliedsnummer**: ganze Zahl, eindeutig; neu = höchste + 1,
-  änderbar. Importierte Mitglieder behalten ihre alte `Adressnummer`.
+- **Mitgliedsnummer**: ganze Zahl, eindeutig; **automatisch, unveränderbar**
+  (Mirko, 05.11.2026): der Server vergibt beim ersten Speichern höchste + 1
+  (bei gleichzeitigem Anlegen erneut versuchen), das Formular zeigt sie nur
+  an (bei „Neu" die voraussichtliche) und kennt kein Feld dafür; eine
+  mitgeschickte Nummer wird ignoriert, auch beim Admin; Zurückholen einer
+  Version ändert sie nie. Wird die höchste Nummer gelöscht, wird sie wieder
+  vergeben. Importierte Mitglieder behalten ihre alte `Adressnummer`.
+- **Anrede entfällt** (Mirko, 05.11.2026): kein Feld in Formular, Anzeige,
+  Verlauf, Export und Import (die Spalte `anrede` in Importdateien wird
+  ignoriert, alte Versionen mit `anrede` im JSON ebenso). Die Spalte
+  `mitglied.anrede` bleibt bis zum nächsten Release stehen (Default `''`),
+  dann folgt `DROP COLUMN`.
 - **Ehemalige**: Austrittsdatum gesetzt und erreicht (berechnet, nicht
   gespeichert). In allen Listen standardmäßig ausgeblendet (Filter
-  „Ehemalige anzeigen"). Löschen nur durch den Admin, mit Rückfrage:
-  gelöscht werden Mitglied, Versionen, Nachweise und Jahresbeiträge;
-  bereits erzeugte Einzüge behalten ihre eigene Kopie (08 §4).
+  „Ehemalige anzeigen"). Von Ehemaligen wird nie eingezogen (08 §3).
+- **Austritt statt Löschen** (#127): Ein Mitglied, das geht, wird nicht
+  gelöscht, sondern bekommt ein Austrittsdatum. Knopf **„Mitglied
+  ausgetreten"** (Recht `mitglieder.bearbeiten`, solange kein
+  Austrittsdatum gesetzt ist) mit Austrittsdatum (vorbelegt heute) und
+  Austrittsgrund (Freitext mit den Vorschlägen). Liegt das Datum in der
+  Zukunft, zeigt das Mitglied „Austritt zum TT.MM.JJJJ vermerkt"; bis dahin
+  bleibt die Person Mitglied. **„Austritt zurücknehmen"** (gleiches Recht,
+  bei gesetztem Austrittsdatum, vermerkt oder ehemalig) leert nach kurzer
+  Rückfrage Datum und Grund. Beides ist ein normales Speichern: neue
+  Version, Versionskonflikt wie im Formular.
+- **Löschen** nur durch den Admin und **nur Ehemalige**, mit doppelter
+  Nachfrage: erst die Rückfrage in ganzen Sätzen („Weiter"), dann
+  „Endgültig löschen?" mit der eingetippten Mitgliedsnummer. Gelöscht
+  werden Mitglied, Versionen, Nachweise und Jahresbeiträge; bereits
+  erzeugte Einzüge behalten ihre eigene Kopie (08 §4).
 - **Mandatsreferenz**: Default = Mitgliedsnummer (Muster folgt E6 aus der
   Sammlung, vor dem ersten echten Einzug). **Mandatsdatum**: Default =
   Eintrittsdatum, sonst das Default-Mandatsdatum aus den Einstellungen.
 - IBAN wird beim Speichern normalisiert (Großbuchstaben, ohne
   Leerzeichen) und per Prüfziffer geprüft – falsch ⇒ Hinweis, gespeichert
   wird trotzdem.
+- IBAN/BIC live (#127): `public/js/bankverbindung.js` prüft die IBAN beim
+  Tippen und Verlassen (Länderlänge + Prüfziffer wie `App\Support\Iban`)
+  und umrahmt eine falsche rot (`aria-invalid`, Text darunter, `aria-live`);
+  nie gesperrt. Bei gültiger **deutscher** IBAN fragt das Skript mit der
+  Bankleitzahl (Stellen 5–12, nur sie – nie die IBAN) `GET /app/bank/{blz}`
+  (`mitglieder.bearbeiten`, JSON `{bank, bic}`), zeigt den Banknamen unter
+  der BIC und trägt die BIC ein, wenn das Feld leer ist (oder die BIC vom
+  Skript selbst für eine frühere IBAN stammt). Eine BIC mit falscher Form
+  (`App\Support\Bic`: 8 oder 11 Zeichen, Bank, Land, Ort, Filiale) oder eine,
+  die nicht zur Bank der IBAN passt (8 Zeichen = 11 mit `XXX`), wird rot
+  umrahmt. Ohne Skript zeigt das Formular nach dem Speichern dasselbe.
+  Beim Speichern ergänzt der Server eine **leere** BIC aus der Bank einer
+  gültigen deutschen IBAN (`Banken::bicErgaenzen()`); der Bankname wird nicht
+  gespeichert, sondern angezeigt (Formular, `daten-lesen`). Bankdaten:
+  `app/data/banken.php` aus der Bankleitzahlendatei der Bundesbank (05 §5,
+  `docs/betrieb.md` „Bankdaten aktualisieren“), `App\Support\Banken`.
 
 Umsetzung des Formulars (#19): Reiter **Daten** (`App\App\Mitglied\
 DatenReiter`, erster Reiter) zeigt alle Felder als ein Formular
@@ -40,17 +79,52 @@ dasselbe Formular unter `GET /app/mitglieder/neu`. Gespeichert wird per
 `POST /app/mitglieder/neu` bzw. `POST /app/mitglieder/{id}`
 (`App\App\MitgliedController`, Routen `app/routes/mitglied.php`), danach
 Weiterleitung auf `/app/mitglieder?mitglied={id}` mit dem Ergebnis als
-Meldung. Blockiert wird nur bei fehlender/unbrauchbarer Nummer, fehlendem
-Nachnamen, vergebener Nummer, einem unlesbaren Datum (`TT.MM.JJJJ` und
-`JJJJ-MM-TT` werden gelesen) und einer Versionskollision (das Formular
+Meldung. Blockiert wird nur bei fehlendem
+Nachnamen, einem unlesbaren Datum (`TT.MM.JJJJ` und
+`JJJJ-MM-TT` werden gelesen), einem neu getippten unbekannten Land und
+einer Versionskollision (das Formular
 kommt mit den eigenen Eingaben und der aktuellen Version zurück; erneutes
 Speichern gilt). Familie und Rolle sind keine Felder dieses Formulars, sie
 bleiben beim Speichern erhalten (§3). Abteilungen, Funktionen und
 Beitragsarten bietet das Formular an, wenn sie aktiv sind oder das Mitglied
-sie schon hat. Löschen (Admin): Rückfrage unter
-`GET /app/mitglieder/{id}/loeschen`, dann `POST` derselben Adresse; die
-Dateien der Nachweise werden mitgelöscht, das Audit-Log vermerkt
-`mitglied.geloescht` nur mit ID und Mitgliedsnummer.
+sie schon hat. Die Felder Austrittsdatum und Austrittsgrund bleiben im
+Formular: dort wird ein bestehender Austritt korrigiert.
+
+Austritt (#127): Unter dem Formular steht „Mitglied ausgetreten" bzw.
+„Austritt zurücknehmen", für Ehemalige beim Admin daneben „Mitglied
+löschen". „Mitglied ausgetreten" ist eine eigene Seite
+`GET /app/mitglieder/{id}/austritt` (kein Dialog – Rückfragen sind in
+dieser Anwendung Seiten, auch ohne Skript), gespeichert per `POST`
+derselben Adresse; „Austritt zurücknehmen" ebenso unter
+`/app/mitglieder/{id}/austritt-zuruecknehmen`. Beide mit
+`mitglieder.bearbeiten`, Rückweg über `zurueck` wie die übrigen Seiten des
+Mitglieds, Audit `mitglied.austritt` bzw.
+`mitglied.austritt_zurueckgenommen` nur mit ID und Versionsnummer.
+Löschen (Admin): Schritt 1 `GET /app/mitglieder/{id}/loeschen`, Schritt 2
+`…/loeschen?schritt=2` mit dem Pflichtfeld „Mitgliedsnummer zur Bestätigung
+eintippen", dann `POST /app/mitglieder/{id}/loeschen`. Der Server löscht
+nur, wenn das Mitglied ehemalig ist (sonst 409 mit Erklärung) und die
+Nummer stimmt (sonst 422, nichts gelöscht). Die Dateien der Nachweise
+werden mitgelöscht, das Audit-Log vermerkt `mitglied.geloescht` nur mit ID
+und Mitgliedsnummer. Der Abgleich des Imports hält dieselbe Regel ein
+(10 §4): ein in der Datei fehlendes Mitglied, das noch nicht ausgetreten
+ist, kann dort nur austreten; ganz löschen lassen sich nur Ehemalige ohne
+Jahresbeiträge – vom Server beim Start und beim Schritt erzwungen.
+
+**Anschriftvorschläge** (#127): Im Mitgliedsformular („Neues Mitglied"
+und Reiter Daten, nicht bei Familien) ist das Feld Straße eine Combobox nach
+WAI-ARIA (`public/js/anschrift-vorschlaege.js`): ab 3 Zeichen und 300 ms
+Tipp-Pause klappen unter dem Feld bis zu 5 Vorschläge auf (Maus, Finger
+oder Pfeiltasten/Eingabe/Escape). Eine Auswahl füllt Straße mit
+Hausnummer, PLZ, Ort und Land (der Name der Länderliste zum ISO-Code) – je
+nur, wenn der Vorschlag einen Wert dafür hat; gespeichert wird erst mit dem
+Formular. Die Liste zeigt das Land nur im Ausland, mit Namen. Als Bias geht
+die Mitte aller Punkte der Karte mit (`GeoAnschriftRepository::mitte()`,
+`AVG` in SQL). Gefragt wird per `POST /app/anschrift/vorschlaege` (Felder `strasse`,
+`plz`, `ort`; Recht `mitglieder.bearbeiten`, JSON, CSRF wie jeder POST,
+60 Anfragen je Konto und Minute, `App\App\AnschriftController`); der
+Server fragt Photon (01 §8). Ohne Skript bleibt es das normale Formular;
+im Barrierefrei-Modus funktioniert die Liste genauso (Tastatur).
 
 **Wohnort auf der Karte** (#106): Im Reiter **Daten** steht bei der
 Anschrift ein Block (`App\Service\Karte\Wohnort`, Template
@@ -198,9 +272,11 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 | Kind ist 18 | Rolle `kind`, Alter ≥ 18 |
 | Kein Beitrag | weder Beitragsart noch Familie, nicht ehemalig |
 | Lastschrift ohne gültige IBAN | Zahlart `lastschrift`, IBAN fehlt oder Prüfziffer falsch |
+| Lastschrift mit falscher BIC (#127) | Zahlart `lastschrift`, BIC eingetragen und falsche Form oder passt nicht zur Bank der (deutschen) IBAN |
 | Beitragsfrei ohne Grund | Regel `beitragsfrei`, Bemerkung leer |
 | Eintrittsdatum unbekannt | Eintrittsdatum fehlt |
 | Pflichtangaben für BLSV fehlen | Geschlecht oder Geburtsdatum fehlt |
+| Land unbekannt (#127) | gespeichertes Land ist kein bekanntes Land (Altdaten, z. B. `CDN`), nicht ehemalig |
 | Anschrift auf der Karte nicht gefunden (#108) | Anschrift auf der Karte „nicht gefunden", nicht ehemalig |
 | Anschrift auf der Karte nur ungefähr gefunden (#108) | Anschrift auf der Karte „ungefähr" (nur PLZ und Ort gefunden), nicht ehemalig |
 
@@ -239,8 +315,14 @@ Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
 - „Lastschrift ohne gültige IBAN" gilt nicht für Elternteil/Kind *ohne* eigene
   Beitragsart und *ohne* IBAN (sie zahlen über den Zahler); eine falsche IBAN
   wird immer gemeldet.
-- Ehemalige: nur „Kein Beitrag" nimmt sie aus; die übrigen Regeln gelten
-  unverändert.
+- „Lastschrift mit falscher BIC": eine leere BIC ist kein Hinweis (die Bank
+  findet sich über die IBAN); verglichen wird nur bei gültiger deutscher IBAN
+  und bekannter Bank, sonst nur die Form.
+- „Land unbekannt" (#127): `Laender::code()` kennt den gespeicherten Wert
+  nicht (leer gilt als Deutschland); `HinweisArt::reiter()` = `daten`. Der
+  Hinweis nennt nur den Ländercode, keine Personendaten.
+- Ehemalige: „Kein Beitrag", „Land unbekannt" und die Karten-Hinweise nehmen
+  sie aus; die übrigen Regeln gelten unverändert.
 
 ## 7. Versionen
 
@@ -273,7 +355,7 @@ SQL.
 
 | Tabelle | Spalten |
 |---|---|
-| `mitglied` | id, mitgliedsnummer UNIQUE, anrede, titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, herkunft (`import`/`manuell`), version, created_at, updated_at |
+| `mitglied` | id, mitgliedsnummer UNIQUE, (anrede – ungenutzt, entfällt im nächsten Release), titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, herkunft (`import`/`manuell`), version, created_at, updated_at |
 | `mitglied_abteilung` | mitglied_id, abteilung_id |
 | `mitglied_funktion` | mitglied_id, funktion_id |
 | `mitglied_version` | id, mitglied_id, nr, anlass, geaendert_von (user_id), geaendert_am, daten (JSON: vollständiger Stand inkl. Abteilungen, Funktionen, Familie) |
@@ -299,6 +381,24 @@ SQL.
     für das Jahr zählen zum laufenden Jahrhundert, außer das läge in der
     Zukunft. Eine vierstellige Zahl passt zusätzlich auf das Geburtsjahr.
   Die Suche ist mit allen Filtern kombinierbar.
+- **Erweiterte Suche** (#127): aufklappbar unter den Filtern (`<details>`,
+  offen, sobald ein Feld gefüllt ist), ein Feld je Spalte, **alle
+  Bedingungen UND**, zusätzlich zum Suchfeld. Textfelder „enthält", ohne
+  Groß-/Kleinschreibung (`LIKE`, `%`/`_` maskiert): Nachname, Vorname,
+  Straße, PLZ, Ort, E-Mail, Telefon (Telefon **oder** Handy), IBAN (ohne
+  Leerzeichen verglichen), Bemerkung; Mitgliedsnummer **exakt**. Auswahl:
+  Geschlecht (m/w/d/ohne Angabe), Funktion, Zahlart, Familie (in einer
+  Familie / ohne Familie / Rolle Zahler, Elternteil, Kind); dazu die
+  vorhandenen Filter Abteilung, Beitragsart, aktiv/passiv. Bereiche (von
+  und/oder bis, einschließlich; Gruppe mit `fieldset/legend`): Alter in
+  Jahren **zum heutigen Tag** (Mitglieder ohne Geburtsdatum fallen heraus),
+  Geburtsdatum, Eintritt, Austritt. **Austritt von/bis blendet Ehemalige
+  automatisch ein** – wer noch Mitglied ist, ist nicht ausgetreten, das
+  Feld fände sonst nichts. Ungültige Werte gelten als nicht gesetzt.
+  **Datenschutz:** Texte, Nummer, Alter und alle Datumsangaben reisen nur im
+  POST-Body, nie in URL, `parameter()` oder `HX-Push-URL`; nur die reinen
+  Auswahlwerte (Funktion, Geschlecht, Zahlart, Familie) stehen wie die
+  anderen Filter in der Adresse. „Filter zurücksetzen" leert alle Felder.
 - **Filter Beitragsart**: „X" findet die Mitglieder mit der Beitragsart X
   **und** die Mitglieder der Familien, deren Zahler (Rolle `zahler`) X hat
   (sie zahlen ja darüber, §3). Wer nur über die Familie gefunden wird,
@@ -334,8 +434,8 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
   Verglichen und zurückgeholt werden nur die IDs.
 - `herkunft` ist kein Feld aus §1 und wird nicht versioniert.
 - Zurückholen (`wiederherstellen()`): nicht mehr vorhandene Familie,
-  Beitragsart, Abteilungen, Funktionen bleiben leer; ist die alte
-  Mitgliedsnummer inzwischen vergeben, bleibt die aktuelle. Jeder Fall
+  Beitragsart, Abteilungen, Funktionen bleiben leer; die
+  Mitgliedsnummer bleibt immer die aktuelle. Jeder Fall
   kommt als Hinweistext zurück. Entspricht die Version dem aktuellen Stand,
   entsteht wie bei jedem Speichern ohne Änderung keine neue Version.
 - Mandatsreferenz/-datum werden gespeichert wie eingegeben; der Default
@@ -367,11 +467,17 @@ Hinweis-Funktion: jede Zeile der Tabelle §6 positiv und negativ, Grenzfälle
 (genau 18, genau 67, Nachweis gültig bis heute). Version: Speichern ohne
 Änderung erzeugt keine Version; Zurückholen hängt eine neue Version an und
 lässt alte unverändert; Zurückholen bei gelöschter Familie. Mitgliedsnummer
-eindeutig, nächste freie Nummer. IBAN-Prüfziffer. Suche findet über alle
+eindeutig, neu = höchste + 1, per POST nicht änderbar, Zurückholen ändert sie nie. IBAN-Prüfziffer. Suche findet über alle
 Suchfelder, Groß-/Kleinschreibung egal; Geburtsdatum in mehreren
 Schreibweisen, IBAN mit/ohne Leerzeichen und als Teilstück, Adresse mit Name,
 Bemerkung, Wort ohne Treffer; Filter Beitragsart findet Zahler und
-Familienmitglieder. Rechte-Matrix §9 serverseitig. Wohnort auf der Karte
+Familienmitglieder. Rechte-Matrix §9 serverseitig. Austritt (#127, `MitgliedAustrittTest`):
+heute ⇒ ehemalig mit neuer Version, Zukunft ⇒ „vermerkt" und weiter
+Mitglied, unlesbares Datum speichert nichts, Versionskonflikt,
+zurücknehmen leert Datum und Grund; Löschen eines nicht ehemaligen
+Mitglieds wird auf GET und POST abgelehnt, ohne oder mit falscher
+Mitgliedsnummer wird nichts gelöscht; „Nur lesen" 403 auf allen
+Austritts- und Löschrouten, Vorstand darf Austritt, nicht Löschen. Wohnort auf der Karte
 (#106, `WohnortTest`): die drei Zustände, Such-Anschrift speichern →
 gefunden bzw. weiter nicht gefunden mit den eingegebenen Werten, entfernen,
 „Nur lesen" sieht den Block ohne Formular und bekommt auf den POST 403,
@@ -381,4 +487,16 @@ wieder automatisch), ungültige Koordinaten → Fehler ohne Speichern, „Nur
 lesen" 403, Audit ohne Anschrift und Koordinaten, Cron/Suche/„Alle neu
 ermitteln" überschreiben ihn nicht. Karten-Hinweise (`HinweiseTest`):
 nicht gefunden und ungefähr ja; gefunden, von Hand, noch nicht gesucht und
-ehemalig nein.
+ehemalig nein. Runde 3 (#127): Anschriftvorschläge
+(`Feature\AnschriftvorschlaegeTest`, `Service\Karte\AnschriftvorschlaegeTest`,
+`tests/js/anschrift-vorschlaege.test.js`) – Text nur im POST-Body, Photon-
+Fehler/Timeout/kaputte Antwort ⇒ leere Liste, Rate-Limit 60/min, „Nur lesen"
+403; IBAN/BIC (`BankenTest`, `BankverbindungTest`,
+`tests/js/bankverbindung.test.js`) – Prüfziffer und Länderlänge, an den Server
+geht nur die BLZ, BIC wird nur bei leerem Feld und gültiger deutscher IBAN
+ergänzt (Formular, Import, Abgleich), falsche BIC ⇒ Hinweis, nie Sperre;
+Land (`LaenderTest`, `MitgliedFormularTest`) – Name, ISO-Code und altes
+Kfz-Kennzeichen ergeben ISO, Geo-Hash bleibt für alte Kennzeichen gleich;
+erweiterte Suche (`MitgliederFilterTest`, `MitgliederListeRepositoryTest`,
+`MitgliederSeiteTest`) – jede Feldart, alle Bedingungen UND, keine
+Personendaten in `parameter()`/URL, Austritt-Filter zeigt Ehemalige.

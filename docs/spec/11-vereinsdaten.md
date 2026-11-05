@@ -35,8 +35,12 @@ in der Datenbank.
   kann Skript enthalten), max. 5 MB.
 - Beim Upload leitet GD einmalig die Größen ab (alle als PNG, nie
   verzerrt): `kopf` (höchstens 96 × 96), `anmeldung` (höchstens 320 × 160),
-  `favicon` (32 × 32), `apple` (180 × 180, weißer Grund). Das Original wird
-  nicht aufbewahrt. Bilder über 16 Megapixel werden abgelehnt. Ein
+  `favicon` (32 × 32), `apple` (180 × 180, weißer Grund), für die
+  installierbare App (06 §6) `icon192` (192 × 192), `icon512` (512 × 512)
+  und `maskable` (512 × 512, weißer Grund, Logo innerhalb der Schutzzone).
+  Das Original wird nicht aufbewahrt; fehlen bei einem früher
+  hochgeladenen Logo die App-Größen, entstehen sie beim ersten Abruf aus
+  `anmeldung` (gröber – ein neuer Upload macht sie scharf). Bilder über 16 Megapixel werden abgelehnt. Ein
   abgelehnter Upload lässt das bisherige Logo unverändert.
 - Ablage in `shared/var/logo/` (überlebt Updates, Teil des Backups),
   ausgeliefert über die **öffentliche** Route `GET /logo/<größe>` (Anmeldeseite

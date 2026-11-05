@@ -28,18 +28,4 @@ final readonly class Verteilung
         public array $nachAbteilung,
     ) {
     }
-
-    /** Share of the total in tenths of a percent, rounded half up; 0 without a total. */
-    public function promille(int $cent): int
-    {
-        return $this->summeCent <= 0 ? 0 : intdiv(2000 * $cent + $this->summeCent, 2 * $this->summeCent);
-    }
-
-    /** "34,5 %" - with a non-breaking space. */
-    public function anteil(int $cent): string
-    {
-        $promille = $this->promille($cent);
-
-        return intdiv($promille, 10) . ',' . ($promille % 10) . "\u{00A0}%";
-    }
 }

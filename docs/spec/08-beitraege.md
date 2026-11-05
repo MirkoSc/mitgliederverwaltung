@@ -118,12 +118,16 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
 
 ## 2b. Verteilung der Beiträge
 
-Seite `/app/beitraege/verteilung?jahr=` (`beitraege.verwalten`), verlinkt
-im Abschnitt „Jahresbeiträge" („Verteilung <Jahr> ansehen"): was das Jahr
-an Beiträgen bringt – Summe, **nach Beitragsart** (Anzahl, Summe, Anteil)
-und **nach Abteilung** (Mitglieder, Summe, Anteil). Nur Zahlen, keine
-Namen. `App\Service\Beitraege\Beitragsverteilung`, rein berechnet aus
-Mitgliedern, Beitragsarten, Abteilungen und den Jahresbeiträgen.
+Seit #127 der Reiter „Beiträge" der Seite **Statistik**
+(`/app/statistik/beitraege?jahr=`, `beitraege.verwalten`, 09 §7), verlinkt
+im Abschnitt „Jahresbeiträge" („Verteilung <Jahr> ansehen"); die alte
+Adresse `/app/beitraege/verteilung?jahr=` leitet dorthin weiter (302). Was
+das Jahr an Beiträgen bringt – Summe, **nach Beitragsart** (Anzahl, Summe,
+Anteil) und **nach Abteilung** (Personen, Summe, Anteil), dazu nach
+Personen-Merkmalen (09 §7). Nur Zahlen, keine Namen.
+`App\Service\Beitraege\Beitragsverteilung`, rein berechnet aus
+Mitgliedern, Beitragsarten, Abteilungen und den Jahresbeiträgen;
+`App\Service\Statistik\Beitragsstatistik` ergänzt die Merkmale.
 
 - **Grundlage**: Hat das Jahr Jahresbeiträge, zählen deren Beträge in
   jedem Status (offen, im Einzug, bezahlt). Hat es keine, wird
@@ -148,7 +152,8 @@ Ablauf auf **einer** Seite (06 §2), von oben nach unten:
 1. **Zusammenstellen**: Liste der offenen Jahresbeiträge mit Zahlart
    `lastschrift` und gültiger IBAN, alle vorausgewählt, abwählbar.
    Daneben, nicht auswählbar: offene Beiträge ohne gültige IBAN bzw. mit
-   Zahlart `selbst` (Verweis auf Liste „Selbst kassieren", 09).
+   Zahlart `selbst` (Verweis auf Liste „Selbst kassieren", 09) und
+   offene Beiträge ausgetretener Mitglieder.
    Fälligkeitsdatum wählen (Vorschlag: nächster Bankarbeitstag + 1).
 2. **Erzeugen**: legt den Einzug an, alle gewählten Beiträge gehen auf
    `im_einzug`. Die Lastschriftdatei wird **in diesem Moment einmal
@@ -180,7 +185,14 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
 `beitraege.verwalten`).
 
 - **Zusammenstellen** (`App\Service\Beitraege\Einzuege::zusammenstellen()`):
-  alle offenen Beiträge aller Jahre, nach Namen. Auswählbar ist ein
+  alle offenen Beiträge aller Jahre, nach Namen. **Nie einziehbar** ist
+  ein Beitrag eines Mitglieds, dessen Austrittsdatum am Einzugstag
+  erreicht ist (`istEhemalig(heute)`; geprüft als Erstes, Grund
+  „ausgetreten am TT.MM.JJJJ"; Austritt morgen = heute noch einziehbar).
+  Das gilt beim Zusammenstellen und noch einmal beim Erzeugen; ein
+  Rücklastschrift- oder verworfener Beitrag kommt nur über dasselbe
+  Erzeugen wieder in einen Einzug. Die Erzeugung der Jahresbeiträge bleibt
+  davon unberührt (Stichtag 1.1., §2). Auswählbar ist sonst ein
   Beitrag mit Zahlart `lastschrift`, gültiger IBAN und brauchbarem Mandat
   (Mandatsreferenz im SEPA-Zeichensatz, höchstens 35 Zeichen – sie wird
   nie umgeschrieben, weil die Bank sie mit dem unterschriebenen Mandat
@@ -196,8 +208,13 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
   nächste Bankarbeitstag oder ein Tag ohne Bankbetrieb ergibt einen
   Hinweis nach dem Erzeugen, keine Sperre.
 - **Erzeugen** (`POST /app/beitraege/einzug`) läuft in einer Transaktion:
-  gewählte Beiträge sperren und erneut prüfen – ist einer nicht mehr offen
-  oder einziehbar, entsteht nichts –, Einzug anlegen, Datei erzeugen und
+  gewählte Beiträge sperren, danach ihre Mitglieder (`SELECT … FOR UPDATE`,
+  nach ID sortiert – feste Reihenfolge Beiträge → Mitglieder) und auf
+  diesen frisch gelesenen Daten erneut prüfen; ein gleichzeitig
+  gespeicherter Austritt wartet bis zum Ende der Transaktion oder ist
+  schon gesehen – ist einer nicht mehr offen
+  oder einziehbar (auch: sein Mitglied ist inzwischen ausgetreten), entsteht
+  nichts –, Einzug anlegen, Datei erzeugen und
   als Blob speichern, `datei_blob_id`/`msg_id`/`daten` setzen, Beiträge auf
   `im_einzug` mit Vermerk „In Einzug Nr. X aufgenommen, fällig am …".
   Danach die Seite des Einzugs.
@@ -298,7 +315,10 @@ eingecheckt) mit und ohne BIC, mit abweichendem Kontoinhaber, mit
 Umlauten; Kontrollsumme und Anzahl stimmen; die Datei wird beim Erzeugen
 verschlüsselt gespeichert, jeder Download liefert byte-gleich dieselbe
 Datei, auch nachdem sich Mitgliedsdaten geändert haben; Archiv zeigt
-verworfene Einzüge; Vorstand und Nur lesen bekommen auf jeder Route der
+verworfene Einzüge; ein Mitglied mit erreichtem Austrittsdatum (gestern,
+heute) ist beim Zusammenstellen und beim Erzeugen nie einziehbar – auch
+wenn es zwischen Auswahl und Erzeugen austritt und nach Rücklastschrift
+oder Verwerfen –, mit Austritt morgen noch einziehbar (`EinzuegeTest`); Vorstand und Nur lesen bekommen auf jeder Route der
 Seite „Beiträge“ 403, sehen aber den Reiter „Beiträge“ ohne Links.
 Zu §2a: Löschen mit falschem Bestätigungswort scheitert; Löschen eines
 bezahlten Jahres mit Einzug entfernt alles des Jahres (Beiträge, Einzüge,
@@ -310,4 +330,5 @@ Zu §2b: Hochrechnung wie Erzeugen (ehemalig, späterer Eintritt, anteilig,
 beitragsfrei); erzeugte Beiträge zählen mit ihrem Betrag; Teilung über
 mehrere Abteilungen und über die Familie (ohne Mitglieder mit eigenem
 Beitrag); Abteilungen und Beitragsarten ergeben je die Gesamtsumme;
-Vorstand und Nur lesen bekommen 403.
+Vorstand und Nur lesen bekommen 403 (auch auf der alten Adresse); weitere
+Pflicht-Tests der Statistik in 09.

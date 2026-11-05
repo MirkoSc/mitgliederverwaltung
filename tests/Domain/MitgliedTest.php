@@ -20,7 +20,6 @@ final class MitgliedTest extends TestCase
             mitgliedsnummer: 4711,
             nachname: 'Mustermann',
             vorname: 'Erika',
-            anrede: 'Frau',
             titel: 'Dr.',
             namenszusatz: 'von',
             geschlecht: Geschlecht::W,
@@ -28,7 +27,7 @@ final class MitgliedTest extends TestCase
             strasse: 'Beispielweg 1',
             plz: '12345',
             ort: 'Beispielstadt',
-            land: 'D',
+            land: 'DE',
             telefon: '01234 5678',
             handy: '0170 1234567',
             email: 'erika@example.org',
@@ -99,7 +98,7 @@ final class MitgliedTest extends TestCase
         self::assertNull($alt->geschlecht);
         self::assertNull($alt->geburtsdatum);
         self::assertSame([1], $alt->abteilungIds);
-        self::assertSame('D', $alt->land);
+        self::assertSame('DE', $alt->land);
         self::assertTrue($alt->aktiv);
         self::assertSame(Zahlart::Lastschrift, $alt->zahlart);
     }

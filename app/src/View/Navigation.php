@@ -10,9 +10,9 @@ use App\Http\HttpMethod;
 
 /**
  * The whole navigation of the application (docs/spec/06-oberflaeche.md
- * section 2): Mitglieder, Familien, Listen, Karte, Beiträge, Einstellungen
- * and the user menu. "Karte" (issue #91) and "Familien" (issue #92) came
- * later.
+ * section 2): Mitglieder, Familien, Listen, Karte, Statistik, Beiträge,
+ * Einstellungen and the user menu. "Karte" (issue #91), "Familien" (issue
+ * #92) and "Statistik" (issue #127) came later.
  *
  * Complete from issue #1 on (docs/spec/05-entwicklung.md section 6): later
  * issues register the routes behind these entries in their own files and
@@ -25,6 +25,7 @@ final class Navigation
     public const string FAMILIEN = '/app/familien';
     public const string LISTEN = '/app/listen';
     public const string KARTE = '/app/karte';
+    public const string STATISTIK = '/app/statistik';
     public const string BEITRAEGE = '/app/beitraege';
     public const string EINSTELLUNGEN = '/admin';
 
@@ -38,6 +39,7 @@ final class Navigation
     /**
      * The main navigation, in display order. Beiträge and Einstellungen
      * are for the admin only (06 section 2) - their rights say so.
+     * Statistik is for every role; its tab "Beiträge" is the admin's.
      *
      * @return list<NavItem>
      */
@@ -48,6 +50,7 @@ final class Navigation
             new NavItem('Familien', self::FAMILIEN, Permission::MitgliederSehen),
             new NavItem('Listen', self::LISTEN, Permission::ListenSehen),
             new NavItem('Karte', self::KARTE, Permission::MitgliederSehen),
+            new NavItem('Statistik', self::STATISTIK, Permission::ListenSehen),
             new NavItem('Beiträge', self::BEITRAEGE, Permission::BeitraegeVerwalten),
             new NavItem('Einstellungen', self::EINSTELLUNGEN, Permission::AdminEinstellungen),
         ];

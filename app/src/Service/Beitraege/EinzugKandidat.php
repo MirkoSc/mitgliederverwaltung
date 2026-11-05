@@ -21,6 +21,8 @@ final readonly class EinzugKandidat
         public ?string $grund = null,
         /** Collected by hand instead - the list "Selbst kassieren" (09): Zahlart `selbst` or no valid IBAN. */
         public bool $selbstKassieren = false,
+        /** The member's leaving date is reached: never collected (08 section 3). */
+        public bool $ausgetreten = false,
     ) {
     }
 

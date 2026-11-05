@@ -98,14 +98,15 @@ Teil eines Releases sind.
 ## 3. Bereiche der Anwendung (technisch)
 
 - **Öffentlich**: Anmeldung, „Passwort vergessen", `/impressum`,
-  `/datenschutz` – sonst nichts (E-F3).
+  `/datenschutz`, dazu für die installierbare App `/manifest.webmanifest`
+  (nur Vereinsname und Logo-Adressen) – sonst nichts (E-F3).
 - **Anwenderseite** (`/app/...`): alles Fachliche, je nach Recht.
 - **Adminseite** (`/admin/...`): Benutzer (drei feste Rollen Admin/
   Vorstand/Nur lesen), Mail, Rechtstexte, Einstellungen, Backup,
   Update, Systemcheck, Audit-Log. Nur der Admin hat einen Adminbereich.
 
 **Oberfläche (06-oberflaeche.md):** so wenige Seiten wie möglich –
-Mitglieder, Familien, Listen, Karte, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
+Mitglieder, Familien, Listen, Karte, Statistik, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
 und PC. Barrierearmut als solide Grundlage, kein Vollstandard; dazu ein
 **Barrierefrei-Modus** je Benutzer (PC: große Schrift, hoher Kontrast,
 große Flächen, nur Tastatur möglich) als CSS-Klasse, kein zweites Layout.
@@ -138,6 +139,7 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
   `<meta name="htmx-config">` konfiguriert.
 - Mitgliederdaten im Browser **nie dauerhaft speichern** (kein
   localStorage/IndexedDB/Service-Worker-Cache); `Cache-Control: no-store`.
+  Service Worker nur ohne Cache (PWA, `public/sw.js`).
 - Rechte **serverseitig pro Aktion** (`Permission`-Enum). Jede Route
   deklariert ihren Zugriff (`App\Http\Zugriff`, Pflichtargument von
   `Router::get/post`). Drei feste Rollen Admin/Vorstand/Nur lesen (02 §6);

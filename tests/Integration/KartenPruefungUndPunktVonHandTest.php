@@ -322,4 +322,19 @@ final class KartenPruefungUndPunktVonHandTest extends DatabaseTestCase
         self::assertEqualsWithDelta(9.1, $mitte->lon, 0.000001);
         self::assertSame(14, $mitte->zoom);
     }
+
+    /** The bias of the address suggestions (issue #127): AVG over every dot, in SQL. */
+    public function testTheMiddleOfAllDotsIsAveragedInTheDatabase(): void
+    {
+        self::assertNull($this->geo()->mitte());
+
+        $this->geo()->speichern(str_repeat('a', 64), GeoStatus::Gefunden, 49.0, 8.0, $this->jetzt);
+        $this->geo()->speichern(str_repeat('b', 64), GeoStatus::NichtGefunden, null, null, $this->jetzt);
+        $this->geo()->punktSetzen(str_repeat('c', 64), 51.0, 10.0, $this->jetzt);
+        $mitte = $this->geo()->mitte();
+
+        self::assertNotNull($mitte);
+        self::assertEqualsWithDelta(50.0, $mitte[0], 0.000001);
+        self::assertEqualsWithDelta(9.0, $mitte[1], 0.000001);
+    }
 }

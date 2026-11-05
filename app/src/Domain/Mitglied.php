@@ -6,6 +6,7 @@ namespace App\Domain;
 
 use App\Support\Alter;
 use App\Support\Iban;
+use App\Support\Laender;
 
 /**
  * A member (docs/spec/07-mitglieder.md sections 1 and 8) as
@@ -22,9 +23,6 @@ final readonly class Mitglied
 {
     use Kopierbar;
 
-    /** The country a new member gets (07 section 1). */
-    public const string LAND_DEFAULT = 'D';
-
     /**
      * @param list<int> $abteilungIds departments (07 section 2), 0..n
      * @param list<int> $funktionIds functions (07 section 4), 0..n
@@ -33,7 +31,6 @@ final readonly class Mitglied
         public int $mitgliedsnummer,
         public string $nachname,
         public string $vorname = '',
-        public string $anrede = '',
         public string $titel = '',
         public string $namenszusatz = '',
         public ?Geschlecht $geschlecht = null,
@@ -41,7 +38,7 @@ final readonly class Mitglied
         public string $strasse = '',
         public string $plz = '',
         public string $ort = '',
-        public string $land = self::LAND_DEFAULT,
+        public string $land = Laender::STANDARD,
         public string $telefon = '',
         public string $handy = '',
         public string $email = '',
@@ -145,7 +142,6 @@ final readonly class Mitglied
     {
         return [
             'mitgliedsnummer' => $this->mitgliedsnummer,
-            'anrede' => $this->anrede,
             'titel' => $this->titel,
             'vorname' => $this->vorname,
             'nachname' => $this->nachname,
@@ -201,7 +197,6 @@ final readonly class Mitglied
             mitgliedsnummer: $zahl('mitgliedsnummer') ?? $aktuell->mitgliedsnummer,
             nachname: $text('nachname', $aktuell->nachname),
             vorname: $text('vorname'),
-            anrede: $text('anrede'),
             titel: $text('titel'),
             namenszusatz: $text('namenszusatz'),
             geschlecht: Geschlecht::tryFrom($text('geschlecht')),
@@ -209,7 +204,7 @@ final readonly class Mitglied
             strasse: $text('strasse'),
             plz: $text('plz'),
             ort: $text('ort'),
-            land: $text('land', self::LAND_DEFAULT),
+            land: Laender::iso($text('land', Laender::STANDARD)), // old versions hold the licence-plate code ("D")
             telefon: $text('telefon'),
             handy: $text('handy'),
             email: $text('email'),

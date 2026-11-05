@@ -11,7 +11,9 @@ use App\Domain\Mitglied;
 use App\Domain\NachweisArt;
 use App\Domain\Zahlart;
 use App\Service\Karte\GeoStatus;
+use App\Support\Banken;
 use App\Support\Iban;
+use App\Support\Laender;
 
 /**
  * The member hints of docs/spec/07-mitglieder.md section 6 as a pure
@@ -147,6 +149,10 @@ final class Hinweise
                 : 'Die Zahlart ist Lastschrift, aber die IBAN ist ungültig – die Prüfziffer passt nicht. Bitte die IBAN prüfen.');
         }
 
+        if ($mitglied->zahlart === Zahlart::Lastschrift && ($bicFehler = Banken::bicFehler($mitglied->bic, $mitglied->iban)) !== null) {
+            $melden(HinweisArt::LastschriftMitFalscherBic, $bicFehler . ' Bitte die BIC prüfen oder leeren – bei einer deutschen IBAN wird sie dann ergänzt.');
+        }
+
         if ($art?->hatRegel(BeitragsRegel::Beitragsfrei) === true && trim($mitglied->bemerkung) === '') {
             $melden(HinweisArt::BeitragsfreiOhneGrund, 'Das Mitglied ist beitragsfrei, aber die Bemerkung nennt keinen Grund. Bitte den Grund in die Bemerkung schreiben.');
         }
@@ -161,6 +167,11 @@ final class Hinweise
                 $mitglied->geburtsdatum === null ? 'das Geburtsdatum' : null,
             ]);
             $melden(HinweisArt::BlsvAngabenFehlen, sprintf('Für die BLSV-Meldung fehlt %s. Bitte ergänzen.', implode(' und ', $fehlt)));
+        }
+
+        // Old data may hold a country the list does not know ("CDN", issue #127).
+        if (trim($mitglied->land) !== '' && Laender::code($mitglied->land) === null && !$mitglied->istEhemalig($tag)) {
+            $melden(HinweisArt::LandUnbekannt, sprintf('Das Land „%s“ ist unbekannt. Bitte im Reiter „Daten“ ein Land aus der Liste wählen.', $mitglied->land));
         }
 
         // The map (issue #108): only what the search left to fix by hand.

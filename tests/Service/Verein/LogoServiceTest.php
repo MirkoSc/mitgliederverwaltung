@@ -50,7 +50,10 @@ final class LogoServiceTest extends DatabaseTestCase
         $this->logo->speichern(TestBilder::png($this->wurzel));
 
         self::assertNotNull($this->logo->version());
-        $erwartet = ['kopf' => [96, 48], 'anmeldung' => [320, 160], 'favicon' => [32, 32], 'apple' => [180, 180]];
+        $erwartet = [
+            'kopf' => [96, 48], 'anmeldung' => [320, 160], 'favicon' => [32, 32], 'apple' => [180, 180],
+            'icon192' => [192, 192], 'icon512' => [512, 512], 'maskable' => [512, 512],
+        ];
         foreach ($erwartet as $groesse => [$breite, $hoehe]) {
             $datei = $this->logo->datei($groesse);
             self::assertNotNull($datei, $groesse);
@@ -58,6 +61,36 @@ final class LogoServiceTest extends DatabaseTestCase
             self::assertSame(IMAGETYPE_PNG, $info[2]);
             self::assertSame([$breite, $hoehe], [$info[0], $info[1]], $groesse);
         }
+    }
+
+    public function testTheAppIconsOfALogoUploadedBeforeAreDerivedOnRequest(): void
+    {
+        $this->logo->speichern(TestBilder::png($this->wurzel));
+        $ordner = dirname((string) $this->logo->datei('kopf'));
+        foreach (['icon192', 'icon512', 'maskable'] as $neu) {
+            unlink($ordner . '/' . $neu . '.png');
+        }
+
+        foreach (['icon192' => 192, 'icon512' => 512, 'maskable' => 512] as $groesse => $kante) {
+            $datei = $this->logo->datei($groesse);
+            self::assertNotNull($datei, $groesse);
+            $info = getimagesize($datei);
+            self::assertNotFalse($info);
+            self::assertSame([$kante, $kante, IMAGETYPE_PNG], [$info[0], $info[1], $info[2]], $groesse);
+        }
+        self::assertSame([], glob($ordner . '/*.neu') ?: []);
+    }
+
+    public function testTheMaskableIconKeepsTheLogoInsideTheSafeZone(): void
+    {
+        $this->logo->speichern(TestBilder::png($this->wurzel));
+        $bild = imagecreatefrompng((string) $this->logo->datei('maskable'));
+        self::assertNotFalse($bild);
+
+        // White square, nothing of the logo near the edge.
+        self::assertSame(0xFFFFFF, imagecolorat($bild, 5, 5) & 0xFFFFFF);
+        self::assertSame(0xFFFFFF, imagecolorat($bild, 256, 50) & 0xFFFFFF);
+        self::assertSame(0xFFFFFF, imagecolorat($bild, 50, 256) & 0xFFFFFF);
     }
 
     public function testAJpegIsAccepted(): void

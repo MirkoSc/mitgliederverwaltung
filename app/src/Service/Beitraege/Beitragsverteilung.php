@@ -9,10 +9,6 @@ use App\Domain\Beitragsart;
 use App\Domain\FamilienRolle;
 use App\Domain\Jahresbeitrag;
 use App\Domain\Mitglied;
-use App\Repository\AbteilungRepository;
-use App\Repository\BeitragsartRepository;
-use App\Repository\JahresbeitragRepository;
-use App\Repository\MitgliedRepository;
 
 /**
  * "Verteilung der Beiträge" (docs/spec/08-beitraege.md section 2b): how much
@@ -32,24 +28,6 @@ final readonly class Beitragsverteilung
     /** Key of the rows "ohne Beitragsart" and "ohne Abteilung" - no real id is 0. */
     private const int OHNE = 0;
 
-    public function __construct(
-        private MitgliedRepository $mitglieder,
-        private BeitragsartRepository $arten,
-        private AbteilungRepository $abteilungen,
-        private JahresbeitragRepository $beitraege,
-    ) {
-    }
-
-    public static function mit(\PDO $pdo): self
-    {
-        return new self(new MitgliedRepository($pdo), new BeitragsartRepository($pdo), new AbteilungRepository($pdo), new JahresbeitragRepository($pdo));
-    }
-
-    public function fuerJahr(int $jahr): Verteilung
-    {
-        return self::berechnen($jahr, $this->mitglieder->alle(true), $this->arten->alle(), $this->abteilungen->alle(), $this->beitraege->imJahr($jahr));
-    }
-
     /**
      * @param list<Mitglied> $mitglieder all members, former ones too
      * @param list<Beitragsart> $arten in display order
@@ -67,29 +45,9 @@ final readonly class Beitragsverteilung
             $artNachId[(int) $art->id] = $art;
         }
 
-        // Who pays how much: member id => cent.
-        $zahlungen = [];
         $hochgerechnet = $beitraege === [];
-        if ($hochgerechnet) {
-            foreach ($mitglieder as $mitglied) {
-                $cent = Jahresbeitraege::vorschlag($mitglied, $artNachId[$mitglied->beitragsartId ?? self::OHNE] ?? null, $jahr);
-                if ($cent !== null) {
-                    $zahlungen[(int) $mitglied->id] = $cent;
-                }
-            }
-        } else {
-            foreach ($beitraege as $beitrag) {
-                $zahlungen[$beitrag->mitgliedId] = $beitrag->betragCent;
-            }
-        }
-
-        // Family members of the year without a fee of their own, by family.
-        $familien = [];
-        foreach ($mitglieder as $mitglied) {
-            if ($mitglied->familieId !== null && !isset($zahlungen[(int) $mitglied->id]) && Jahresbeitraege::istImJahrMitglied($mitglied, $jahr)) {
-                $familien[$mitglied->familieId][] = $mitglied;
-            }
-        }
+        $zahlungen = self::zahlungen($jahr, $mitglieder, $arten, $beitraege);
+        $familien = self::familienOhneBeitrag($jahr, $mitglieder, $zahlungen);
 
         $abteilungIds = [];
         foreach ($abteilungen as $abteilung) {
@@ -108,7 +66,7 @@ final readonly class Beitragsverteilung
             $jeArt[$artKey]['anzahl']++;
             $jeArt[$artKey]['summe'] += $cent;
 
-            $traeger = $mitglied === null ? [] : [$mitglied, ...self::familieOhneBeitrag($mitglied, $familien)];
+            $traeger = self::traeger($mitglied, $familien);
             $gewichte = [];
             $kgv = 1;
             foreach ($traeger as $person) {
@@ -160,6 +118,79 @@ final readonly class Beitragsverteilung
     }
 
     /**
+     * Who pays how much in the year: member id => cent. The created fees;
+     * without any, the projection the way "Beiträge erzeugen" would create
+     * them (Jahresbeitraege::vorschlag()).
+     *
+     * @param list<Mitglied> $mitglieder all members, former ones too
+     * @param list<Beitragsart> $arten
+     * @param list<Jahresbeitrag> $beitraege the year's created fees; none => projection
+     * @return array<int, int>
+     */
+    public static function zahlungen(int $jahr, array $mitglieder, array $arten, array $beitraege): array
+    {
+        $zahlungen = [];
+        if ($beitraege === []) {
+            $artNachId = [];
+            foreach ($arten as $art) {
+                $artNachId[(int) $art->id] = $art;
+            }
+            foreach ($mitglieder as $mitglied) {
+                $cent = Jahresbeitraege::vorschlag($mitglied, $artNachId[$mitglied->beitragsartId ?? self::OHNE] ?? null, $jahr);
+                if ($cent !== null) {
+                    $zahlungen[(int) $mitglied->id] = $cent;
+                }
+            }
+        } else {
+            foreach ($beitraege as $beitrag) {
+                $zahlungen[$beitrag->mitgliedId] = $beitrag->betragCent;
+            }
+        }
+
+        return $zahlungen;
+    }
+
+    /**
+     * Family members of the year without a fee of their own, by family.
+     *
+     * @param list<Mitglied> $mitglieder
+     * @param array<int, int> $zahlungen from zahlungen()
+     * @return array<int, list<Mitglied>>
+     */
+    public static function familienOhneBeitrag(int $jahr, array $mitglieder, array $zahlungen): array
+    {
+        $familien = [];
+        foreach ($mitglieder as $mitglied) {
+            if ($mitglied->familieId !== null && !isset($zahlungen[(int) $mitglied->id]) && Jahresbeitraege::istImJahrMitglied($mitglied, $jahr)) {
+                $familien[$mitglied->familieId][] = $mitglied;
+            }
+        }
+
+        return $familien;
+    }
+
+    /**
+     * The people one fee is split over: the member, and for a family payer
+     * every family member of the year without a fee of their own. None for
+     * a fee whose member is unknown.
+     *
+     * @param array<int, list<Mitglied>> $familien from familienOhneBeitrag()
+     * @return list<Mitglied>
+     */
+    public static function traeger(?Mitglied $zahler, array $familien): array
+    {
+        if ($zahler === null) {
+            return [];
+        }
+        if ($zahler->familieId === null || $zahler->familieRolle !== FamilienRolle::Zahler) {
+            return [$zahler];
+        }
+
+        // The payer has a fee, so is never among them.
+        return [$zahler, ...($familien[$zahler->familieId] ?? [])];
+    }
+
+    /**
      * $cent split by integer weights, the parts adding up exactly: each key
      * gets its rounded-down share, the cents left over go to the largest
      * remainders (equal remainders: first key first).
@@ -184,20 +215,6 @@ final readonly class Beitragsverteilung
         }
 
         return $teile;
-    }
-
-    /**
-     * @param array<int, list<Mitglied>> $familien
-     * @return list<Mitglied>
-     */
-    private static function familieOhneBeitrag(Mitglied $zahler, array $familien): array
-    {
-        if ($zahler->familieId === null || $zahler->familieRolle !== FamilienRolle::Zahler) {
-            return [];
-        }
-
-        // The payer has a fee, so is never among them.
-        return $familien[$zahler->familieId] ?? [];
     }
 
     /**

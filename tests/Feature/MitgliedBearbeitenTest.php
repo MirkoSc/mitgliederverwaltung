@@ -99,7 +99,7 @@ final class MitgliedBearbeitenTest extends AppTestCase
         return (int) substr($antwort->headers['Location'], strlen('/app/mitglieder?mitglied='));
     }
 
-    public function testTheNewFormSuggestsTheNextFreeNumber(): void
+    public function testTheNewFormShowsTheNextNumberButHasNoNumberField(): void
     {
         $this->vorhanden(41);
         $this->als(Rolle::Vorstand);
@@ -108,7 +108,8 @@ final class MitgliedBearbeitenTest extends AppTestCase
 
         self::assertSame(200, $seite->status);
         self::assertStringContainsString('<h1>Neues Mitglied</h1>', $seite->body);
-        self::assertMatchesRegularExpression('/<input type="text" id="m-mitgliedsnummer" name="mitgliedsnummer"[^>]* value="42"/', $seite->body);
+        self::assertStringContainsString('voraussichtlich 42', $seite->body);
+        self::assertStringNotContainsString('name="mitgliedsnummer"', $seite->body);
         self::assertStringContainsString('action="/app/mitglieder/neu"', $seite->body);
         self::assertStringContainsString('Mitglied anlegen', $seite->body);
         self::assertStringNotContainsString('Mitglied löschen', $seite->body);
@@ -123,16 +124,17 @@ final class MitgliedBearbeitenTest extends AppTestCase
         $fussball = (string) $this->wert("SELECT id FROM abteilung WHERE name = 'Fußball'");
 
         $antwort = $this->post('/app/mitglieder/neu', [
-            'mitgliedsnummer' => '412', 'vorname' => 'Erika', 'nachname' => 'Musterfrau', 'abteilungen' => [$fussball],
+            'vorname' => 'Erika', 'nachname' => 'Musterfrau', 'abteilungen' => [$fussball],
             'iban' => 'de89 3704 0044 0532 0130 00', 'aktiv' => '1', 'zahlart' => 'lastschrift',
         ]);
 
         $id = $this->idAus($antwort);
         $mitglied = $this->repo()->finde($id);
         self::assertNotNull($mitglied);
-        self::assertSame(412, $mitglied->mitgliedsnummer);
+        self::assertSame(1, $mitglied->mitgliedsnummer, 'the server gives out highest + 1');
         self::assertSame([(int) $fussball], $mitglied->abteilungIds);
         self::assertSame('DE89370400440532013000', $mitglied->iban, 'normalised');
+        self::assertSame('COBADEFFXXX', $mitglied->bic, 'filled in from the bank of the IBAN');
         $versionen = $this->repo()->versionen($id);
         self::assertCount(1, $versionen);
         self::assertSame('angelegt', $versionen[0]->anlass->text);
@@ -144,7 +146,7 @@ final class MitgliedBearbeitenTest extends AppTestCase
     {
         $this->als(Rolle::Admin);
 
-        $antwort = $this->post('/app/mitglieder/neu', ['mitgliedsnummer' => '5', 'vorname' => 'Erika', 'nachname' => '']);
+        $antwort = $this->post('/app/mitglieder/neu', ['vorname' => 'Erika', 'nachname' => '']);
 
         self::assertSame(422, $antwort->status);
         self::assertStringContainsString('Bitte den Nachnamen eintragen.', $antwort->body);
@@ -153,7 +155,7 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertSame(0, (int) $this->wert('SELECT COUNT(*) FROM mitglied'));
     }
 
-    public function testATakenNumberIsRefusedWithTheNextFreeOne(): void
+    public function testANewMemberGetsTheHighestNumberPlusOneAndAPostedNumberIsIgnored(): void
     {
         $this->vorhanden(412, 'Musterfrau', ['vorname' => 'Erika']);
         $this->vorhanden(500);
@@ -161,9 +163,9 @@ final class MitgliedBearbeitenTest extends AppTestCase
 
         $antwort = $this->post('/app/mitglieder/neu', ['mitgliedsnummer' => '412', 'nachname' => 'Mustermann']);
 
-        self::assertSame(422, $antwort->status);
-        self::assertStringContainsString('Die Nummer 412 hat schon Erika Musterfrau. Die nächste freie Nummer ist 501.', $antwort->body);
-        self::assertSame(2, (int) $this->wert('SELECT COUNT(*) FROM mitglied'));
+        self::assertSame(302, $antwort->status);
+        self::assertSame(501, $this->repo()->finde($this->idAus($antwort))?->mitgliedsnummer);
+        self::assertSame(3, (int) $this->wert('SELECT COUNT(*) FROM mitglied'));
     }
 
     public function testEveryChangeIsAVersionAndAnUnchangedSaveIsNone(): void
@@ -300,17 +302,20 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertSame(3, $jetzt->version);
     }
 
-    public function testChangingToATakenNumberIsRefused(): void
+    public function testThePostedNumberNeverChangesAnExistingMember(): void
     {
         $this->vorhanden(1, 'Erste');
         $m = $this->vorhanden(2, 'Zweite');
         $this->als(Rolle::Vorstand);
 
-        $antwort = $this->post('/app/mitglieder/' . $m->id, $this->formularVon($m, ['mitgliedsnummer' => '1']));
+        $this->post('/app/mitglieder/' . $m->id, $this->formularVon($m, ['mitgliedsnummer' => '1', 'ort' => 'Musterstadt']));
+        $this->post('/app/mitglieder/' . $m->id, $this->formularVon($this->repo()->finde((int) $m->id), ['mitgliedsnummer' => '99', 'ort' => 'Anderswo', 'version' => '2']));
 
-        self::assertSame(422, $antwort->status);
-        self::assertStringContainsString('Die Nummer 1 hat schon Erste.', $antwort->body);
-        self::assertSame(2, $this->repo()->finde((int) $m->id)?->mitgliedsnummer);
+        $jetzt = $this->repo()->finde((int) $m->id);
+        self::assertSame(2, $jetzt?->mitgliedsnummer);
+        self::assertSame('Anderswo', $jetzt->ort);
+        $seite = $this->get('/app/mitglieder/' . $m->id . '/bearbeiten');
+        self::assertStringNotContainsString('name="mitgliedsnummer"', $seite->body);
     }
 
     public function testAnUnknownMemberIsNotFound(): void
@@ -350,7 +355,7 @@ final class MitgliedBearbeitenTest extends AppTestCase
 
     public function testTheAdminDeletesAfterAClearQuestion(): void
     {
-        $m = $this->vorhanden(13, 'Musterfrau', ['vorname' => 'Erika']);
+        $m = $this->vorhanden(13, 'Musterfrau', ['vorname' => 'Erika', 'austrittsdatum' => new \DateTimeImmutable('2020-12-31')]);
         $this->repo()->speichern($m->mit(['ort' => 'Musterstadt']), VersionsAnlass::geaendert(), null);
         $blobs = BlobService::aus($this->dienste);
         $datei = $blobs->storeString('Rentenbescheid (erfunden)', new BlobMeta('application/pdf'), BlobStorage::Db);
@@ -362,10 +367,10 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertStringContainsString('Mitglied löschen?', $frage->body);
         self::assertStringContainsString('Erika Musterfrau', $frage->body);
         self::assertStringContainsString('lässt sich nicht rückgängig machen', $frage->body);
-        self::assertStringContainsString('Austrittsdatum', $frage->body);
-        self::assertStringContainsString('action="/app/mitglieder/' . $m->id . '/loeschen"', $frage->body);
+        self::assertStringContainsString('/app/mitglieder/' . $m->id . '/loeschen?schritt=2', $frage->body);
+        self::assertStringContainsString('action="/app/mitglieder/' . $m->id . '/loeschen"', $this->get('/app/mitglieder/' . $m->id . '/loeschen', ['schritt' => '2'])->body);
 
-        $antwort = $this->post('/app/mitglieder/' . $m->id . '/loeschen');
+        $antwort = $this->post('/app/mitglieder/' . $m->id . '/loeschen', ['mitgliedsnummer' => '13']);
 
         self::assertWeiterleitungNach('/app/mitglieder', $antwort);
         self::assertSame('Mitglied Nr. 13 ist gelöscht.', $this->flash());
@@ -400,7 +405,8 @@ final class MitgliedBearbeitenTest extends AppTestCase
         $admin = $this->als(Rolle::Admin);
         $this->dienste->view->setAnmeldung($admin, 'token-123');
         $html = $this->dienste->view->fragment($reiter[0]->template(), $reiter[0]->daten((int) $m->id));
-        self::assertStringContainsString('href="/app/mitglieder/' . $m->id . '/loeschen"', $html);
+        self::assertStringNotContainsString('/loeschen"', $html, 'not for a member who has not left');
+        self::assertStringContainsString('href="/app/mitglieder/' . $m->id . '/austritt">Mitglied ausgetreten', $html);
 
         self::assertStringContainsString('gibt es nicht mehr', $this->dienste->view->fragment($reiter[0]->template(), $reiter[0]->daten(999)));
     }
