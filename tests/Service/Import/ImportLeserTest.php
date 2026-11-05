@@ -64,12 +64,21 @@ final class ImportLeserTest extends TestCase
         self::assertSame(1, $m->beitragsartId);
         self::assertSame(Zahlart::Lastschrift, $m->zahlart);
         self::assertSame('DE02100208900014569054', $m->iban);
+        self::assertSame('', $m->bic, 'made-up IBAN with wrong check digits: no BIC filled in');
         self::assertSame([1], $m->funktionIds);
         self::assertSame("Zeile 1\nZeile 2", $m->bemerkung);
         self::assertSame(Herkunft::Import, $m->herkunft);
         self::assertSame('D', $m->land, 'an empty country is the default country');
         self::assertNull($m->familieId);
         self::assertNull($datei->eintraege[0]->familie);
+    }
+
+    public function testAMissingBicIsFilledInFromTheBankOfAGermanIban(): void
+    {
+        $datei = $this->lesen('1;Beispiel;Erika;w;12.03.1980;01.01.2005;1;09;Aktiv;lastschrift;DE89 3704 0044 0532 0130 00;;;;;');
+
+        self::assertTrue($datei->istFehlerfrei(), implode(' | ', self::texte($datei)));
+        self::assertSame('COBADEFFXXX', $datei->eintraege[0]->mitglied->bic);
     }
 
     public function testFamiliesAreLinkedByKeyWithNameAndRole(): void

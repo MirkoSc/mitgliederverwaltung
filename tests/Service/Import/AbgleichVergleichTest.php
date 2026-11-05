@@ -143,6 +143,26 @@ final class AbgleichVergleichTest extends TestCase
         self::assertSame(1, $ziel['beitragsart_id']);
     }
 
+    public function testAMissingBicIsFilledInFromTheIban(): void
+    {
+        // In the file: an empty BIC. Without a column bic at all: the member's own IBAN.
+        $datei = $this->datei('1;Name1;Vorname1;Altstadt;1;09;Aktiv;DE89370400440532013000;;;;');
+        $vergleich = AbgleichVergleich::aus($datei, [self::importiert(1, ['iban' => 'DE89370400440532013000'])], [], []);
+        self::assertSame(['bic' => ['', 'COBADEFFXXX']], $vergleich->geaendert[0]->felder);
+
+        $ohneSpalte = ImportLeser::lesen("mitgliedsnummer;nachname;vorname;aktiv;abteilungen\n1;Name1;Vorname1;1;09\n", new ImportStammdaten(
+            [new Abteilung('Fußball', '09', 20, true, 2)],
+            [],
+            [],
+        ));
+        $bestand = self::importiert(1, ['iban' => 'DE89370400440532013000']);
+        $vergleich = AbgleichVergleich::aus($ohneSpalte, [$bestand], [], []);
+        self::assertSame(['bic' => ['', 'COBADEFFXXX']], $vergleich->geaendert[0]->felder);
+
+        $mitBic = AbgleichVergleich::aus($ohneSpalte, [$bestand->mit(['bic' => 'INGDDEFFXXX'])], [], []);
+        self::assertSame(1, $mitBic->unveraendert, 'a BIC that is there stays');
+    }
+
     public function testFamiliesAreMatchedByKeyAndANewKeyIsANewFamily(): void
     {
         $datei = $this->datei(

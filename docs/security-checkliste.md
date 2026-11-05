@@ -327,6 +327,19 @@ für die neuen Routen erneut durchgegangen.
 | L-05 | Texte escaped; Roh-HTML nur aus `Markdown::fett()` (erst escapen, dann nur `<strong>`), kein Link, kein `style=` | ✓ | `app/views/hilfe/anleitung.php`; `HilfeTest::testTheStepsAreAnOrderedListWithEscapedText`, `MarkdownTest::testBoldOnlyEscapesAndKeepsEverythingElsePlain` |
 | L-06 | Keine Mitgliederdaten auf den Seiten; Bilder sind statische Dateien unter `public/img/hilfe/` und zeigen nur Beispieldaten (Abnahme in #119) | ✓ | `StaticFileHandler` (C-27), 12 §4 Nr. 8, §9 |
 
+## M – Bankverbindung (#127)
+
+Geprüft beim Prüfen von IBAN/BIC im Formular (2026-11-05); Abschnitte C, E,
+I und J für die neue Route erneut durchgegangen.
+
+| ID | Prüfung | Ergebnis | Fundstelle |
+|---|---|---|---|
+| M-01 | Neue Route `GET /app/bank/{blz}` deklariert (`mitglieder.bearbeiten`, JSON), nur lesend; „Nur lesen" → 403 | ✓ | `app/routes/bank.php`, `tests/Http/routen-zugriff/bank.txt`, `BankverbindungTest::testOnlyWhoEditsMembersMayAsk` |
+| M-02 | Die IBAN verlässt das Formular nicht vor dem Speichern: die Prüfziffer rechnet der Browser, an den Server geht nur die Bankleitzahl (kennzeichnet eine Bank, kein Mitglied); nichts davon in Log oder Audit | ✓ | `public/js/bankverbindung.js` (`blz()`), `app/routes/bank.php` |
+| M-03 | Kein Pfad aus der Anfrage: die BLZ wird nur als Schlüssel im geladenen Array gesucht (`[1-9]\d{7}`), die Datendatei ist fest | ✓ | `Support/Banken::fuerBlz()`, `app/data/banken.php` |
+| M-04 | Bankname und BIC im HTML escaped, im Skript nur über `textContent`/`value` | ✓ | `app/views/mitglied/formular.php`, `daten-lesen.php`, `bankverbindung.js` |
+| M-05 | Antworten nur im Speicher der Seite, nichts in `localStorage` o. Ä. (§4) | ✓ | `bankverbindung.js` (`banken`) |
+
 ## Befunde des Durchlaufs 2026-10-29
 
 Kein Befund war „kritisch" oder „hoch". Behoben heißt: im PR zu #37 mit

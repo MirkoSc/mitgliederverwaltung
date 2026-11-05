@@ -6,6 +6,7 @@ namespace App\Service\Import;
 
 use App\Domain\Herkunft;
 use App\Domain\Mitglied;
+use App\Support\Banken;
 use App\Support\Iban;
 
 /**
@@ -116,7 +117,7 @@ final readonly class AbgleichVergleich
         $daten = [
             ...$eintrag->mitglied->daten(),
             'iban' => Iban::normalisieren($eintrag->mitglied->iban),
-            'bic' => strtoupper((string) preg_replace('/\s+/u', '', $eintrag->mitglied->bic)),
+            'bic' => Banken::bicErgaenzen($eintrag->mitglied->bic, $eintrag->mitglied->iban),
             'familie_id' => $familie,
         ];
         if ($vorhanden === null || $spalten === []) {
@@ -129,6 +130,9 @@ final readonly class AbgleichVergleich
                 $daten[$feld] = $bisher[$feld] ?? null;
             }
         }
+        // A missing BIC is filled in from the bank of a German IBAN, also
+        // when the file has no column for it (10 section 4).
+        $daten['bic'] = Banken::bicErgaenzen((string) $daten['bic'], (string) $daten['iban']);
 
         return $daten;
     }

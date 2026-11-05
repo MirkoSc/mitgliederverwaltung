@@ -113,6 +113,11 @@ geschützt (PR + grüne CI Pflicht).
   spezifizierten Protokolls (SMTP, TOTP, QR) als eine große Abhängigkeit.
 - JS-Bibliotheken vendored unter `public/js/vendor/` mit `README.md`
   (Version, Lizenz, SHA-256), nie per CDN.
+- Fremde Daten: `app/data/banken.php` (Bankleitzahl → Bankname, BIC; #127)
+  aus dem npm-Paket `bankdata-germany` (Markus Baumer, Lizenz „MIT OR
+  MPL-2.0", genutzt unter MIT; Daten der Deutschen Bundesbank), erzeugt von
+  `tools/banken-erzeugen.php`, das nur dessen JSON liest. Herkunft und Stand
+  stehen im Kopf der Datei; Aktualisieren: `docs/betrieb.md`.
 - Lizenz GPLv3.
 
 ## 6. Parallele Entwicklung

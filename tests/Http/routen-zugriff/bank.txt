@@ -1,0 +1,3 @@
+# app/routes/bank.php - bank name and BIC for a Bankleitzahl, asked by the
+# member form (07 section 1); only the BLZ is sent, never the IBAN.
+GET /app/bank/{blz:[0-9]+} -> mitglieder.bearbeiten (api)

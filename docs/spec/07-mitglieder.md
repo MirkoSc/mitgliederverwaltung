@@ -42,6 +42,22 @@ gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 - IBAN wird beim Speichern normalisiert (Großbuchstaben, ohne
   Leerzeichen) und per Prüfziffer geprüft – falsch ⇒ Hinweis, gespeichert
   wird trotzdem.
+- IBAN/BIC live (#127): `public/js/bankverbindung.js` prüft die IBAN beim
+  Tippen und Verlassen (Länderlänge + Prüfziffer wie `App\Support\Iban`)
+  und umrahmt eine falsche rot (`aria-invalid`, Text darunter, `aria-live`);
+  nie gesperrt. Bei gültiger **deutscher** IBAN fragt das Skript mit der
+  Bankleitzahl (Stellen 5–12, nur sie – nie die IBAN) `GET /app/bank/{blz}`
+  (`mitglieder.bearbeiten`, JSON `{bank, bic}`), zeigt den Banknamen unter
+  der BIC und trägt die BIC ein, wenn das Feld leer ist (oder die BIC vom
+  Skript selbst für eine frühere IBAN stammt). Eine BIC mit falscher Form
+  (`App\Support\Bic`: 8 oder 11 Zeichen, Bank, Land, Ort, Filiale) oder eine,
+  die nicht zur Bank der IBAN passt (8 Zeichen = 11 mit `XXX`), wird rot
+  umrahmt. Ohne Skript zeigt das Formular nach dem Speichern dasselbe.
+  Beim Speichern ergänzt der Server eine **leere** BIC aus der Bank einer
+  gültigen deutschen IBAN (`Banken::bicErgaenzen()`); der Bankname wird nicht
+  gespeichert, sondern angezeigt (Formular, `daten-lesen`). Bankdaten:
+  `app/data/banken.php` aus der Bankleitzahlendatei der Bundesbank (05 §5,
+  `docs/betrieb.md` „Bankdaten aktualisieren“), `App\Support\Banken`.
 
 Umsetzung des Formulars (#19): Reiter **Daten** (`App\App\Mitglied\
 DatenReiter`, erster Reiter) zeigt alle Felder als ein Formular
@@ -224,6 +240,7 @@ oben im Mitglied, nach dem Speichern und gesammelt in der Liste
 | Kind ist 18 | Rolle `kind`, Alter ≥ 18 |
 | Kein Beitrag | weder Beitragsart noch Familie, nicht ehemalig |
 | Lastschrift ohne gültige IBAN | Zahlart `lastschrift`, IBAN fehlt oder Prüfziffer falsch |
+| Lastschrift mit falscher BIC (#127) | Zahlart `lastschrift`, BIC eingetragen und falsche Form oder passt nicht zur Bank der (deutschen) IBAN |
 | Beitragsfrei ohne Grund | Regel `beitragsfrei`, Bemerkung leer |
 | Eintrittsdatum unbekannt | Eintrittsdatum fehlt |
 | Pflichtangaben für BLSV fehlen | Geschlecht oder Geburtsdatum fehlt |
@@ -265,6 +282,9 @@ Hinweise gibt – sie stehen dann oben im Mitglied. Auslegung im Einzelnen:
 - „Lastschrift ohne gültige IBAN" gilt nicht für Elternteil/Kind *ohne* eigene
   Beitragsart und *ohne* IBAN (sie zahlen über den Zahler); eine falsche IBAN
   wird immer gemeldet.
+- „Lastschrift mit falscher BIC": eine leere BIC ist kein Hinweis (die Bank
+  findet sich über die IBAN); verglichen wird nur bei gültiger deutscher IBAN
+  und bekannter Bank, sonst nur die Form.
 - Ehemalige: nur „Kein Beitrag" nimmt sie aus; die übrigen Regeln gelten
   unverändert.
 
