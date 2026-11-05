@@ -138,6 +138,7 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
   `<meta name="htmx-config">` konfiguriert.
 - Mitgliederdaten im Browser **nie dauerhaft speichern** (kein
   localStorage/IndexedDB/Service-Worker-Cache); `Cache-Control: no-store`.
+  Service Worker nur ohne Cache (PWA, `public/sw.js`).
 - Rechte **serverseitig pro Aktion** (`Permission`-Enum). Jede Route
   deklariert ihren Zugriff (`App\Http\Zugriff`, Pflichtargument von
   `Router::get/post`). Drei feste Rollen Admin/Vorstand/Nur lesen (02 §6);
