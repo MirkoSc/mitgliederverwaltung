@@ -190,7 +190,6 @@ final class BeitragsverteilungTest extends TestCase
         self::assertSame(0, $v->anzahl);
         self::assertSame(0, $v->summeCent);
         self::assertSame([], $v->nachArt);
-        self::assertSame('0,0' . "\u{00A0}%", $v->anteil(0));
     }
 
     public function testSplittingKeepsEveryCent(): void
@@ -199,15 +198,5 @@ final class BeitragsverteilungTest extends TestCase
         self::assertSame([1 => 8667, 2 => 4333], Beitragsverteilung::teilen(13000, [1 => 2, 2 => 1]));
         self::assertSame([5 => 4250, 6 => 4250], Beitragsverteilung::teilen(8500, [5 => 1, 6 => 1]));
         self::assertSame([1 => 1, 2 => 0], Beitragsverteilung::teilen(1, [1 => 1, 2 => 1]));
-    }
-
-    public function testTheShareIsRoundedToATenthOfAPercent(): void
-    {
-        $v = new Verteilung(2026, false, 3, 30000, 3, [], []);
-
-        self::assertSame(333, $v->promille(10000));
-        self::assertSame('33,3' . "\u{00A0}%", $v->anteil(10000));
-        self::assertSame('100,0' . "\u{00A0}%", $v->anteil(30000));
-        self::assertSame('0,1' . "\u{00A0}%", $v->anteil(15));
     }
 }

@@ -10,7 +10,7 @@ Anleitungen für seltene Admin-Abläufe. Mehr nur auf ausdrücklichen Wunsch.
 
 ## 1. Seiten und Zugriff
 
-- Eintrag **„Hilfe"** im Benutzermenü, vor „Abmelden" (06 §2 Punkt 7) – kein
+- Eintrag **„Hilfe"** im Benutzermenü, vor „Abmelden" (06 §2 Punkt 8) – kein
   achter Bereich in der Hauptnavigation.
 - `GET /app/hilfe` – Übersicht. `GET /app/hilfe/{slug}` – eine Anleitung
   (`slug` nur `[a-z0-9-]+`). Beide `Zugriff::angemeldet()`.

@@ -122,7 +122,12 @@
                     <?= $textfeld('bemerkung', 'Bemerkung', $e->bemerkung) ?>
                     <?= $textfeld('mitgliedsnummer', 'Mitgliedsnummer (genau)', (string) ($e->mitgliedsnummer ?? ''), 'number') ?>
                     <?= $auswahl('geschlecht', 'Geschlecht', $e->geschlecht, [
-                        'm' => 'männlich', 'w' => 'weiblich', 'd' => 'divers', \App\Domain\ErweiterteSuche::OHNE_ANGABE => 'ohne Angabe',
+                        ...array_column(
+                            array_map(static fn($g): array => [$g->value, $g->bezeichnung()], \App\Domain\Geschlecht::cases()),
+                            1,
+                            0,
+                        ),
+                        \App\Domain\ErweiterteSuche::OHNE_ANGABE => 'ohne Angabe',
                     ], 'Alle') ?>
                     <?= $auswahl('funktion', 'Funktion', (string) ($e->funktionId ?? ''), array_combine(
                         array_map(static fn($f): int => (int) $f->id, $funktionen),
