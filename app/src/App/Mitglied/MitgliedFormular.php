@@ -7,6 +7,7 @@ namespace App\App\Mitglied;
 use App\Domain\Geschlecht;
 use App\Domain\Mitglied;
 use App\Domain\Zahlart;
+use App\Support\Datum;
 use App\Support\Iban;
 use App\Support\Laender;
 
@@ -145,7 +146,7 @@ final readonly class MitgliedFormular
         }
         $daten = [];
         foreach (self::DATUMSFELDER as $feld) {
-            $daten[$feld] = self::datum($werte[$feld]);
+            $daten[$feld] = Datum::ausEingabe($werte[$feld]);
             if ($werte[$feld] !== '' && $daten[$feld] === null) {
                 $fehler[$feld] = 'Bitte das Datum als Tag, Monat und Jahr eintragen, zum Beispiel 31.12.1980.';
             } elseif ($daten[$feld] !== null) {
@@ -194,20 +195,6 @@ final readonly class MitgliedFormular
         ]);
 
         return new self($werte, $abteilungIds, $funktionIds, mitglied: $mitglied);
-    }
-
-    /**
-     * A day as the date input sends it ("1980-12-31") or as typed where the
-     * browser shows a plain text field ("31.12.1980"); null for '' and for
-     * anything else.
-     */
-    public static function datum(string $wert): ?\DateTimeImmutable
-    {
-        if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/D', $wert, $teile) === 1) {
-            $wert = sprintf('%04d-%02d-%02d', $teile[3], $teile[2], $teile[1]);
-        }
-
-        return Mitglied::datum($wert === '' ? null : $wert);
     }
 
     /** The same form with one more error (from the save itself). */

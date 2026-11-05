@@ -26,6 +26,24 @@ final class Alter
     }
 
     /**
+     * The latest birth date of someone who is at least `jahre` old on
+     * `stichtag` - the SQL counterpart of am(), same 29 February rule (plain
+     * "minus N years" would turn 29 February into 1 March).
+     */
+    public static function spaetestesGeburtsdatum(\DateTimeInterface $stichtag, int $jahre): \DateTimeImmutable
+    {
+        $jahr = (int) $stichtag->format('Y') - $jahre;
+        $tag = $stichtag->format('m-d');
+        if ($tag === '02-29' && !checkdate(2, 29, $jahr)) {
+            $tag = '02-28';
+        } elseif ($tag === '02-28' && !checkdate(2, 29, (int) $stichtag->format('Y')) && checkdate(2, 29, $jahr)) {
+            $tag = '02-29'; // born on 29 February: the birthday is today
+        }
+
+        return new \DateTimeImmutable(sprintf('%04d-%s', $jahr, $tag));
+    }
+
+    /**
      * "MM-DD" of the birthday in the given year - 29 February becomes
      * 28 February in a year without it.
      */

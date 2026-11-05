@@ -45,7 +45,7 @@ final readonly class StatistikController
 
     public function mitglieder(Request $r): Response
     {
-        $heute = self::heute();
+        $heute = Datum::heute();
 
         return Response::html($this->dienste->view->render('statistik/mitglieder', [
             'title' => 'Statistik',
@@ -56,7 +56,7 @@ final readonly class StatistikController
 
     public function beitraege(Request $r): Response
     {
-        $heute = self::heute();
+        $heute = Datum::heute();
         $jahr = self::jahr($r->feld('jahr'), $heute);
 
         return Response::html($this->dienste->view->render('statistik/beitraege', [
@@ -72,7 +72,7 @@ final readonly class StatistikController
     /** The old address /app/beitraege/verteilung (08 section 2b): moved here. */
     public function alteVerteilung(Request $r): Response
     {
-        return Response::redirect(self::beitragsAdresse(self::jahr($r->feld('jahr'), self::heute())));
+        return Response::redirect(self::beitragsAdresse(self::jahr($r->feld('jahr'), Datum::heute())));
     }
 
     /**
@@ -98,10 +98,5 @@ final readonly class StatistikController
         return $jahr !== null && $jahr >= Jahresbeitraege::ERSTES_JAHR && $jahr <= Jahresbeitraege::letztesJahr($heute)
             ? $jahr
             : (int) $heute->format('Y');
-    }
-
-    private static function heute(): \DateTimeImmutable
-    {
-        return new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
     }
 }

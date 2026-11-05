@@ -146,14 +146,15 @@ final readonly class GeburtstageListe implements Liste
     private function mitglieder(GeburtstageZeitraum $zeitraum, \DateTimeImmutable $heute): array
     {
         $monate = $zeitraum->monate();
+        [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('m', $heute);
         $stmt = ($this->pdo)()->prepare(sprintf(
             'SELECT m.id, m.nachname, m.vorname, m.geburtsdatum FROM mitglied m
              WHERE m.geburtsdatum IS NOT NULL AND MONTH(m.geburtsdatum) IN (%s)
-               AND (m.austrittsdatum IS NULL OR m.austrittsdatum > ?)
+               AND ' . $nichtAusgetreten . '
              ORDER BY m.nachname, m.vorname, m.mitgliedsnummer',
             Zeilen::platzhalter(count($monate)),
         ));
-        $stmt->execute([...$monate, Zeilen::fuerDatum($heute)]);
+        $stmt->execute([...$monate, $tag]);
         $zeilen = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         if ($zeilen === []) {
             return [];

@@ -39,7 +39,7 @@ final readonly class EhrungenController
         } elseif ($r->feld('aktion') === 'zurueck') {
             $this->ehrungen->zuruecknehmen($mitgliedId, $stufe);
             $this->dienste->session->flash('Der Vermerk „geehrt“ ist zurückgenommen.');
-        } elseif ($this->ehrungen->vermerken($mitgliedId, $stufe, new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE)), $this->dienste->session->userId())) {
+        } elseif ($this->ehrungen->vermerken($mitgliedId, $stufe, Datum::heute(), $this->dienste->session->userId())) {
             $this->dienste->session->flash('Als geehrt vermerkt.');
         } else {
             $this->dienste->session->flash('Dieses Mitglied ist für diese Stufe schon als geehrt vermerkt.', FlashArt::Warnung);

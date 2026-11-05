@@ -7,6 +7,7 @@ namespace App\App\Mitglied;
 use App\Dienste;
 use App\Http\Request;
 use App\Repository\MitgliedRepository;
+use App\Support\Datum;
 
 /**
  * The opened member as a building block (docs/spec/06-oberflaeche.md
@@ -88,7 +89,7 @@ final readonly class MitgliedAnsicht
         foreach (MitgliedErweiterungen::abschnitte()->alle($this->dienste, $konto) as $abschnitt) {
             $abschnitte[] = $view->fragment($abschnitt->template(), [...$abschnitt->daten($id), ...$gemeinsam]);
         }
-        $ehemalig = $mitglied->istEhemalig(new \DateTimeImmutable('today'));
+        $ehemalig = $mitglied->istEhemalig(Datum::heute());
 
         $html = $view->fragment('mitglied/ansicht', [
             'mitglied' => $mitglied,

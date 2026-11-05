@@ -24,15 +24,16 @@ final readonly class SelbstKassierenRepository
      */
     public function offeneBeitraege(int $jahr, \DateTimeImmutable $heute): array
     {
+        [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('m', $heute);
         $stmt = $this->pdo->prepare(
             'SELECT j.betrag_cent, j.jahr, m.id AS mitglied_id, m.nachname, m.vorname,
                     m.telefon, m.handy, m.email, m.zahlart, m.iban
              FROM jahresbeitrag j JOIN mitglied m ON m.id = j.mitglied_id
              WHERE j.jahr = ? AND j.status = ?
-               AND (m.austrittsdatum IS NULL OR m.austrittsdatum > ?)
+               AND ' . $nichtAusgetreten . '
              ORDER BY m.nachname, m.vorname, m.mitgliedsnummer',
         );
-        $stmt->execute([$jahr, JahresbeitragStatus::Offen->value, $heute->format('Y-m-d')]);
+        $stmt->execute([$jahr, JahresbeitragStatus::Offen->value, $tag]);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }

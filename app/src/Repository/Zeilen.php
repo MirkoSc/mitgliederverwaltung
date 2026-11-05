@@ -24,6 +24,20 @@ final class Zeilen
         return $datum === false ? null : $datum;
     }
 
+    /**
+     * SQL condition and value for "has not left on `tag`" - the member's
+     * leaving day itself already counts as left (Mitglied::istEhemalig()).
+     * `alias` is the table alias ("m") or '' for none.
+     *
+     * @return array{0: string, 1: string} condition, value for its placeholder
+     */
+    public static function nichtAusgetreten(string $alias, \DateTimeInterface $tag): array
+    {
+        $spalte = ($alias === '' ? '' : $alias . '.') . 'austrittsdatum';
+
+        return ['(' . $spalte . ' IS NULL OR ' . $spalte . ' > ?)', $tag->format('Y-m-d')];
+    }
+
     /** A DATETIME column (local time). */
     public static function zeitpunkt(mixed $wert): \DateTimeImmutable
     {

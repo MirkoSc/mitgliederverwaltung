@@ -12,6 +12,7 @@ use App\Domain\MitgliedVersion;
 use App\Domain\SpeicherErgebnis;
 use App\Domain\VersionsAnlass;
 use App\Domain\Zahlart;
+use App\Support\Datum;
 use App\Support\Iban;
 
 /**
@@ -83,8 +84,9 @@ final readonly class MitgliedRepository
             array_push($werte, ...array_fill(0, 5, '%' . addcslashes($wort, '%_\\') . '%'));
         }
         if (!$mitEhemaligen) {
-            $bedingungen[] = '(austrittsdatum IS NULL OR austrittsdatum > ?)';
-            $werte[] = Zeilen::fuerDatum($stichtag ?? new \DateTimeImmutable());
+            [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('', $stichtag ?? Datum::heute());
+            $bedingungen[] = $nichtAusgetreten;
+            $werte[] = $tag;
         }
 
         return $this->mehrere(
