@@ -43,9 +43,10 @@ final class RoutenZugriffTest extends TestCase
     /**
      * What may be public at all (docs/ENTSCHEIDUNGEN.md E-F3): the login and
      * everything below it (password reset, invitation), logging out, the
-     * legal pages, and "/" which only redirects.
+     * legal pages, "/" which only redirects, the club logo and the web app
+     * manifest (club name and logo URLs only - both on the login page anyway).
      */
-    private const array OEFFENTLICH_GENAU = ['/', '/abmelden', '/impressum', '/datenschutz', '/logo/{groesse}'];
+    private const array OEFFENTLICH_GENAU = ['/', '/abmelden', '/impressum', '/datenschutz', '/logo/{groesse}', '/manifest.webmanifest'];
 
     private const string OEFFENTLICH_BEREICH = '/anmelden';
 

@@ -262,6 +262,12 @@ Verschlüsselung einzelner Datenbankfelder.
 - **Daten im Browser**: Mitgliederdaten nie in localStorage,
   sessionStorage, IndexedDB oder einem Service-Worker-Cache;
   `Cache-Control: no-store` auf allen Seiten mit Mitgliederdaten.
+  Der Service Worker der installierbaren App (`public/sw.js`, 06 §6) hat
+  **keinen** Cache, keinen `fetch`-Handler und keinen Speicher – jede
+  Anfrage geht wie ohne ihn ans Netz (`tests/js/pwa.test.js`). Er wird
+  mit `Cache-Control: no-cache` ausgeliefert. Das Manifest
+  `/manifest.webmanifest` ist öffentlich und enthält nur Vereinsname und
+  Logo-URLs (stehen ohnehin auf der Anmeldeseite).
 - Ausgaben escapen (`e()`), SQL nur mit Prepared Statements.
 - **Logs**: keine Mitgliederdaten in Logs, Fehlermeldungen, Dateinamen
   oder URLs (Mitgliedsnummer bzw. ID genügt). Passwörter nie loggen.

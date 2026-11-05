@@ -27,16 +27,33 @@ final readonly class LogoService
 
     /**
      * Size name => [width, height, square canvas, background of that canvas
-     * (null = transparent)]. A logo is scaled to fit and never distorted;
-     * "kopf" and "anmeldung" keep its own proportions. The Apple touch icon
-     * gets white behind it - iOS paints transparency black.
+     * (null = transparent), free margin on each side as a share of the
+     * canvas]. A logo is scaled to fit and never distorted; "kopf" and
+     * "anmeldung" keep its own proportions. The Apple touch icon gets white
+     * behind it - iOS paints transparency black.
+     *
+     * icon192/icon512/maskable are the icons of the installable app (web app
+     * manifest, App\PublicPages\ManifestController). A "maskable" icon is
+     * cut to a circle or rounded square by the launcher: the logo stays
+     * inside the safe zone (a circle of 80 %) on a white square.
      */
     private const array GROESSEN = [
-        'kopf' => [96, 96, false, null],
-        'anmeldung' => [320, 160, false, null],
-        'favicon' => [32, 32, true, null],
-        'apple' => [180, 180, true, 0xFFFFFF],
+        'kopf' => [96, 96, false, null, 0.0],
+        'anmeldung' => [320, 160, false, null, 0.0],
+        'favicon' => [32, 32, true, null, 0.0],
+        'apple' => [180, 180, true, 0xFFFFFF, 0.0],
+        'icon192' => [192, 192, true, null, 0.0],
+        'icon512' => [512, 512, true, null, 0.0],
+        'maskable' => [512, 512, true, 0xFFFFFF, 0.22],
     ];
+
+    /**
+     * Sizes added after logos were already uploaded (the original is not
+     * kept): for such a logo they are derived on first request from the
+     * largest older size, "anmeldung" - see datei(). A new upload derives
+     * them from the original like every other size.
+     */
+    private const array NACHTRAEGLICH = ['icon192', 'icon512', 'maskable'];
 
     public function __construct(private Paths $paths, private SettingRepository $settings)
     {
@@ -68,8 +85,42 @@ final readonly class LogoService
             return null;
         }
         $pfad = $this->paths->logoDir() . '/' . $groesse . '.png';
+        if (!is_file($pfad) && in_array($groesse, self::NACHTRAEGLICH, true)) {
+            $this->nachtraeglichAbleiten($groesse, $pfad);
+        }
 
         return is_file($pfad) ? $pfad : null;
+    }
+
+    /**
+     * Derives a size that did not exist when the logo was uploaded, from
+     * "anmeldung" (up to 320 x 160). Coarser than from the original - a new
+     * upload makes it sharp. Failing quietly leaves the size missing; the
+     * caller then shows the placeholder.
+     */
+    private function nachtraeglichAbleiten(string $groesse, string $pfad): void
+    {
+        $quellpfad = $this->paths->logoDir() . '/anmeldung.png';
+        if (!extension_loaded('gd') || !is_file($quellpfad)) {
+            return;
+        }
+        $inhalt = file_get_contents($quellpfad);
+        $quelle = $inhalt === false ? false : @imagecreatefromstring($inhalt);
+        if ($quelle === false) {
+            return;
+        }
+        [$breite, $hoehe, $quadrat, $hintergrund, $rand] = self::GROESSEN[$groesse];
+        // A unique temporary name, then rename: two requests at the same
+        // time each write their own file, and the last rename wins.
+        $temp = $pfad . '.' . bin2hex(random_bytes(4)) . '.neu';
+        if (@file_put_contents($temp, $this->ableiten($quelle, $breite, $hoehe, $quadrat, $hintergrund, $rand)) === false) {
+            @unlink($temp);
+
+            return;
+        }
+        if (!@rename($temp, $pfad)) {
+            @unlink($temp);
+        }
     }
 
     /**
@@ -112,8 +163,8 @@ final readonly class LogoService
         // failure half-way must not leave a logo of mixed old and new files.
         $zwischen = [];
         try {
-            foreach (self::GROESSEN as $name => [$breite, $hoehe, $quadrat, $hintergrund]) {
-                $png = $this->ableiten($quelle, $breite, $hoehe, $quadrat, $hintergrund);
+            foreach (self::GROESSEN as $name => [$breite, $hoehe, $quadrat, $hintergrund, $rand]) {
+                $png = $this->ableiten($quelle, $breite, $hoehe, $quadrat, $hintergrund, $rand);
                 $temp = $ordner . '/' . $name . '.png.neu';
                 if (file_put_contents($temp, $png) === false) {
                     throw new LogoException('Das Logo konnte nicht gespeichert werden.');
@@ -145,11 +196,12 @@ final readonly class LogoService
         }
     }
 
-    private function ableiten(\GdImage $quelle, int $breite, int $hoehe, bool $quadrat, ?int $hintergrund): string
+    private function ableiten(\GdImage $quelle, int $breite, int $hoehe, bool $quadrat, ?int $hintergrund, float $rand = 0.0): string
     {
         $qb = imagesx($quelle);
         $qh = imagesy($quelle);
-        $faktor = min($breite / $qb, $hoehe / $qh);
+        $innen = 1 - 2 * $rand;
+        $faktor = min($breite * $innen / $qb, $hoehe * $innen / $qh);
         $zb = max(1, (int) round($qb * $faktor));
         $zh = max(1, (int) round($qh * $faktor));
         // Square canvas for icons, the scaled size itself otherwise.

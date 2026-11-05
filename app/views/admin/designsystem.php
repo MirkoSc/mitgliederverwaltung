@@ -481,4 +481,7 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
     <h3>Kopfzeile</h3>
     <p>Links das Vereinslogo mit dem Namen der Anwendung, rechts das Benutzermenü, darunter die Hauptnavigation.
         Bis der Verein sein Logo hochlädt, steht dort ein neutrales Wappen (<code>App\View\View::setLogo()</code>).</p>
+    <p>Die Kopfzeile klebt oben. Am Handy gleitet sie beim Runterscrollen weg und kommt beim Hochscrollen sofort
+        zurück (<code>kopfleiste.js</code>); am PC, im Barrierefrei-Modus und bei reduzierter Bewegung bleibt sie stehen.
+        Was selbst oben klebt oder angesprungen wird, rechnet mit <code>--kopf-versatz</code>.</p>
 </section>

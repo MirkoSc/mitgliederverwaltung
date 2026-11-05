@@ -4,7 +4,7 @@
    only sets aria-current and moves the focus. */
 .verzeichnis {
     position: sticky;
-    top: 0;
+    top: var(--kopf-versatz);
     z-index: 4;
     margin: 0 calc(-1 * var(--abstand-4)) var(--abstand-4);
     padding: 0 var(--abstand-4);
@@ -54,7 +54,7 @@
 }
 
 .mit-verzeichnis .abschnitt {
-    scroll-margin-top: calc(var(--tippflaeche) + var(--abstand-3));
+    scroll-margin-top: calc(var(--kopf-versatz) + var(--tippflaeche) + var(--abstand-3));
 }
 
 @media (min-width: 64rem) {
@@ -66,13 +66,13 @@
     }
 
     .verzeichnis {
-        top: var(--abstand-4);
+        top: calc(var(--kopf-versatz) + var(--abstand-4));
         margin: 0;
         padding: 0;
         overflow: visible;
         background: none;
         border-bottom: 0;
-        max-height: calc(100vh - 2 * var(--abstand-4));
+        max-height: calc(100vh - var(--kopf-versatz) - 2 * var(--abstand-4));
         overflow-y: auto;
     }
 
@@ -92,7 +92,7 @@
     }
 
     .mit-verzeichnis .abschnitt {
-        scroll-margin-top: var(--abstand-4);
+        scroll-margin-top: calc(var(--kopf-versatz) + var(--abstand-4));
     }
 }
 

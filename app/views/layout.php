@@ -58,9 +58,15 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
     <?php if ($appleIconUrl !== null): ?>
     <link rel="apple-touch-icon" href="<?= e($appleIconUrl) ?>">
     <?php endif; ?>
+    <?php /* Installable app (06 section 6): on every page, the login
+             included, so it can be installed from there. */ ?>
+    <link rel="manifest" href="<?= e(\App\PublicPages\ManifestController::PFAD) ?>">
+    <meta name="theme-color" content="<?= e(\App\PublicPages\ManifestController::THEME_FARBE) ?>">
     <?php /* Only external files (CLAUDE.md section 4); values a script needs
              travel as data-* attributes. */ ?>
     <script src="/js/vendor/htmx.min.js?v=<?= e($version) ?>" defer></script>
+    <script src="/js/kopfleiste.js?v=<?= e($version) ?>" defer></script>
+    <script src="/js/pwa.js?v=<?= e($version) ?>" defer></script>
     <?php if ($bereich->mitNavigation() && ($konto ?? null) !== null): ?>
     <script src="/js/benutzermenue.js?v=<?= e($version) ?>" defer></script>
     <?php endif; ?>
