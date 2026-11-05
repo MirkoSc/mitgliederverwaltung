@@ -12,6 +12,7 @@ use App\Domain\MitgliedVersion;
 use App\Domain\SpeicherErgebnis;
 use App\Domain\VersionsAnlass;
 use App\Domain\Zahlart;
+use App\Support\Bic;
 use App\Support\Datum;
 use App\Support\Iban;
 
@@ -142,7 +143,7 @@ final readonly class MitgliedRepository
     ): SpeicherErgebnis {
         $mitglied = $mitglied->mit([
             'iban' => Iban::normalisieren($mitglied->iban),
-            'bic' => strtoupper((string) preg_replace('/\s+/u', '', $mitglied->bic)),
+            'bic' => Bic::normalisieren($mitglied->bic),
         ]);
         $zeit = Zeilen::fuerZeitpunkt($jetzt);
 

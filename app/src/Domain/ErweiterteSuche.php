@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain;
 
+use App\Support\Iban;
+
 /**
  * The "Erweiterte Suche" of the member list (docs/spec/07-mitglieder.md
  * section 8): one field per column, all conditions AND, on top of the free
@@ -74,7 +76,7 @@ final readonly class ErweiterteSuche
             ort: self::text($daten, 'ort'),
             email: self::text($daten, 'email'),
             telefon: self::text($daten, 'telefon'),
-            iban: strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', self::text($daten, 'iban'))),
+            iban: Iban::normalisieren(self::text($daten, 'iban')),
             bemerkung: self::text($daten, 'bemerkung'),
             mitgliedsnummer: self::zahl($daten, 'mitgliedsnummer', 4294967295),
             geschlecht: Geschlecht::tryFrom($geschlecht) !== null || $geschlecht === self::OHNE_ANGABE ? $geschlecht : '',

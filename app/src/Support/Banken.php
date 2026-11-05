@@ -16,6 +16,9 @@ namespace App\Support;
  */
 final class Banken
 {
+    /** Endpoint of the BLZ lookup (app/routes/bank.php), used by the member form. */
+    public const string PFAD = '/app/bank';
+
     private const string DATEI = __DIR__ . '/../../data/banken.php';
 
     /** @var array<int|string, array{0: string, 1: string|null}>|null */
@@ -55,6 +58,21 @@ final class Banken
         }
 
         return Bic::gleich($bic, $bank->bic);
+    }
+
+    /**
+     * The hint for the BIC field, or null when it is fine or empty. The same
+     * texts are in public/js/bankverbindung.js (shown while typing) - keep
+     * both in step.
+     */
+    public static function bicFehler(string $bic, string $iban): ?string
+    {
+        return match (true) {
+            Bic::normalisieren($bic) === '' => null,
+            !Bic::istGueltig($bic) => 'Die BIC hat nicht die richtige Form (8 oder 11 Zeichen, z. B. COBADEFFXXX).',
+            self::bicPasst($bic, $iban) === false => 'Die BIC passt nicht zur IBAN – zur Bankleitzahl gehört ' . self::fuerIban($iban)?->bic . '.',
+            default => null,
+        };
     }
 
     /**

@@ -70,7 +70,7 @@ final class NurLesenTest extends AppTestCase
 
         self::assertStringContainsString('Beispiel', $seite);
         self::assertStringContainsString('Musterstadt', $seite);
-        self::assertStringContainsString('DE02120300000000202051', $seite);
+        self::assertStringContainsString('DE02 1203 0000 0000 2020 51', $seite);
         self::assertStringContainsString('Sie können dieses Mitglied ansehen, aber nicht ändern.', $seite);
         self::assertStringNotContainsString('id="mitglied-formular"', $seite);
         self::assertStringNotContainsString('Mitglied speichern', $seite);

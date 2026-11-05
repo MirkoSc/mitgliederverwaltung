@@ -7,6 +7,7 @@ namespace App\App\Mitglied;
 use App\Domain\Geschlecht;
 use App\Domain\Mitglied;
 use App\Domain\Zahlart;
+use App\Support\Banken;
 use App\Support\Datum;
 use App\Support\Iban;
 use App\Support\Laender;
@@ -185,7 +186,7 @@ final readonly class MitgliedFormular
             // The repository normalises too; done here so the column width holds.
             'iban' => mb_substr(Iban::normalisieren($werte['iban']), 0, 34),
             // An empty BIC is filled in from the bank of a German IBAN (07 section 1).
-            'bic' => \App\Support\Banken::bicErgaenzen($werte['bic'], $werte['iban']),
+            'bic' => Banken::bicErgaenzen($werte['bic'], $werte['iban']),
             'kontoinhaber' => $werte['kontoinhaber'],
             'mandatsreferenz' => $werte['mandatsreferenz'],
             'mandatsdatum' => $daten['mandatsdatum'],

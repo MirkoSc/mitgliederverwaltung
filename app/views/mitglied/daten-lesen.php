@@ -12,6 +12,9 @@
  * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (issue #106), without buttons
  */
 
+use App\Support\Banken;
+use App\Support\Iban;
+
 /** Names of the chosen entries, in the order of the settings. */
 $namen = static function (array $ids, array $liste): string {
     $gewaehlt = array_filter($liste, static fn(object $eintrag): bool => in_array($eintrag->id, $ids, true));
@@ -56,9 +59,9 @@ $gruppen = [
     'Beitrag' => [
         'Beitragsart' => $beitragsart,
         'Zahlart' => $mitglied->zahlart->bezeichnung(),
-        'IBAN' => $mitglied->iban,
+        'IBAN' => Iban::anzeigen($mitglied->iban),
         'BIC' => $mitglied->bic,
-        'Bank' => \App\Support\Banken::fuerIban($mitglied->iban)?->name ?? '',
+        'Bank' => Banken::fuerIban($mitglied->iban)?->name ?? '',
         'Kontoinhaber' => $mitglied->kontoinhaber,
         'Mandatsreferenz' => $mitglied->effektiveMandatsreferenz(),
         'Mandatsdatum' => datum($mitglied->effektivesMandatsdatum($listen->vereinsMandatsdatum)),

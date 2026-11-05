@@ -26,6 +26,7 @@ use App\App\MitgliedController;
 use App\App\WohnortController;
 use App\Domain\Geschlecht;
 use App\Domain\Zahlart;
+use App\Support\Banken;
 use App\Support\Iban;
 use App\Support\Laender;
 
@@ -83,13 +84,8 @@ $nummer = $formular->wert('mitgliedsnummer');
 $ibanUngueltig = $formular->wert('iban') !== '' && !Iban::istGueltig($formular->wert('iban'));
 // Bank and BIC check of the server; public/js/bankverbindung.js shows the
 // same while typing (07 section 1). A hint only, saving stays possible.
-$bank = \App\Support\Banken::fuerIban($formular->wert('iban'));
-$bicFehler = match (true) {
-    $formular->wert('bic') === '' => null,
-    !\App\Support\Bic::istGueltig($formular->wert('bic')) => 'Die BIC hat nicht die richtige Form (8 oder 11 Zeichen, z. B. COBADEFFXXX).',
-    \App\Support\Banken::bicPasst($formular->wert('bic'), $formular->wert('iban')) === false => 'Die BIC passt nicht zur IBAN – zur Bankleitzahl gehört ' . $bank?->bic . '.',
-    default => null,
-};
+$bank = Banken::fuerIban($formular->wert('iban'));
+$bicFehler = Banken::bicFehler($formular->wert('bic'), $formular->wert('iban'));
 
 $mandatsdatumDefault = $formular->wert('eintrittsdatum') !== '' ? null : $listen->vereinsMandatsdatum;
 $mandatsdatumHilfe = match (true) {
@@ -203,8 +199,8 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     </fieldset>
     <div class="feld">
         <label for="m-iban">IBAN</label>
-        <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-iban-hinweis" data-bank-adresse="/app/bank"<?= $ibanUngueltig ? ' aria-invalid="true"' : '' ?>>
-        <p class="feld-fehler" id="m-iban-hinweis" aria-live="polite"<?= $ibanUngueltig ? '' : ' hidden' ?>><?= $ibanUngueltig ? 'Die Prüfziffer passt nicht. Bitte die IBAN vom Kontoauszug abschreiben – gespeichert wird sie trotzdem.' : '' ?></p>
+        <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-iban-hinweis" data-bank-adresse="<?= e(Banken::PFAD) ?>"<?= $ibanUngueltig ? ' aria-invalid="true"' : '' ?>>
+        <p class="feld-fehler" id="m-iban-hinweis" aria-live="polite"<?= $ibanUngueltig ? '' : ' hidden' ?>><?= $ibanUngueltig ? Iban::FEHLER_PRUEFZIFFER : '' ?></p>
     </div>
     <div class="feld feld-kurz">
         <label for="m-bic">BIC</label>

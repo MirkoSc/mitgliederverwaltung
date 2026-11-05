@@ -74,6 +74,16 @@ final class BankenTest extends TestCase
         self::assertNull(Banken::bicPasst('INGDDEFFXXX', 'DE00370400440532013000'), 'IBAN wrong');
     }
 
+    public function testBicHint(): void
+    {
+        $iban = 'DE89370400440532013000';
+        self::assertNull(Banken::bicFehler('', $iban));
+        self::assertNull(Banken::bicFehler('COBADEFFXXX', $iban));
+        self::assertStringContainsString('nicht die richtige Form', (string) Banken::bicFehler('XYZ', $iban));
+        self::assertStringContainsString('gehört COBADEFFXXX.', (string) Banken::bicFehler('INGDDEFFXXX', $iban));
+        self::assertNull(Banken::bicFehler('INGDDEFFXXX', 'AT611904300234573201'), 'not German: cannot be told');
+    }
+
     public function testAnEmptyBicIsFilledIn(): void
     {
         self::assertSame('COBADEFFXXX', Banken::bicErgaenzen('', 'DE89370400440532013000'));

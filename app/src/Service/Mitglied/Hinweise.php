@@ -12,7 +12,6 @@ use App\Domain\NachweisArt;
 use App\Domain\Zahlart;
 use App\Service\Karte\GeoStatus;
 use App\Support\Banken;
-use App\Support\Bic;
 use App\Support\Iban;
 
 /**
@@ -149,15 +148,8 @@ final class Hinweise
                 : 'Die Zahlart ist Lastschrift, aber die IBAN ist ungültig – die Prüfziffer passt nicht. Bitte die IBAN prüfen.');
         }
 
-        if ($mitglied->zahlart === Zahlart::Lastschrift && trim($mitglied->bic) !== '') {
-            if (!Bic::istGueltig($mitglied->bic)) {
-                $melden(HinweisArt::LastschriftMitFalscherBic, 'Die BIC hat nicht die richtige Form (8 oder 11 Zeichen, z. B. COBADEFFXXX). Bitte die BIC prüfen oder leeren – bei einer deutschen IBAN wird sie dann ergänzt.');
-            } elseif (Banken::bicPasst($mitglied->bic, $mitglied->iban) === false) {
-                $melden(HinweisArt::LastschriftMitFalscherBic, sprintf(
-                    'Die BIC passt nicht zur IBAN – zur Bankleitzahl gehört die BIC %s. Bitte die BIC prüfen oder leeren, dann wird sie ergänzt.',
-                    (string) Banken::fuerIban($mitglied->iban)?->bic,
-                ));
-            }
+        if ($mitglied->zahlart === Zahlart::Lastschrift && ($bicFehler = Banken::bicFehler($mitglied->bic, $mitglied->iban)) !== null) {
+            $melden(HinweisArt::LastschriftMitFalscherBic, $bicFehler . ' Bitte die BIC prüfen oder leeren – bei einer deutschen IBAN wird sie dann ergänzt.');
         }
 
         if ($art?->hatRegel(BeitragsRegel::Beitragsfrei) === true && trim($mitglied->bemerkung) === '') {
