@@ -105,42 +105,6 @@ final class BeitraegeSeiteTest extends AppTestCase
         self::assertStringContainsString('Heute bezahlt', $seite);
     }
 
-    public function testTheDistributionIsProjectedThenTakenFromTheCreatedFees(): void
-    {
-        $this->mitglied(1, 'Musterfrau');
-        $this->mitglied(2, 'Beispiel', 'Passiv');
-        $this->als(Rolle::Admin);
-
-        self::assertStringContainsString('/app/beitraege/verteilung?jahr=2026', $this->get('/app/beitraege', ['jahr' => '2026'])->body);
-
-        $seite = $this->get('/app/beitraege/verteilung', ['jahr' => '2026']);
-        self::assertSame(200, $seite->status);
-        self::assertStringContainsString('Verteilung der Beiträge 2026', $seite->body);
-        self::assertStringContainsString('hochgerechnet', $seite->body);
-        self::assertStringContainsString('135,00', $seite->body);
-        self::assertStringContainsString('Nach Beitragsart', $seite->body);
-        self::assertStringContainsString('Nach Abteilung', $seite->body);
-        self::assertStringContainsString('ohne Abteilung', $seite->body);
-        self::assertStringNotContainsString('Musterfrau', $seite->body, 'figures only, no names');
-
-        $this->post('/app/beitraege/erzeugen', ['jahr' => '2026']);
-        $this->beitraege()->speichern($this->beitraege()->imJahr(2026)[0]->mit(['betragCent' => 1000]));
-
-        $seite = $this->get('/app/beitraege/verteilung', ['jahr' => '2026'])->body;
-        self::assertStringNotContainsString('hochgerechnet', $seite);
-        self::assertStringContainsString('erzeugten Jahresbeiträgen 2026', $seite);
-        self::assertStringContainsString('60,00', $seite, 'the changed amount counts');
-    }
-
-    public function testTheVorstandGets403OnTheDistribution(): void
-    {
-        $this->mitglied(1, 'Musterfrau');
-        foreach ([Rolle::Vorstand, Rolle::Lesend] as $rolle) {
-            $this->als($rolle);
-            self::assertSame(403, $this->get('/app/beitraege/verteilung', ['jahr' => '2026'])->status, $rolle->name);
-        }
-    }
-
     public function testAYearOutOfRangeIsNotCreated(): void
     {
         $this->mitglied(1, 'Musterfrau');

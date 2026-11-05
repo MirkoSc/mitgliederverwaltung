@@ -15,7 +15,6 @@ use App\Http\Response;
 use App\Repository\BenutzerRepository;
 use App\Repository\JahresbeitragRepository;
 use App\Repository\MitgliedRepository;
-use App\Service\Beitraege\Beitragsverteilung;
 use App\Service\Beitraege\Jahresbeitraege;
 use App\Support\Datum;
 use App\Support\Geld;
@@ -39,6 +38,7 @@ final readonly class BeitraegeController
 {
     public const int PRO_SEITE = 50;
 
+    /** The former "Verteilung der Beiträge" - now StatistikController::PFAD_BEITRAEGE. */
     public const string PFAD_VERTEILUNG = Navigation::BEITRAEGE . '/verteilung';
 
     /** Filter of the list; the default shows what still needs doing. */
@@ -118,26 +118,6 @@ final readonly class BeitraegeController
             'scripts' => ['/js/beitraege-auswahl.js'],
             // The direct debit and its archive (#30) live on this page too.
             ...EinzugController::aus($this->dienste)->seitenDaten(),
-        ], Area::App));
-    }
-
-    public static function verteilungsAdresse(int $jahr): string
-    {
-        return self::PFAD_VERTEILUNG . '?' . http_build_query(['jahr' => (string) $jahr]);
-    }
-
-    /** "Verteilung der Beiträge" (08 section 2b): what the year brings in, by fee type and department. */
-    public function verteilung(Request $r): Response
-    {
-        $heute = self::heute();
-        $jahr = $this->jahr($r->feld('jahr'), $heute);
-
-        return Response::html($this->dienste->view->render('beitraege/verteilung', [
-            'title' => 'Verteilung der Beiträge ' . $jahr,
-            'verteilung' => Beitragsverteilung::mit($this->dienste->pdo())->fuerJahr($jahr),
-            'vorjahr' => $jahr > Jahresbeitraege::ERSTES_JAHR ? $jahr - 1 : null,
-            'folgejahr' => $jahr < Jahresbeitraege::letztesJahr($heute) ? $jahr + 1 : null,
-            'zurueck' => self::seitenAdresse($jahr),
         ], Area::App));
     }
 

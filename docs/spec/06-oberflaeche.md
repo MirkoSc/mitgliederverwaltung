@@ -26,13 +26,13 @@ eigenständig nach dem Skill `frontend-design` gestaltet.
 
 ## 2. Seitenaufbau (Vorschlag)
 
-Sieben Bereiche in der Hauptnavigation, mehr nicht („Karte" kam mit #91,
-„Familien" mit #92 dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
+Acht Bereiche in der Hauptnavigation, mehr nicht („Karte" kam mit #91,
+„Familien" mit #92, „Statistik" mit #127 dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
 umgeschaltet statt verlinkt.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Mitglieder  Familien  Listen  Karte  Beiträge*  Einstellungen*  [Ben.]│
+│ Mitglieder Familien Listen Karte Statistik Beiträge* Einstellungen*  │
 └──────────────────────────────────────────────────────────────────────┘
 * nur Admin
 ```
@@ -112,11 +112,18 @@ umgeschaltet statt verlinkt.
    Häkchen; danach läuft dieselbe Schrittkette wie beim Knopf
    (`POST /app/karte/neu-ermitteln`, `admin.system`, ohne Skript zurück auf
    die Seite mit Meldung, der Cron sucht weiter).
-5. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
+5. **Statistik** (#127, alle Rollen, `listen.sehen`) – Reiter
+   „Mitglieder" (Anzahlen: Kennzahlen, Altersgruppen, Wohnorte, Abteilungen,
+   Familien, Mitgliedsdauer, Ein- und Austritte) und, nur für den Admin
+   (`beitraege.verwalten`), „Beiträge" (Geld je Jahr; die frühere
+   „Verteilung der Beiträge"). Je Auswertung ein Diagramm (Chart.js,
+   vendored) über der aufklappbaren Tabelle mit denselben Zahlen; ohne JS
+   und im Barrierefrei-Modus nur die Tabellen. Details 09 §7.
+6. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
    „bezahlt setzen".
-6. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
+7. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
    (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
    Systemcheck – übernommen). Links (PC) bzw. oben (Handy, waagerecht
@@ -125,7 +132,7 @@ umgeschaltet statt verlinkt.
    haben `tabindex="-1"` und bekommen nach dem Klick den Fokus).
    `public/js/inhaltsverzeichnis.js` markiert den aktuellen Abschnitt mit
    `aria-current="true"`.
-7. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
+8. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
    **Barrierefrei-Modus an/aus**, **Hilfe** (bebilderte Anleitungen, 12;
    kein eigener Bereich der Hauptnavigation), Abmelden.
 

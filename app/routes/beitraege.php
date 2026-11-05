@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\App\BeitraegeController;
+use App\App\StatistikController;
 use App\Domain\Permission;
 use App\Http\Request;
 use App\Http\Response;
@@ -22,7 +23,8 @@ return static function (Routen $routen): void {
     $beitrag = Navigation::BEITRAEGE . '/{id:[0-9]+}';
 
     $routen->get(Navigation::BEITRAEGE, $zugriff, static fn(Request $r): Response => $controller()->seite($r));
-    $routen->get(BeitraegeController::PFAD_VERTEILUNG, $zugriff, static fn(Request $r): Response => $controller()->verteilung($r));
+    // Moved to the page "Statistik" (09 section 7): old bookmarks redirect.
+    $routen->get(BeitraegeController::PFAD_VERTEILUNG, $zugriff, static fn(Request $r): Response => StatistikController::aus($routen->dienste())->alteVerteilung($r));
     $routen->post(Navigation::BEITRAEGE . '/erzeugen', $zugriff, static fn(Request $r): Response => $controller()->erzeugen($r));
     $routen->get($beitrag, $zugriff, static fn(Request $r, array $p): Response => $controller()->beitrag($r, $p));
     $routen->post($beitrag . '/betrag', $zugriff, static fn(Request $r, array $p): Response => $controller()->betrag($r, $p));

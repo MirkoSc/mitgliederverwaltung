@@ -118,12 +118,16 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
 
 ## 2b. Verteilung der Beiträge
 
-Seite `/app/beitraege/verteilung?jahr=` (`beitraege.verwalten`), verlinkt
-im Abschnitt „Jahresbeiträge" („Verteilung <Jahr> ansehen"): was das Jahr
-an Beiträgen bringt – Summe, **nach Beitragsart** (Anzahl, Summe, Anteil)
-und **nach Abteilung** (Mitglieder, Summe, Anteil). Nur Zahlen, keine
-Namen. `App\Service\Beitraege\Beitragsverteilung`, rein berechnet aus
-Mitgliedern, Beitragsarten, Abteilungen und den Jahresbeiträgen.
+Seit #127 der Reiter „Beiträge" der Seite **Statistik**
+(`/app/statistik/beitraege?jahr=`, `beitraege.verwalten`, 09 §7), verlinkt
+im Abschnitt „Jahresbeiträge" („Verteilung <Jahr> ansehen"); die alte
+Adresse `/app/beitraege/verteilung?jahr=` leitet dorthin weiter (302). Was
+das Jahr an Beiträgen bringt – Summe, **nach Beitragsart** (Anzahl, Summe,
+Anteil) und **nach Abteilung** (Personen, Summe, Anteil), dazu nach
+Personen-Merkmalen (09 §7). Nur Zahlen, keine Namen.
+`App\Service\Beitraege\Beitragsverteilung`, rein berechnet aus
+Mitgliedern, Beitragsarten, Abteilungen und den Jahresbeiträgen;
+`App\Service\Statistik\Beitragsstatistik` ergänzt die Merkmale.
 
 - **Grundlage**: Hat das Jahr Jahresbeiträge, zählen deren Beträge in
   jedem Status (offen, im Einzug, bezahlt). Hat es keine, wird
@@ -310,4 +314,5 @@ Zu §2b: Hochrechnung wie Erzeugen (ehemalig, späterer Eintritt, anteilig,
 beitragsfrei); erzeugte Beiträge zählen mit ihrem Betrag; Teilung über
 mehrere Abteilungen und über die Familie (ohne Mitglieder mit eigenem
 Beitrag); Abteilungen und Beitragsarten ergeben je die Gesamtsumme;
-Vorstand und Nur lesen bekommen 403.
+Vorstand und Nur lesen bekommen 403 (auch auf der alten Adresse); weitere
+Pflicht-Tests der Statistik in 09.

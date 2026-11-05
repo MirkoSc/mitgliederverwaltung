@@ -320,6 +320,17 @@ für die neuen Routen erneut durchgegangen.
 | L-05 | Texte escaped; Roh-HTML nur aus `Markdown::fett()` (erst escapen, dann nur `<strong>`), kein Link, kein `style=` | ✓ | `app/views/hilfe/anleitung.php`; `HilfeTest::testTheStepsAreAnOrderedListWithEscapedText`, `MarkdownTest::testBoldOnlyEscapesAndKeepsEverythingElsePlain` |
 | L-06 | Keine Mitgliederdaten auf den Seiten; Bilder sind statische Dateien unter `public/img/hilfe/` und zeigen nur Beispieldaten (Abnahme in #119) | ✓ | `StaticFileHandler` (C-27), 12 §4 Nr. 8, §9 |
 
+## S – Statistik (#127)
+
+Geprüft beim Bau der Seite „Statistik" (2026-11-05); Abschnitte C, E, I
+und J für die neuen Routen erneut durchgegangen.
+
+| ID | Prüfung | Ergebnis | Fundstelle |
+|---|---|---|---|
+| S-01 | Neue Routen nur lesend und deklariert: `GET /app/statistik` (`listen.sehen`), `GET /app/statistik/beitraege` (`beitraege.verwalten`); die alte Adresse `/app/beitraege/verteilung` bleibt `beitraege.verwalten` und leitet nur auf einen festen Pfad weiter (kein offener Redirect, `jahr` nur als vierstellige Zahl) | ✓ | `app/routes/statistik.php`, `tests/Http/routen-zugriff/statistik.txt`, `StatistikSeiteTest` |
+| S-02 | Nur Anzahlen und Summen, keine Namen, keine Mitgliedsnummern; Ortsnamen und PLZ nur als Gruppen (Top 10, Rest „Sonstige") | ✓ | `StatistikSeiteTest` (kein Name im HTML) |
+| S-03 | Chart.js vendored mit Prüfsumme, nur auf dieser Seite geladen; kein `eval`, Stile nur per CSSOM, Daten aus der serverseitig escapten Tabelle (`data-wert` Zahlen, Beschriftung als `textContent`) – CSP unverändert | ✓ | `public/js/vendor/README.md`, `VendorAssetsTest`, `CspComplianceTest`, `public/js/statistik.js` |
+
 ## Befunde des Durchlaufs 2026-10-29
 
 Kein Befund war „kritisch" oder „hoch". Behoben heißt: im PR zu #37 mit
