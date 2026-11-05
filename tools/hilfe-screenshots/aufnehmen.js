@@ -56,7 +56,8 @@ function warte(ms) {
 
 /** The first lines of an error: Playwright appends a long call log. */
 function kurz(fehler) {
-    return String(fehler?.message ?? fehler).split('\n').filter((z) => z.trim() !== '').slice(0, 3).join(' | ');
+    // eslint-disable-next-line no-control-regex
+    return String(fehler?.message ?? fehler).replace(/\u001b\[[0-9;]*m/g, '').split('\n').filter((z) => z.trim() !== '').slice(0, 3).join(' | ');
 }
 
 /** Path without query: no search words in messages. */
@@ -270,7 +271,7 @@ async function main() {
                     kontexte.set(schluessel, kontext);
                 }
 
-                const erwartet = aufnahme.probe ? undefined : anleitungen.get(slug)?.bilder;
+                const erwartet = anleitungen.get(slug)?.bilder;
                 const ergebnis = await ablaufAusfuehren({
                     kontext: kontexte.get(schluessel),
                     aufnahme,
