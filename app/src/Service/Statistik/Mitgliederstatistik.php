@@ -8,6 +8,7 @@ use App\Domain\Abteilung;
 use App\Domain\Mitglied;
 use App\Repository\AbteilungRepository;
 use App\Repository\MitgliedRepository;
+use App\Service\Mitglied\Hinweise;
 use App\Support\Alter;
 
 /**
@@ -97,7 +98,7 @@ final readonly class Mitgliederstatistik
             maennlich: $geschlecht[1],
             divers: $geschlecht[2],
             ohneGeschlecht: $geschlecht[3],
-            minderjaehrig: count(array_filter($bekannt, static fn(int $a): bool => $a < Altersgruppen::VOLLJAEHRIG)),
+            minderjaehrig: count(array_filter($bekannt, static fn(int $a): bool => $a < Hinweise::VOLLJAEHRIG)),
             durchschnittsalterZehntel: Kennzahlen::mittelZehntel(array_sum(array_map(static fn(int $a): int => max(0, $a), $bekannt)), count($bekannt)),
         );
     }
@@ -194,7 +195,7 @@ final readonly class Mitgliederstatistik
             'abteilungen',
             'Abteilungen',
             'Abteilung',
-            Merkmale::GESCHLECHTER,
+            Merkmale::geschlechter(),
             $zeilen,
             Diagramm::GestapeltLiegend,
             erklaerung: 'Wer in mehreren Abteilungen ist, zählt in jeder – deshalb gibt es keine Summe. „Ø Alter“ in Jahren, nur Mitglieder mit Geburtsdatum.',
@@ -231,7 +232,7 @@ final readonly class Mitgliederstatistik
     /** @param list<Mitglied> $aktuelle */
     private static function familien(array $aktuelle): Auswertung
     {
-        $zaehler = ['in einer Familie' => 0, 'einzeln' => 0];
+        $zaehler = [Merkmale::IN_FAMILIE => 0, Merkmale::EINZELN => 0];
         $familien = [];
         foreach ($aktuelle as $mitglied) {
             $zaehler[Merkmale::familie($mitglied->familieId)]++;
@@ -348,7 +349,7 @@ final readonly class Mitgliederstatistik
             }
         }
 
-        return new Auswertung($id, $titel, $merkmal, Merkmale::GESCHLECHTER, $zeilen, $diagramm, new AuswertungsZeile('Zusammen', $summen), erklaerung: $erklaerung);
+        return new Auswertung($id, $titel, $merkmal, Merkmale::geschlechter(), $zeilen, $diagramm, new AuswertungsZeile('Zusammen', $summen), erklaerung: $erklaerung);
     }
 
     /**

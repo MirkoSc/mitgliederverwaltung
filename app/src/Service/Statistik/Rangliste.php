@@ -13,7 +13,7 @@ final class Rangliste
 {
     public const int ANZAHL = 10;
 
-    public const string OHNE_ANGABE = 'ohne Angabe';
+    public const string OHNE_ANGABE = Merkmale::OHNE_ANGABE;
 
     /**
      * Adds $wert under $text: grouped case-insensitively and without

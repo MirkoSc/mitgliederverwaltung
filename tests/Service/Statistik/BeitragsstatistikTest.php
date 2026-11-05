@@ -15,6 +15,7 @@ use App\Service\Statistik\Auswertung;
 use App\Service\Statistik\AuswertungsZeile;
 use App\Service\Statistik\Beitragsstatistik;
 use App\Service\Statistik\Beitragszahlen;
+use App\Service\Statistik\Diagramm;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -166,5 +167,16 @@ final class BeitragsstatistikTest extends TestCase
         self::assertSame(500, $geschlecht[Beitragsstatistik::UNBEKANNT]);
         self::assertSame(1500, array_sum($geschlecht));
         self::assertSame(1500, array_sum(self::summen($zahlen, 'zahlart')));
+    }
+
+    public function testTheShareIsRoundedToATenthOfAPercent(): void
+    {
+        $a = new Auswertung('x', 'X', 'X', ['Summe'], [], Diagramm::Balken, new AuswertungsZeile('Zusammen', [30000]));
+
+        self::assertSame(333, $a->promille(10000));
+        self::assertSame('33,3' . "\u{00A0}%", $a->anteil(10000));
+        self::assertSame('100,0' . "\u{00A0}%", $a->anteil(30000));
+        self::assertSame('0,1' . "\u{00A0}%", $a->anteil(15));
+        self::assertSame('0,0' . "\u{00A0}%", (new Auswertung('x', 'X', 'X', ['Summe'], [], Diagramm::Balken))->anteil(0));
     }
 }

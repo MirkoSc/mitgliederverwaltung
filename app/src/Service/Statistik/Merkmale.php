@@ -9,10 +9,26 @@ use App\Domain\Geschlecht;
 /** Shared rows and series of the statistics (09 section 7). */
 final class Merkmale
 {
-    /** The gender series, name => colour slot; "ohne Angabe" is grey. */
-    public const array GESCHLECHTER = ['weiblich' => 1, 'männlich' => 2, 'divers' => 3, 'ohne Angabe' => 4];
+    public const string OHNE_ANGABE = 'ohne Angabe';
+    public const string IN_FAMILIE = 'in einer Familie';
+    public const string EINZELN = 'einzeln';
 
-    /** Index into GESCHLECHTER. */
+    /**
+     * The gender series, name => colour slot; "ohne Angabe" is grey.
+     *
+     * @return array<string, int>
+     */
+    public static function geschlechter(): array
+    {
+        return [
+            Geschlecht::W->bezeichnung() => 1,
+            Geschlecht::M->bezeichnung() => 2,
+            Geschlecht::D->bezeichnung() => 3,
+            self::OHNE_ANGABE => 4,
+        ];
+    }
+
+    /** Index into geschlechter(). */
     public static function geschlecht(?Geschlecht $geschlecht): int
     {
         return match ($geschlecht) {
@@ -25,7 +41,7 @@ final class Merkmale
 
     public static function geschlechtName(?Geschlecht $geschlecht): string
     {
-        return array_keys(self::GESCHLECHTER)[self::geschlecht($geschlecht)];
+        return array_keys(self::geschlechter())[self::geschlecht($geschlecht)];
     }
 
     /** @return list<string> the age groups, then "ohne Geburtsdatum" */
@@ -36,6 +52,6 @@ final class Merkmale
 
     public static function familie(?int $familieId): string
     {
-        return $familieId === null ? 'einzeln' : 'in einer Familie';
+        return $familieId === null ? self::EINZELN : self::IN_FAMILIE;
     }
 }

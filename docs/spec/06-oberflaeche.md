@@ -26,7 +26,7 @@ eigenständig nach dem Skill `frontend-design` gestaltet.
 
 ## 2. Seitenaufbau (Vorschlag)
 
-Acht Bereiche in der Hauptnavigation, mehr nicht („Karte" kam mit #91,
+Sieben Bereiche in der Hauptnavigation (Punkte 1–7), dazu das Benutzermenü (Punkt 8), mehr nicht („Karte" kam mit #91,
 „Familien" mit #92, „Statistik" mit #127 dazu). Was zusammengehört, liegt auf **einer** Seite und wird dort
 umgeschaltet statt verlinkt.
 

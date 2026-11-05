@@ -131,9 +131,9 @@ final readonly class Beitragsstatistik
                 'Die heutige Beitragsart des Mitglieds.', 'Beiträge', $verteilung->anzahl),
             $auswertung('abteilung', 'Nach Abteilung', 'Abteilung', self::ausVerteilung($verteilung->nachAbteilung), Diagramm::Balken,
                 'Wer in mehreren Abteilungen ist, zahlt einen Beitrag – er wird gleichmäßig auf seine Abteilungen geteilt. „Personen“ zählt jede Person, die zur Abteilung beiträgt.', anzahl: $verteilung->personen),
-            $auswertung('geschlecht', 'Nach Geschlecht', 'Geschlecht', self::feste(array_keys(Merkmale::GESCHLECHTER), $gruppiert(
+            $auswertung('geschlecht', 'Nach Geschlecht', 'Geschlecht', self::feste(array_keys(Merkmale::geschlechter()), $gruppiert(
                 static fn(Mitglied $m): string => Merkmale::geschlechtName($m->geschlecht),
-            ), ['ohne Angabe']), Diagramm::Balken, ''),
+            ), [Merkmale::OHNE_ANGABE]), Diagramm::Balken, ''),
             $auswertung('altersgruppe', 'Nach Altersgruppe', 'Altersgruppe', self::feste(Merkmale::altersgruppen(), $gruppiert(
                 static fn(Mitglied $m): string => Altersgruppen::gruppe($m->alterAm($stichtag)),
             ), [Altersgruppen::OHNE_GEBURTSDATUM]), Diagramm::Saeulen, 'Alter am 1. Januar ' . $jahr . ', gleiche Gruppen wie bei den Mitgliedern.'),
@@ -142,7 +142,7 @@ final readonly class Beitragsstatistik
             $auswertung('aktiv', 'Aktiv und passiv', 'Mitgliedschaft', self::feste(['aktiv', 'passiv'], $gruppiert(
                 static fn(Mitglied $m): string => $m->aktiv ? 'aktiv' : 'passiv',
             )), Diagramm::Balken, ''),
-            $auswertung('familie', 'Familien und Einzelmitglieder', 'Mitgliedschaft', self::feste(['in einer Familie', 'einzeln'], $gruppiert(
+            $auswertung('familie', 'Familien und Einzelmitglieder', 'Mitgliedschaft', self::feste([Merkmale::IN_FAMILIE, Merkmale::EINZELN], $gruppiert(
                 static fn(Mitglied $m): string => Merkmale::familie($m->familieId),
             )), Diagramm::Ring, ''),
             $auswertung('zahlart', 'Nach Zahlart', 'Zahlart', self::feste(array_keys($zahlarten), $zahlarten), Diagramm::Ring,

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service\Statistik;
 
+use App\Service\Mitglied\Hinweise;
+
 /**
  * The age groups of the page "Statistik" (docs/spec/09-listen-und-exporte.md
  * section 7) - defined once, used by the member and the fee statistics.
@@ -34,14 +36,11 @@ final class Altersgruppen
     public const array LEBENSPHASEN = [
         'Kinder (0–13)' => [0, 13],
         'Jugendliche (14–17)' => [14, 17],
-        'Erwachsene (18–66)' => [18, 66],
-        'Senioren (ab 67)' => [67, null],
+        'Erwachsene (18–66)' => [Hinweise::VOLLJAEHRIG, Hinweise::RENTENALTER - 1],
+        'Senioren (ab 67)' => [Hinweise::RENTENALTER, null],
     ];
 
     public const string OHNE_GEBURTSDATUM = 'ohne Geburtsdatum';
-
-    /** Kinder und Jugendliche: younger than this. */
-    public const int VOLLJAEHRIG = 18;
 
     /** The label of the age group; null age => OHNE_GEBURTSDATUM. */
     public static function gruppe(?int $alter): string

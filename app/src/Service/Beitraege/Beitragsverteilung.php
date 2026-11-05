@@ -9,10 +9,6 @@ use App\Domain\Beitragsart;
 use App\Domain\FamilienRolle;
 use App\Domain\Jahresbeitrag;
 use App\Domain\Mitglied;
-use App\Repository\AbteilungRepository;
-use App\Repository\BeitragsartRepository;
-use App\Repository\JahresbeitragRepository;
-use App\Repository\MitgliedRepository;
 
 /**
  * "Verteilung der Beiträge" (docs/spec/08-beitraege.md section 2b): how much
@@ -31,24 +27,6 @@ final readonly class Beitragsverteilung
 {
     /** Key of the rows "ohne Beitragsart" and "ohne Abteilung" - no real id is 0. */
     private const int OHNE = 0;
-
-    public function __construct(
-        private MitgliedRepository $mitglieder,
-        private BeitragsartRepository $arten,
-        private AbteilungRepository $abteilungen,
-        private JahresbeitragRepository $beitraege,
-    ) {
-    }
-
-    public static function mit(\PDO $pdo): self
-    {
-        return new self(new MitgliedRepository($pdo), new BeitragsartRepository($pdo), new AbteilungRepository($pdo), new JahresbeitragRepository($pdo));
-    }
-
-    public function fuerJahr(int $jahr): Verteilung
-    {
-        return self::berechnen($jahr, $this->mitglieder->alle(true), $this->arten->alle(), $this->abteilungen->alle(), $this->beitraege->imJahr($jahr));
-    }
 
     /**
      * @param list<Mitglied> $mitglieder all members, former ones too
