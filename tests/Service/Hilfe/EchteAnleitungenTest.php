@@ -174,18 +174,20 @@ final class EchteAnleitungenTest extends TestCase
             'austritt-eintragen',
             'barrierefrei-modus',
             'geburtstagsliste',
+            'mitglied-loeschen',
             'statistik',
             'app-installieren',
         ];
 
         yield 'Admin' => [Rolle::Admin, $alle];
-        yield 'Vorstand' => [Rolle::Vorstand, $alle];
+        // Deleting a member is the admin's alone (02 section 6).
+        yield 'Vorstand' => [Rolle::Vorstand, array_values(array_diff($alle, ['mitglied-loeschen']))];
         yield 'Nur lesen' => [Rolle::Lesend, ['anmelden', 'mitglied-suchen', 'barrierefrei-modus', 'geburtstagsliste', 'statistik', 'app-installieren']];
     }
 
     /**
-     * 12 section 7: Admin and Vorstand see all guides, Nur lesen exactly
-     * the six it can carry out.
+     * 12 section 7: Admin sees all guides, Vorstand all but the deleting of
+     * a member, Nur lesen exactly the six it can carry out.
      *
      * @param list<string> $erwartet
      */

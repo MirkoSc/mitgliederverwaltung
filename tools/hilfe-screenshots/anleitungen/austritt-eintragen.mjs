@@ -1,31 +1,37 @@
 // Recording for app/data/hilfe/07-austritt-eintragen.php. Member 1028 (Rudolf
-// Engel) leaves; the leaving date and reason are cleared again afterwards.
+// Engel) leaves today; "Austritt zurücknehmen" restores him afterwards.
 
-async function oeffne(seite) {
+// Opens member 1028 on the tab "Daten" (the default) and waits for the button
+// below the form.
+async function oeffne(seite, knopf, ehemalige = false) {
     await seite.goto('/app/mitglieder');
+    if (ehemalige) {
+        await seite.getByLabel('Ehemalige anzeigen').check();
+    }
     await seite.getByRole('row', { name: /\b1028\b/ }).getByRole('link').first().click();
-    await seite.getByRole('link', { name: 'Daten', exact: true }).waitFor();
+    const link = seite.getByRole('link', { name: knopf, exact: true });
+    await link.waitFor();
+
+    return link;
 }
 
 export default async function ablauf({ seite, markiere, foto }) {
-    await oeffne(seite);
-    await seite.getByLabel('Austrittsdatum').fill('2026-10-31');
-    await seite.getByLabel('Austrittsgrund').fill('Umzug');
+    const ausgetreten = await oeffne(seite, 'Mitglied ausgetreten');
+    await markiere(ausgetreten);
+    await foto(2);
+
+    await ausgetreten.click();
+    await seite.getByRole('heading', { name: 'Mitglied ausgetreten', level: 1 }).waitFor();
     await markiere(seite.getByLabel('Austrittsdatum'));
     await foto(3);
 
-    await seite.getByRole('button', { name: 'Mitglied speichern' }).click();
-    await markiere(seite.getByText('Mitglied gespeichert.'));
+    await seite.getByLabel('Austrittsgrund').fill('Austritt');
+    await seite.getByRole('button', { name: 'Austritt eintragen' }).click();
+    await markiere(seite.getByText(/Austritt zum .* eingetragen – das Mitglied ist jetzt ehemalig\./));
     await foto(6);
 
-    // Restore: still a member. The member is "ehemalig" now, so the list shows
-    // it only with "Ehemalige anzeigen".
-    await seite.goto('/app/mitglieder');
-    await seite.getByLabel('Ehemalige anzeigen').check();
-    await seite.getByRole('row', { name: /\b1028\b/ }).getByRole('link').first().click();
-    await seite.getByRole('link', { name: 'Daten', exact: true }).waitFor();
-    await seite.getByLabel('Austrittsdatum').fill('');
-    await seite.getByLabel('Austrittsgrund').fill('');
-    await seite.getByRole('button', { name: 'Mitglied speichern' }).click();
-    await seite.getByText('Mitglied gespeichert.').waitFor();
+    // Restore: still a member (step 7 of the guide).
+    await (await oeffne(seite, 'Austritt zurücknehmen', true)).click();
+    await seite.getByRole('button', { name: 'Austritt zurücknehmen' }).click();
+    await seite.getByText('Austritt zurückgenommen.').waitFor();
 }

@@ -15,6 +15,20 @@
             "rolle": "vorstand",
             "barrierefrei": true,
             "totp_geheimnis": "KRSXG5CTMVRXEZLUKRSXG5CTMVRXEZLU"
+        },
+        "admin-normal": {
+            "email": "hilfe-admin-normal@example.org",
+            "name": "Anton Admin",
+            "rolle": "admin",
+            "barrierefrei": false,
+            "totp_geheimnis": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+        },
+        "admin-barrierefrei": {
+            "email": "hilfe-admin-barrierefrei@example.org",
+            "name": "Agnes Admin",
+            "rolle": "admin",
+            "barrierefrei": true,
+            "totp_geheimnis": "MFRGGZDFMZTWQ2LKNNWG23TPOBYXE43U"
         }
     }
 }
