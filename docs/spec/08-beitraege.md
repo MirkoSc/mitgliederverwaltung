@@ -208,7 +208,11 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
   nächste Bankarbeitstag oder ein Tag ohne Bankbetrieb ergibt einen
   Hinweis nach dem Erzeugen, keine Sperre.
 - **Erzeugen** (`POST /app/beitraege/einzug`) läuft in einer Transaktion:
-  gewählte Beiträge sperren und erneut prüfen – ist einer nicht mehr offen
+  gewählte Beiträge sperren, danach ihre Mitglieder (`SELECT … FOR UPDATE`,
+  nach ID sortiert – feste Reihenfolge Beiträge → Mitglieder) und auf
+  diesen frisch gelesenen Daten erneut prüfen; ein gleichzeitig
+  gespeicherter Austritt wartet bis zum Ende der Transaktion oder ist
+  schon gesehen – ist einer nicht mehr offen
   oder einziehbar (auch: sein Mitglied ist inzwischen ausgetreten), entsteht
   nichts –, Einzug anlegen, Datei erzeugen und
   als Blob speichern, `datei_blob_id`/`msg_id`/`daten` setzen, Beiträge auf

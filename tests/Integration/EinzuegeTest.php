@@ -548,6 +548,49 @@ final class EinzuegeTest extends DatabaseTestCase
         self::assertSame(JahresbeitragStatus::Offen, $this->beitraege->finde($bleibt)?->status);
     }
 
+    public function testWhileTheRunLocksAMemberALeavingSavedMeanwhileWaits(): void
+    {
+        $mitglied = $this->mitglied('Brandt', ['iban' => self::BERT]);
+        $andere = $this->mitglied('Albrecht');
+
+        // The lock erzeugen() takes on the members of the chosen fees.
+        $this->pdo()->beginTransaction();
+        try {
+            $gesperrt = $this->mitglieder->mitIdsZumAendern([(int) $mitglied->id, (int) $mitglied->id]);
+            self::assertSame([(int) $mitglied->id], array_keys($gesperrt));
+
+            $zweite = $this->zweiteVerbindung();
+            $zweite->exec('SET SESSION innodb_lock_wait_timeout = 1');
+            $nebenan = new MitgliedRepository($zweite);
+            try {
+                $nebenan->speichern($mitglied->mit(['austrittsdatum' => new \DateTimeImmutable('2026-02-10')]), VersionsAnlass::geaendert(), 1);
+                self::fail('saving a locked member waits for the run');
+            } catch (\PDOException $e) {
+                self::assertSame(1205, $e->errorInfo[1] ?? null, 'lock wait timeout');
+            }
+            // Only the chosen members are locked.
+            $nebenan->speichern($andere->mit(['ort' => 'Musterdorf']), VersionsAnlass::geaendert(), 1);
+        } finally {
+            $this->pdo()->rollBack();
+        }
+
+        self::assertNull($this->mitglieder->finde((int) $mitglied->id)?->austrittsdatum);
+        self::assertSame([], $this->mitglieder->mitIdsZumAendern([]));
+    }
+
+    private function zweiteVerbindung(): \PDO
+    {
+        $db = self::configData()['db'];
+        assert(is_array($db));
+
+        return new \PDO(
+            sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $db['host'], $db['port'], $db['name']),
+            (string) $db['user'],
+            (string) $db['password'],
+            [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_EMULATE_PREPARES => false],
+        );
+    }
+
     public function testCreatingStillCollectsAMemberWhoLeavesTomorrow(): void
     {
         $morgen = $this->beitrag($this->mitglied('Albrecht', ['austrittsdatum' => new \DateTimeImmutable('2026-02-11')]));

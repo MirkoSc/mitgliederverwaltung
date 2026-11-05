@@ -106,6 +106,31 @@ final readonly class MitgliedRepository
     }
 
     /**
+     * The members with these ids by id, their rows locked until the
+     * transaction ends (call inside one) - in id order, so two callers
+     * never wait for each other crosswise. For the direct debit (08
+     * section 3) and a deletion by the reconciliation (10 section 4): a
+     * member saved meanwhile waits, aendern() locks the row first.
+     *
+     * @param list<int> $ids
+     * @return array<int, Mitglied>
+     */
+    public function mitIdsZumAendern(array $ids): array
+    {
+        $ids = array_values(array_unique($ids));
+        sort($ids);
+        $gefunden = [];
+        foreach (array_chunk($ids, 1000) as $teil) {
+            $sql = 'SELECT * FROM mitglied WHERE id IN (' . Zeilen::platzhalter(count($teil)) . ') ORDER BY id FOR UPDATE';
+            foreach ($this->mehrere($sql, $teil) as $mitglied) {
+                $gefunden[(int) $mitglied->id] = $mitglied;
+            }
+        }
+
+        return $gefunden;
+    }
+
+    /**
      * The members of a family, the payer first.
      *
      * @return list<Mitglied>

@@ -21,6 +21,7 @@ use App\Repository\MitgliedRepository;
 use App\Repository\Zeilen;
 use App\Service\Audit\AuditLog;
 use App\Service\Storage\BlobService;
+use App\Support\Datum;
 
 /**
  * The reconciliation with a later file of the old software
@@ -164,16 +165,19 @@ final readonly class Abgleich
         foreach ($vergleich->fehlt as $zeile) {
             $fehlt[$zeile->mitglied->mitgliedsnummer] = $zeile;
         }
+        // Deleting is for former members only (07 section 1): a member who
+        // has not left may only leave, a former one cannot leave again.
         $loeschen = self::gewaehlt($auswahl['loeschen'] ?? [], array_keys($fehlt));
         foreach ($loeschen as $nummer) {
             if (!$fehlt[$nummer]->kannLoeschen) {
                 throw new ImportNichtMoeglich(sprintf(
-                    'Mitglied Nr. %d hat Jahresbeiträge und kann deshalb nicht ganz gelöscht werden – nur austreten lassen.',
+                    'Mitglied Nr. %d ist nicht ausgetreten und kann deshalb nicht gelöscht werden – nur austreten lassen.',
                     $nummer,
                 ));
             }
         }
-        $austritt = array_values(array_diff(self::gewaehlt($auswahl['austritt'] ?? [], array_keys($fehlt)), $loeschen));
+        $austretend = array_keys(array_filter($fehlt, static fn(AbgleichFehlt $zeile): bool => !$zeile->kannLoeschen));
+        $austritt = self::gewaehlt($auswahl['austritt'] ?? [], $austretend);
 
         if ($neu === [] && $aendern === [] && $austritt === [] && $loeschen === []) {
             throw new ImportNichtMoeglich('Es ist nichts angehakt. Bitte die Zeilen anhaken, die übernommen werden sollen.');
@@ -355,6 +359,7 @@ final readonly class Abgleich
         return Zeilen::transaktion($this->pdo, function () use ($teil, $eintraege, $datei, $austrittsdatum, $userId, $ip): array {
             $zaehler = array_fill_keys(self::ZAEHLER, 0);
             $geloescht = [];
+            $heute = new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
             $anlass = VersionsAnlass::abgleich();
 
             foreach ($teil as $op) {
@@ -404,7 +409,11 @@ final readonly class Abgleich
                             $zaehler['geloescht']++;
                             break;
                         }
-                        if (!$this->beitraege->hatBeitrag((int) $vorhanden->id)) {
+                        // Checked again on the locked row: the leaving may
+                        // have been taken back or an annual fee appeared
+                        // since the start - then the member stays (07 section 1).
+                        $vorhanden = $this->mitglieder->mitIdsZumAendern([(int) $vorhanden->id])[(int) $vorhanden->id] ?? $vorhanden;
+                        if ($vorhanden->istEhemalig($heute) && !$this->beitraege->hatBeitrag((int) $vorhanden->id)) {
                             $geloescht = [...$geloescht, ...$this->mitglieder->loeschen((int) $vorhanden->id)];
                             // In the same transaction as the deletion, so neither goes without the other.
                             $this->audit->protokollieren(
@@ -418,9 +427,9 @@ final readonly class Abgleich
                             $zaehler['geloescht']++;
                             break;
                         }
-                        // An annual fee appeared since the start: the member only leaves.
-                        $austrittsdatum ??= new \DateTimeImmutable('today');
-                        // no break
+                        $zaehler['uebersprungen']++;
+                        break;
+
                     case self::AUSTRITT:
                         if ($vorhanden === null || $austrittsdatum === null) {
                             $zaehler['uebersprungen']++;
