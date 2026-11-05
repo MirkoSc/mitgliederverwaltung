@@ -98,7 +98,8 @@ Teil eines Releases sind.
 ## 3. Bereiche der Anwendung (technisch)
 
 - **Öffentlich**: Anmeldung, „Passwort vergessen", `/impressum`,
-  `/datenschutz` – sonst nichts (E-F3).
+  `/datenschutz`, dazu für die installierbare App `/manifest.webmanifest`
+  (nur Vereinsname und Logo-Adressen) – sonst nichts (E-F3).
 - **Anwenderseite** (`/app/...`): alles Fachliche, je nach Recht.
 - **Adminseite** (`/admin/...`): Benutzer (drei feste Rollen Admin/
   Vorstand/Nur lesen), Mail, Rechtstexte, Einstellungen, Backup,

@@ -238,7 +238,9 @@ fremden Host an. Vorlage: `docs/betrieb.md` §11.
 
   Jede Route unter `/admin` verlangt ein `admin.*`-Recht, jede unter
   `/app` eine Anmeldung; öffentlich sind nur `/`, `/anmelden…`,
-  `/abmelden`, `/impressum`, `/datenschutz` (E-F3,
+  `/abmelden`, `/impressum`, `/datenschutz`, das Vereinslogo
+  `/logo/{groesse}` und `/manifest.webmanifest` (PWA, #127: nur Vereinsname
+  und Logo-Adressen) (E-F3,
   `tests/Http/RoutenZugriffTest.php`).
 
 ## 7. Web-Sicherheit

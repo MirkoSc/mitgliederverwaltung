@@ -481,4 +481,16 @@ wieder automatisch), ungültige Koordinaten → Fehler ohne Speichern, „Nur
 lesen" 403, Audit ohne Anschrift und Koordinaten, Cron/Suche/„Alle neu
 ermitteln" überschreiben ihn nicht. Karten-Hinweise (`HinweiseTest`):
 nicht gefunden und ungefähr ja; gefunden, von Hand, noch nicht gesucht und
-ehemalig nein.
+ehemalig nein. Runde 3 (#127): Anschriftvorschläge
+(`Feature\AnschriftvorschlaegeTest`, `Service\Karte\AnschriftvorschlaegeTest`,
+`tests/js/anschrift-vorschlaege.test.js`) – Text nur im POST-Body, Photon-
+Fehler/Timeout/kaputte Antwort ⇒ leere Liste, Rate-Limit 60/min, „Nur lesen"
+403; IBAN/BIC (`BankenTest`, `BankverbindungTest`,
+`tests/js/bankverbindung.test.js`) – Prüfziffer und Länderlänge, an den Server
+geht nur die BLZ, BIC wird nur bei leerem Feld und gültiger deutscher IBAN
+ergänzt (Formular, Import, Abgleich), falsche BIC ⇒ Hinweis, nie Sperre;
+Land (`LaenderTest`, `MitgliedFormularTest`) – Name, ISO-Code und altes
+Kfz-Kennzeichen ergeben ISO, Geo-Hash bleibt für alte Kennzeichen gleich;
+erweiterte Suche (`MitgliederFilterTest`, `MitgliederListeRepositoryTest`,
+`MitgliederSeiteTest`) – jede Feldart, alle Bedingungen UND, keine
+Personendaten in `parameter()`/URL, Austritt-Filter zeigt Ehemalige.

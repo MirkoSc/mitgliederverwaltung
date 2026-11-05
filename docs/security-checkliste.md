@@ -265,7 +265,7 @@ echten Daten installiert, das Repository öffentlich.
 | J-08 | Mails ohne Mitgliederdaten; Sicherheitsmails (neues Gerät, Passwort, 2FA, Backup-Codes) nur feste Sätze; Betreffzeilen fest; SMTP-Fehler nur mit Code | ✓ | `app/views/mail/*.php`, `Kontomails.php:32–40, 79–150`, `SmtpTransport.php` |
 | J-09 | Audit-Log ohne Mitgliederdaten (nur Mitgliedsnummer/IDs/Zähler), IP nur als HMAC | ✓ | `AuditLog::protokollieren()` Z. 56; alle 26 Aufrufe geprüft |
 | J-10 | Audit-Log deckt die Spec-Ereignisse ab (02 §8: Anmeldungen, Benutzer- und Rollenänderungen …) | ✓ (#37) | siehe A-23 |
-| J-11 | Mitgliedersuche: Suchtext nur im POST-Body, nie in URL/History (`hx-push-url` ohne Text) | ✓ | `MitgliederController` (`urlBauer()`, `formUrl()`), `MitgliederFilter::parameter()`, `mitglieder/bereich.php`, `bereich-link.php` |
+| J-11 | Mitgliedersuche: Suchtext und alle Textfelder der erweiterten Suche (#127: Namen, Straße, PLZ, Ort, E-Mail, Telefon, IBAN, Bemerkung, Mitgliedsnummer, Alters- und Datumsbereiche) nur im POST-Body, nie in URL/History (`hx-push-url` ohne Text); in der URL nur Auswahlwerte (IDs, Geschlecht, Zahlart, Familie) | ✓ | `MitgliederController` (`urlBauer()`, `formUrl()`), `MitgliederFilter::parameter()`, `ErweiterteSuche::parameter()`, `mitglieder/bereich.php`, `bereich-link.php` |
 | J-12 | Listen-Filter in der URL | ✓ (nur Auswahl/Jahr/Datum/Haken – `Listen/FilterArt.php`, kein Freitext) | `listen/liste.php:104` |
 | J-13 | Familiensuche `?q=` in `/app/mitglieder/{id}/familie` | ✓ (#37) | Familiensuche per POST mit CSRF (`app/routes/familie.php`), `q` nur aus dem Body |
 | J-14 | Download-Dateinamen ohne Personendaten | ✓ Listen-Exporte (`*::dateiname()`), pain.008 (`lastschrift-<jahr>-<id>.xml`); ✗ Nachweis-Dateien | **J-B03** |
