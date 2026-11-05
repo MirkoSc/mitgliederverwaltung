@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { punktText, punktGroesse, punktTitel, orteAus, zusammenfassen, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter } = require('../../public/js/karte.js');
+const { punktText, punktGroesse, punktTitel, orteAus, wohnortAus, mitteAus, punktAusFeldern, feldText, statusText, weiter } = require('../../public/js/karte.js');
 
 test('a marker shows how many members live at the address', () => {
     assert.equal(punktText(1), '1');
@@ -94,30 +94,64 @@ test('the fields of a point by hand take a decimal comma and refuse anything els
     assert.equal(feldText(-9.5), '-9.500000');
 });
 
-test('places at the same point become one marker with every address and all members', () => {
-    const orte = zusammenfassen(orteAus([
-        { lat: '50.025967', lon: '9.129987', anschrift: 'Am Hang 12, 12345 Musterort', anzahl: '2', genauigkeit: 'ungefaehr' },
-        { lat: '49.990000', lon: '9.150000', anschrift: 'Hauptstraße 1, 12345 Musterort', anzahl: '1' },
-        { lat: '50.0259669', lon: '9.1299873', anschrift: 'Talweg 3, 12345 Musterort', anzahl: '3', genauigkeit: 'ungefaehr' },
-    ]));
+const { gruppiere, stapel, faecherPositionen, summeMitglieder, gruppenTitel } = require('../../public/js/karte.js');
 
-    assert.equal(orte.length, 2);
-    assert.equal(orte[0].anzahl, 5, 'the members of both addresses');
-    assert.equal(orte[0].anschrift, '2 Anschriften');
-    assert.deepEqual(orte[0].teile.map((t) => t.anschrift), ['Am Hang 12, 12345 Musterort', 'Talweg 3, 12345 Musterort']);
-    assert.equal(orte[0].genauigkeit, 'ungefaehr', 'both approximate: the marker says so');
-    assert.equal(orte[1].anzahl, 1);
-    assert.equal(orte[1].teile.length, 1);
-    assert.equal(orte[1].anschrift, 'Hauptstraße 1, 12345 Musterort');
+test('places close on screen are one group with the sum, far ones stay single', () => {
+    const gruppen = gruppiere([
+        { x: 100, y: 100, anzahl: 2 },
+        { x: 110, y: 105, anzahl: 3 },
+        { x: 400, y: 400, anzahl: 1 },
+        { x: 100, y: 100, anzahl: 1 },
+    ], 40);
+
+    assert.equal(gruppen.length, 2);
+    assert.equal(gruppen[0].punkte.length, 3);
+    assert.equal(gruppen[0].anzahl, 6);
+    assert.equal(gruppen[1].punkte.length, 1);
+    assert.equal(gruppen[1].anzahl, 1);
+    assert.equal(gruppen[1].x, 400);
+    // The centre is weighted by members.
+    assert.equal(gruppen[0].x > 100 && gruppen[0].x < 110, true);
+    assert.deepEqual(gruppiere([], 40), []);
 });
 
-test('a shared point of an exact and an approximate address is not called approximate, and keeps the focus', () => {
-    const orte = zusammenfassen(orteAus([
-        { lat: '50.1', lon: '9.1', anschrift: 'A', anzahl: '1', genauigkeit: 'ungefaehr' },
-        { lat: '50.1', lon: '9.1', anschrift: 'B', anzahl: '1', fokus: true },
-    ]));
+test('a smaller distance on screen (zoomed in) lets a group fall apart', () => {
+    const punkte = [{ x: 0, y: 0, anzahl: 1 }, { x: 60, y: 0, anzahl: 1 }];
 
-    assert.equal(orte.length, 1);
-    assert.equal(orte[0].genauigkeit, '');
-    assert.equal(orte[0].fokus, true);
+    assert.equal(gruppiere(punkte, 40).length, 2);
+    assert.equal(gruppiere(punkte, 80).length, 1);
+});
+
+test('places with the same coordinates form a stack', () => {
+    const orte = [
+        { lat: 48.1, lon: 11.5, anschrift: 'A' },
+        { lat: 48.100001, lon: 11.5, anschrift: 'B' },
+        { lat: 48.2, lon: 11.5, anschrift: 'C' },
+        { lat: 48.1, lon: 11.5, anschrift: 'D' },
+    ];
+    const haufen = stapel(orte);
+
+    assert.deepEqual(haufen.map((h) => h.map((o) => o.anschrift)), [['A', 'B', 'D'], ['C']]);
+    assert.equal(summeMitglieder([{ anzahl: 2 }, { anzahl: '3' }, {}]), 5);
+    assert.equal(gruppenTitel(2, 5), '2 Anschriften, 5 Mitglieder – Klick vergrößert');
+    assert.equal(gruppenTitel(3, 1), '3 Anschriften, 1 Mitglied – Klick vergrößert');
+});
+
+test('fanned-out positions: one stays, a ring up to eight, a spiral beyond; none overlap', () => {
+    assert.deepEqual(faecherPositionen(1), [[0, 0]]);
+    for (const n of [2, 3, 8, 9, 25]) {
+        const lagen = faecherPositionen(n, 40);
+        assert.equal(lagen.length, n);
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                const abstand = Math.hypot(lagen[i][0] - lagen[j][0], lagen[i][1] - lagen[j][1]);
+                assert.equal(abstand >= 30, true, n + ': ' + i + '/' + j + ' ' + abstand);
+            }
+        }
+        for (const [x, y] of lagen) {
+            assert.equal(Math.hypot(x, y) >= 39.9, true);
+        }
+    }
+    // The ring starts at the top.
+    assert.equal(Math.round(faecherPositionen(4, 40)[0][1]) < 0, true);
 });

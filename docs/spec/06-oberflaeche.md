@@ -95,6 +95,16 @@ umgeschaltet statt verlinkt.
    Seite ohne Karte und im Barrierefrei-Modus vollständig nutzbar.
    Hinweis „© OpenStreetMap-Mitwirkende" auf der Karte. Keine Änderung an
    der Datenschutzerklärung (mit Mirko abgestimmt).
+   Gruppierung nach Zoomstufe (#127, eigene Umsetzung in `karte.js`, keine
+   Cluster-Bibliothek): Anschriften, die auf dem Bildschirm näher als etwa
+   40 px beieinander liegen, sind ein größerer Gruppen-Marker mit der Summe
+   der Mitglieder; Klick zoomt auf deren Ausdehnung, bis die Gruppe zerfällt.
+   Ab Zoom 17 wird nicht mehr gruppiert; Anschriften mit denselben
+   Koordinaten (fünf Nachkommastellen, z. B. Straßenmitte) werden in einem
+   Kreis bzw. einer Spirale um den echten Punkt **aufgefächert**, mit dünner
+   Linie zum Punkt, jeder einzeln anklickbar mit eigenem Popup. Neu
+   gezeichnet wird bei jedem `zoomend`. Die kleine Karte am Mitglied
+   (ein Marker) bleibt unverändert.
    Mit `?mitglied=<id>` (Link „Auf der großen Karte zeigen" am Mitglied,
    #106) zentriert die Karte dessen Anschrift und öffnet ihren Marker; die
    Links unter „Nicht gefundene Anschriften" führen direkt in den Reiter

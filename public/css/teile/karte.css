@@ -288,3 +288,37 @@
 .wohnort-punkt-stand:empty {
     display: none;
 }
+
+/* Zoom grouping and fanning out (issue #127): places close together on
+   screen are one bigger coin with the sum; at street level places with
+   the same point are fanned out around it, a thin line leads to the real
+   point. */
+.karte-punkt-gruppe {
+    background: var(--farbe-haupt);
+    color: var(--farbe-haupt-text);
+    font-size: 1rem;
+    box-shadow: 0 0 0 4px rgb(0 0 0 / 0.18), 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+.karte-flaeche path.karte-faecher-linie {
+    stroke: var(--farbe-haupt);
+    stroke-width: 1.5;
+    stroke-opacity: 0.8;
+}
+
+.karte-flaeche path.karte-faecher-anker {
+    fill: var(--farbe-haupt);
+    fill-opacity: 1;
+    stroke: var(--farbe-flaeche);
+    stroke-width: 1.5;
+}
+
+.modus-barrierefrei .karte-flaeche path.karte-faecher-linie {
+    stroke: #000000;
+    stroke-width: 2.5;
+    stroke-opacity: 1;
+}
+
+.modus-barrierefrei .karte-punkt-gruppe {
+    box-shadow: 0 0 0 3px #000000;
+}
