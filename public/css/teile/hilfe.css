@@ -128,6 +128,7 @@
 
 .hilfe-tasten dt {
     font-weight: 650;
+    white-space: nowrap;
 }
 
 .hilfe-tasten dd {
@@ -183,6 +184,12 @@
     grid-column: 1 / -1;
     width: 100%;
     border: 2px solid var(--farbe-rand);
+}
+
+/* The large type needs the room: the key above its explanation. */
+.modus-barrierefrei .hilfe-tasten > div {
+    grid-template-columns: none;
+    gap: var(--abstand-1);
 }
 
 .modus-barrierefrei .hilfe-tastatur kbd,

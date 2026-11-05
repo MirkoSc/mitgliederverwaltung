@@ -126,7 +126,8 @@ umgeschaltet statt verlinkt.
    `public/js/inhaltsverzeichnis.js` markiert den aktuellen Abschnitt mit
    `aria-current="true"`.
 7. **Benutzermenü** (Name oben rechts): eigenes Passwort, zweiter Faktor,
-   **Barrierefrei-Modus an/aus**, Abmelden.
+   **Barrierefrei-Modus an/aus**, **Hilfe** (bebilderte Anleitungen, 12;
+   kein eigener Bereich der Hauptnavigation), Abmelden.
 
 Was die Rolle nicht darf, wird nicht angezeigt **und** serverseitig
 abgelehnt (02 §6).
