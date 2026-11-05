@@ -18,7 +18,7 @@ return [
         ],
         [
             'text' => 'Setzen Sie bei **Abteilungen** einen Haken bei jeder Abteilung des Mitglieds.',
-            'tipp' => 'Es sind mehrere Abteilungen möglich. Einen Haken entfernen Sie mit der Leertaste oder einem Klick.',
+            'tipp' => 'Es sind mehrere Abteilungen möglich. Einen Haken entfernen Sie mit der Leertaste oder durch erneutes Wählen.',
             'bild' => 'Das Mitglied auf dem Reiter Daten. Die Gruppe Abteilungen mit den Haken ist markiert.',
         ],
         [

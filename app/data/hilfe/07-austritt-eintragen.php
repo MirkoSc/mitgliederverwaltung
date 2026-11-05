@@ -17,8 +17,8 @@ return [
             'text' => 'Wählen Sie den Reiter **Daten**. Suchen Sie die Gruppe **Mitgliedschaft**.',
         ],
         [
-            'text' => 'Tragen Sie im Feld **Austrittsdatum** den letzten Tag der Mitgliedschaft ein.',
-            'bild' => 'Das Mitglied auf dem Reiter Daten. Die Felder Austrittsdatum und Austrittsgrund sind markiert.',
+            'text' => 'Tragen Sie im Feld **Austrittsdatum** den Tag des Austritts ein.',
+            'bild' => 'Das Mitglied auf dem Reiter Daten. Das Feld Austrittsdatum ist markiert.',
         ],
         [
             'text' => 'Tragen Sie im Feld **Austrittsgrund** den Grund ein. Sie können auch einen Vorschlag wählen.',
@@ -28,9 +28,9 @@ return [
             'text' => 'Wählen Sie **Mitglied speichern**.',
         ],
         [
-            'text' => 'Oben erscheint die Meldung **Mitglied gespeichert.** Neben dem Namen steht nun **ehemalig**.',
-            'tipp' => 'Das Mitglied bleibt gespeichert. Löschen müssen Sie es nicht. In der Liste sehen Sie es nur, wenn Sie bei **Ehemalige anzeigen** einen Haken setzen.',
-            'bild' => 'Das Mitglied nach dem Speichern. Die Meldung Mitglied gespeichert und die Marke ehemalig sind markiert.',
+            'text' => 'Oben erscheint die Meldung **Mitglied gespeichert.** Der Austritt ist damit eingetragen.',
+            'tipp' => 'Ab dem Austrittsdatum steht neben dem Namen **ehemalig**. Liegt das Datum in der Zukunft, steht dort bis dahin weiter aktiv oder passiv. Das Mitglied bleibt gespeichert. Löschen müssen Sie es nicht. In der Liste sehen Sie es nur, wenn Sie bei **Ehemalige anzeigen** einen Haken setzen.',
+            'bild' => 'Das Mitglied nach dem Speichern. Die Meldung Mitglied gespeichert ist markiert.',
         ],
     ],
 ];

@@ -6,7 +6,7 @@ use App\Domain\Permission;
 
 return [
     'titel' => 'Beitragsart, Zahlart oder IBAN ändern',
-    'kurz' => 'So ändern Sie, was ein Mitglied zahlt und wie es zahlt.',
+    'kurz' => 'So ändern Sie, was ein Mitglied zahlt und wie es zahlt. Ändern Sie nur, was sich geändert hat, und überspringen Sie die übrigen Schritte.',
     'recht' => Permission::MitgliederBearbeiten,
     'schritte' => [
         [
@@ -15,7 +15,7 @@ return [
         ],
         [
             'text' => 'Wählen Sie den Reiter **Daten**. Suchen Sie die Gruppe **Beitrag**.',
-            'bild' => 'Das geöffnete Mitglied auf dem Reiter Daten. Die Gruppe Beitrag mit dem Feld Beitragsart ist markiert.',
+            'bild' => 'Das geöffnete Mitglied auf dem Reiter Daten. Die Überschrift der Gruppe Beitrag ist markiert.',
         ],
         [
             'text' => 'Wählen Sie im Feld **Beitragsart** die neue Beitragsart aus der Liste.',
