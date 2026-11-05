@@ -1,0 +1,20 @@
+{
+    "hinweis": "Erfundene Werte nur fuer die lokale Docker-Umgebung (docs/spec/12-hilfe.md Abschnitt 5). Kein Geheimnis. Ein weiterer Zugang: Eintrag hinzufuegen, Schluessel '<zugang>-normal' bzw. '<zugang>-barrierefrei'.",
+    "passwort": "Hilfe-Demo-Zugang-2026",
+    "konten": {
+        "normal": {
+            "email": "hilfe-normal@example.org",
+            "name": "Hilde Normal",
+            "rolle": "vorstand",
+            "barrierefrei": false,
+            "totp_geheimnis": "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"
+        },
+        "barrierefrei": {
+            "email": "hilfe-barrierefrei@example.org",
+            "name": "Berta Barrierefrei",
+            "rolle": "vorstand",
+            "barrierefrei": true,
+            "totp_geheimnis": "KRSXG5CTMVRXEZLUKRSXG5CTMVRXEZLU"
+        }
+    }
+}
