@@ -61,7 +61,7 @@
     border: 1px solid var(--farbe-rand);
     border-left: 4px solid var(--farbe-info);
     border-radius: var(--radius);
-    scroll-margin-top: var(--abstand-4);
+    scroll-margin-top: calc(var(--kopf-versatz) + var(--abstand-4));
 }
 
 .einzug-karte h4 {

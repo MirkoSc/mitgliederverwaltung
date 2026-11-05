@@ -34,6 +34,13 @@ final class StaticFileHandler
     private const int ONE_YEAR = 31536000;
 
     /**
+     * Files whose URL cannot carry ?v=<VERSION>, so they are revalidated
+     * even in a release: the service worker (a browser looks it up under
+     * its fixed name, docs/spec/06-oberflaeche.md section 6).
+     */
+    private const array NO_LONG_CACHE = ['/sw.js'];
+
+    /**
      * @param bool $longCache asset URLs carry ?v=<VERSION>, so immutable
      *                        caching is safe for releases; dev builds
      *                        revalidate via Last-Modified instead
@@ -77,7 +84,7 @@ final class StaticFileHandler
 
         $headers = [
             'Content-Type' => $mime,
-            'Cache-Control' => $this->longCache
+            'Cache-Control' => $this->longCache && !in_array($path, self::NO_LONG_CACHE, true)
                 ? 'public, max-age=' . self::ONE_YEAR . ', immutable'
                 : 'no-cache',
             'Last-Modified' => gmdate('D, d M Y H:i:s', $lastModified) . ' GMT',

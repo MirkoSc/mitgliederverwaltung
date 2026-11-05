@@ -132,6 +132,22 @@ umgeschaltet statt verlinkt.
 Was die Rolle nicht darf, wird nicht angezeigt **und** serverseitig
 abgelehnt (02 §6).
 
+**Kopfleiste beim Scrollen:** Der Kopf (Logo, Benutzermenü,
+Hauptnavigation) klebt oben (`position: sticky`). Am PC (ab 48rem) ist er
+immer sichtbar. Am Handy (unter 48rem) gleitet er beim Runterscrollen weg,
+sobald die Seite um mehr als seine Höhe gescrollt ist, und kommt beim
+kleinsten Hochscrollen sofort zurück; nie weg, solange das Benutzermenü
+offen ist oder der Fokus im Kopf liegt. Im Barrierefrei-Modus und bei
+`prefers-reduced-motion` bleibt er immer stehen, ohne Animation (das CSS
+sichert das auch ohne Skript). `public/js/kopfleiste.js` setzt dafür die
+Klasse `kopf-versteckt` am `<html>` (Entscheidung in `sollVerstecken()`,
+getestet in `tests/js/kopfleiste.test.js`) und misst die Kopfhöhe per
+`ResizeObserver` in die CSS-Variable `--kopf-hoehe` (CSSOM). Alles, was
+oben klebt (`geteilt-detail`, `verzeichnis`) oder angesprungen wird
+(`scroll-margin-top` für Anker, Abschnitte, fokussierte Felder), rechnet
+mit `--kopf-versatz` (Kopfhöhe, 0 solange er weg ist). Beim Drucken klebt
+der Kopf nicht.
+
 ## 3. Muster
 
 - Listen: Tabelle am PC, Karten untereinander am Handy; Sortierung durch
@@ -276,6 +292,27 @@ $ansicht = MitgliedAnsicht::aus($dienste)->oeffnen($request, $einbettung);
   zurück (mit Suche, Filter und Seite). Das gilt überall, wo der Baustein
   eingebettet ist (Mitglieder, Listen, Familien).
 
+## 6. Installierbare App (PWA)
+
+Die Anwendung lässt sich am Handy und PC als App installieren („Zum
+Startbildschirm hinzufügen"), sonst ändert sich nichts:
+
+- **Manifest** `GET /manifest.webmanifest` (öffentlich, `no-cache`,
+  `App\PublicPages\ManifestController`): `name` = Vereinsname, `short_name`
+  = Kurzname (auf 15 Zeichen gekürzt), ohne Vereinsdaten
+  „Mitgliederverwaltung"/„Mitglieder"; `id` und `start_url` `/app`,
+  `scope` `/`, `display` `standalone`, Farben des Designsystems (hell).
+  Icons aus dem Vereinslogo (`/logo/icon192`, `/logo/icon512`,
+  `/logo/maskable`, 11 §2), ohne Logo `public/icon.svg`. Jede Seite
+  (auch die Anmeldung) verlinkt es und setzt `<meta name="theme-color">`.
+- **Service Worker** `public/sw.js` (Scope `/`, `Cache-Control: no-cache`),
+  registriert von `public/js/pwa.js` nur im sicheren Kontext (HTTPS,
+  localhost). Er speichert **nichts** und beantwortet keine Anfrage
+  selbst (02 §7) – kein Offline-Betrieb.
+- Wartungsmodus: Manifest und Service Worker sind nicht freigeschaltet und
+  bekommen während eines Updates die 503-Seite; der Browser behält dann
+  den bisherigen Worker. Shim und `index.php` bleiben unverändert.
+
 ## Pflicht-Tests
 
 `CspComplianceTest` (kein Inline-JS, kein `hx-on`), Routen-Zugriffsmatrix
@@ -287,5 +324,8 @@ Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite
 `zurueck` fällt auf die Mitglieder-Seite zurück; Fokus) –
 `MitgliedAnsichtTest`, `EinbettungTest`; Familien-Seite (#92) mit dem
 Mitglied an Stelle der Familie, „Zurück zur Familie", Fokus –
-`FamilienSeiteTest`; manuelle Prüfliste
+`FamilienSeiteTest`; installierbare App (Manifest öffentlich mit
+Vereinsname und Logo-Icons, `sw.js` mit `no-cache`, ohne Cache) –
+`PwaTest`, `tests/js/pwa.test.js`; Kopfleiste – `tests/js/kopfleiste.test.js`;
+manuelle Prüfliste
 je UI-PR: 360 px Handy, PC, PC im Barrierefrei-Modus (nur Tastatur).

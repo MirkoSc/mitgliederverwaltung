@@ -1,0 +1,2 @@
+# app/routes/pwa.php - web app manifest of the installable app, public.
+GET /manifest.webmanifest -> öffentlich

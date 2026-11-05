@@ -328,7 +328,7 @@ code {
     position: absolute;
     left: var(--abstand-4);
     top: -10rem;
-    z-index: 10;
+    z-index: 1200;
     padding: var(--abstand-2) var(--abstand-4);
     background: var(--farbe-flaeche);
     color: var(--farbe-text);
@@ -359,11 +359,54 @@ code {
 
 /* ------------------------------------------------ Header and navigation */
 
+/* The header sticks to the top (06 section 2). public/js/kopfleiste.js
+   measures it into --kopf-hoehe; --kopf-versatz is what it covers right
+   now - 0 while it is slid away on a phone. Whatever sticks to the top or
+   is scrolled to (anchors, focus) keeps clear of it. */
+:root {
+    --kopf-versatz: var(--kopf-hoehe, 0px);
+}
+
+.inhalt :where([id], a, button, input, select, textarea, summary, [tabindex]),
+#inhalt {
+    scroll-margin-top: calc(var(--kopf-versatz) + var(--abstand-3));
+}
+
 .kopf {
     --farbe-fokus: var(--farbe-markierung);
 
+    /* Above Leaflet's panes and controls (z-index up to 1000), which share
+       the root stacking context; only the skip link lies higher. */
+    position: sticky;
+    top: 0;
+    z-index: 1100;
     background: var(--farbe-verein);
     color: var(--farbe-verein-text);
+}
+
+/* Phone: scrolling down slides the header away, the least scrolling up
+   brings it back (the script sets .kopf-versteckt, never while the user
+   menu is open or the focus is in the header). Not in the Barrierefrei-
+   Modus and not with reduced motion: there it simply stays. */
+@media (max-width: 47.99rem) and (prefers-reduced-motion: no-preference) {
+    .kopf {
+        transition: transform 0.2s ease-out;
+    }
+
+    :root.kopf-versteckt:not(.modus-barrierefrei) {
+        --kopf-versatz: 0px;
+    }
+
+    :root.kopf-versteckt:not(.modus-barrierefrei) .kopf {
+        transform: translateY(-100%);
+    }
+}
+
+@media print {
+    .kopf {
+        position: static;
+        transform: none;
+    }
 }
 
 /* The opened user menu lies light on top of the content. */
@@ -842,7 +885,7 @@ code {
     border: 1px solid var(--farbe-rand);
     border-radius: var(--radius);
     background: var(--farbe-flaeche);
-    scroll-margin-top: var(--abstand-4);
+    scroll-margin-top: calc(var(--kopf-versatz) + var(--abstand-4));
 }
 
 .abschnitt > :last-child {
@@ -1444,8 +1487,8 @@ textarea:disabled {
 
     :root:not(.modus-barrierefrei) .geteilt-detail {
         position: sticky;
-        top: var(--abstand-4);
-        max-height: calc(100vh - 2 * var(--abstand-4));
+        top: calc(var(--kopf-versatz) + var(--abstand-4));
+        max-height: calc(100vh - var(--kopf-versatz) - 2 * var(--abstand-4));
         overflow-y: auto;
         padding: var(--abstand-5);
         border: 1px solid var(--farbe-rand);
