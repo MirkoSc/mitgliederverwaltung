@@ -9,7 +9,10 @@ export default async function ablauf({ seite, markiere, foto }) {
     await markiere(seite.getByRole('link', { name: 'Mitglieder', exact: true }).first());
     await foto(1);
 
-    await seite.getByLabel('Mitglied suchen').fill('1001');
+    // A name finds the whole family Huber; the picture waits until the list
+    // has changed (member 1023 is no Huber), as the tip of step 2 says.
+    await seite.getByLabel('Mitglied suchen').fill('Huber');
+    await seite.getByRole('row', { name: /\b1023\b/ }).waitFor({ state: 'detached' });
     await seite.getByRole('row', { name: /\b1001\b/ }).waitFor();
     await markiere(seite.getByLabel('Mitglied suchen'));
     await foto(2);

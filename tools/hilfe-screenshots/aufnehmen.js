@@ -37,6 +37,8 @@ const GESAMT_MAX_BYTES = 10 * 1024 * 1024;
 const INIT_SKRIPT = () => {
     const stil = '*,*::before,*::after{animation:none!important;transition:none!important;'
         + 'scroll-behavior:auto!important;caret-color:transparent!important}'
+        // The focus ring of the field typed in last is noise next to the mark.
+        + ':focus:not([data-hilfe-markiert]){outline:none!important;box-shadow:none!important}'
         + '[data-hilfe-markiert]{outline:4px solid #e0004d!important;outline-offset:3px!important;'
         + 'box-shadow:0 0 0 8px rgba(224,0,77,.28)!important}'
         + '[data-hilfe-markiert=innen]{outline-offset:-4px!important;'
