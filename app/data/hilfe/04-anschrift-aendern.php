@@ -17,15 +17,19 @@ return [
             'bild' => 'Das geöffnete Mitglied. Der Reiter „Daten“ ist markiert.',
         ],
         [
-            'text' => 'Ändern Sie die Anschrift in den Feldern **Straße und Hausnummer**, **PLZ** und **Ort**.',
-            'bild' => 'Das Formular des Mitglieds. Das Feld „Straße und Hausnummer“ ist markiert.',
+            'text' => 'Tragen Sie im Feld **Straße und Hausnummer** die neue Straße ein. Beim Tippen erscheinen darunter Vorschläge.',
+            'bild' => 'Unter dem Feld „Straße und Hausnummer“ steht eine Liste mit Anschriften. Der erste Vorschlag ist markiert.',
+        ],
+        [
+            'text' => 'Wählen Sie den passenden Vorschlag. Straße, PLZ, Ort und Land sind dann eingetragen.',
+            'tipp' => 'Mit der Tastatur: Pfeiltaste nach unten, dann Enter. Passt kein Vorschlag, ändern Sie **PLZ** und **Ort** selbst. Im Feld **Land** filtert Tippen die Liste. Leer heißt Deutschland.',
         ],
         [
             'text' => 'Ändern Sie Telefon oder E-Mail in den Feldern **Telefon**, **Handy** und **E-Mail**.',
         ],
         [
-            'text' => 'Wählen Sie **Mitglied speichern**.',
-            'bild' => 'Der Knopf „Mitglied speichern“ am Ende des Formulars ist markiert.',
+            'text' => 'Wählen Sie unten **Mitglied speichern**.',
+            'bild' => 'Der Knopf „Mitglied speichern“ unten im Mitglied ist markiert.',
         ],
         [
             'text' => 'Die Meldung **Mitglied gespeichert.** erscheint.',
