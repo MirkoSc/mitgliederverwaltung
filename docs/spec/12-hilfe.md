@@ -179,7 +179,10 @@ im Barrierefrei-Modus auf und räumt das Projekt ab.
   zwischen den Modi neu an; Aufnahmen, die etwas ändern, stellen den
   Ausgangszustand selbst wieder her.
 - **Markieren:** ein kräftiger Rahmen um das gemeinte Element (nur im
-  Browser des Skripts eingefügt; dafür `bypassCSP` nur dort).
+  Browser des Skripts eingefügt; dafür `bypassCSP` nur dort). Ist das
+  Element verdeckt (feste Speichern-Leiste, Karte), scheitert die Aufnahme.
+- **Kartenkacheln** beantwortet der Browser des Skripts mit einer
+  einfarbigen Kachel – die Bilder hängen nicht vom Kachel-Server ab (#119).
 - **Bilder:** PNG, Fenster 1280 × 800, `deviceScaleFactor` 1, `de-DE`,
   `Europe/Berlin`, helles Farbschema, keine Animationen. Je Bild höchstens
   250 KB, alle Bilder zusammen höchstens 10 MB (sie gehen in jedes

@@ -62,6 +62,10 @@ export default async function ablauf({ seite, markiere, foto }) {
   mit `baseURL`; Adressen sind Pfade.
 - `markiere(element)` blättert zum Element und setzt einen kräftigen Rahmen,
   der nur im Browser des Skripts existiert. Er verschwindet nach `foto()`.
+  Liegt das Element unter der festen Speichern-Leiste oder unter etwas
+  anderem (z. B. der kleinen Karte), blättert es weiter; gelingt das nicht,
+  scheitert die Aufnahme. Würde ein blätternder Kasten (Reiter, geöffnetes
+  Mitglied) den Rahmen abschneiden, liegt er innen im Element.
 - `foto(n)` speichert Schritt `n` (ab 1) im aktuellen Modus. Mehrfaches `foto(n)`
   für denselben Schritt ist ein Fehler.
 - Elemente über **Rolle und deutsche Beschriftung** finden (`getByRole`,
@@ -77,8 +81,14 @@ export default async function ablauf({ seite, markiere, foto }) {
 - Nur eine Probe (kein Bezug zu einer Anleitung): `export const probe = true;`.
   Ihre Bilder gehen nach `probe-ausgabe/` (nicht in git), `beispiel.mjs` ist so eine.
 
-Bilder: PNG, 1280 × 800, `de-DE`, `Europe/Berlin`, helles Farbschema, keine
-Animationen, höchstens 250 KB je Bild und 10 MB zusammen.
+Bilder: PNG, 1280 × 800, `de-DE` (auch Datumsfelder), `Europe/Berlin`, helles
+Farbschema, keine Animationen, kein Fokusrahmen neben der Markierung, höchstens
+250 KB je Bild und 10 MB zusammen.
+
+Kartenkacheln (`/app/karte/kachel/…`) beantwortet der Browser des Skripts selbst
+mit einer einfarbigen Kachel (`lib/kachel.js`): Die Bilder hängen so nicht vom
+Kachel-Server und vom Netz der Docker-Umgebung ab, und der Kachel-Server bekommt
+keine Abrufe für Bilder. Die Anwendung bleibt dafür unverändert.
 
 ## Beispieldaten und Demo-Zugänge
 

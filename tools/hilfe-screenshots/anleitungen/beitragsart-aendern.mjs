@@ -14,7 +14,7 @@ export default async function ablauf({ seite, markiere, foto }) {
     await markiere(seite.getByRole('heading', { name: 'Beitrag', level: 3 }));
     await foto(2);
 
-    await art.selectOption(await art.locator('option', { hasText: /^Passiv/ }).getAttribute('value'));
+    await art.selectOption(await art.locator('option', { hasText: /^Mindestbeitrag/ }).getAttribute('value'));
     await seite.getByRole('button', { name: 'Mitglied speichern' }).click();
     await markiere(seite.getByText('Mitglied gespeichert.'));
     await foto(7);

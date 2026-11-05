@@ -15,7 +15,7 @@ return [
         ],
         [
             'text' => 'Tragen Sie im Feld **Mitglied suchen** einen Namen oder eine Nummer ein.',
-            'bild' => 'Die Seite Mitglieder. Das Feld „Mitglied suchen“ ist markiert und enthält eine Nummer.',
+            'bild' => 'Die Seite Mitglieder. Das Feld „Mitglied suchen“ ist markiert und enthält einen Namen. Die Liste zeigt nur noch passende Mitglieder.',
             'tipp' => 'Die Liste ändert sich beim Tippen. Sie dürfen mehrere Wörter eintragen, zum Beispiel Vorname und Ort.',
         ],
         [
