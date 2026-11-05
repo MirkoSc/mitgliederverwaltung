@@ -78,12 +78,13 @@ leere Zelle = kein Wert. Eine Zeile je Mitglied.
 | Spalte | Inhalt |
 |---|---|
 | `mitgliedsnummer` | Pflicht, ganze Zahl |
-| `anrede`, `titel`, `vorname`, `nachname`, `namenszusatz` | Text |
+| `titel`, `vorname`, `nachname`, `namenszusatz` | Text |
 | `geschlecht` | `m`/`w`/`d` |
 | `geburtsdatum`, `eintrittsdatum`, `austrittsdatum` | Datum; Eintritt leer = unbekannt |
 | `austrittsgrund` | Text |
 | `strasse`, `plz`, `ort`, `land` | Text |
 | `telefon`, `handy`, `email` | Text |
+| `anrede` | entfallen (07 §1): eine Spalte `anrede` in alten Dateien wird ignoriert, ohne Hinweis |
 | `aktiv` | `1`/`0` |
 | `abteilungen` | BLSV-Nummern mit Komma, z. B. `09,34` |
 | `beitragsart` | Name der Beitragsart oder leer |

@@ -28,7 +28,7 @@ final class ImportLeser
 {
     /** The columns of the format, in the order of the table in 10 section 2. */
     public const array SPALTEN = [
-        'mitgliedsnummer', 'anrede', 'titel', 'vorname', 'nachname', 'namenszusatz', 'geschlecht',
+        'mitgliedsnummer', 'titel', 'vorname', 'nachname', 'namenszusatz', 'geschlecht',
         'geburtsdatum', 'eintrittsdatum', 'austrittsdatum', 'austrittsgrund',
         'strasse', 'plz', 'ort', 'land', 'telefon', 'handy', 'email',
         'aktiv', 'abteilungen', 'beitragsart', 'zahlart', 'iban', 'bic', 'kontoinhaber',
@@ -38,7 +38,7 @@ final class ImportLeser
 
     /** Longest value per text column - what the database column holds. */
     private const array MAXIMUM = [
-        'anrede' => 32, 'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
+        'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
         'austrittsgrund' => 255, 'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 3,
         'telefon' => 50, 'handy' => 50, 'email' => 254, 'iban' => 34, 'bic' => 11,
         'kontoinhaber' => 140, 'mandatsreferenz' => 35, 'lizenznummer' => 64,
@@ -84,7 +84,8 @@ final class ImportLeser
                 implode('“, „', $fehlt),
             ));
         }
-        $unbekannt = array_values(array_diff($kopf, self::SPALTEN, ['']));
+        // "anrede" was dropped (07 section 1); old files still carry it, silently ignored.
+        $unbekannt = array_values(array_diff($kopf, self::SPALTEN, ['', 'anrede']));
 
         $eintraege = [];
         $fehler = [];
@@ -306,7 +307,6 @@ final class ImportLeser
             mitgliedsnummer: $nummer,
             nachname: $text('nachname'),
             vorname: $text('vorname'),
-            anrede: $text('anrede'),
             titel: $text('titel'),
             namenszusatz: $text('namenszusatz'),
             geschlecht: $geschlecht,

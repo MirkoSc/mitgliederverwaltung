@@ -29,7 +29,6 @@ $gruppen = [
     'Person' => [
         'Mitgliedsnummer' => (string) $mitglied->mitgliedsnummer,
         'Geschlecht' => $mitglied->geschlecht?->bezeichnung() ?? '',
-        'Anrede' => $mitglied->anrede,
         'Titel' => $mitglied->titel,
         'Vorname' => $mitglied->vorname,
         'Nachname' => $mitglied->nachname,

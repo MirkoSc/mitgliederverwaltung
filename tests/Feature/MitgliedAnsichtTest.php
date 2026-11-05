@@ -298,7 +298,7 @@ final class MitgliedAnsichtTest extends AppTestCase
         $formular = $this->get('/app/mitglieder/neu', ['zurueck' => '/app/mitglieder?status=aktiv'])->body;
         self::assertStringContainsString('<input type="hidden" name="zurueck" value="/app/mitglieder?status=aktiv">', $formular);
 
-        $antwort = $this->post('/app/mitglieder/neu', ['mitgliedsnummer' => '77', 'nachname' => 'Neumann', 'zurueck' => '/app/mitglieder?status=aktiv']);
+        $antwort = $this->post('/app/mitglieder/neu', ['nachname' => 'Neumann', 'zurueck' => '/app/mitglieder?status=aktiv']);
         self::assertSame(302, $antwort->status);
         self::assertMatchesRegularExpression('#^/app/mitglieder\?status=aktiv&mitglied=\d+$#', $antwort->headers['Location'] ?? '');
     }

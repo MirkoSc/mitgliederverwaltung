@@ -72,7 +72,6 @@ final class AlleMitgliederListe implements Liste
 
         $spalten = [
             Spalte::zahl('mitgliedsnummer', 'Mitgliedsnummer'),
-            Spalte::text('anrede', 'Anrede'),
             Spalte::text('titel', 'Titel'),
             Spalte::text('vorname', 'Vorname'),
             Spalte::text('nachname', 'Nachname'),
@@ -135,7 +134,6 @@ final class AlleMitgliederListe implements Liste
             }
             $werte = [
                 'mitgliedsnummer' => $m->mitgliedsnummer,
-                'anrede' => $m->anrede,
                 'titel' => $m->titel,
                 'vorname' => $m->vorname,
                 'nachname' => $m->nachname,

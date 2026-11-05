@@ -6,8 +6,8 @@
  * "Daten" and on the page "Neues Mitglied"; markup from the design system
  * (formular-zweispaltig, feld, feldgruppe, formular-aktionen).
  *
- * Only Mitgliedsnummer and Nachname are required. Hints below a field say
- * what an empty field means instead of forcing a value.
+ * Only Nachname is required (the Mitgliedsnummer is given out by the server).
+ * Hints below a field say what an empty field means instead of forcing a value.
  *
  * @var \App\App\Mitglied\MitgliedFormular $formular
  * @var \App\App\Mitglied\Auswahllisten $listen
@@ -108,7 +108,13 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?php endif; ?>
 
     <h3>Person</h3>
-    <?= $text('mitgliedsnummer', 'Mitgliedsnummer', 'feld-kurz', $neu ? 'Die nächste freie Nummer ist eingetragen; Sie können sie ändern.' : null, 'inputmode="numeric" required') ?>
+    <div class="feld feld-kurz">
+        <span id="m-mitgliedsnummer-label">Mitgliedsnummer</span>
+        <p id="m-mitgliedsnummer" aria-labelledby="m-mitgliedsnummer-label"><strong><?= e($nummer === '' ? 'wird beim Speichern vergeben' : $nummer) ?></strong></p>
+        <?php if ($neu): ?>
+            <p class="feld-hinweis">Wird beim Speichern vergeben<?= $nummer === '' ? '' : ' (voraussichtlich ' . e($nummer) . ')' ?> und lässt sich danach nicht mehr ändern.</p>
+        <?php endif; ?>
+    </div>
     <div class="feld feld-kurz">
         <label for="m-geschlecht">Geschlecht</label>
         <select <?= $attribute('geschlecht') ?>>
@@ -118,7 +124,6 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
             <?php endforeach; ?>
         </select>
     </div>
-    <?= $text('anrede', 'Anrede') ?>
     <?= $text('titel', 'Titel') ?>
     <?= $text('vorname', 'Vorname') ?>
     <?= $text('nachname', 'Nachname', '', null, 'required') ?>

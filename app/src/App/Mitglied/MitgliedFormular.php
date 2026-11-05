@@ -25,9 +25,6 @@ use App\Support\Iban;
  */
 final readonly class MitgliedFormular
 {
-    /** Largest number the column `mitglied.mitgliedsnummer` (INT UNSIGNED) takes. */
-    public const int GROESSTE_NUMMER = 4294967295;
-
     /** Suggestions for "Austrittsgrund" (07 section 1) - free text, not a choice. */
     public const array AUSTRITTSGRUENDE = ['Austritt', 'verstorben'];
 
@@ -36,7 +33,7 @@ final readonly class MitgliedFormular
      * input gets it as maxlength, the server cuts anything longer.
      */
     public const array LAENGEN = [
-        'anrede' => 32, 'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
+        'titel' => 64, 'vorname' => 100, 'nachname' => 100, 'namenszusatz' => 64,
         'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 3, 'telefon' => 50, 'handy' => 50,
         'email' => 254, 'austrittsgrund' => 255, 'iban' => 42, 'bic' => 11, 'kontoinhaber' => 140,
         'mandatsreferenz' => 35, 'lizenznummer' => 64, 'bemerkung' => 10000,
@@ -61,7 +58,10 @@ final readonly class MitgliedFormular
     ) {
     }
 
-    /** An empty form for a new member, with the next free number. */
+    /**
+     * An empty form for a new member. $naechsteNummer is only shown ("will
+     * probably be ..."); the number is given out when saving (07 section 1).
+     */
     public static function neu(int $naechsteNummer): self
     {
         return self::aus(new Mitglied($naechsteNummer, ''));
@@ -121,19 +121,16 @@ final readonly class MitgliedFormular
         foreach (array_keys(self::LAENGEN) as $feld) {
             $werte[$feld] = $text($feld);
         }
-        foreach ([...self::DATUMSFELDER, 'mitgliedsnummer', 'geschlecht', 'beitragsart_id', 'zahlart', 'aktiv'] as $feld) {
+        foreach ([...self::DATUMSFELDER, 'geschlecht', 'beitragsart_id', 'zahlart', 'aktiv'] as $feld) {
             $werte[$feld] = $text($feld);
         }
         $abteilungIds = Auswahllisten::vorhandene($ids('abteilungen'), $listen->abteilungen);
         $funktionIds = Auswahllisten::vorhandene($ids('funktionen'), $listen->funktionen);
 
         $fehler = [];
-        $nummer = $werte['mitgliedsnummer'];
-        if ($nummer === '') {
-            $fehler['mitgliedsnummer'] = 'Bitte eine Mitgliedsnummer eintragen.';
-        } elseif (!ctype_digit($nummer) || (int) $nummer < 1 || strlen(ltrim($nummer, '0')) > 10 || (int) $nummer > self::GROESSTE_NUMMER) {
-            $fehler['mitgliedsnummer'] = 'Die Mitgliedsnummer ist eine ganze Zahl ab 1, ohne Buchstaben oder Zeichen.';
-        }
+        // The member number is not read from the post: it is given out when
+        // a member is saved first and never changes (07 section 1).
+        $werte['mitgliedsnummer'] = $basis->mitgliedsnummer < 1 ? '' : (string) $basis->mitgliedsnummer;
         if ($werte['nachname'] === '') {
             $fehler['nachname'] = 'Bitte den Nachnamen eintragen.';
         }
@@ -155,8 +152,6 @@ final readonly class MitgliedFormular
         $beitragsartId = Auswahllisten::vorhandene([$beitragsartId], $listen->beitragsarten)[0] ?? null;
 
         $mitglied = $basis->mit([
-            'mitgliedsnummer' => (int) $nummer,
-            'anrede' => $werte['anrede'],
             'titel' => $werte['titel'],
             'vorname' => $werte['vorname'],
             'nachname' => $werte['nachname'],

@@ -10,7 +10,7 @@ gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 
 | Gruppe | Felder |
 |---|---|
-| Person | Mitgliedsnummer, Anrede, Titel, Vorname, Nachname, Namenszusatz, Geschlecht (`m`/`w`/`d`), Geburtsdatum |
+| Person | Mitgliedsnummer, Titel, Vorname, Nachname, Namenszusatz, Geschlecht (`m`/`w`/`d`), Geburtsdatum |
 | Anschrift | Straße, PLZ, Ort, Land (Default `D`) |
 | Kontakt | Telefon, Handy, E-Mail |
 | Mitgliedschaft | Eintrittsdatum (oder „unbekannt"), Austrittsdatum, Austrittsgrund (Freitext, Auswahlvorschläge „Austritt", „verstorben"), aktiv/passiv (Häkchen), Abteilungen (0..n) |
@@ -19,8 +19,18 @@ gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 | Funktionen | Häkchen je Funktion (§4), Übungsleiter-Lizenznummer |
 | Sonstiges | Bemerkung (Freitext, mehrzeilig) |
 
-- **Mitgliedsnummer**: ganze Zahl, eindeutig; neu = höchste + 1,
-  änderbar. Importierte Mitglieder behalten ihre alte `Adressnummer`.
+- **Mitgliedsnummer**: ganze Zahl, eindeutig; **automatisch, unveränderbar**
+  (Mirko, 05.11.2026): der Server vergibt beim ersten Speichern höchste + 1
+  (bei gleichzeitigem Anlegen erneut versuchen), das Formular zeigt sie nur
+  an (bei „Neu" die voraussichtliche) und kennt kein Feld dafür; eine
+  mitgeschickte Nummer wird ignoriert, auch beim Admin; Zurückholen einer
+  Version ändert sie nie. Wird die höchste Nummer gelöscht, wird sie wieder
+  vergeben. Importierte Mitglieder behalten ihre alte `Adressnummer`.
+- **Anrede entfällt** (Mirko, 05.11.2026): kein Feld in Formular, Anzeige,
+  Verlauf, Export und Import (die Spalte `anrede` in Importdateien wird
+  ignoriert, alte Versionen mit `anrede` im JSON ebenso). Die Spalte
+  `mitglied.anrede` bleibt bis zum nächsten Release stehen (Default `''`),
+  dann folgt `DROP COLUMN`.
 - **Ehemalige**: Austrittsdatum gesetzt und erreicht (berechnet, nicht
   gespeichert). In allen Listen standardmäßig ausgeblendet (Filter
   „Ehemalige anzeigen"). Löschen nur durch den Admin, mit Rückfrage:
@@ -40,8 +50,8 @@ dasselbe Formular unter `GET /app/mitglieder/neu`. Gespeichert wird per
 `POST /app/mitglieder/neu` bzw. `POST /app/mitglieder/{id}`
 (`App\App\MitgliedController`, Routen `app/routes/mitglied.php`), danach
 Weiterleitung auf `/app/mitglieder?mitglied={id}` mit dem Ergebnis als
-Meldung. Blockiert wird nur bei fehlender/unbrauchbarer Nummer, fehlendem
-Nachnamen, vergebener Nummer, einem unlesbaren Datum (`TT.MM.JJJJ` und
+Meldung. Blockiert wird nur bei fehlendem
+Nachnamen, einem unlesbaren Datum (`TT.MM.JJJJ` und
 `JJJJ-MM-TT` werden gelesen) und einer Versionskollision (das Formular
 kommt mit den eigenen Eingaben und der aktuellen Version zurück; erneutes
 Speichern gilt). Familie und Rolle sind keine Felder dieses Formulars, sie
@@ -273,7 +283,7 @@ SQL.
 
 | Tabelle | Spalten |
 |---|---|
-| `mitglied` | id, mitgliedsnummer UNIQUE, anrede, titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, herkunft (`import`/`manuell`), version, created_at, updated_at |
+| `mitglied` | id, mitgliedsnummer UNIQUE, (anrede – ungenutzt, entfällt im nächsten Release), titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, herkunft (`import`/`manuell`), version, created_at, updated_at |
 | `mitglied_abteilung` | mitglied_id, abteilung_id |
 | `mitglied_funktion` | mitglied_id, funktion_id |
 | `mitglied_version` | id, mitglied_id, nr, anlass, geaendert_von (user_id), geaendert_am, daten (JSON: vollständiger Stand inkl. Abteilungen, Funktionen, Familie) |
@@ -334,8 +344,8 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
   Verglichen und zurückgeholt werden nur die IDs.
 - `herkunft` ist kein Feld aus §1 und wird nicht versioniert.
 - Zurückholen (`wiederherstellen()`): nicht mehr vorhandene Familie,
-  Beitragsart, Abteilungen, Funktionen bleiben leer; ist die alte
-  Mitgliedsnummer inzwischen vergeben, bleibt die aktuelle. Jeder Fall
+  Beitragsart, Abteilungen, Funktionen bleiben leer; die
+  Mitgliedsnummer bleibt immer die aktuelle. Jeder Fall
   kommt als Hinweistext zurück. Entspricht die Version dem aktuellen Stand,
   entsteht wie bei jedem Speichern ohne Änderung keine neue Version.
 - Mandatsreferenz/-datum werden gespeichert wie eingegeben; der Default
@@ -367,7 +377,7 @@ Hinweis-Funktion: jede Zeile der Tabelle §6 positiv und negativ, Grenzfälle
 (genau 18, genau 67, Nachweis gültig bis heute). Version: Speichern ohne
 Änderung erzeugt keine Version; Zurückholen hängt eine neue Version an und
 lässt alte unverändert; Zurückholen bei gelöschter Familie. Mitgliedsnummer
-eindeutig, nächste freie Nummer. IBAN-Prüfziffer. Suche findet über alle
+eindeutig, neu = höchste + 1, per POST nicht änderbar, Zurückholen ändert sie nie. IBAN-Prüfziffer. Suche findet über alle
 Suchfelder, Groß-/Kleinschreibung egal; Geburtsdatum in mehreren
 Schreibweisen, IBAN mit/ohne Leerzeichen und als Teilstück, Adresse mit Name,
 Bemerkung, Wort ohne Treffer; Filter Beitragsart findet Zahler und
