@@ -11,6 +11,9 @@ namespace App\Support;
  */
 final class Iban
 {
+    /** Hint for a wrong IBAN; also in public/js/bankverbindung.js - keep both in step. */
+    public const string FEHLER_PRUEFZIFFER = 'Die Prüfziffer passt nicht. Bitte die IBAN vom Kontoauszug abschreiben – gespeichert wird sie trotzdem.';
+
     /**
      * Lengths of the SEPA countries (ISO 13616 registry). A country that is
      * not listed is checked by format and check digits alone.

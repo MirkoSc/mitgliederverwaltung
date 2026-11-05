@@ -20,7 +20,7 @@ use App\Support\Banken;
  */
 return static function (Routen $routen): void {
     $routen->get(
-        '/app/bank/{blz:[0-9]+}',
+        Banken::PFAD . '/{blz:[0-9]+}',
         Zugriff::recht(Permission::MitgliederBearbeiten)->alsApi(),
         static function (Request $r, array $p): Response {
             $bank = Banken::fuerBlz((string) $p['blz']);

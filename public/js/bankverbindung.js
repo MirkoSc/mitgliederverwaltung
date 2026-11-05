@@ -27,6 +27,8 @@
         VA: 22,
     };
 
+    // The three texts are the same as in PHP: Iban::FEHLER_PRUEFZIFFER and
+    // Banken::bicFehler() - keep both in step.
     var TEXT_IBAN = 'Die Prüfziffer passt nicht. Bitte die IBAN vom Kontoauszug abschreiben – gespeichert wird sie trotzdem.';
     var TEXT_BIC_FORM = 'Die BIC hat nicht die richtige Form (8 oder 11 Zeichen, z. B. COBADEFFXXX).';
     var TEXT_BIC_PASST_NICHT = 'Die BIC passt nicht zur IBAN – zur Bankleitzahl gehört ';
