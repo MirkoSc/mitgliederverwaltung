@@ -16,6 +16,7 @@ const { bildDatei, bildPfad, gueltigerSlug, kontoSchluessel, MODI } = require(pa
 const { abgleich, anleitungenLesen, dateienAbgleichen } = require(path.join(lib, 'abgleich.js'));
 const { optionenLesen } = require(path.join(lib, 'optionen.js'));
 const { composeArgs, portLesen } = require(path.join(lib, 'docker.js'));
+const { KACHEL, einfarbigesPng } = require(path.join(lib, 'kachel.js'));
 
 // ---------------------------------------------------------------- TOTP
 
@@ -208,4 +209,27 @@ test('docker: reads the port Docker chose', () => {
     assert.equal(portLesen('0.0.0.0:49153\n'), 49153);
     assert.equal(portLesen('0.0.0.0:49153\n[::]:49153\n'), 49153);
     assert.throws(() => portLesen(''), /nicht lesbar/);
+});
+
+// ---------------------------------------------------------------- map tile (#119)
+
+test('the neutral map tile is a valid 256 x 256 PNG with correct checksums', () => {
+    const zlib = require('node:zlib');
+    assert.deepEqual([...KACHEL.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const abschnitte = [];
+    for (let pos = 8; pos < KACHEL.length;) {
+        const laenge = KACHEL.readUInt32BE(pos);
+        const typUndDaten = KACHEL.subarray(pos + 4, pos + 8 + laenge);
+        assert.equal(KACHEL.readUInt32BE(pos + 8 + laenge), zlib.crc32(typUndDaten));
+        abschnitte.push({ typ: typUndDaten.subarray(0, 4).toString('ascii'), daten: typUndDaten.subarray(4) });
+        pos += 12 + laenge;
+    }
+    assert.deepEqual(abschnitte.map((a) => a.typ), ['IHDR', 'IDAT', 'IEND']);
+    assert.equal(abschnitte[0].daten.readUInt32BE(0), 256);
+    assert.equal(abschnitte[0].daten.readUInt32BE(4), 256);
+    const pixel = zlib.inflateSync(abschnitte[1].daten);
+    assert.equal(pixel.length, 256 * (1 + 256 * 3));
+    assert.deepEqual([...pixel.subarray(0, 4)], [0, 0xf2, 0xef, 0xe9]);
+    assert.ok(KACHEL.length < 2048, 'small enough to answer every tile');
+    assert.notDeepEqual(einfarbigesPng(2, [1, 2, 3]), KACHEL);
 });

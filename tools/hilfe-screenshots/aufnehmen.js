@@ -22,6 +22,7 @@ const { abgleich, anleitungenLesen, dateienAbgleichen } = require('./lib/abgleic
 const { appCode, sekundenBisNaechsterSchritt } = require('./lib/totp');
 const { optionenLesen } = require('./lib/optionen');
 const { playwrightLaden } = require('./lib/playwright');
+const { kachelnErsetzen } = require('./lib/kachel');
 
 const HIER = __dirname;
 const AUFNAHMEN = path.join(HIER, 'anleitungen');
@@ -122,6 +123,7 @@ async function kontextOeffnen(browser, basis) {
         bypassCSP: true,
     });
     await kontext.addInitScript(INIT_SKRIPT);
+    await kachelnErsetzen(kontext);
 
     return kontext;
 }
