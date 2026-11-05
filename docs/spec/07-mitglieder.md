@@ -29,8 +29,8 @@ Server – auch hier gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 - **Anrede entfällt** (Mirko, 05.11.2026): kein Feld in Formular, Anzeige,
   Verlauf, Export und Import (die Spalte `anrede` in Importdateien wird
   ignoriert, alte Versionen mit `anrede` im JSON ebenso). Die Spalte
-  `mitglied.anrede` bleibt bis zum nächsten Release stehen (Default `''`),
-  dann folgt `DROP COLUMN`.
+  `mitglied.anrede` ist mit Migration 301 entfernt (#129), ein Release nach
+  dem Code (03 §4).
 - **Ehemalige**: Austrittsdatum gesetzt und erreicht (berechnet, nicht
   gespeichert). In allen Listen standardmäßig ausgeblendet (Filter
   „Ehemalige anzeigen"). Von Ehemaligen wird nie eingezogen (08 §3).
@@ -355,7 +355,7 @@ SQL.
 
 | Tabelle | Spalten |
 |---|---|
-| `mitglied` | id, mitgliedsnummer UNIQUE, (anrede – ungenutzt, entfällt im nächsten Release), titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, herkunft (`import`/`manuell`), version, created_at, updated_at |
+| `mitglied` | id, mitgliedsnummer UNIQUE, titel, vorname, nachname, namenszusatz, geschlecht, geburtsdatum, strasse, plz, ort, land, telefon, handy, email, eintrittsdatum NULL, austrittsdatum NULL, austrittsgrund, aktiv, beitragsart_id NULL, zahlart, iban, bic, kontoinhaber, mandatsreferenz, mandatsdatum NULL, familie_id NULL, familie_rolle NULL, lizenznummer, bemerkung, herkunft (`import`/`manuell`), version, created_at, updated_at |
 | `mitglied_abteilung` | mitglied_id, abteilung_id |
 | `mitglied_funktion` | mitglied_id, funktion_id |
 | `mitglied_version` | id, mitglied_id, nr, anlass, geaendert_von (user_id), geaendert_am, daten (JSON: vollständiger Stand inkl. Abteilungen, Funktionen, Familie) |
