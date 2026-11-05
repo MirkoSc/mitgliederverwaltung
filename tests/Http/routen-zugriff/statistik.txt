@@ -1,0 +1,4 @@
+# app/routes/statistik.php - the page "Statistik" (09 section 7): member
+# figures for every role, fee figures for the admin only.
+GET /app/statistik -> listen.sehen
+GET /app/statistik/beitraege -> beitraege.verwalten

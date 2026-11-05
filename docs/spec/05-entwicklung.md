@@ -112,7 +112,10 @@ geschützt (PR + grüne CI Pflicht).
   Prüfung im PR notieren. Lieber kleine eigene Implementierung eines exakt
   spezifizierten Protokolls (SMTP, TOTP, QR) als eine große Abhängigkeit.
 - JS-Bibliotheken vendored unter `public/js/vendor/` mit `README.md`
-  (Version, Lizenz, SHA-256), nie per CDN.
+  (Version, Lizenz, SHA-256), nie per CDN. Geprüft und aufgenommen:
+  htmx, Leaflet (Karte, #91), Chart.js 4.6.1 (Statistik, #127: MIT, UMD-Bündel
+  ohne weitere Abhängigkeit, kein `eval`, Größe/Stil nur per CSSOM – passt zur
+  CSP; nur auf den Statistik-Seiten über `scripts` eingebunden).
 - Fremde Daten: `app/data/banken.php` (Bankleitzahl → Bankname, BIC; #127)
   aus dem npm-Paket `bankdata-germany` (Markus Baumer, Lizenz „MIT OR
   MPL-2.0", genutzt unter MIT; Daten der Deutschen Bundesbank), erzeugt von

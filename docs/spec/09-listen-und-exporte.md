@@ -155,6 +155,69 @@ Jahresbeitrags des laufenden Jahres.
 | `ehrung` | id, mitglied_id, stufe_jahre, geehrt_am, vermerkt_von |
 | `setting` | `runde_geburtstage`, `ehrungsstufen` (JSON-Listen) |
 
+## 7. Statistik (#127)
+
+Eigener Hauptmenüpunkt **Statistik** (`/app/statistik`, 06 §2) mit zwei
+Reitern. Nur Zahlen, keine Namen, kein Export. Je Auswertung eine Tabelle
+(`App\Service\Statistik\Auswertung`, ein Template
+`app/views/statistik/auswertung.php`) und darüber ein Diagramm, das
+`public/js/statistik.js` mit Chart.js (vendored, `public/js/vendor/README.md`)
+**aus der Tabelle** zeichnet (`data-diagramm`, `th[data-reihe]`,
+`td[data-wert]` mit Rohwerten – Cent bzw. Anzahl); danach klappt die Tabelle
+zu („Zahlen als Tabelle"). Ohne JS und im Barrierefrei-Modus bleiben nur die
+offenen Tabellen. Farben: vier Tokens `--diagramm-1…4` in
+`public/css/teile/statistik.css` (hell/dunkel; 4 = Grau für „ohne Angabe",
+„Sonstige"), beim Wechsel hell/dunkel neu gezeichnet. Chart.js und das Skript
+lädt nur diese Seite.
+
+**Reiter „Mitglieder"** (`listen.sehen`, alle drei Rollen;
+`App\Service\Statistik\Mitgliederstatistik`). Stichtag ist heute; gezählt
+werden die aktuellen Mitglieder – Ehemalige (`istEhemalig(heute)`) nirgends,
+außer bei den Austritten.
+- Kennzahlen: Mitglieder, aktiv, passiv, Durchschnittsalter (nur mit
+  Geburtsdatum, eine Nachkommastelle), Kinder und Jugendliche unter 18,
+  weiblich, männlich, divers, Geschlecht ohne Angabe.
+- **Altersgruppen** (zentral in `App\Service\Statistik\Altersgruppen`):
+  0–6, 7–14, 15–18, 19–26, 27–40, 41–60, 61–70, 71 und älter, ohne
+  Geburtsdatum. Alter in vollen Jahren (`Alter::am`), **beide Grenzen
+  gehören dazu** („15–18" = 15 bis einschließlich 18); „unter 18" ist eine
+  eigene Kennzahl und folgt den Gruppen nicht. Je Gruppe gestapelt nach
+  Geschlecht.
+- **Kinder/Jugendliche/Erwachsene/Senioren**: 0–13, 14–17, 18–66, ab 67
+  (Rentenalter wie die Hinweise, 07 §6).
+- **Abteilungen**: je Abteilung nach Geschlecht und Ø Alter; wer in mehreren
+  ist, zählt in jeder (keine Summenzeile), ohne Abteilung eigene Zeile.
+  Aktive Abteilungen immer, inaktive nur mit Mitgliedern.
+- **Wohnorte** und **Postleitzahlen**: die 10 häufigsten (gleich viele: nach
+  Name), der Rest als „Sonstige (n Orte)", leere als „ohne Angabe"; Ort ohne
+  Groß-/Kleinschreibung und Leerzeichen am Rand zusammengefasst.
+- **Familien und Einzelmitglieder** (Ring) mit der Zahl der Familien.
+- **Mitgliedsdauer** in vollen Jahren seit Eintritt: unter 5, 5 bis unter
+  10, 10 bis unter 25, 25 bis unter 40, 40 bis unter 50, 50 und mehr,
+  Eintritt unbekannt.
+- **Eintritte und Austritte** der letzten 10 Jahre (laufendes
+  eingeschlossen): Eintritte nach Eintrittsdatum (bis heute) aller, auch
+  inzwischen ehemaliger Mitglieder; Austritte nur erreichte (ein vermerkter
+  Austritt in der Zukunft zählt erst ab seinem Tag).
+
+**Reiter „Beiträge"** (`beitraege.verwalten`, nur Admin;
+`App\Service\Statistik\Beitragsstatistik`), Jahr wählbar wie auf der Seite
+„Beiträge". Grundlage wie 08 §2b: die erzeugten Jahresbeiträge des Jahres,
+sonst die Hochrechnung. **Maßgeblich ist, ob für das Jahr ein Beitrag
+besteht bzw. entstünde** – wer zum 1. Januar schon ausgetreten war, taucht
+nicht auf; ein im Jahr ausgetretenes Mitglied mit erzeugtem Beitrag zählt
+mit diesem Beitrag. Auswertungen: nach Beitragsart und nach Abteilung
+(unverändert aus 08 §2b), nach Geschlecht, Altersgruppe (Alter am 1. Januar,
+gleiche Gruppen), Wohnort (10 höchste Summen + Sonstige), aktiv/passiv,
+Familie/Einzel und Zahlart. Für die Personen-Merkmale wird jeder Beitrag
+zuerst gleichmäßig auf die Personen dahinter geteilt – das Mitglied und beim
+Familien-Zahler die Familienmitglieder des Jahres ohne eigenen Beitrag
+(`Beitragsverteilung::traeger()`) –, in Cent nach größtem Rest; jede
+Auswertung ergibt so genau die Gesamtsumme. Die Zahlart ist die des Zahlers
+und wird nicht geteilt. Merkmale sind die heutigen. Ein Beitrag zu einem
+nicht mehr vorhandenen Mitglied (kommt praktisch nicht vor) steht als
+„Mitglied unbekannt".
+
 ## Pflicht-Tests
 
 Geburtstagsfenster Woche/Monat/Jahr über den Jahreswechsel, 29.02., runde
@@ -170,3 +233,11 @@ Speichern in der geöffneten Person bleibt auf der Liste, htmx tauscht nur
 den Bereich `listen-bereich` – `ListenMitgliedTest`. Auffälligkeiten mit den
 Karten-Hinweisen (#108): Filter je Art, Link öffnet den Reiter „Daten",
 gefundene Anschriften erscheinen nicht – `KarteSeiteTest`.
+Zu §7 (`MitgliederstatistikTest`, `BeitragsstatistikTest`,
+`StatistikSeiteTest`, `tests/js/statistik.test.js`): Altersgrenzen
+einschließlich (18 gehört zu 15–18, 17 ist unter 18), Alter am Stichtag;
+Ehemalige zählen nicht, Austritte je Jahr nur erreichte, Eintritte auch
+Ehemaliger; Top 10 + Sonstige; jede Beitragsauswertung ergibt die
+Gesamtsumme auf den Cent, Familienbeitrag geteilt, Zahlart nicht geteilt;
+alle Rollen sehen „Mitglieder", Vorstand und Nur lesen bekommen auf
+„Beiträge" 403; die alte Adresse leitet weiter; keine Namen auf den Seiten.

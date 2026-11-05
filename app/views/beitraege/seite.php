@@ -35,6 +35,7 @@
 
 use App\App\BeitraegeController;
 use App\App\BeitragsjahrController;
+use App\App\StatistikController;
 use App\Domain\JahresbeitragStatus;
 use App\View\Navigation;
 
@@ -84,7 +85,7 @@ $statusEtikett = require __DIR__ . '/status-etikett.php';
             <input type="hidden" name="jahr" value="<?= e($jahr) ?>">
             <button type="submit" class="knopf knopf-haupt" aria-describedby="erzeugen-hilfe">Beiträge für <?= e($jahr) ?> erzeugen</button>
         </form>
-        <a class="knopf" href="<?= e(BeitraegeController::verteilungsAdresse($jahr)) ?>">Verteilung <?= e($jahr) ?> ansehen</a>
+        <a class="knopf" href="<?= e(StatistikController::beitragsAdresse($jahr)) ?>">Verteilung <?= e($jahr) ?> ansehen</a>
         <?php if ($gesamt > 0): ?>
             <a class="knopf knopf-still" href="<?= e(BeitragsjahrController::loeschAdresse($jahr)) ?>">Beiträge <?= e($jahr) ?> löschen</a>
         <?php endif; ?>

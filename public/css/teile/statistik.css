@@ -1,0 +1,129 @@
+/* The page "Statistik" (docs/spec/09-listen-und-exporte.md section 7):
+   figures on top, then one section per evaluation - chart, then its table.
+
+   The chart colours are the one exception to "tokens of app.css only": a
+   categorical palette checked for colour-vision deficiency (adjacent pairs
+   distinguishable, slot 4 is the neutral grey of "ohne Angabe"), stepped
+   separately for light and dark. public/js/statistik.js reads them with
+   getComputedStyle. The Barrierefrei-Modus shows tables only. */
+:root {
+    --diagramm-1: #2a78d6;
+    --diagramm-2: #1baf7a;
+    --diagramm-3: #eb6834;
+    --diagramm-4: #a2aaa5;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --diagramm-1: #3987e5;
+        --diagramm-2: #199e70;
+        --diagramm-3: #d95926;
+        --diagramm-4: #5d6862;
+    }
+}
+
+.statistik-stand,
+.statistik-erklaerung {
+    max-width: var(--text-breite);
+}
+
+.statistik-stand {
+    margin: 0 0 var(--abstand-4);
+    color: var(--farbe-gedaempft);
+}
+
+.statistik-erklaerung {
+    margin: 0 0 var(--abstand-3);
+}
+
+/* The figures: number large, its meaning below it - a quiet strip, no cards. */
+.kennzahlen {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--abstand-4) var(--abstand-5);
+    margin: 0 0 var(--abstand-5);
+    padding: var(--abstand-4) 0;
+    border-top: 1px solid var(--farbe-rand);
+    border-bottom: 1px solid var(--farbe-rand);
+}
+
+.kennzahl {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    padding-left: var(--abstand-3);
+    border-left: 3px solid var(--farbe-haupt);
+}
+
+.kennzahl dd {
+    margin: 0;
+    font-size: var(--schrift-h1);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+}
+
+.kennzahl dt {
+    color: var(--farbe-gedaempft);
+    font-size: var(--schrift-klein);
+}
+
+.statistik-abschnitt {
+    margin-bottom: var(--abstand-6);
+    scroll-margin-top: var(--abstand-6);
+}
+
+.statistik-abschnitt .liste {
+    max-width: 48rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The chart; public/js/statistik.js sets its height for the rows. */
+.statistik-diagramm {
+    position: relative;
+    max-width: 48rem;
+    height: 16rem;
+    margin: 0 0 var(--abstand-3);
+}
+
+.statistik-tabelle > summary {
+    width: fit-content;
+    min-height: var(--tippflaeche);
+    padding: var(--abstand-2) 0;
+    color: var(--farbe-link);
+    cursor: pointer;
+}
+
+.statistik-ohne .liste-titel {
+    color: var(--farbe-gedaempft);
+    font-style: italic;
+}
+
+.statistik-abschnitt .liste tfoot td {
+    border-top: 2px solid var(--farbe-text);
+    border-bottom: 0;
+    font-weight: 700;
+}
+
+/* Phone: the totals row is a card like the others. */
+@media (max-width: 47.99rem) {
+    .statistik-abschnitt .liste tfoot,
+    .statistik-abschnitt .liste tfoot tr {
+        display: block;
+    }
+
+    .statistik-abschnitt .liste tfoot tr {
+        padding: var(--abstand-3) var(--abstand-4);
+        border: 2px solid var(--farbe-text);
+        border-radius: var(--radius);
+        background: var(--farbe-flaeche);
+    }
+
+    .statistik-abschnitt .liste tfoot td {
+        border: 0;
+    }
+
+    .statistik-diagramm {
+        height: 14rem;
+    }
+}
