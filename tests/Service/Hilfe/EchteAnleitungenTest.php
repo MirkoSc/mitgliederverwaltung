@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  * public/img/hilfe/ - the "Pflicht-Tests" of the closing issue (#119) in
  * docs/spec/12-hilfe.md section 7: both pictures for every step with
  * "bild", no orphaned picture, real PNG files within the limits of
- * section 6, and the role filter with the nine guides of section 8.
+ * section 6, and the role filter with the guides of section 8.
  */
 final class EchteAnleitungenTest extends TestCase
 {
@@ -174,16 +174,18 @@ final class EchteAnleitungenTest extends TestCase
             'austritt-eintragen',
             'barrierefrei-modus',
             'geburtstagsliste',
+            'statistik',
+            'app-installieren',
         ];
 
         yield 'Admin' => [Rolle::Admin, $alle];
         yield 'Vorstand' => [Rolle::Vorstand, $alle];
-        yield 'Nur lesen' => [Rolle::Lesend, ['anmelden', 'mitglied-suchen', 'barrierefrei-modus', 'geburtstagsliste']];
+        yield 'Nur lesen' => [Rolle::Lesend, ['anmelden', 'mitglied-suchen', 'barrierefrei-modus', 'geburtstagsliste', 'statistik', 'app-installieren']];
     }
 
     /**
-     * 12 section 7: Admin and Vorstand see all nine guides, Nur lesen exactly
-     * the four it can carry out.
+     * 12 section 7: Admin and Vorstand see all guides, Nur lesen exactly
+     * the six it can carry out.
      *
      * @param list<string> $erwartet
      */
