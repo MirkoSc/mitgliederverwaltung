@@ -28,7 +28,8 @@ use App\Tests\Support\AppTestCase;
  * (docs/spec/10-import.md section 4; issue #34): the merge view sorts into
  * Neu / Fehlt in der Datei / Geändert, only ticked rows are taken over as a
  * step chain, each change is a version "abgleich", a second run with the
- * same file finds nothing. The master data are the seeds of the migrations
+ * same file finds nothing but the members who left to be deleted; only
+ * former members are deleted. The master data are the seeds of the migrations
  * (Fußball 09, Aktiv, Familie). All data is made up.
  */
 final class AbgleichTest extends AppTestCase
@@ -199,7 +200,8 @@ final class AbgleichTest extends AppTestCase
         self::assertNull(ErstImport::aus($this->dienste)->vorschau(), 'no first import is started');
         $vergleich = $this->vergleich();
         self::assertSame([7, 8], self::nummern($vergleich->neu));
-        self::assertSame([4], self::nummern($vergleich->fehlt), 'not 5 (left), not 9001 (by hand)');
+        self::assertSame([4, 5], self::nummern($vergleich->fehlt), 'not 9001 (by hand)');
+        self::assertSame([false, true], array_map(static fn($f): bool => $f->kannLoeschen, $vergleich->fehlt), '4 may only leave, 5 (left) only be deleted');
         self::assertSame([3, 6], self::nummern($vergleich->geaendert));
         self::assertSame(2, $vergleich->unveraendert);
         self::assertSame(['ort'], array_keys($vergleich->geaendert[0]->felder));
@@ -272,9 +274,11 @@ final class AbgleichTest extends AppTestCase
         $this->hochladen(self::spaetereDatei());
 
         $vergleich = $this->vergleich();
-        self::assertTrue($vergleich->istLeer(), 'nothing new, missing or changed any more');
+        self::assertSame([], $vergleich->neu, 'nothing new');
+        self::assertSame([], $vergleich->geaendert, 'nothing changed');
+        self::assertSame([4, 5], self::nummern($vergleich->fehlt), 'only the two who left, now former');
+        self::assertSame([true, true], array_map(static fn($f): bool => $f->kannLoeschen, $vergleich->fehlt), 'to be deleted, not to leave again');
         self::assertSame(6, $vergleich->unveraendert);
-        self::assertStringContainsString('Datei und Bestand stimmen überein', $this->get('/admin')->body);
     }
 
     public function testSendingNumbersOutsideTheirSectionChangesNothing(): void
@@ -292,34 +296,81 @@ final class AbgleichTest extends AppTestCase
         self::assertSame($vorher, $this->anzahlZeilen('mitglied_version'));
     }
 
-    public function testDeletingAMemberWithAnnualFeesIsRefusedWithoutFeesItIsDone(): void
+    /** Lets a member leave on a day that has passed: it is former now. */
+    private function ausgetreten(int $nummer, string $datum = '2026-01-31'): Mitglied
+    {
+        $mitglied = $this->repo()->findeNachNummer($nummer);
+        self::assertNotNull($mitglied);
+
+        return $this->repo()->speichern($mitglied->mit(['austrittsdatum' => new \DateTimeImmutable($datum)]), VersionsAnlass::geaendert(), null)->mitglied;
+    }
+
+    public function testOnlyFormerMembersWithoutAnnualFeesCanBeDeletedTheOthersOnlyLeave(): void
     {
         $this->als(Rolle::Admin);
         $this->erstimport();
+        $beitraege = new JahresbeitragRepository($this->dienste->pdo());
         $vier = $this->repo()->findeNachNummer(4);
         self::assertNotNull($vier);
-        new JahresbeitragRepository($this->dienste->pdo())->anlegenWennFehlt(new Jahresbeitrag((int) $vier->id, 2026, 8500));
+        $beitraege->anlegenWennFehlt(new Jahresbeitrag((int) $vier->id, 2026, 8500));
+        $this->ausgetreten(5);
+        // Former, but with an annual fee: nothing to do here, not shown.
+        $beitraege->anlegenWennFehlt(new Jahresbeitrag((int) $this->ausgetreten(6)->id, 2026, 8500));
         $this->hochladen(self::csv(self::zeile(1, familie: 'F1;Familie Eins;zahler', beitrag: 'Familie'), self::zeile(2, familie: 'F1;;kind', beitrag: '')));
 
-        self::assertSame([3, 4, 5, 6], self::nummern($this->vergleich()->fehlt));
-        self::assertStringContainsString('nicht möglich, hat Jahresbeiträge', $this->get('/admin')->body);
+        $fehlt = $this->vergleich()->fehlt;
+        self::assertSame([3, 4, 5], self::nummern($fehlt));
+        self::assertSame([false, false, true], array_map(static fn($f): bool => $f->kannLoeschen, $fehlt));
+        $seite = $this->get('/admin')->body;
+        self::assertStringContainsString('erst nach dem Austritt', $seite);
+        self::assertStringContainsString('ausgetreten am 31.01.2026', $seite);
+        self::assertMatchesRegularExpression('/name="loeschen" value="5"/', $seite);
+        self::assertDoesNotMatchRegularExpression('/name="loeschen" value="[34]"/', $seite, 'no delete tick for a member who has not left');
+        self::assertDoesNotMatchRegularExpression('/name="austritt" value="5"/', $seite, 'a former member does not leave again');
 
-        $abgelehnt = $this->post('/admin/import/abgleich/starten', ['loeschen' => '4', 'austritt' => '4', 'austrittsdatum' => '2026-09-30']);
+        // A forged POST deleting a member who has not left: refused, nothing done.
+        $abgelehnt = $this->post('/admin/import/abgleich/starten', ['loeschen' => '3', 'austritt' => '4', 'austrittsdatum' => '2026-09-30']);
         self::assertSame(409, $abgelehnt->status);
-        self::assertStringContainsString('Jahresbeiträge', $this->json($abgelehnt)['fehler']);
-        self::assertNotNull($this->repo()->findeNachNummer(4));
+        self::assertStringContainsString('Nr. 3 ist nicht ausgetreten', $this->json($abgelehnt)['fehler']);
+        self::assertNotNull($this->repo()->findeNachNummer(3));
         self::assertNull($this->repo()->findeNachNummer(4)?->austrittsdatum, 'nothing was done');
+        // Leaving again is no option for a former member.
+        $nichts = $this->post('/admin/import/abgleich/starten', ['austritt' => '5', 'austrittsdatum' => '2026-09-30']);
+        self::assertSame(409, $nichts->status);
+        self::assertStringContainsString('nichts angehakt', $this->json($nichts)['fehler']);
 
         // Deleting needs no date; leaving does.
-        $stand = $this->uebernehmen(['loeschen' => '3', 'austritt' => '4,5', 'austrittsdatum' => '2026-09-30']);
+        $stand = $this->uebernehmen(['loeschen' => '5', 'austritt' => '3,4', 'austrittsdatum' => '2026-09-30']);
 
         self::assertSame(1, $stand['geloescht']);
         self::assertSame(2, $stand['ausgetreten']);
-        self::assertNull($this->repo()->findeNachNummer(3));
+        self::assertNull($this->repo()->findeNachNummer(5));
+        self::assertSame('2026-09-30', $this->repo()->findeNachNummer(3)?->austrittsdatum?->format('Y-m-d'));
         self::assertSame('2026-09-30', $this->repo()->findeNachNummer(4)?->austrittsdatum?->format('Y-m-d'));
-        self::assertNull($this->repo()->findeNachNummer(6)?->austrittsdatum, 'not ticked');
+        self::assertNotNull($this->repo()->findeNachNummer(6));
         $aktionen = array_map(static fn($e): string => $e->action, $this->dienste->audit()->neueste(5));
         self::assertContains('mitglied.geloescht', $aktionen);
+    }
+
+    public function testADeletionWhoseLeavingWasTakenBackSinceTheStartIsSkipped(): void
+    {
+        $this->als(Rolle::Admin);
+        $this->erstimport();
+        $fuenf = $this->ausgetreten(5);
+        $this->hochladen(self::spaetereDatei());
+        self::assertSame(200, $this->post('/admin/import/abgleich/starten', ['loeschen' => '5'])->status);
+
+        // Before the step runs, the leaving is taken back.
+        $this->repo()->speichern($fuenf->mit(['austrittsdatum' => null]), VersionsAnlass::geaendert(), null);
+        do {
+            $stand = $this->json($this->post('/admin/import/abgleich/schritt'));
+        } while ($stand['fertig'] === false);
+
+        self::assertSame(0, $stand['geloescht']);
+        self::assertSame(1, $stand['uebersprungen']);
+        self::assertNotNull($this->repo()->finde((int) $fuenf->id), 'a member again: stays');
+        $aktionen = array_map(static fn($e): string => $e->action, $this->dienste->audit()->neueste(5));
+        self::assertNotContains('mitglied.geloescht', $aktionen);
     }
 
     public function testLeavingNeedsAValidDate(): void
@@ -394,10 +445,8 @@ final class AbgleichTest extends AppTestCase
     {
         $this->als(Rolle::Admin);
         $this->erstimport();
-        $drei = $this->repo()->findeNachNummer(3);
-        $vier = $this->repo()->findeNachNummer(4);
-        self::assertNotNull($drei);
-        self::assertNotNull($vier);
+        $drei = $this->ausgetreten(3);
+        $vier = $this->ausgetreten(4);
         $this->hochladen(self::csv(self::zeile(1, familie: 'F1;Familie Eins;zahler', beitrag: 'Familie'), self::zeile(2, familie: 'F1;;kind', beitrag: '')));
         self::assertSame(200, $this->post('/admin/import/abgleich/starten', ['loeschen' => '3'])->status);
 
@@ -458,6 +507,7 @@ final class AbgleichTest extends AppTestCase
     {
         $this->als(Rolle::Admin);
         $this->erstimport();
+        $this->ausgetreten(5);
         $this->hochladen(self::spaetereDatei());
         self::assertSame(200, $this->post('/admin/import/abgleich/starten', ['neu' => '8', 'aendern' => '3', 'austritt' => '4', 'loeschen' => '5', 'austrittsdatum' => '2026-09-30'])->status);
 

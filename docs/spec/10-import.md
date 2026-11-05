@@ -124,7 +124,7 @@ Bestand nicht leer ist. Zugeordnet wird über die **Mitgliedsnummer**.
 | Abschnitt | Wer | Häkchen bedeutet | Vorauswahl |
 |---|---|---|---|
 | **Neu** | in der Datei, nicht in der Anwendung | Mitglied anlegen | an |
-| **Fehlt in der Datei** | in der Anwendung (Herkunft `import`), nicht in der Datei | austreten lassen: Austrittsdatum setzen (Datum oben auf der Seite, Default heute); wahlweise „ganz löschen" je Zeile | aus |
+| **Fehlt in der Datei** | in der Anwendung (Herkunft `import`), nicht in der Datei: noch nicht ausgetreten, oder ehemalig ohne Jahresbeiträge | noch nicht ausgetreten: austreten lassen (Austrittsdatum oben auf der Seite, Default heute); ehemalig: „ganz löschen" | aus |
 | **Geändert** | in beiden, Werte unterscheiden sich | Werte aus der Datei übernehmen | aus |
 
 - „Geändert" zeigt je Mitglied die abweichenden Felder als
@@ -132,9 +132,13 @@ Bestand nicht leer ist. Zugeordnet wird über die **Mitgliedsnummer**.
   oder gar nicht – einzelne Felder danach von Hand ändern.
 - Mitglieder, die in der Anwendung angelegt wurden (Herkunft `manuell`),
   erscheinen nie unter „Fehlt in der Datei".
-- Bereits Ausgetretene, die in der Datei fehlen, werden nicht angezeigt.
-- „Ganz löschen" ist nur möglich, wenn das Mitglied keine Jahresbeiträge
-  hat; sonst nur austreten lassen.
+- Gleiche Regel wie am Mitglied (07 §1, #127): **Austritt statt Löschen.**
+  Ein noch nicht ausgetretenes Mitglied kann hier nur austreten; „ganz
+  löschen" gibt es nur für Ehemalige (Austrittsdatum erreicht) ohne
+  Jahresbeiträge. Ehemalige mit Jahresbeiträgen und Mitglieder mit
+  vermerktem künftigem Austritt werden nicht angezeigt (hier gibt es für
+  sie nichts zu tun). Wer im Abgleich austritt, lässt sich also frühestens
+  beim nächsten Abgleich (oder am Mitglied) löschen.
 - Familien: neue `FamID` ⇒ neue Familie; Wechsel der Familie oder Rolle
   erscheint als Änderung unter „Geändert".
 - **Übernehmen** als Schrittkette; jede Änderung erzeugt eine Version
@@ -165,17 +169,21 @@ sonst Abgleich (Dienst `App\Service\Import\Abgleich`, Routen
   ebenso (`ImportLeser`). Familie: Zeile ohne
   `familie` = keine Familie; vorhandener Schlüssel = diese Familie;
   unbekannter Schlüssel = neue Familie (Name aus `familie_name`). Den
-  Familiennamen selbst gleicht der Abgleich nicht ab. „Bereits
-  ausgetreten“ heißt: Austrittsdatum gesetzt (auch ein künftiges). Ein von
+  Familiennamen selbst gleicht der Abgleich nicht ab. „Ehemalig“ heißt:
+  Austrittsdatum erreicht (`Mitglied::istEhemalig()`, Stichtag heute). Ein von
   Hand angelegtes Mitglied, das in der Datei steht, kann unter „Geändert“
   erscheinen; es behält beim Übernehmen seine Herkunft.
-- Häkchen: je Zeile „Anlegen“ / „Austreten“ (+ „ganz löschen“) /
-  „Übernehmen“; ohne Jahresbeiträge ist „ganz löschen“ angeboten, sonst
-  steht dort „nicht möglich, hat Jahresbeiträge“. Das Skript schickt je
+- Häkchen: je Zeile „Anlegen“ / „Austreten“ oder „ganz löschen“ /
+  „Übernehmen“; bei „Fehlt in der Datei“ hat ein noch nicht ausgetretenes
+  Mitglied nur „Austreten“ (Spalte löschen: „erst nach dem Austritt“), ein
+  ehemaliges nur „ganz löschen“ („ausgetreten am …“). „Alle an“ hakt dort
+  nur „Austreten“ an, gelöscht wird immer Zeile für Zeile. Das Skript schickt je
   Abschnitt eine kommagetrennte Liste von Mitgliedsnummern (tausende
   Einzelfelder liefen in `max_input_vars`). Der Server teilt beim Start
   neu ein und nimmt nur Nummern, die noch in ihrem Abschnitt stehen;
-  „ganz löschen“ eines Mitglieds mit Jahresbeiträgen lehnt den Start ab.
+  „ganz löschen“ eines nicht ehemaligen Mitglieds (auch per
+  manipuliertem POST) lehnt den Start ab, „Austreten“ eines Ehemaligen
+  wird ignoriert.
   Das Austrittsdatum ist nur nötig, wenn jemand austreten soll.
 - Schrittkette: die Auswahl steht als Liste von (Art, Nummer) im Job –
   bei geändert, austreten und löschen als (Art, Nummer, ID) des beim Start
@@ -188,8 +196,11 @@ sonst Abgleich (Dienst `App\Service\Import\Abgleich`, Routen
   übrigen Zeilen zu geändert/austreten/löschen, dafür die Datei noch
   einmal hochladen. Jede Art ist wiederholbar (vorhandene Nummer wird
   nicht doppelt angelegt, Speichern ohne Änderung schreibt keine Version,
-  gelöscht ist gelöscht). Bekommt ein zum Löschen gewähltes Mitglied
-  zwischendurch einen Jahresbeitrag, tritt es stattdessen aus. Neue
+  gelöscht ist gelöscht). Vor dem Löschen prüft der Schritt auf der
+  gesperrten Zeile (`MitgliedRepository::mitIdsZumAendern()`) noch einmal:
+  ist das Mitglied nicht mehr ehemalig (Austritt zurückgenommen) oder hat
+  es zwischendurch einen Jahresbeitrag bekommen, bleibt es und die Zeile
+  zählt als übersprungen. Neue
   Mitglieder tragen Herkunft `import`. Ein angefangener Abgleich lässt sich
   fortsetzen oder abbrechen; abgebrochen bleibt, was schon übernommen ist
   (Audit mit `abgebrochen`).
@@ -207,9 +218,12 @@ Vorschau gemeldet und nichts importiert; Import nur bei leerem Bestand;
 Schrittkette idempotent bei Wiederholung eines Schritts; Familien und
 Rollen korrekt verknüpft; Version 1 je Mitglied. Abgleich: richtige
 Einteilung in Neu/Fehlt/Geändert/unverändert, manuell angelegte und
-ausgetretene Mitglieder nie unter „Fehlt", nur angehakte Zeilen werden
-umgesetzt, „ganz löschen" bei vorhandenen Jahresbeiträgen abgelehnt,
-Version mit Anlass `abgleich`, ein zweiter Abgleich mit derselben Datei
-findet nichts mehr. Eine **erfundene** `import.csv` unter
+Mitglieder mit gesetztem Austrittsdatum nie zum Austreten unter „Fehlt",
+nur angehakte Zeilen werden umgesetzt, „ganz löschen" eines noch nicht
+ausgetretenen Mitglieds (auch per manipuliertem POST) abgelehnt, eines
+Ehemaligen ohne Jahresbeiträge ausgeführt, Ehemalige mit Jahresbeiträgen
+nie unter „Fehlt", Version mit Anlass `abgleich`, ein zweiter Abgleich mit
+derselben Datei findet nichts mehr außer den eben Ausgetretenen zum
+Löschen. Eine **erfundene** `import.csv` unter
 `tests/Fixtures/import/beispiel.csv` (Fantasiedaten) importiert
 fehlerfrei.

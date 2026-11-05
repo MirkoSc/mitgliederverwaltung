@@ -1,6 +1,6 @@
 // Merge view and step chain of the reconciliation in the settings section
 // Import (issue #34, docs/spec/10-import.md section 4): "Alle an/aus" per
-// section, the tick "ganz löschen" tied to "austreten", and the chain - one
+// section and the chain - one
 // request starts it with the ticked member numbers, then one request per
 // step until the server reports it done. No single request runs long
 // (CLAUDE.md section 1). Patterned on import.js.
@@ -20,11 +20,11 @@
         return (werte || []).filter((wert) => /^\d+$/.test(String(wert))).join(',');
     }
 
-    /** How many rows are ticked over all sections; "ganz löschen" is part of "austreten". */
+    /** How many rows are ticked over all sections (a row is either "austreten" or "ganz löschen"). */
     function anzahlGewaehlt(auswahl) {
-        const austritt = new Set([...(auswahl.austritt || []), ...(auswahl.loeschen || [])]);
+        const fehlt = new Set([...(auswahl.austritt || []), ...(auswahl.loeschen || [])]);
 
-        return (auswahl.neu || []).length + (auswahl.aendern || []).length + austritt.size;
+        return (auswahl.neu || []).length + (auswahl.aendern || []).length + fehlt.size;
     }
 
     function prozent(teil, ganz) {
@@ -92,11 +92,9 @@
             return Array.from(formular.querySelectorAll('input[type="checkbox"][name="' + gruppe + '"]'));
         }
 
-        function partner(gruppe, wert) {
-            return haken(gruppe).find((feld) => feld.value === wert) || null;
-        }
-
-        // "Alle an" / "Alle aus" of a section.
+        // "Alle an" / "Alle aus" of a section. In "Fehlt in der Datei" it
+        // ticks only "austreten" - deleting is always one row at a time -
+        // and "Alle aus" clears "ganz löschen" too.
         formular.querySelectorAll('[data-abgleich-alle]').forEach((knopf) => {
             knopf.addEventListener('click', () => {
                 const an = knopf.dataset.an === '1';
@@ -109,27 +107,6 @@
                     });
                 }
             });
-        });
-
-        // "ganz löschen" goes with "austreten": ticking it ticks the row,
-        // unticking the row unticks it.
-        formular.addEventListener('change', (ereignis) => {
-            const feld = ereignis.target;
-            if (!(feld instanceof HTMLInputElement) || feld.type !== 'checkbox') {
-                return;
-            }
-            if (feld.name === 'loeschen' && feld.checked) {
-                const zeile = partner('austritt', feld.value);
-                if (zeile !== null) {
-                    zeile.checked = true;
-                }
-            }
-            if (feld.name === 'austritt' && !feld.checked) {
-                const loeschen = partner('loeschen', feld.value);
-                if (loeschen !== null) {
-                    loeschen.checked = false;
-                }
-            }
         });
 
         function zeigen(stand) {

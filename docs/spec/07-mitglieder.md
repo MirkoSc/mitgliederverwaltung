@@ -106,8 +106,10 @@ eintippen", dann `POST /app/mitglieder/{id}/loeschen`. Der Server löscht
 nur, wenn das Mitglied ehemalig ist (sonst 409 mit Erklärung) und die
 Nummer stimmt (sonst 422, nichts gelöscht). Die Dateien der Nachweise
 werden mitgelöscht, das Audit-Log vermerkt `mitglied.geloescht` nur mit ID
-und Mitgliedsnummer. (Der Abgleich des Imports löscht weiterhin nach
-eigener Auswahl, 10.)
+und Mitgliedsnummer. Der Abgleich des Imports hält dieselbe Regel ein
+(10 §4): ein in der Datei fehlendes Mitglied, das noch nicht ausgetreten
+ist, kann dort nur austreten; ganz löschen lassen sich nur Ehemalige ohne
+Jahresbeiträge – vom Server beim Start und beim Schritt erzwungen.
 
 **Anschriftvorschläge** (#127): Im Mitgliedsformular („Neues Mitglied"
 und Reiter Daten, nicht bei Familien) ist das Feld Straße eine Combobox nach
