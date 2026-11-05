@@ -60,6 +60,25 @@ final readonly class BenutzerRepository
     }
 
     /**
+     * The account under exactly this address - for the login and the
+     * password reset. findByEmail() compares in the column's collation,
+     * which also matches spellings with accents or invisible characters
+     * ("érika@…" for "erika@…"). Had those reached the account, every such
+     * spelling would share the account's rate limit counter while each
+     * spelling of an unknown address counts for itself - and the
+     * difference would tell an outsider which addresses have an account
+     * (App\Service\RateLimiter::konto()). Stored addresses are plain ASCII
+     * (Einladung::pruefeEmail()), and the forms' type="email" sends nothing
+     * else, so only hand-made spellings fall away.
+     */
+    public function findByExactEmail(string $email): ?Benutzer
+    {
+        $benutzer = $this->findByEmail($email);
+
+        return $benutzer !== null && $benutzer->email === $email ? $benutzer : null;
+    }
+
+    /**
      * Every account, by name - the list of the settings section. A club has
      * a handful, no paging needed.
      *

@@ -65,9 +65,11 @@ final readonly class PasswortReset
         $now ??= new \DateTimeImmutable();
         $email = Benutzer::normalisiereEmail($email);
 
-        // The account counter under the account's id (RateLimiter::konto()):
-        // other spellings of the address must not reach the mailbox again.
-        $benutzer = $email === '' ? null : $this->benutzer()->findByEmail($email);
+        // The account counter under the account's id (RateLimiter::konto()),
+        // found only by the account's own address: another spelling neither
+        // reaches the mailbox nor shares the counter - as for an unknown
+        // address, so the limit does not tell which addresses exist.
+        $benutzer = $email === '' ? null : $this->benutzer()->findByExactEmail($email);
         $ipFrei = $this->limits->versuch(self::LIMIT_IP, RateLimiter::ip($ip), self::JE_IP, $now);
         $kontoFrei = $this->limits->versuch(self::LIMIT_KONTO, RateLimiter::konto($benutzer?->id, $email), self::JE_KONTO, $now);
         if (!$ipFrei || !$kontoFrei) {

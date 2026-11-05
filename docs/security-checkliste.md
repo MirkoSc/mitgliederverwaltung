@@ -31,7 +31,7 @@ echten Daten installiert, das Repository öffentlich.
 | `tests/Http/RoutenZugriffTest` | jede Route × anonym × Admin × Vorstand × Nur lesen gegen ihre Deklaration und `tests/Http/routen-zugriff/*.txt`; `/admin` nur mit `admin.*`; CSRF auf jeder POST-Route |
 | `tests/Http/CspComplianceTest` | CSP ohne `unsafe-inline`/`unsafe-eval`, kein externer Host, kein Inline-JS/`on*`/`hx-on`; Security-Header; `.user.ini` gesperrt, `X-Powered-By` entfernt (#37) |
 | `tests/Support/NoShellExecutionTest` | kein `exec` & Co. |
-| `tests/Integration/AnmeldungTest`, `RateLimiterTest` | Rate-Limit atomar, Kontozähler über Schreibweisen der Adresse hinweg, IPv6 je /64 (#37) |
+| `tests/Integration/AnmeldungTest`, `RateLimiterTest` | Rate-Limit atomar, andere Schreibweisen der Adresse erreichen kein Konto, Kontozähler verrät nicht, ob es eine Adresse gibt, IPv6 je /64 (#37) |
 | `tests/Feature/AnmeldungFlowTest` | Anmeldung, 2FA, Reset, Einladung, Benutzerverwaltung; Audit-Einträge nur mit IDs (#37) |
 | `tests/Integration/MailerTest` | Mail-Text nach Versand/endgültigem Fehlschlag geleert (#37) |
 | `tests/Service/Export/CsvWriterTest`, `tests/Support/MarkdownTest` | CSV-Formelschutz, nur eigene Pfade/http(s)/mailto als Links (#37) |

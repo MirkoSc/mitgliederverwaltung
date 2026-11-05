@@ -134,8 +134,12 @@ Verschlüsselung einzelner Datenbankfelder.
   für unbekannte Adresse, falsches Passwort, gesperrtes Konto und offene
   Einladung, Schein-`password_verify()` bei unbekanntem Konto. Adressen
   werden getrimmt und klein geschrieben gespeichert und gesucht. Der
-  Kontozähler hängt an der Konto-ID (`RateLimiter::konto()`), nicht an der
-  getippten Schreibweise – die Datenbank findet ein Konto auch mit Akzenten;
+  Kontozähler hängt an der Konto-ID (`RateLimiter::konto()`); Anmeldung
+  und Reset finden ein Konto nur unter seiner eigenen Adresse
+  (`BenutzerRepository::findByExactEmail()`), nicht unter Schreibweisen,
+  die erst der Vergleich der Datenbank gleich macht (Akzente, unsichtbare
+  Zeichen). So zählt jede Schreibweise für sich, ob es das Konto gibt oder
+  nicht, und der Zähler verrät keine Konten;
   IPv6-Adressen zählen je /64 (`RateLimiter::ip()`).
 - Mails mit Links oder Codes stehen nur bis zum Versand im Klartext in
   `mail_queue`; danach und nach dem endgültigen Fehlschlag wird der Text
