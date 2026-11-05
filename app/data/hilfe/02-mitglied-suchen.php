@@ -33,7 +33,7 @@ return [
         ],
         [
             'text' => 'Wählen Sie in der Liste den Namen des Mitglieds.',
-            'bild' => 'Das geöffnete Mitglied mit seinen Reitern. Der Knopf zum Zurückkehren zur Liste ist markiert.',
+            'bild' => 'Das geöffnete Mitglied mit seinen Reitern. Der Reiter Daten ist markiert.',
         ],
         [
             'text' => 'Wählen Sie einen Reiter wie **Daten** oder **Verlauf**, um mehr zu sehen.',

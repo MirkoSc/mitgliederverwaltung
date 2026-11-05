@@ -14,20 +14,20 @@ return [
             'bild' => 'Die Seite Mitglieder. Markiert ist der Eintrag Statistik in der Leiste oben.',
         ],
         [
-            'text' => 'Wählen Sie den Reiter **Mitglieder**. Oben stehen die wichtigsten Zahlen, zum Beispiel **Mitglieder**, **aktiv**, **passiv** und **Durchschnittsalter in Jahren**.',
+            'text' => 'Oben stehen die wichtigsten Zahlen, zum Beispiel **Mitglieder**, **aktiv**, **passiv** und **Durchschnittsalter in Jahren**.',
             'bild' => 'Die Seite Statistik. Markiert sind die Zahlen oben auf der Seite.',
-            'tipp' => 'Wer die Beiträge verwaltet, sieht zusätzlich den Reiter **Beiträge**. Dort stehen die Summen der Jahresbeiträge.',
+            'tipp' => 'Der Admin sieht oben zusätzlich die Reiter **Mitglieder** und **Beiträge**. Unter **Beiträge** stehen die Summen der Jahresbeiträge.',
         ],
         [
             'text' => 'Darunter folgen die Abschnitte, zum Beispiel **Altersgruppen**, **Abteilungen**, **Wohnorte** und **Eintritte und Austritte**. Wählen Sie in der Liste über den Abschnitten einen Namen, um dorthin zu springen.',
         ],
         [
-            'text' => 'Jeder Abschnitt zeigt ein Diagramm. Mit der Maus oder dem Finger sehen Sie die genaue Zahl zu einem Balken.',
+            'text' => 'Im Barrierefrei-Modus stehen die Zahlen jedes Abschnitts als Tabelle da. Ohne Barrierefrei-Modus zeigt jeder Abschnitt ein Diagramm. Mit der Maus oder dem Finger sehen Sie dort die genaue Zahl zu einem Wert.',
         ],
         [
-            'text' => 'Wollen Sie alle Zahlen lesen? Wählen Sie unter dem Diagramm **Zahlen als Tabelle**. Die Tabelle klappt auf.',
+            'text' => 'Ohne Barrierefrei-Modus: Wählen Sie unter dem Diagramm **Zahlen als Tabelle**. Die Tabelle klappt auf.',
             'bild' => 'Der Abschnitt Altersgruppen mit dem Diagramm. Markiert ist der Eintrag Zahlen als Tabelle unter dem Diagramm.',
-            'tipp' => 'Im Barrierefrei-Modus gibt es keine Diagramme. Dort sehen Sie nur die Tabellen, schon aufgeklappt.',
+            'tipp' => 'Im Barrierefrei-Modus ist die Tabelle schon aufgeklappt.',
         ],
         [
             'text' => 'Gezählt werden die heutigen Mitglieder. Wer schon ausgetreten ist, zählt nicht mit. Nur bei **Eintritte und Austritte** sind auch Ehemalige dabei.',

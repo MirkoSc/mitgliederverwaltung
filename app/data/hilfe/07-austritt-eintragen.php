@@ -10,11 +10,13 @@ return [
     'recht' => Permission::MitgliederBearbeiten,
     'schritte' => [
         [
-            'text' => 'Wählen Sie oben in der Leiste **Mitglieder** und öffnen Sie das Mitglied in der Liste.',
-            'tipp' => 'Wie Sie ein Mitglied finden, steht in der Anleitung „Mitglied suchen und öffnen“.',
+            'text' => 'Öffnen Sie das Mitglied. Wie das geht, steht in der Anleitung „Mitglied suchen und öffnen“.',
         ],
         [
-            'text' => 'Wählen Sie den Reiter **Daten**. Wählen Sie unter dem Formular den Knopf **Mitglied ausgetreten**.',
+            'text' => 'Wählen Sie den Reiter **Daten**.',
+        ],
+        [
+            'text' => 'Wählen Sie unter dem Formular den Knopf **Mitglied ausgetreten**.',
             'bild' => 'Das Mitglied auf dem Reiter Daten. Der Knopf Mitglied ausgetreten unter dem Formular ist markiert.',
         ],
         [
@@ -35,8 +37,11 @@ return [
             'bild' => 'Das Mitglied nach dem Eintragen. Die Meldung Austritt eingetragen ist markiert.',
         ],
         [
-            'text' => 'War der Austritt ein Versehen? Wählen Sie im Mitglied unter dem Formular **Austritt zurücknehmen** und dann noch einmal **Austritt zurücknehmen**. Es erscheint die Meldung **Austritt zurückgenommen.**',
+            'text' => 'War der Austritt ein Versehen? Wählen Sie im Mitglied unter dem Formular **Austritt zurücknehmen**.',
             'tipp' => 'Ein ehemaliges Mitglied finden Sie in der Liste nur mit einem Haken bei **Ehemalige anzeigen**.',
+        ],
+        [
+            'text' => 'Wählen Sie auf der Rückfrage noch einmal **Austritt zurücknehmen**. Es erscheint die Meldung **Austritt zurückgenommen.**',
         ],
     ],
 ];

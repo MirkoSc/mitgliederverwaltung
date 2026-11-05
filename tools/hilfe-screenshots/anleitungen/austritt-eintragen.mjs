@@ -18,19 +18,19 @@ async function oeffne(seite, knopf, ehemalige = false) {
 export default async function ablauf({ seite, markiere, foto }) {
     const ausgetreten = await oeffne(seite, 'Mitglied ausgetreten');
     await markiere(ausgetreten);
-    await foto(2);
+    await foto(3);
 
     await ausgetreten.click();
     await seite.getByRole('heading', { name: 'Mitglied ausgetreten', level: 1 }).waitFor();
     await markiere(seite.getByLabel('Austrittsdatum'));
-    await foto(3);
+    await foto(4);
 
     await seite.getByLabel('Austrittsgrund').fill('Austritt');
     await seite.getByRole('button', { name: 'Austritt eintragen' }).click();
     await markiere(seite.getByText(/Austritt zum .* eingetragen – das Mitglied ist jetzt ehemalig\./));
-    await foto(6);
+    await foto(7);
 
-    // Restore: still a member (step 7 of the guide).
+    // Restore: still a member (steps 8 and 9 of the guide).
     await (await oeffne(seite, 'Austritt zurücknehmen', true)).click();
     await seite.getByRole('button', { name: 'Austritt zurücknehmen' }).click();
     await seite.getByText('Austritt zurückgenommen.').waitFor();

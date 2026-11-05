@@ -20,7 +20,10 @@ return [
             'text' => 'Öffnen Sie das Mitglied in der Liste. Neben dem Namen steht **ehemalig**.',
         ],
         [
-            'text' => 'Wählen Sie den Reiter **Daten**. Wählen Sie unter dem Formular den Knopf **Mitglied löschen**.',
+            'text' => 'Wählen Sie den Reiter **Daten**.',
+        ],
+        [
+            'text' => 'Wählen Sie unter dem Formular den Knopf **Mitglied löschen**.',
             'bild' => 'Das ehemalige Mitglied auf dem Reiter Daten. Der Knopf Mitglied löschen unter dem Formular ist markiert.',
         ],
         [

@@ -10,8 +10,7 @@ return [
     'recht' => Permission::MitgliederBearbeiten,
     'schritte' => [
         [
-            'text' => 'Wählen Sie oben in der Leiste **Mitglieder** und öffnen Sie das Mitglied in der Liste.',
-            'tipp' => 'Wie Sie ein Mitglied finden, steht in der Anleitung „Mitglied suchen und öffnen“.',
+            'text' => 'Öffnen Sie das Mitglied. Wie das geht, steht in der Anleitung „Mitglied suchen und öffnen“.',
         ],
         [
             'text' => 'Wählen Sie den Reiter **Daten**. Suchen Sie die Gruppe **Beitrag**.',
