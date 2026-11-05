@@ -24,6 +24,7 @@
  * @var list<string> $abschnitte
  * @var string|null $statusText
  * @var string|null $statusKlasse
+ * @var \DateTimeImmutable|null $austrittVermerkt a leaving date in the future
  * @var string|null $fokus 'mitglied', 'reiter' or null
  */
 ?>
@@ -43,6 +44,9 @@
                 <a class="knopf knopf-still detail-schliessen" <?= $einbettung->link($einbettung->rueckweg()) ?>>Schließen</a>
             <?php endif; ?>
         </div>
+        <?php if (($austrittVermerkt ?? null) !== null): ?>
+            <p class="hinweis hinweis-info">Austritt zum <?= e(datum($austrittVermerkt)) ?> vermerkt – bis dahin bleibt die Person Mitglied.</p>
+        <?php endif; ?>
 
         <?php foreach ($abschnitte as $abschnitt): ?>
             <?= $abschnitt ?>

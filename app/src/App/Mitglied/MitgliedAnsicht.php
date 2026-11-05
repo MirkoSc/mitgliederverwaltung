@@ -99,6 +99,8 @@ final readonly class MitgliedAnsicht
             'abschnitte' => $abschnitte,
             'statusText' => $ehemalig ? 'ehemalig' : ($mitglied->aktiv ? 'aktiv' : 'passiv'),
             'statusKlasse' => $ehemalig ? 'etikett-fehler' : ($mitglied->aktiv ? 'etikett-ok' : ''),
+            // A leaving date still to come: noted, the person is a member until then (07 section 1).
+            'austrittVermerkt' => $ehemalig ? null : $mitglied->austrittsdatum,
             'fokus' => $fokus,
         ]);
 

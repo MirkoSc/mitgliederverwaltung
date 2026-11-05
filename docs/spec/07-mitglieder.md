@@ -33,9 +33,22 @@ gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
   dann folgt `DROP COLUMN`.
 - **Ehemalige**: Austrittsdatum gesetzt und erreicht (berechnet, nicht
   gespeichert). In allen Listen standardmäßig ausgeblendet (Filter
-  „Ehemalige anzeigen"). Löschen nur durch den Admin, mit Rückfrage:
-  gelöscht werden Mitglied, Versionen, Nachweise und Jahresbeiträge;
-  bereits erzeugte Einzüge behalten ihre eigene Kopie (08 §4).
+  „Ehemalige anzeigen"). Von Ehemaligen wird nie eingezogen (08 §3).
+- **Austritt statt Löschen** (#127): Ein Mitglied, das geht, wird nicht
+  gelöscht, sondern bekommt ein Austrittsdatum. Knopf **„Mitglied
+  ausgetreten"** (Recht `mitglieder.bearbeiten`, solange kein
+  Austrittsdatum gesetzt ist) mit Austrittsdatum (vorbelegt heute) und
+  Austrittsgrund (Freitext mit den Vorschlägen). Liegt das Datum in der
+  Zukunft, zeigt das Mitglied „Austritt zum TT.MM.JJJJ vermerkt"; bis dahin
+  bleibt die Person Mitglied. **„Austritt zurücknehmen"** (gleiches Recht,
+  bei gesetztem Austrittsdatum, vermerkt oder ehemalig) leert nach kurzer
+  Rückfrage Datum und Grund. Beides ist ein normales Speichern: neue
+  Version, Versionskonflikt wie im Formular.
+- **Löschen** nur durch den Admin und **nur Ehemalige**, mit doppelter
+  Nachfrage: erst die Rückfrage in ganzen Sätzen („Weiter"), dann
+  „Endgültig löschen?" mit der eingetippten Mitgliedsnummer. Gelöscht
+  werden Mitglied, Versionen, Nachweise und Jahresbeiträge; bereits
+  erzeugte Einzüge behalten ihre eigene Kopie (08 §4).
 - **Mandatsreferenz**: Default = Mitgliedsnummer (Muster folgt E6 aus der
   Sammlung, vor dem ersten echten Einzug). **Mandatsdatum**: Default =
   Eintrittsdatum, sonst das Default-Mandatsdatum aus den Einstellungen.
@@ -73,10 +86,27 @@ kommt mit den eigenen Eingaben und der aktuellen Version zurück; erneutes
 Speichern gilt). Familie und Rolle sind keine Felder dieses Formulars, sie
 bleiben beim Speichern erhalten (§3). Abteilungen, Funktionen und
 Beitragsarten bietet das Formular an, wenn sie aktiv sind oder das Mitglied
-sie schon hat. Löschen (Admin): Rückfrage unter
-`GET /app/mitglieder/{id}/loeschen`, dann `POST` derselben Adresse; die
-Dateien der Nachweise werden mitgelöscht, das Audit-Log vermerkt
-`mitglied.geloescht` nur mit ID und Mitgliedsnummer.
+sie schon hat. Die Felder Austrittsdatum und Austrittsgrund bleiben im
+Formular: dort wird ein bestehender Austritt korrigiert.
+
+Austritt (#127): Unter dem Formular steht „Mitglied ausgetreten" bzw.
+„Austritt zurücknehmen", für Ehemalige beim Admin daneben „Mitglied
+löschen". „Mitglied ausgetreten" ist eine eigene Seite
+`GET /app/mitglieder/{id}/austritt` (kein Dialog – Rückfragen sind in
+dieser Anwendung Seiten, auch ohne Skript), gespeichert per `POST`
+derselben Adresse; „Austritt zurücknehmen" ebenso unter
+`/app/mitglieder/{id}/austritt-zuruecknehmen`. Beide mit
+`mitglieder.bearbeiten`, Rückweg über `zurueck` wie die übrigen Seiten des
+Mitglieds, Audit `mitglied.austritt` bzw.
+`mitglied.austritt_zurueckgenommen` nur mit ID und Versionsnummer.
+Löschen (Admin): Schritt 1 `GET /app/mitglieder/{id}/loeschen`, Schritt 2
+`…/loeschen?schritt=2` mit dem Pflichtfeld „Mitgliedsnummer zur Bestätigung
+eintippen", dann `POST /app/mitglieder/{id}/loeschen`. Der Server löscht
+nur, wenn das Mitglied ehemalig ist (sonst 409 mit Erklärung) und die
+Nummer stimmt (sonst 422, nichts gelöscht). Die Dateien der Nachweise
+werden mitgelöscht, das Audit-Log vermerkt `mitglied.geloescht` nur mit ID
+und Mitgliedsnummer. (Der Abgleich des Imports löscht weiterhin nach
+eigener Auswahl, 10.)
 
 **Anschriftvorschläge** (#127): Im Mitgliedsformular („Neues Mitglied"
 und Reiter Daten, nicht bei Familien) ist das Feld Straße eine Combobox nach
@@ -435,7 +465,13 @@ eindeutig, neu = höchste + 1, per POST nicht änderbar, Zurückholen ändert si
 Suchfelder, Groß-/Kleinschreibung egal; Geburtsdatum in mehreren
 Schreibweisen, IBAN mit/ohne Leerzeichen und als Teilstück, Adresse mit Name,
 Bemerkung, Wort ohne Treffer; Filter Beitragsart findet Zahler und
-Familienmitglieder. Rechte-Matrix §9 serverseitig. Wohnort auf der Karte
+Familienmitglieder. Rechte-Matrix §9 serverseitig. Austritt (#127, `MitgliedAustrittTest`):
+heute ⇒ ehemalig mit neuer Version, Zukunft ⇒ „vermerkt" und weiter
+Mitglied, unlesbares Datum speichert nichts, Versionskonflikt,
+zurücknehmen leert Datum und Grund; Löschen eines nicht ehemaligen
+Mitglieds wird auf GET und POST abgelehnt, ohne oder mit falscher
+Mitgliedsnummer wird nichts gelöscht; „Nur lesen" 403 auf allen
+Austritts- und Löschrouten, Vorstand darf Austritt, nicht Löschen. Wohnort auf der Karte
 (#106, `WohnortTest`): die drei Zustände, Such-Anschrift speichern →
 gefunden bzw. weiter nicht gefunden mit den eingegebenen Werten, entfernen,
 „Nur lesen" sieht den Block ohne Formular und bekommt auf den POST 403,

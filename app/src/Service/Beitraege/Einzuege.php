@@ -80,9 +80,9 @@ final readonly class Einzuege
     }
 
     /**
-     * Step 1: every open fee, the collectable ones (Zahlart `lastschrift`,
-     * valid IBAN, a usable mandate) apart from the others, plus what the
-     * club data lacks.
+     * Step 1: every open fee, the collectable ones (not left by today,
+     * Zahlart `lastschrift`, valid IBAN, a usable mandate) apart from the
+     * others, plus what the club data lacks.
      */
     public function zusammenstellen(?\DateTimeImmutable $heute = null): EinzugAuswahl
     {
@@ -112,8 +112,8 @@ final readonly class Einzuege
      * Step 2: creates the run from the chosen open fees. In one
      * transaction: the run, its file (made once, stored encrypted) and the
      * fees going to `im_einzug` with a note each. If a chosen fee is no
-     * longer open or collectable, nothing happens - the page shows the
-     * current state again.
+     * longer open or collectable - its member left in the meantime, too -
+     * nothing happens; the page shows the current state again.
      *
      * @param list<int> $beitragIds
      * @throws EinzugNichtMoeglich
@@ -369,11 +369,16 @@ final readonly class Einzuege
     }
 
     /**
-     * Whether and why not an open fee can be collected (08 section 3):
-     * Zahlart `lastschrift`, a valid IBAN, and a mandate the file can carry.
+     * Whether and why not an open fee can be collected (08 section 3): a
+     * member who has not left yet (checked first - a member whose leaving
+     * date is reached is never collected, whatever else is true), Zahlart
+     * `lastschrift`, a valid IBAN, and a mandate the file can carry.
      */
     private static function kandidat(Jahresbeitrag $beitrag, Mitglied $mitglied, Vereinsdaten $verein, \DateTimeImmutable $heute): EinzugKandidat
     {
+        if ($mitglied->istEhemalig($heute)) {
+            return new EinzugKandidat($beitrag, $mitglied, 'ausgetreten am ' . Datum::anzeigen($mitglied->austrittsdatum), ausgetreten: true);
+        }
         if ($mitglied->zahlart === Zahlart::Selbst) {
             return new EinzugKandidat($beitrag, $mitglied, 'zahlt selbst (Zahlart „selbst“)', true);
         }

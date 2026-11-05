@@ -14,7 +14,7 @@
  * @var \App\Domain\Mitglied|null $mitglied the stored member, null for a new one
  * @var \App\Domain\Familie|null $familie
  * @var string $aktion
- * @var bool $darfLoeschen
+ * @var bool $darfLoeschen admin and a former member (07 section 1)
  * @var \App\App\Mitglied\Einbettung|null $einbettung the page the member is shown on (MitgliedAnsicht)
  * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (tab "Daten" only, issue #106)
  * @var string|null $csrf
@@ -252,8 +252,18 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     </form>
 <?php endif; ?>
 
-<?php if ($darfLoeschen && $loeschAdresse !== null): ?>
+<?php if (!$neu): ?>
+    <?php /* Leaving instead of deleting (07 section 1): "Mitglied ausgetreten"
+             while no leaving date is set, else "Austritt zurücknehmen";
+             deleting (admin) only once the member is a former one. */ ?>
     <p class="knopfreihe">
-        <a class="knopf knopf-gefahr" href="<?= e($loeschAdresse) ?>">Mitglied löschen</a>
+        <?php if ($mitglied->austrittsdatum === null): ?>
+            <a class="knopf" href="<?= e($einbettung->mitRueckweg(MitgliedController::austrittAdresse((int) $mitglied->id))) ?>">Mitglied ausgetreten</a>
+        <?php else: ?>
+            <a class="knopf" href="<?= e($einbettung->mitRueckweg(MitgliedController::zuruecknehmenAdresse((int) $mitglied->id))) ?>">Austritt zurücknehmen</a>
+        <?php endif; ?>
+        <?php if ($darfLoeschen && $loeschAdresse !== null): ?>
+            <a class="knopf knopf-gefahr" href="<?= e($loeschAdresse) ?>">Mitglied löschen</a>
+        <?php endif; ?>
     </p>
 <?php endif; ?>

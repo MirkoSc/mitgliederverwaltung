@@ -355,7 +355,7 @@ final class MitgliedBearbeitenTest extends AppTestCase
 
     public function testTheAdminDeletesAfterAClearQuestion(): void
     {
-        $m = $this->vorhanden(13, 'Musterfrau', ['vorname' => 'Erika']);
+        $m = $this->vorhanden(13, 'Musterfrau', ['vorname' => 'Erika', 'austrittsdatum' => new \DateTimeImmutable('2020-12-31')]);
         $this->repo()->speichern($m->mit(['ort' => 'Musterstadt']), VersionsAnlass::geaendert(), null);
         $blobs = BlobService::aus($this->dienste);
         $datei = $blobs->storeString('Rentenbescheid (erfunden)', new BlobMeta('application/pdf'), BlobStorage::Db);
@@ -367,10 +367,10 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertStringContainsString('Mitglied löschen?', $frage->body);
         self::assertStringContainsString('Erika Musterfrau', $frage->body);
         self::assertStringContainsString('lässt sich nicht rückgängig machen', $frage->body);
-        self::assertStringContainsString('Austrittsdatum', $frage->body);
-        self::assertStringContainsString('action="/app/mitglieder/' . $m->id . '/loeschen"', $frage->body);
+        self::assertStringContainsString('/app/mitglieder/' . $m->id . '/loeschen?schritt=2', $frage->body);
+        self::assertStringContainsString('action="/app/mitglieder/' . $m->id . '/loeschen"', $this->get('/app/mitglieder/' . $m->id . '/loeschen', ['schritt' => '2'])->body);
 
-        $antwort = $this->post('/app/mitglieder/' . $m->id . '/loeschen');
+        $antwort = $this->post('/app/mitglieder/' . $m->id . '/loeschen', ['mitgliedsnummer' => '13']);
 
         self::assertWeiterleitungNach('/app/mitglieder', $antwort);
         self::assertSame('Mitglied Nr. 13 ist gelöscht.', $this->flash());
@@ -405,7 +405,8 @@ final class MitgliedBearbeitenTest extends AppTestCase
         $admin = $this->als(Rolle::Admin);
         $this->dienste->view->setAnmeldung($admin, 'token-123');
         $html = $this->dienste->view->fragment($reiter[0]->template(), $reiter[0]->daten((int) $m->id));
-        self::assertStringContainsString('href="/app/mitglieder/' . $m->id . '/loeschen"', $html);
+        self::assertStringNotContainsString('/loeschen"', $html, 'not for a member who has not left');
+        self::assertStringContainsString('href="/app/mitglieder/' . $m->id . '/austritt">Mitglied ausgetreten', $html);
 
         self::assertStringContainsString('gibt es nicht mehr', $this->dienste->view->fragment($reiter[0]->template(), $reiter[0]->daten(999)));
     }

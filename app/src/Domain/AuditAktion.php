@@ -41,6 +41,8 @@ enum AuditAktion: string
     case BeitraegeJahrGeloescht = 'beitraege.jahr_geloescht';
     case VersionZurueckgeholt = 'mitglied.version_zurueckgeholt';
     case MitgliedGeloescht = 'mitglied.geloescht';
+    case MitgliedAusgetreten = 'mitglied.austritt';
+    case AustrittZurueckgenommen = 'mitglied.austritt_zurueckgenommen';
     case AnschriftUebernommen = 'familie.anschrift_uebernommen';
     case KartenSucheGeaendert = 'mitglied.karten_suche_geaendert';
     case KartenPunktGeaendert = 'mitglied.karten_punkt_geaendert';
@@ -80,6 +82,8 @@ enum AuditAktion: string
             self::BeitraegeJahrGeloescht => 'Beiträge eines Jahres gelöscht',
             self::VersionZurueckgeholt => 'Version zurückgeholt',
             self::MitgliedGeloescht => 'Mitglied gelöscht',
+            self::MitgliedAusgetreten => 'Austritt eingetragen',
+            self::AustrittZurueckgenommen => 'Austritt zurückgenommen',
             self::AnschriftUebernommen => 'Anschrift in der Familie übernommen',
             self::KartenSucheGeaendert => 'Such-Anschrift für die Karte geändert',
             self::KartenPunktGeaendert => 'Punkt auf der Karte von Hand geändert',

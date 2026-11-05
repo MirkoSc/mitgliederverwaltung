@@ -106,6 +106,7 @@ $einzugJahre = $einzugAuswahl->jahre();
         <?php
         $einzugOhne = count($einzugAuswahl->nichtAuswaehlbar);
         $einzugSelbst = count(array_filter($einzugAuswahl->nichtAuswaehlbar, static fn($k): bool => $k->selbstKassieren));
+        $einzugAusgetreten = count(array_filter($einzugAuswahl->nichtAuswaehlbar, static fn($k): bool => $k->ausgetreten));
         ?>
         <details class="einzug-klappe einzug-ausnahmen">
             <summary><?= $einzugOhne === 1 ? '1 offener Beitrag lässt' : e($einzugOhne) . ' offene Beiträge lassen' ?> sich nicht per Lastschrift einziehen</summary>
@@ -114,7 +115,10 @@ $einzugJahre = $einzugAuswahl->jahre();
                     Selbstzahler und Beiträge ohne gültige IBAN kassieren Sie selbst – sie stehen in der Liste
                     <a href="<?= e(Navigation::LISTEN) ?>/selbst-kassieren">„Selbst kassieren“</a>.
                 <?php endif; ?>
-                <?php if ($einzugSelbst < $einzugOhne): ?>
+                <?php if ($einzugAusgetreten > 0): ?>
+                    Von ausgetretenen Mitgliedern wird nichts mehr eingezogen.
+                <?php endif; ?>
+                <?php if ($einzugSelbst + $einzugAusgetreten < $einzugOhne): ?>
                     Fehlt eine Angabe zum Mandat, ergänzen Sie sie am Mitglied; danach lässt sich der Beitrag einziehen.
                 <?php endif; ?>
             </p>
