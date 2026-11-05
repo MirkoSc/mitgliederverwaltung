@@ -17,6 +17,7 @@ const { abgleich, anleitungenLesen, dateienAbgleichen } = require(path.join(lib,
 const { optionenLesen } = require(path.join(lib, 'optionen.js'));
 const { composeArgs, portLesen } = require(path.join(lib, 'docker.js'));
 const { KACHEL, einfarbigesPng } = require(path.join(lib, 'kachel.js'));
+const { ANSCHRIFT_ROUTE, VORSCHLAEGE, antwort } = require(path.join(lib, 'anschrift.js'));
 
 // ---------------------------------------------------------------- TOTP
 
@@ -232,4 +233,15 @@ test('the neutral map tile is a valid 256 x 256 PNG with correct checksums', () 
     assert.deepEqual([...pixel.subarray(0, 4)], [0, 0xf2, 0xef, 0xe9]);
     assert.ok(KACHEL.length < 2048, 'small enough to answer every tile');
     assert.notDeepEqual(einfarbigesPng(2, [1, 2, 3]), KACHEL);
+});
+
+test('fixed address suggestions: the format the form reads, sample town, route of the application', () => {
+    const { vorschlaegeAus, felderFuer } = require(path.join(__dirname, '..', '..', 'public', 'js', 'anschrift-vorschlaege.js'));
+    const gelesen = vorschlaegeAus(JSON.parse(antwort()));
+    assert.equal(gelesen.length, VORSCHLAEGE.length);
+    for (const vorschlag of gelesen) {
+        assert.deepEqual(Object.keys(felderFuer(vorschlag)).sort(), ['land', 'ort', 'plz', 'strasse']);
+        assert.match(vorschlag.ort, /^Muster/);
+    }
+    assert.equal(ANSCHRIFT_ROUTE, '**/app/anschrift/vorschlaege');
 });

@@ -183,6 +183,10 @@ im Barrierefrei-Modus auf und räumt das Projekt ab.
   Element verdeckt (feste Speichern-Leiste, Karte), scheitert die Aufnahme.
 - **Kartenkacheln** beantwortet der Browser des Skripts mit einer
   einfarbigen Kachel – die Bilder hängen nicht vom Kachel-Server ab (#119).
+- **Anschriftvorschläge** (07 §1) beantwortet der Browser des Skripts für
+  Aufnahmen, die die Liste zeigen, mit festen, erfundenen Anschriften aus
+  Musterstadt (`lib/anschrift.js`, `seite.route`) – nicht vom externen Dienst
+  abhängig (#129).
 - **Bilder:** PNG, Fenster 1280 × 800, `deviceScaleFactor` 1, `de-DE`,
   `Europe/Berlin`, helles Farbschema, keine Animationen. Je Bild höchstens
   250 KB, alle Bilder zusammen höchstens 10 MB (sie gehen in jedes
