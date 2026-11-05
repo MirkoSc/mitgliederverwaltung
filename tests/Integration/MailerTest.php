@@ -79,6 +79,28 @@ final class MailerTest extends DatabaseTestCase
         self::assertCount(1, $this->transport->gesendet);
     }
 
+    /** The reset link: queued in the request, attempted after the response (Kontomails::resetLink()). */
+    public function testAQueuedMailIsAttemptedByItsId(): void
+    {
+        $id = $this->mailer->einreihen('a@example.org', 'Betreff', 'Text', $this->jetzt);
+        self::assertSame([], $this->transport->gesendet);
+
+        self::assertTrue($this->mailer->versuchen($id, $this->jetzt)->erfolg);
+        self::assertCount(1, $this->transport->gesendet);
+        self::assertSame(MailStatus::Gesendet, $this->queue->find($id)?->status);
+        self::assertSame(0, $this->mailer->sendeFaellige($this->jetzt), 'the cron does not send it again');
+    }
+
+    /** A cron run between queueing and the attempt: the mail goes out once. */
+    public function testAMailTheCronAlreadySentIsNotAttemptedAgain(): void
+    {
+        $id = $this->mailer->einreihen('a@example.org', 'Betreff', 'Text', $this->jetzt);
+        self::assertSame(1, $this->mailer->sendeFaellige($this->jetzt));
+
+        self::assertFalse($this->mailer->versuchen($id, $this->jetzt)->erfolg);
+        self::assertCount(1, $this->transport->gesendet);
+    }
+
     public function testAFailedImmediateMailStaysQueuedAndTheCronRetriesIt(): void
     {
         $this->transport->fehlschlaege = 1;

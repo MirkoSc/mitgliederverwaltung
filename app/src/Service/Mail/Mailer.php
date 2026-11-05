@@ -15,10 +15,12 @@ use App\Repository\MailQueueRepository;
  * the same class runs inside a request and inside the cron.
  *
  * Two ways in (docs/spec/01-plattform.md section 6):
- *  - sendeSofort(): security mails (reset, 2FA code, new device) are queued
- *    and attempted at once, so the page can say right away whether it went
+ *  - sendeSofort(): security mails (2FA code, new device) are queued and
+ *    attempted at once, so the page can say right away whether it went
  *    out; a failure stays in the queue and the cron retries it;
- *  - einreihen(): everything else is only queued, the cron sends it.
+ *  - einreihen(): everything else is only queued, the cron sends it -
+ *    unless versuchen() attempts it first: the reset link, once the
+ *    response is out (App\Service\Account\Kontomails::resetLink()).
  *
  * Mails go to users only and carry no member data (CLAUDE.md section 4).
  */
@@ -68,11 +70,22 @@ final readonly class Mailer
     public function sendeSofort(string $empfaenger, string $betreff, string $text, ?\DateTimeImmutable $now = null): MailAttemptResult
     {
         $now ??= new \DateTimeImmutable();
-        $id = $this->queue->enqueue($empfaenger, $betreff, $text, $now);
+
+        return $this->versuchen($this->queue->enqueue($empfaenger, $betreff, $text, $now), $now);
+    }
+
+    /**
+     * One attempt at a mail queued with einreihen(), now - unless the cron
+     * has claimed it meanwhile; then the cron sends it.
+     */
+    public function versuchen(int $id, ?\DateTimeImmutable $now = null): MailAttemptResult
+    {
+        $now ??= new \DateTimeImmutable();
         $mail = $this->queue->claimById($id, $now);
         if ($mail === null) {
-            // Cannot happen for a row nobody else touched yet, but every
-            // claim can in principle miss.
+            // The cron took it between einreihen() and now (it sends it
+            // then) - for a row of sendeSofort() nobody else touched yet
+            // this cannot happen, but every claim can in principle miss.
             return new MailAttemptResult(false, 'Die Mail konnte nicht aus der Warteschlange geholt werden.');
         }
 

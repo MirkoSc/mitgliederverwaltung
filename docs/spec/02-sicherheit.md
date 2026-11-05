@@ -147,8 +147,9 @@ Verschlüsselung einzelner Datenbankfelder.
 - **Passwort-Reset**: Token 32 Byte, nur SHA-256 gespeichert, 30 min,
   einmalig, ein neuer Link ersetzt den alten; beendet alle Sessions.
   Anfragen zählen je IP (10) und je Konto bzw. Adresse (3) im Fenster; die Antwort
-  ist für jede Adresse dieselbe. Ohne Tresor verliert das Konto dabei
-  nichts.
+  ist für jede Adresse dieselbe, auch in der Laufzeit: der Link wird nur
+  eingereiht und erst nach der Antwort versendet (01 §3, §6). Ohne Tresor
+  verliert das Konto dabei nichts.
 - **Eigenes Passwort ändern** (Benutzermenü): nur mit dem aktuellen
   Passwort (Fehlversuche zählen wie bei der Anmeldung); beendet alle
   anderen Sessions, die eigene lebt mit neuer ID weiter.

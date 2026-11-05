@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Account;
 
 use App\Dienste;
+use App\Http\NachDerAntwort;
 use App\Http\Request;
 use App\PublicPages\AnmeldungController;
 use App\Service\Mail\MailAttemptResult;
@@ -20,8 +21,9 @@ use App\Support\FileLogger;
  * Gerät", "2FA geändert". Taken over from Vereinsbelege's Mailer
  * methods of the same purpose.
  *
- * All of them are attempted at once (App\Service\Mail\Mailer::sendeSofort())
- * - a failed attempt stays in the queue and the cron retries it. They carry
+ * All of them are attempted at once (App\Service\Mail\Mailer::sendeSofort()),
+ * the reset link right after the response (resetLink()) - a failed attempt
+ * stays in the queue and the cron retries it. They carry
  * no member data (CLAUDE.md section 4), and a link is only ever built on a
  * trustworthy base (App\Service\Mail\PublicUrl): without one there is no
  * mail, never a link to whatever host the request named.
@@ -83,21 +85,33 @@ final readonly class Kontomails
     }
 
     /**
-     * @return MailAttemptResult|null null = not sent, no trustworthy base URL
+     * Queued now, attempted only once the response is out
+     * (App\Http\NachDerAntwort): the SMTP conversation takes long enough to
+     * tell from the response time whether the address has an account
+     * (docs/spec/02-sicherheit.md section 3). A failed attempt stays in the
+     * queue for the cron, as with the other mails.
      */
-    public function resetLink(Request $request, string $email, #[\SensitiveParameter] string $token): ?MailAttemptResult
+    public function resetLink(Request $request, string $email, #[\SensitiveParameter] string $token): void
     {
         $basis = $this->basis($request);
         if ($basis === null) {
             $this->ohneBasis('password reset');
 
-            return null;
+            return;
         }
 
-        return $this->mailer->sendeSofort($email, 'Neues Passwort für die Mitgliederverwaltung', $this->mailer->vorlage('passwort-reset', [
+        $id = $this->mailer->einreihen($email, 'Neues Passwort für die Mitgliederverwaltung', $this->mailer->vorlage('passwort-reset', [
             'link' => $basis . AnmeldungController::PASSWORT_NEU . '?token=' . $token,
             'gueltigMinuten' => intdiv(PasswortReset::GUELTIG_SEKUNDEN, 60),
         ]));
+        NachDerAntwort::ausfuehren(function () use ($id): void {
+            try {
+                $this->mailer->versuchen($id);
+            } catch (\Throwable $e) {
+                // Still queued: the cron sends it. The log names the class only.
+                $this->logger->append(sprintf('password reset mail not attempted: %s', $e::class));
+            }
+        });
     }
 
     /**
