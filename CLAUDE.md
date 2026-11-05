@@ -37,6 +37,7 @@ aktuelle Issue verlinkt**, nicht alle.
 | `docs/spec/09-listen-und-exporte.md` | Geburtstage, Ehrungen, Funktionen, Selbst kassieren, Auffälligkeiten, BLSV, Gesamtexport, xlsx/csv |
 | `docs/spec/10-import.md` | Erstimport und späterer Abgleich (Merge-Ansicht), Importformat |
 | `docs/spec/11-vereinsdaten.md` | Vereinsdaten, Bankverbindung, Gläubiger-ID, Verbandsnummern, Logo |
+| `docs/spec/12-hilfe.md` | Hilfe: bebilderte Anleitungen, Schreibregeln, Beispieldaten, Screenshot-Skript |
 
 Schwesterprojekte (gleicher Hoster, gleiche Bauweise):
 `MirkoSc/vereinsbelege` (Hauptvorlage: Login, 2FA, Installer,
