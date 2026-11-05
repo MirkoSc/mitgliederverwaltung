@@ -21,6 +21,26 @@ Repository sagen „starte die Entwicklung“ (bzw. den Workflow
 Wie viele Agenten gleichzeitig laufen, hängt von der Maschine der Sitzung
 ab; höchstens 4 gleichzeitig, weil jeder Agent eine eigene Docker-Umgebung startet. Die Sitzung muss laufen bleiben; startet der Container neu, den Workflow einfach erneut starten – er setzt fort.
 
+## Weitere Runden
+
+Ohne Argumente arbeitet der Workflow den ursprünglichen Plan (#1–#36) ab.
+Eine neue Runde bekommt er als Argument:
+
+```js
+{
+  plan: [{ n: 114, m: 'opus', e: 'high', d: [] }, …],  // wie die Tabelle im Arbeitsplan
+  sammelIssue: 113,          // Bericht und `braucht-hilfe` für die Runde
+  release: { version: '0.3.0' },  // optional: danach Pre-Release auslösen
+}
+```
+
+Mit `release` wartet er nach dem letzten Merge auf die grüne CI auf `main`,
+startet `release.yml` (`workflow_dispatch`, immer Pre-Release), prüft das
+Release (Tag, ZIP, `setup.php`, Prüfsummen, Signatur) und schreibt den
+Bericht als Kommentar ins Sammel-Issue. Hängt ein Issue oder scheitert ein
+Schritt, gibt es kein Release, sondern `braucht-hilfe` am Sammel-Issue mit
+Grund. „Latest" markiert weiterhin Mirko.
+
 ## Wenn etwas hängt
 
 Issues mit **`braucht-hilfe`**: der Kommentar am Issue nennt den Grund.

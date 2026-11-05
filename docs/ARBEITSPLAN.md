@@ -72,6 +72,25 @@ gibt vor, wie gründlich gearbeitet und getestet wird.
 Kritischer Pfad: #1 → #15 → #19 → #29 → #30 → #35/#36. Bis zu 9 Issues
 laufen gleichzeitig (Wellen 1–3).
 
+## Runde 2: Hilfe (#113)
+
+Bebilderte Anleitungen, Spec `docs/spec/12-hilfe.md`. Läuft mit dem
+Workflow `entwicklung` und `args.plan` (siehe `docs/VORGEHEN.md`, „Weitere
+Runden"); nach dem letzten Merge löst er das Pre-Release **v0.3.0** aus und
+berichtet in #113.
+
+| Issue | Titel | Modell | Effort | Abhängig von | Migrationen |
+|---|---|---|---|---|---|
+| #114 | Hilfe: Seiten, Benutzermenü und Darstellung der Anleitungen | Opus 5.5 | high | – | – |
+| #115 | Hilfe: Beispieldaten und Screenshot-Skript | Sonnet 5.5 | high | – | – |
+| #116 | Hilfe: Anleitungen Anmelden, Barrierefrei-Modus, Geburtstagsliste | Sonnet 5.5 | medium | #114, #115 | – |
+| #117 | Hilfe: Anleitungen Mitglied suchen, Neues Mitglied, Anschrift ändern | Sonnet 5.5 | medium | #114, #115 | – |
+| #118 | Hilfe: Anleitungen Beitragsart ändern, Abteilung zuordnen, Austritt eintragen | Sonnet 5.5 | medium | #114, #115 | – |
+| #119 | Hilfe: Bilder erzeugen, Gesamtprüfung und Abschluss | Opus 5.5 | high | #116, #117, #118 | – |
+
+#116–#118 ändern je Anleitung nur ihre zwei eigenen Dateien (12 §2, §6)
+und laufen parallel.
+
 ## Regeln für parallele Arbeit
 
 Stehen in `docs/spec/05-entwicklung.md` §6: Erweiterungspunkte statt
