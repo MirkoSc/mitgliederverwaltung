@@ -79,4 +79,36 @@ final class SetupPhpTest extends TestCase
         self::assertLessThan(strpos($setup, '$downloader->extractTo('), strpos($setup, 'ReleaseSignatur::pruefe('));
         self::assertLessThan(strpos($setup, '$downloader->extractTo('), strpos($setup, '$downloader->verifyChecksum('));
     }
+
+    /**
+     * 04 section 2: the token goes out only after proof of FTP access - the
+     * code of the (uncached) form in setup_freigabe.txt in the data
+     * directory, checked before anything is written and removed once
+     * current/ exists.
+     */
+    public function testTheTokenNeedsTheFtpFreigabeFirst(): void
+    {
+        $setup = self::inhalt();
+        // The template part starts here, after the shared classes.
+        $vorlage = strpos($setup, "const SETUP_FREIGABE_DATEI = 'setup_freigabe.txt';");
+        $pruefung = strpos($setup, '!hash_equals($freigabeErwartet, $freigabe)');
+
+        self::assertNotFalse($vorlage);
+        self::assertNotFalse($pruefung);
+        self::assertStringContainsString("\$freigabeDatei = \$rootDir . '/' . SETUP_FREIGABE_DATEI;", $setup);
+        self::assertStringContainsString("header('Cache-Control: no-store');", $setup);
+        foreach ([
+            '$downloader->findLatestRelease(',
+            'mkdir($dir, 0775, true)',
+            "\$sharedDir . '/setup_kanal.txt'",
+            "\$sharedDir . '/install_token.txt'",
+            '$downloader->downloadTo(',
+        ] as $schreibt) {
+            self::assertLessThan(strpos($setup, $schreibt, $vorlage), $pruefung, $schreibt);
+        }
+        self::assertLessThan(
+            strpos($setup, '@unlink($freigabeDatei);'),
+            strpos($setup, "rename(\$target, \$rootDir . '/current')"),
+        );
+    }
 }

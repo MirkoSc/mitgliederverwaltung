@@ -47,6 +47,14 @@ angepasst. Bei Detailfragen gilt Vereinsbelege als Referenz.
    DocumentRoot laden und **sofort** im Browser aufrufen:
    - Umgebungs-Checkliste (PHP-Version, Erweiterungen, Schreibrechte,
      `rename()`, HTTPS).
+   - **Freigabe per FTP**: Die Seite zeigt einen Zufallscode (128 Bit,
+     bei jedem Aufruf ein neuer, nur in dieser Antwort, `Cache-Control:
+     no-store`). Gestartet wird erst, wenn per FTP im Datenverzeichnis
+     (eine Ebene über dem DocumentRoot, nicht per Browser erreichbar)
+     `setup_freigabe.txt` mit genau diesem Code liegt (Leerraum, BOM und
+     Groß-/Kleinschreibung egal, `hash_equals`). Sonst „Freigabe fehlt",
+     und es wird nichts geschrieben. Nach dem `rename()` nach `current/`
+     löscht `setup.php` die Datei.
    - Kanal wählen (`stable`/`beta`) → `shared/setup_kanal.txt`.
    - `.htaccess` mit `Require all denied` in `shared/` und `releases/`
      **vor** dem Download.
