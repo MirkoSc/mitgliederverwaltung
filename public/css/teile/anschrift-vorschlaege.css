@@ -1,0 +1,59 @@
+/* Address suggestions under the street field of the member form (issue
+   #127, public/js/anschrift-vorschlaege.js). The list hangs below the
+   field over the form, as wide as the field; the marked option looks like
+   the chosen row of a list (background plus bar on the left). Tokens only:
+   light/dark and the Barrierefrei-Modus follow by themselves. */
+
+.anschrift-combobox {
+    position: relative;
+}
+
+.anschrift-vorschlaege {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    max-height: min(20rem, 50vh);
+    overflow-y: auto;
+    margin: var(--abstand-1) 0 0;
+    padding: var(--abstand-1) 0;
+    list-style: none;
+    background: var(--farbe-flaeche);
+    color: var(--farbe-text);
+    border: var(--rand-feld) solid var(--farbe-rand-feld);
+    border-radius: var(--radius-klein);
+    box-shadow: 0 8px 28px rgb(0 0 0 / 20%);
+}
+
+.anschrift-vorschlaege[hidden] {
+    display: none;
+}
+
+.anschrift-vorschlaege [role="option"] {
+    display: flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    padding: var(--abstand-2) var(--abstand-3);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.anschrift-vorschlaege [role="option"]:hover {
+    background: var(--farbe-flaeche-2);
+}
+
+.anschrift-vorschlaege [role="option"][aria-selected="true"] {
+    background: var(--farbe-gewaehlt);
+    box-shadow: inset 4px 0 0 var(--farbe-haupt);
+}
+
+/* Barrierefrei-Modus: a clearer frame around the list and the marked option. */
+.modus-barrierefrei .anschrift-vorschlaege {
+    border-width: 2px;
+}
+
+.modus-barrierefrei .anschrift-vorschlaege [role="option"][aria-selected="true"] {
+    outline: var(--fokus-breite) solid var(--farbe-fokus);
+    outline-offset: calc(-1 * var(--fokus-breite));
+}

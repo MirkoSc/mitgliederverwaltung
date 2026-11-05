@@ -13,7 +13,7 @@ use App\Service\Karte\HttpAntwort;
  */
 final class FakeHttpAbruf implements HttpAbruf
 {
-    /** @var list<array{url: string, userAgent: string}> */
+    /** @var list<array{url: string, userAgent: string, timeoutS: ?int}> */
     public array $anfragen = [];
 
     /** @var \Closure(string): HttpAntwort */
@@ -27,9 +27,9 @@ final class FakeHttpAbruf implements HttpAbruf
         $this->antwort = $antwort ?? static fn(string $url): HttpAntwort => new HttpAntwort(404);
     }
 
-    public function holen(string $url, string $userAgent): HttpAntwort
+    public function holen(string $url, string $userAgent, ?int $timeoutS = null): HttpAntwort
     {
-        $this->anfragen[] = ['url' => $url, 'userAgent' => $userAgent];
+        $this->anfragen[] = ['url' => $url, 'userAgent' => $userAgent, 'timeoutS' => $timeoutS];
 
         return ($this->antwort)($url);
     }

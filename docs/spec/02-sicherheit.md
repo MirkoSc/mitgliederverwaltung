@@ -20,7 +20,11 @@ nur Dateien.
 
 Datenschutz (für die Datenschutzerklärung): Schutz durch Zugangskontrolle
 mit zweitem Faktor, HTTPS, verschlüsselte Dateien und Backups; keine
-Verschlüsselung einzelner Datenbankfelder.
+Verschlüsselung einzelner Datenbankfelder. Externe Dienste (01 §8): der
+Server schickt Anschriften ohne Namen an Nominatim/OpenStreetMap (Karte)
+und beim Tippen im Mitgliedsformular die eingegebenen Anschriftteile an
+Photon (komoot GmbH, Anschriftvorschläge, #127); der Browser spricht keinen
+fremden Host an. Vorlage: `docs/betrieb.md` §11.
 
 ## 2. Server-Schlüssel und Dateiverschlüsselung
 

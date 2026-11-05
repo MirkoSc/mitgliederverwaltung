@@ -16,6 +16,9 @@ interface HttpAbruf
      *
      * @param string $userAgent identifies the installation, as the usage
      *        policies of the OpenStreetMap services require
+     * @param int|null $timeoutS seconds to wait at most; null = the
+     *        client's default. Shorter for a request a person waits for
+     *        while typing (address suggestions, issue #127).
      */
-    public function holen(string $url, string $userAgent): HttpAntwort;
+    public function holen(string $url, string $userAgent, ?int $timeoutS = null): HttpAntwort;
 }

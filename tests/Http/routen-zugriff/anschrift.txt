@@ -1,0 +1,3 @@
+# app/routes/anschrift.php - address suggestions in the member form
+# (issue #127): only for whoever may edit members; JSON for fetch().
+POST /app/anschrift/vorschlaege -> mitglieder.bearbeiten (api)

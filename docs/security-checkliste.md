@@ -281,7 +281,9 @@ Geprüft beim Bau der Seite „Karte" (2026-10-30), Abschnitte C, E, I und J
 für die neuen Routen erneut durchgegangen; K-10 bis K-14 beim Wohnort am
 Mitglied (#106, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft;
 K-15 bis K-20 bei PLZ-Prüfung, Punkt von Hand und „Alle neu ermitteln"
-(#108, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft.
+(#108, 2026-10-30) ergänzt, C, E, I und J dafür erneut geprüft;
+K-21 bis K-25 bei den Anschriftvorschlägen (#127, 2026-11-05) ergänzt,
+C, E, I und J dafür erneut geprüft.
 
 | ID | Prüfung | Ergebnis | Fundstelle |
 |---|---|---|---|
@@ -305,6 +307,11 @@ K-15 bis K-20 bei PLZ-Prüfung, Punkt von Hand und „Alle neu ermitteln"
 | K-18 | Audit ohne Anschrift und ohne Koordinaten | ✓ | `mitglied.karten_punkt_geaendert` nur Mitglieds-ID + `punkt` gesetzt/entfernt, `karte.neu_ermittelt` nur die Anzahl; `WohnortTest::testAPointSetByHandIsSavedShownAndAuditedWithoutCoordinates` |
 | K-19 | Ein Punkt von Hand löst keine Anfrage nach außen aus; die Startmitte der kleinen Karte kommt aus vorhandenen Daten | ✓ | `Kartenmitte`; `WohnortTest::testWithoutADotTheSmallMapOpensWhereOtherMembersOfThePostcodeLive` |
 | K-20 | Hinweise „Anschrift auf der Karte …" ohne Anschrift im Text; Liste lädt den Geo-Status mit einer Abfrage | ✓ | `Hinweise::fuer()`, `HinweisLader::fuerAlle()`; Link nur mit ID und Reiter |
+| K-21 | Anschriftvorschläge (#127): neue Route `POST /app/anschrift/vorschlaege` deklariert (`mitglieder.bearbeiten`, JSON), CSRF zentral (Token als Header und Feld), „Nur lesen" → 403, anonym → 401 | ✓ | `app/routes/anschrift.php`, `tests/Http/routen-zugriff/anschrift.txt`, `Feature\AnschriftvorschlaegeTest` |
+| K-22 | Kein SSRF zu Photon: URL fest (`Anschriftvorschlaege::URL`), Eingaben nur als URL-kodierte Query-Parameter (`q`, Bias `lat`/`lon` als Zahl), nur HTTPS, keine Weiterleitungen, Antwort auf 2 MB begrenzt (`CurlHttpAbruf`), JSON-Tiefe 16, Timeout 3 s | ✓ | `Anschriftvorschlaege::url()/auswerten()`, `CurlHttpAbruf`; `Service\Karte\AnschriftvorschlaegeTest` |
+| K-23 | Suchtext nie in URL, Log oder Audit; an Photon nur Straße/PLZ/Ort, nie Name oder Mitgliedsnummer; Fehler = leere Liste | ✓ | Text nur im POST-Body; `Anschriftvorschlaege` loggt nichts; `AnschriftvorschlaegeTest::testFailuresAndOddAnswersGiveAnEmptyList` |
+| K-24 | Kein Massenabruf bei Photon über die Route | ✓ | 60 Anfragen je Konto und Minute (`RateLimiter`, Tabelle `rate_limit`), Skript fragt erst ab 3 Zeichen nach 300 ms Pause; `AnschriftvorschlaegeTest::testSixtyRequestsAMinutePerAccount` |
+| K-25 | Vorschläge im Browser ohne HTML aus Daten, nichts gespeichert | ✓ | `anschrift-vorschlaege.js` setzt den Text per `textContent`, kein Speicher im Browser |
 
 ## L – Hilfe (#114)
 
