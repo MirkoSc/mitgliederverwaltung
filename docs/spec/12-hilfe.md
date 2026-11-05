@@ -138,7 +138,10 @@ Konfiguration nicht `debug => true` hat, und nutzt kein `exec`.
   **Authenticator-App** mit festem Demo-Geheimnis. Passwort und Geheimnis
   stehen in `tools/hilfe-screenshots/konten.json` (erfundene Werte nur für
   die lokale Umgebung). Für Bilder, die ein anderes Recht brauchen, darf das
-  Skript weitere Zugänge anlegen.
+  Skript weitere Zugänge anlegen: `admin-normal` und `admin-barrierefrei`
+  (Rolle **Admin**) für `mitglied-loeschen`.
+- Zwei Ehemalige: Nr. 1031 für „Ehemalige anzeigen", Nr. 1032 nur für
+  `mitglied-loeschen`, dessen Aufnahme ihn löscht.
 - Am App-Code ändert sich für die Anmeldung **nichts** (keine Hintertür):
   das Skript rechnet den App-Code selbst aus (RFC 6238, wie
   `App\Service\Account\Totp`).
@@ -220,9 +223,9 @@ sich ohne `debug`.
 Abschluss (#119):
 - Jeder Schritt mit `bild` hat beide Bilder; keine verwaisten Bilder unter
   `public/img/hilfe/`; echte PNG-Dateien; Größengrenzen aus §6.
-- Rollen mit den echten Anleitungen: Admin und Vorstand sehen alle neun,
-  Nur lesen genau `anmelden`, `mitglied-suchen`, `barrierefrei-modus`,
-  `geburtstagsliste`.
+- Rollen mit den echten Anleitungen: Admin sieht alle, Vorstand alle außer
+  `mitglied-loeschen`, Nur lesen genau `anmelden`, `mitglied-suchen`,
+  `barrierefrei-modus`, `geburtstagsliste`.
 
 ## 8. Die Anleitungen
 
@@ -237,6 +240,7 @@ Abschluss (#119):
 | `07-austritt-eintragen` | Austritt eintragen | `MitgliederBearbeiten` | #118 |
 | `08-barrierefrei-modus` | Barrierefrei-Modus ein- und ausschalten | – (`null`) | #116 |
 | `09-geburtstagsliste` | Geburtstagsliste anzeigen und exportieren | `ListenSehen` | #116 |
+| `10-mitglied-loeschen` | Ehemaliges Mitglied löschen | `MitgliederLoeschen` (nur Admin) | #129 |
 
 Für `01-anmelden` dürfen die Bilder die Anmeldung mit Authenticator-App
 zeigen (Demo-Zugang); der Text erklärt den Code per E-Mail als Standard und

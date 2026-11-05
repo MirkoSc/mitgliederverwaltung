@@ -65,11 +65,11 @@ final class HilfeBeispieldatenTest extends DatabaseTestCase
         $ergebnis = $this->helfer()->anlegen($this->heute);
 
         $mitglieder = new MitgliedRepository($this->pdo());
-        self::assertSame(['mitglieder' => 31, 'familien' => 5, 'konten' => 2], $ergebnis);
-        self::assertSame(31, $mitglieder->anzahl());
-        self::assertCount(30, $mitglieder->alle(false, $this->heute), 'one former member besides the 30');
+        self::assertSame(['mitglieder' => 32, 'familien' => 5, 'konten' => 4], $ergebnis);
+        self::assertSame(32, $mitglieder->anzahl());
+        self::assertCount(30, $mitglieder->alle(false, $this->heute), 'two former members besides the 30');
         self::assertNotNull($mitglieder->findeNachNummer(HilfeBeispieldaten::ERSTE_NUMMER));
-        self::assertNotNull($mitglieder->findeNachNummer(HilfeBeispieldaten::ERSTE_NUMMER + 30));
+        self::assertNotNull($mitglieder->findeNachNummer(HilfeBeispieldaten::ERSTE_NUMMER + 31));
         self::assertNull($mitglieder->findeNachNummer(HilfeBeispieldaten::ERSTE_NUMMER - 1));
         self::assertSame(5, (int) $this->pdo()->query('SELECT COUNT(*) FROM familie')->fetchColumn());
 
@@ -163,11 +163,17 @@ final class HilfeBeispieldatenTest extends DatabaseTestCase
         $benutzer = new BenutzerRepository($this->pdo());
         $faktor = $this->zweiterFaktor();
 
-        foreach (['normal' => false, 'barrierefrei' => true] as $schluessel => $barrierefrei) {
+        $erwartet = [
+            'normal' => [Rolle::Vorstand, false],
+            'barrierefrei' => [Rolle::Vorstand, true],
+            'admin-normal' => [Rolle::Admin, false],
+            'admin-barrierefrei' => [Rolle::Admin, true],
+        ];
+        foreach ($erwartet as $schluessel => [$rolle, $barrierefrei]) {
             $konto = $konten['konten'][$schluessel];
             $nutzer = $benutzer->findByExactEmail($konto['email']);
             self::assertNotNull($nutzer, $schluessel);
-            self::assertSame(Rolle::Vorstand, $nutzer->rolle);
+            self::assertSame($rolle, $nutzer->rolle, $schluessel);
             self::assertSame($barrierefrei, $nutzer->barrierefrei);
             self::assertSame(MfaMethode::App, $nutzer->mfaMethod);
             self::assertTrue($nutzer->darfAnmelden());
@@ -194,7 +200,7 @@ final class HilfeBeispieldatenTest extends DatabaseTestCase
         self::assertSame($erstes, $helfer->anlegen($this->heute));
         self::assertSame($nummern, $this->nummern());
         self::assertSame(5, (int) $this->pdo()->query('SELECT COUNT(*) FROM familie')->fetchColumn());
-        self::assertSame(2, (int) $this->pdo()->query('SELECT COUNT(*) FROM `user`')->fetchColumn(), 'accounts are not duplicated');
+        self::assertSame(4, (int) $this->pdo()->query('SELECT COUNT(*) FROM `user`')->fetchColumn(), 'accounts are not duplicated');
         $neu = $benutzer->findByExactEmail($konto['email']);
         self::assertNotNull($neu);
         self::assertNotSame($alteId, $neu->id);
