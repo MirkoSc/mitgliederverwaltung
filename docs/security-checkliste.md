@@ -306,6 +306,20 @@ K-15 bis K-20 bei PLZ-Prüfung, Punkt von Hand und „Alle neu ermitteln"
 | K-19 | Ein Punkt von Hand löst keine Anfrage nach außen aus; die Startmitte der kleinen Karte kommt aus vorhandenen Daten | ✓ | `Kartenmitte`; `WohnortTest::testWithoutADotTheSmallMapOpensWhereOtherMembersOfThePostcodeLive` |
 | K-20 | Hinweise „Anschrift auf der Karte …" ohne Anschrift im Text; Liste lädt den Geo-Status mit einer Abfrage | ✓ | `Hinweise::fuer()`, `HinweisLader::fuerAlle()`; Link nur mit ID und Reiter |
 
+## L – Hilfe (#114)
+
+Geprüft beim Bau der Hilfe-Seiten (2026-11-05); Abschnitte C, E, I und J
+für die neuen Routen erneut durchgegangen.
+
+| ID | Prüfung | Ergebnis | Fundstelle |
+|---|---|---|---|
+| L-01 | Neue Routen `GET /app/hilfe` und `GET /app/hilfe/{slug:[a-z0-9-]+}` deklariert (`angemeldet`), nur lesend, keine Schreib-Route | ✓ | `app/routes/hilfe.php`, `tests/Http/routen-zugriff/hilfe.txt` |
+| L-02 | Recht je Anleitung serverseitig im Controller; nicht erlaubt und unbekannt sind beide 404 (nicht unterscheidbar) | ✓ | `HilfeController::anleitung()` → `Anleitungen::finde($slug, $rolle)`; `HilfeTest::testAGuideTheRoleMayNotCarryOutOrThatDoesNotExistIsNotFound` |
+| L-03 | Kein Pfad aus der Anfrage: der `slug` wird nur mit den geladenen Anleitungen verglichen, Bildpfade entstehen aus dem geladenen `slug` und der Schrittnummer | ✓ | `Anleitungen::finde()`, `::bild()`; Route lässt nur `[a-z0-9-]` durch |
+| L-04 | `require` nur auf Dateien aus dem festen Verzeichnis `app/data/hilfe/` mit Namen `NN-slug.php`, in eigenem Scope | ✓ | `Anleitungen::alle()`/`::laden()` (vgl. E-18) |
+| L-05 | Texte escaped; Roh-HTML nur aus `Markdown::fett()` (erst escapen, dann nur `<strong>`), kein Link, kein `style=` | ✓ | `app/views/hilfe/anleitung.php`; `HilfeTest::testTheStepsAreAnOrderedListWithEscapedText`, `MarkdownTest::testBoldOnlyEscapesAndKeepsEverythingElsePlain` |
+| L-06 | Keine Mitgliederdaten auf den Seiten; Bilder sind statische Dateien unter `public/img/hilfe/` und zeigen nur Beispieldaten (Abnahme in #119) | ✓ | `StaticFileHandler` (C-27), 12 §4 Nr. 8, §9 |
+
 ## Befunde des Durchlaufs 2026-10-29
 
 Kein Befund war „kritisch" oder „hoch". Behoben heißt: im PR zu #37 mit

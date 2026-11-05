@@ -68,6 +68,7 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
         <li><a href="#muster-formular">Formular</a></li>
         <li><a href="#muster-liste">Liste</a></li>
         <li><a href="#muster-geteilt">Liste neben Mitglied</a></li>
+        <li><a href="#muster-anleitung">Anleitung</a></li>
         <li><a href="#muster-weiteres">Weiteres</a></li>
     </ul>
 </nav>
@@ -399,6 +400,42 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
             <?php endif; ?>
         </div>
     </div>
+</section>
+
+<section class="muster" id="muster-anleitung" aria-labelledby="titel-anleitung">
+    <h2 id="titel-anleitung">Anleitung</h2>
+    <p>Eine Anleitung der Hilfe (<code>/app/hilfe</code>, Spec 12): die Schritte als <code>&lt;ol class="anleitung"&gt;</code>,
+        die Nummern zeichnet das Stylesheet groß davor. Je Schritt der Text, darunter ggf. ein Tipp
+        (<code>hinweis hinweis-info anleitung-tipp</code>) und ein Bild (<code>anleitung-bild</code> mit
+        <code>width</code>/<code>height</code>, höchstens so breit wie der Inhalt; im Barrierefrei-Modus über die
+        ganze Breite). Unten <code>anleitung-weiter</code>.</p>
+
+    <div class="abschnitt">
+        <p class="anleitung-zurueck"><a href="<?= e($link([], 'muster-anleitung')) ?>">Alle Anleitungen</a></p>
+        <ol class="anleitung">
+            <li class="anleitung-schritt">
+                <p class="anleitung-text">Wählen Sie oben in der Leiste <strong>Mitglieder</strong>.</p>
+            </li>
+            <li class="anleitung-schritt">
+                <p class="anleitung-text">Wählen Sie den Knopf <strong>Neues Mitglied</strong>.</p>
+                <div class="hinweis hinweis-info anleitung-tipp">
+                    <p>Tipp: <strong>Mitgliedsnummer</strong> und <strong>Nachname</strong> genügen. Den Rest können Sie
+                        später ergänzen.</p>
+                </div>
+            </li>
+            <li class="anleitung-schritt">
+                <p class="anleitung-text">Wählen Sie <strong>Mitglied speichern</strong>. Oben erscheint die Meldung
+                    „Mitglied gespeichert“.</p>
+            </li>
+        </ol>
+        <nav class="anleitung-weiter" aria-label="Beispiel: weitere Anleitungen">
+            <p>Nächste Anleitung: <a href="<?= e($link([], 'muster-anleitung')) ?>">Anschrift, Telefon oder E-Mail ändern</a></p>
+            <p><a href="<?= e($link([], 'muster-anleitung')) ?>">Alle Anleitungen</a></p>
+        </nav>
+    </div>
+
+    <h3>Tastatur-Kasten der Übersicht</h3>
+    <?php require __DIR__ . '/../partials/hilfe-tastatur.php'; ?>
 </section>
 
 <section class="muster" id="muster-weiteres" aria-labelledby="titel-weiteres">
