@@ -121,6 +121,9 @@ geschützt (PR + grüne CI Pflicht).
   MPL-2.0", genutzt unter MIT; Daten der Deutschen Bundesbank), erzeugt von
   `tools/banken-erzeugen.php`, das nur dessen JSON liest. Herkunft und Stand
   stehen im Kopf der Datei; Aktualisieren: `docs/betrieb.md`.
+- Fremde Daten: `app/data/laender.php` (ISO-3166-1-alpha-2 → deutscher
+  Ländername; #127) aus dem npm-Paket `i18n-iso-countries` (MIT), erzeugt
+  von `tools/laender-erzeugen.mjs`; Herkunft im Kopf der Datei.
 - Lizenz GPLv3.
 
 ## 6. Parallele Entwicklung

@@ -147,8 +147,8 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?= $text('ort', 'Ort') ?>
     <?= $text('land', 'Land', '', 'Tippen filtert die Liste. Leer lassen für Deutschland.', 'list="m-laender"') ?>
     <datalist id="m-laender">
-        <?php foreach (Laender::auswahl() as $landName): ?>
-            <option value="<?= e($landName) ?>"></option>
+        <?php foreach (Laender::auswahl() as $landCode => $landName): ?>
+            <option value="<?= e($landName) ?>" data-iso="<?= e($landCode) ?>"></option>
         <?php endforeach; ?>
     </datalist>
     <?php if (isset($wohnort) && !$neu): ?>

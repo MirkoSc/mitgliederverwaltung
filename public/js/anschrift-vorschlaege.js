@@ -236,7 +236,9 @@
                         setzen(land, werte.land);
                     }
                 } else if (land instanceof HTMLInputElement) {
-                    setzen(land, werte.land);
+                    // The country field shows names (datalist options carry the ISO code); the server also takes the code.
+                    var option = land.list ? land.list.querySelector('option[data-iso="' + werte.land + '"]') : null;
+                    setzen(land, option ? option.value : werte.land);
                 }
             }
             if (formular) {
