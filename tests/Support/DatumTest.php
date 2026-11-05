@@ -73,4 +73,12 @@ final class DatumTest extends TestCase
 
         self::assertSame('2026-01-15 11:00:00', Datum::zeitpunktFuerDatenbank($utc), 'winter time, UTC+1');
     }
+
+    public function testTodayIsMidnightInLocalTime(): void
+    {
+        $heute = Datum::heute();
+
+        self::assertSame('00:00:00', $heute->format('H:i:s'));
+        self::assertSame(Datum::ZEITZONE, $heute->getTimezone()->getName());
+    }
 }

@@ -47,4 +47,25 @@ final class AlterTest extends TestCase
         self::assertSame('02-28', Alter::geburtstagImJahr($geburt, 2027));
         self::assertSame('07-14', Alter::geburtstagImJahr(new \DateTimeImmutable('1990-07-14'), 2027));
     }
+
+    public function testTheLatestBirthDateAgreesWithTheAgeOnEveryDay(): void
+    {
+        // Every stichtag around the leap day, every age: born on the latest
+        // date is exactly old enough, born one day later is not.
+        foreach (['2027-02-27', '2027-02-28', '2027-03-01', '2028-02-28', '2028-02-29', '2028-03-01', '2024-02-29', '2025-02-28'] as $tag) {
+            $stichtag = new \DateTimeImmutable($tag);
+            foreach ([0, 1, 4, 17, 18, 26, 67] as $jahre) {
+                $spaetestens = Alter::spaetestesGeburtsdatum($stichtag, $jahre);
+                self::assertGreaterThanOrEqual($jahre, Alter::am($spaetestens, $stichtag), "$tag, $jahre");
+                self::assertLessThan($jahre, Alter::am($spaetestens->modify('+1 day'), $stichtag), "$tag, $jahre");
+            }
+        }
+    }
+
+    public function testBornOnTheLeapDayTurnsOldOnTheTwentyEighthInAYearWithoutOne(): void
+    {
+        $am = Alter::spaetestesGeburtsdatum(new \DateTimeImmutable('2027-02-28'), 19);
+        self::assertSame('2008-02-29', $am->format('Y-m-d'));
+        self::assertSame('2009-02-28', Alter::spaetestesGeburtsdatum(new \DateTimeImmutable('2028-02-29'), 19)->format('Y-m-d'));
+    }
 }

@@ -11,6 +11,7 @@ use App\Domain\MitgliederSeite;
 use App\Domain\MitgliederSortierung;
 use App\Domain\MitgliederStatus;
 use App\Domain\MitgliedZeile;
+use App\Support\Alter;
 
 /**
  * The member list (docs/spec/06-oberflaeche.md sections 2 and 3, 07 section
@@ -129,8 +130,9 @@ final readonly class MitgliederListeRepository
             array_push($werte, $filter->beitragsartId, FamilienRolle::Zahler->value, $filter->beitragsartId);
         }
         if (!$filter->zeigtEhemalige()) {
-            $bedingungen[] = '(m.austrittsdatum IS NULL OR m.austrittsdatum > ?)';
-            $werte[] = Zeilen::fuerDatum($stichtag);
+            [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('m', $stichtag);
+            $bedingungen[] = $nichtAusgetreten;
+            $werte[] = $tag;
         }
         [$erweitert, $erweitertWerte] = self::erweiterteBedingungen($filter->erweitert, $stichtag);
         array_push($bedingungen, ...$erweitert);
@@ -200,11 +202,11 @@ final readonly class MitgliederListeRepository
         // at most M years old = born after today minus (M + 1) years.
         if ($e->alterVon !== null) {
             $bedingungen[] = 'm.geburtsdatum <= ?';
-            $werte[] = Zeilen::fuerDatum($stichtag->modify('-' . $e->alterVon . ' years'));
+            $werte[] = Zeilen::fuerDatum(Alter::spaetestesGeburtsdatum($stichtag, $e->alterVon));
         }
         if ($e->alterBis !== null) {
             $bedingungen[] = 'm.geburtsdatum > ?';
-            $werte[] = Zeilen::fuerDatum($stichtag->modify('-' . ($e->alterBis + 1) . ' years'));
+            $werte[] = Zeilen::fuerDatum(Alter::spaetestesGeburtsdatum($stichtag, $e->alterBis + 1));
         }
         foreach ([
             'm.geburtsdatum' => [$e->geburtVon, $e->geburtBis],

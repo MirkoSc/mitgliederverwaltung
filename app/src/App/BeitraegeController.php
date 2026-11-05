@@ -73,7 +73,7 @@ final readonly class BeitraegeController
 
     public function seite(Request $r): Response
     {
-        $heute = self::heute();
+        $heute = Datum::heute();
         $jahr = $this->jahr($r->feld('jahr'), $heute);
         $filter = array_key_exists($r->feld('status'), self::FILTER) ? $r->feld('status') : 'offen';
 
@@ -123,7 +123,7 @@ final readonly class BeitraegeController
 
     public function erzeugen(Request $r): Response
     {
-        $jahr = $this->jahr($r->feld('jahr'), self::heute(), streng: true);
+        $jahr = $this->jahr($r->feld('jahr'), Datum::heute(), streng: true);
         if ($jahr === null) {
             $this->dienste->session->flash('Für dieses Jahr lassen sich keine Beiträge erzeugen.', FlashArt::Warnung);
 
@@ -163,7 +163,7 @@ final readonly class BeitraegeController
             'zurueckText' => preg_match('/[?&]mitglied=/', $zurueck) === 1 ? 'Zurück zum Mitglied' : 'Zurück zu den Beiträgen',
             'hier' => self::adresse((int) $beitrag->id, $zurueck),
             'zahlweisen' => Zahlweise::cases(),
-            'heute' => self::heute(),
+            'heute' => Datum::heute(),
         ], Area::App));
     }
 
@@ -181,7 +181,7 @@ final readonly class BeitraegeController
     public function bezahlt(Request $r, array $params): Response
     {
         $zahlweise = Zahlweise::tryFrom($r->feld('zahlweise'));
-        $am = $r->feld('bezahlt_am') === '' ? self::heute() : Datum::ausEingabe($r->feld('bezahlt_am'));
+        $am = $r->feld('bezahlt_am') === '' ? Datum::heute() : Datum::ausEingabe($r->feld('bezahlt_am'));
 
         return $this->ausfuehren($r, (int) $params['id'], fn(int $id, ?int $von) => match (true) {
             $zahlweise === null => throw new BeitragNichtAenderbar('Bitte wählen Sie, wie bezahlt wurde.'),
@@ -264,10 +264,5 @@ final readonly class BeitraegeController
         }
 
         return $streng ? null : (int) $heute->format('Y');
-    }
-
-    private static function heute(): \DateTimeImmutable
-    {
-        return new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
     }
 }

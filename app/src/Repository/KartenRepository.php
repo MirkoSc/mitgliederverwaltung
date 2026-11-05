@@ -25,8 +25,9 @@ final readonly class KartenRepository
      */
     public function mitglieder(\DateTimeImmutable $stichtag, ?int $abteilungId = null, MitgliederStatus $status = MitgliederStatus::Alle): array
     {
-        $bedingungen = ['(m.austrittsdatum IS NULL OR m.austrittsdatum > ?)'];
-        $werte = [Zeilen::fuerDatum($stichtag)];
+        [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('m', $stichtag);
+        $bedingungen = [$nichtAusgetreten];
+        $werte = [$tag];
         if ($abteilungId !== null) {
             $bedingungen[] = 'EXISTS (SELECT 1 FROM mitglied_abteilung ma WHERE ma.mitglied_id = m.id AND ma.abteilung_id = ?)';
             $werte[] = $abteilungId;
@@ -65,12 +66,13 @@ final readonly class KartenRepository
      */
     public function anschriften(\DateTimeImmutable $stichtag): array
     {
+        [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('', $stichtag);
         $stmt = $this->pdo->prepare(
             'SELECT strasse, plz, ort, land FROM mitglied
-             WHERE austrittsdatum IS NULL OR austrittsdatum > ?
+             WHERE ' . $nichtAusgetreten . '
              ORDER BY id',
         );
-        $stmt->execute([Zeilen::fuerDatum($stichtag)]);
+        $stmt->execute([$tag]);
 
         $anschriften = [];
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $z) {

@@ -175,14 +175,15 @@ final readonly class EhrungenListe implements Liste
             return [];
         }
         $eintrittsjahre = array_map(static fn(int $s): int => $jahr - $s, $stufen);
+        [$nichtAusgetreten, $tag] = self::nichtVorJahresbeginnAusgetreten($jahr);
         $stmt = ($this->pdo)()->prepare(sprintf(
             'SELECT m.id, m.nachname, m.vorname, m.eintrittsdatum FROM mitglied m
              WHERE m.eintrittsdatum IS NOT NULL AND YEAR(m.eintrittsdatum) IN (%s)
-               AND (m.austrittsdatum IS NULL OR m.austrittsdatum >= ?)
+               AND ' . $nichtAusgetreten . '
              ORDER BY m.nachname, m.vorname, m.mitgliedsnummer',
             Zeilen::platzhalter(count($eintrittsjahre)),
         ));
-        $stmt->execute([...$eintrittsjahre, sprintf('%04d-01-01', $jahr)]);
+        $stmt->execute([...$eintrittsjahre, $tag]);
         $zeilen = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         if ($zeilen === []) {
             return [];
@@ -212,11 +213,22 @@ final readonly class EhrungenListe implements Liste
     /** Members not yet left whose joining date is unknown. */
     private function ohneEintritt(int $jahr): int
     {
-        $stmt = ($this->pdo)()->prepare(
-            'SELECT COUNT(*) FROM mitglied WHERE eintrittsdatum IS NULL AND (austrittsdatum IS NULL OR austrittsdatum >= ?)',
-        );
-        $stmt->execute([sprintf('%04d-01-01', $jahr)]);
+        [$nichtAusgetreten, $tag] = self::nichtVorJahresbeginnAusgetreten($jahr);
+        $stmt = ($this->pdo)()->prepare('SELECT COUNT(*) FROM mitglied m WHERE m.eintrittsdatum IS NULL AND ' . $nichtAusgetreten);
+        $stmt->execute([$tag]);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Docs/spec 09 section 2: only those who left BEFORE 1 January of the
+     * year are out, so a leaving day of 1 January still lists the member.
+     * That is "not left on 31 December of the year before".
+     *
+     * @return array{0: string, 1: string}
+     */
+    private static function nichtVorJahresbeginnAusgetreten(int $jahr): array
+    {
+        return Zeilen::nichtAusgetreten('m', new \DateTimeImmutable(sprintf('%04d-01-01', $jahr))->modify('-1 day'));
     }
 }

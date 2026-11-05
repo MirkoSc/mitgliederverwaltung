@@ -95,7 +95,7 @@ final readonly class BeitragsjahrController
         $auswahl = $r->post['bezahlt'] ?? [];
         $ids = is_array($auswahl) ? array_values(array_map(intval(...), array_filter($auswahl, is_string(...)))) : [];
         $zahlweise = Zahlweise::tryFrom($r->feld('zahlweise'));
-        $am = $r->feld('bezahlt_am') === '' ? self::heute() : Datum::ausEingabe($r->feld('bezahlt_am'));
+        $am = $r->feld('bezahlt_am') === '' ? Datum::heute() : Datum::ausEingabe($r->feld('bezahlt_am'));
 
         $warnung = match (true) {
             $r->feld(self::VOLLSTAENDIG) !== '1' => 'Die Auswahl kam nicht vollständig beim Server an, es wurde nichts geändert. Bitte versuchen Sie es erneut.',
@@ -141,11 +141,6 @@ final readonly class BeitragsjahrController
     {
         $jahr = preg_match('/^[0-9]{4}$/D', $eingabe) === 1 ? (int) $eingabe : null;
 
-        return $jahr !== null && $jahr >= Jahresbeitraege::ERSTES_JAHR && $jahr <= Jahresbeitraege::letztesJahr(self::heute()) ? $jahr : null;
-    }
-
-    private static function heute(): \DateTimeImmutable
-    {
-        return new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
+        return $jahr !== null && $jahr >= Jahresbeitraege::ERSTES_JAHR && $jahr <= Jahresbeitraege::letztesJahr(Datum::heute()) ? $jahr : null;
     }
 }

@@ -154,7 +154,7 @@ final readonly class MitgliedController
         }
 
         return $this->austrittSeite($mitglied, [
-            'austrittsdatum' => ($mitglied->austrittsdatum ?? self::heute())->format('Y-m-d'),
+            'austrittsdatum' => ($mitglied->austrittsdatum ?? Datum::heute())->format('Y-m-d'),
             'austrittsgrund' => $mitglied->austrittsgrund,
         ], Einbettung::ausAnfrage($r));
     }
@@ -177,7 +177,7 @@ final readonly class MitgliedController
             'austrittsdatum' => $r->feld('austrittsdatum'),
             'austrittsgrund' => mb_substr((string) preg_replace('/\s+/u', ' ', $r->feld('austrittsgrund')), 0, MitgliedFormular::LAENGEN['austrittsgrund']),
         ];
-        $datum = MitgliedFormular::datum($werte['austrittsdatum']);
+        $datum = Datum::ausEingabe($werte['austrittsdatum']);
         $version = self::version($r, $gespeichert);
         if ($datum === null) {
             return $this->austrittSeite($gespeichert->mit(['version' => $version]), $werte, $einbettung, 422, fehler: $werte['austrittsdatum'] === ''
@@ -197,7 +197,7 @@ final readonly class MitgliedController
             $this->protokollieren(AuditAktion::MitgliedAusgetreten, $ergebnis->mitglied, $r);
         }
 
-        return $this->fertig($ergebnis->mitglied, $ergebnis->mitglied->istEhemalig(self::heute())
+        return $this->fertig($ergebnis->mitglied, $ergebnis->mitglied->istEhemalig(Datum::heute())
             ? sprintf('Austritt zum %s eingetragen – das Mitglied ist jetzt ehemalig.', Datum::anzeigen($datum))
             : sprintf('Austritt zum %s vermerkt – bis dahin bleibt es Mitglied.', Datum::anzeigen($datum)), $einbettung);
     }
@@ -295,7 +295,7 @@ final readonly class MitgliedController
             return $this->gibtEsNicht();
         }
         $einbettung = Einbettung::ausAnfrage($r);
-        if (!$mitglied->istEhemalig(self::heute())) {
+        if (!$mitglied->istEhemalig(Datum::heute())) {
             return $this->loeschSeite($mitglied, $einbettung, 1);
         }
         $eingabe = $r->feld('mitgliedsnummer');
@@ -343,7 +343,7 @@ final readonly class MitgliedController
         return Response::html($this->dienste->view->render('mitglied/austritt-zuruecknehmen', [
             'title' => 'Austritt zurücknehmen',
             'mitglied' => $mitglied,
-            'ehemalig' => $mitglied->istEhemalig(self::heute()),
+            'ehemalig' => $mitglied->istEhemalig(Datum::heute()),
             'meldung' => $meldung,
             'einbettung' => $einbettung,
         ], Area::App), $status);
@@ -352,7 +352,7 @@ final readonly class MitgliedController
     /** Step 1 or 2 of deleting; a member that has not left (yet) gets the reason why not, 409. */
     private function loeschSeite(Mitglied $mitglied, Einbettung $einbettung, int $schritt, ?string $fehler = null): Response
     {
-        $ehemalig = $mitglied->istEhemalig(self::heute());
+        $ehemalig = $mitglied->istEhemalig(Datum::heute());
 
         return Response::html($this->dienste->view->render('mitglied/loeschen', [
             'title' => 'Mitglied löschen',
@@ -372,11 +372,6 @@ final readonly class MitgliedController
     private function protokollieren(AuditAktion $aktion, Mitglied $mitglied, Request $r): void
     {
         $this->dienste->audit()->protokollieren($aktion, $this->dienste->session->userId(), 'mitglied', $mitglied->id, ['version' => $mitglied->version], $r->ip);
-    }
-
-    private static function heute(): \DateTimeImmutable
-    {
-        return new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
     }
 
     private function listen(): Auswahllisten
@@ -421,7 +416,7 @@ final readonly class MitgliedController
             'aktion' => $mitglied?->id === null ? self::PFAD_NEU : self::speicherAdresse($mitglied->id),
             'darfBearbeiten' => $konto !== null && $konto->darf(Permission::MitgliederBearbeiten),
             // Only a former member can be deleted (07 section 1); everyone else leaves first.
-            'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen) && $mitglied->istEhemalig(self::heute()),
+            'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen) && $mitglied->istEhemalig(Datum::heute()),
             'einbettung' => $einbettung ?? Einbettung::mitgliederSeite(),
         ];
     }
