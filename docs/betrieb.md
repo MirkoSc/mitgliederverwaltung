@@ -441,6 +441,16 @@ Die Anwendung versendet nur Mails an Benutzer der Anwendung (Anmeldung,
 Sicherheitshinweise). Mitgliederdaten werden nicht per Mail versendet,
 sofern nicht [ausdrücklich geregelt].
 
+## Karten- und Anschriftdienste
+Für die Mitgliederkarte fragt der Server der Anwendung die Anschriften der
+Mitglieder (Straße, PLZ, Ort, Land – ohne Namen) beim Dienst Nominatim der
+OpenStreetMap Foundation ab und lädt Kartenbilder von deren Kachelserver.
+Beim Eintippen einer Anschrift im Mitgliedsformular schickt der Server die
+eingegebenen Anschriftteile (Straße, PLZ, Ort – ohne Namen) an den Dienst
+Photon der komoot GmbH, um Vorschläge zu zeigen. Die Browser der Benutzer
+sprechen keinen dieser Dienste selbst an; die Dienste sehen nur den Server
+des Vereins.
+
 ## Speicherdauer
 [z. B. Mitgliederdaten bis [X] Jahre nach Austritt; Backups werden in der
 Anwendung auf die letzten 10 begrenzt; Beitrags- und Lastschriftdaten nach

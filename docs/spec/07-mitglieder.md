@@ -62,6 +62,22 @@ sie schon hat. Löschen (Admin): Rückfrage unter
 Dateien der Nachweise werden mitgelöscht, das Audit-Log vermerkt
 `mitglied.geloescht` nur mit ID und Mitgliedsnummer.
 
+**Anschriftvorschläge** (#127): Im Mitgliedsformular („Neues Mitglied"
+und Reiter Daten, nicht bei Familien) ist das Feld Straße eine Combobox nach
+WAI-ARIA (`public/js/anschrift-vorschlaege.js`): ab 3 Zeichen und 300 ms
+Tipp-Pause klappen unter dem Feld bis zu 5 Vorschläge auf (Maus, Finger
+oder Pfeiltasten/Eingabe/Escape). Eine Auswahl füllt Straße mit
+Hausnummer, PLZ, Ort und Land (ISO-Code) – je nur, wenn der Vorschlag einen
+Wert dafür hat; gespeichert wird erst mit dem Formular. Das Land-Feld ist
+das Element `[data-land-iso]` des Formulars, sonst das Feld `land` (ein
+`<select>` nur, wenn es den Code als Option hat); danach erhält das
+Formular das Ereignis `anschrift-vorschlag` (`detail` = gefüllte Werte).
+Gefragt wird per `POST /app/anschrift/vorschlaege` (Felder `strasse`,
+`plz`, `ort`; Recht `mitglieder.bearbeiten`, JSON, CSRF wie jeder POST,
+60 Anfragen je Konto und Minute, `App\App\AnschriftController`); der
+Server fragt Photon (01 §8). Ohne Skript bleibt es das normale Formular;
+im Barrierefrei-Modus funktioniert die Liste genauso (Tastatur).
+
 **Wohnort auf der Karte** (#106): Im Reiter **Daten** steht bei der
 Anschrift ein Block (`App\Service\Karte\Wohnort`, Template
 `mitglied/wohnort`), in jeder einbettenden Seite gleich. Er sagt als Text,

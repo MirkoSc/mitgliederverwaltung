@@ -24,20 +24,21 @@ final readonly class CurlHttpAbruf implements HttpAbruf
     /** A tile is ~20 KB, a geocoder answer ~1 KB. */
     private const int MAX_BYTES = 2 * 1024 * 1024;
 
-    public function holen(string $url, string $userAgent): HttpAntwort
+    public function holen(string $url, string $userAgent, ?int $timeoutS = null): HttpAntwort
     {
         if (defined('MV_OHNE_NETZ') || preg_match('#^https://#i', $url) !== 1) {
             return new HttpAntwort(0);
         }
 
+        $timeout = max(1, min($timeoutS ?? self::TIMEOUT_S, self::TIMEOUT_S));
         try {
-            return function_exists('curl_init') ? $this->viaCurl($url, $userAgent) : $this->viaStream($url, $userAgent);
+            return function_exists('curl_init') ? $this->viaCurl($url, $userAgent, $timeout) : $this->viaStream($url, $userAgent, $timeout);
         } catch (\Throwable) {
             return new HttpAntwort(0);
         }
     }
 
-    private function viaCurl(string $url, string $userAgent): HttpAntwort
+    private function viaCurl(string $url, string $userAgent, int $timeout): HttpAntwort
     {
         $handle = curl_init($url);
         if ($handle === false) {
@@ -46,8 +47,8 @@ final readonly class CurlHttpAbruf implements HttpAbruf
         curl_setopt_array($handle, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_CONNECTTIMEOUT => self::TIMEOUT_S,
-            CURLOPT_TIMEOUT => self::TIMEOUT_S,
+            CURLOPT_CONNECTTIMEOUT => $timeout,
+            CURLOPT_TIMEOUT => $timeout,
             CURLOPT_USERAGENT => $userAgent,
             CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
             CURLOPT_MAXFILESIZE => self::MAX_BYTES,
@@ -63,12 +64,12 @@ final readonly class CurlHttpAbruf implements HttpAbruf
         return new HttpAntwort($status, $body, is_string($typ) ? $typ : '');
     }
 
-    private function viaStream(string $url, string $userAgent): HttpAntwort
+    private function viaStream(string $url, string $userAgent, int $timeout): HttpAntwort
     {
         $kontext = stream_context_create([
             'http' => [
                 'method' => 'GET',
-                'timeout' => self::TIMEOUT_S,
+                'timeout' => $timeout,
                 'follow_location' => 0,
                 'ignore_errors' => true,
                 'header' => 'User-Agent: ' . $userAgent . "\r\n",

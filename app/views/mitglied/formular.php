@@ -131,7 +131,8 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <?= $datum('geburtsdatum', 'Geburtsdatum') ?>
 
     <h3>Anschrift</h3>
-    <?= $text('strasse', 'Straße und Hausnummer', 'feld-breit') ?>
+    <?php /* Address suggestions while typing (issue #127): public/js/anschrift-vorschlaege.js. */ ?>
+    <?= $text('strasse', 'Straße und Hausnummer', 'feld-breit', null, 'data-anschrift-vorschlaege="' . e(\App\App\AnschriftController::PFAD) . '"') ?>
     <?= $text('plz', 'PLZ', 'feld-kurz', null, 'inputmode="numeric"') ?>
     <?= $text('ort', 'Ort') ?>
     <?= $text('land', 'Land', 'feld-kurz', 'Leer lassen für Deutschland (D).') ?>

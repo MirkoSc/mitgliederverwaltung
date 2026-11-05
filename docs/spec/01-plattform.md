@@ -213,6 +213,15 @@ Projektadresse), wie es ihre Nutzungsregeln verlangen.
   7 Tage gültig; fällt der Dienst aus, dient eine abgelaufene Kopie,
   sonst 503. `KachelAufraeumenTask` (Aufräumen) löscht Abgelaufenes und
   hält den Cache unter 100 MB (älteste zuerst, auf 80 %).
+- **Anschriftvorschläge** (Photon der komoot GmbH,
+  `App\Service\Karte\Anschriftvorschlaege`, #127; Nominatim verbietet
+  Autocomplete): `https://photon.komoot.io/api/?q=…&lang=de&limit=8&layer=house&layer=street`,
+  dazu als Bias `lat`/`lon` die Mitte aller Punkte der Karte (falls es
+  welche gibt). `q` ist der getippte Straßentext, ergänzt um PLZ und Ort des
+  Formulars – nie Name oder Mitgliedsnummer. Timeout 3 s
+  (`HttpAbruf::holen(…, timeoutS)`), jeder Fehler ergibt eine leere Liste,
+  nichts wird geloggt. Höchstens 5 Vorschläge, ohne Dubletten, nur Treffer
+  mit Straße oder Ort; Land als ISO-Code. Route und Oberfläche: 07 §1.
 - Tests senden nie eine echte Anfrage: Fakes für `HttpAbruf` und `Takt`;
   zusätzlich schickt `CurlHttpAbruf` nichts, solange die Konstante
   `MV_OHNE_NETZ` definiert ist (`tests/bootstrap.php`).
