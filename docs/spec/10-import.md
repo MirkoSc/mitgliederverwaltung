@@ -172,9 +172,16 @@ sonst Abgleich (Dienst `App\Service\Import\Abgleich`, Routen
   neu ein und nimmt nur Nummern, die noch in ihrem Abschnitt stehen;
   „ganz löschen“ eines Mitglieds mit Jahresbeiträgen lehnt den Start ab.
   Das Austrittsdatum ist nur nötig, wenn jemand austreten soll.
-- Schrittkette: die Auswahl steht als Liste von (Art, Nummer) im Job,
-  100 je Schritt in einer Transaktion, Reihenfolge neu → geändert →
-  austreten → löschen. Jede Art ist wiederholbar (vorhandene Nummer wird
+- Schrittkette: die Auswahl steht als Liste von (Art, Nummer) im Job –
+  bei geändert, austreten und löschen als (Art, Nummer, ID) des beim Start
+  geprüften Mitglieds –, 100 je Schritt in einer Transaktion, Reihenfolge
+  neu → geändert → austreten → löschen. Geändert, austreten und löschen
+  treffen nur dieses Mitglied (über die ID gefunden): trägt es inzwischen
+  eine andere Nummer, wird die Zeile übersprungen – die Nummer kann
+  zwischendurch jemand anderem gegeben worden sein. Ein vor diesem Update
+  begonnener Abgleich hat keine IDs; fortgesetzt überspringt er seine
+  übrigen Zeilen zu geändert/austreten/löschen, dafür die Datei noch
+  einmal hochladen. Jede Art ist wiederholbar (vorhandene Nummer wird
   nicht doppelt angelegt, Speichern ohne Änderung schreibt keine Version,
   gelöscht ist gelöscht). Bekommt ein zum Löschen gewähltes Mitglied
   zwischendurch einen Jahresbeitrag, tritt es stattdessen aus. Neue
