@@ -17,12 +17,14 @@ export default async function ablauf({ seite, markiere, foto }) {
     await markiere(seite.getByLabel('Mitglied suchen'));
     await foto(2);
 
+    // Extended search: opened, with a field filled in so the list is narrowed.
+    await seite.getByText('Erweiterte Suche', { exact: true }).click();
+    await seite.getByLabel('Ort', { exact: true }).waitFor();
+    await markiere(seite.locator('#suche-erweitert > summary'));
+    await foto(5);
+
     await seite.getByRole('row', { name: /\b1001\b/ }).getByRole('link').first().click();
     await seite.getByRole('link', { name: 'Daten', exact: true }).waitFor();
-    // Only one of the two ways back is visible, depending on the mode.
-    await markiere(
-        seite.getByRole('link', { name: 'Zurück zur Liste' })
-            .or(seite.getByRole('link', { name: 'Schließen', exact: true })),
-    );
-    await foto(5);
+    await markiere(seite.getByRole('link', { name: 'Daten', exact: true }));
+    await foto(6);
 }

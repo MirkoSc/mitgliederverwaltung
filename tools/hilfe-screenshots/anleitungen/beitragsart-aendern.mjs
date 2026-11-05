@@ -17,7 +17,7 @@ export default async function ablauf({ seite, markiere, foto }) {
     await art.selectOption(await art.locator('option', { hasText: /^Mindestbeitrag/ }).getAttribute('value'));
     await seite.getByRole('button', { name: 'Mitglied speichern' }).click();
     await markiere(seite.getByText('Mitglied gespeichert.'));
-    await foto(7);
+    await foto(8);
 
     // Restore the original fee type.
     await oeffne(seite);

@@ -27,8 +27,13 @@ return [
             'tipp' => 'Ohne diesen Haken fehlen ausgetretene Mitglieder in der Liste.',
         ],
         [
+            'text' => 'Reicht das nicht? Wählen Sie **Erweiterte Suche**. Es klappen Felder auf, zum Beispiel **Ort**, **Zahlart** oder **Eintritt**. Füllen Sie die Felder aus, die Sie kennen.',
+            'bild' => 'Die Seite Mitglieder mit aufgeklappter Erweiterter Suche. Die Überschrift „Erweiterte Suche“ ist markiert, darunter stehen die Felder.',
+            'tipp' => 'Alle ausgefüllten Felder müssen zugleich passen, auch zusammen mit dem Suchtext. Wer im Feld **Austritt** etwas einträgt, sieht automatisch auch Ehemalige.',
+        ],
+        [
             'text' => 'Wählen Sie in der Liste den Namen des Mitglieds.',
-            'bild' => 'Das geöffnete Mitglied mit seinen Reitern. Der Knopf zum Zurückkehren zur Liste ist markiert.',
+            'bild' => 'Das geöffnete Mitglied mit seinen Reitern. Der Reiter Daten ist markiert.',
         ],
         [
             'text' => 'Wählen Sie einen Reiter wie **Daten** oder **Verlauf**, um mehr zu sehen.',

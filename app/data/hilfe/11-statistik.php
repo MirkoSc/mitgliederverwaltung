@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Domain\Permission;
+
+return [
+    'titel' => 'Statistik ansehen',
+    'kurz' => 'So sehen Sie, wie sich die Mitglieder verteilen. Es werden nur Zahlen gezeigt, keine Namen.',
+    'recht' => Permission::ListenSehen,
+    'schritte' => [
+        [
+            'text' => 'Wählen Sie oben in der Leiste **Statistik**.',
+            'bild' => 'Die Seite Mitglieder. Markiert ist der Eintrag Statistik in der Leiste oben.',
+        ],
+        [
+            'text' => 'Oben stehen die wichtigsten Zahlen, zum Beispiel **Mitglieder**, **aktiv**, **passiv** und **Durchschnittsalter in Jahren**.',
+            'bild' => 'Die Seite Statistik. Markiert sind die Zahlen oben auf der Seite.',
+            'tipp' => 'Der Admin sieht oben zusätzlich die Reiter **Mitglieder** und **Beiträge**. Unter **Beiträge** stehen die Summen der Jahresbeiträge.',
+        ],
+        [
+            'text' => 'Darunter folgen die Abschnitte, zum Beispiel **Altersgruppen**, **Abteilungen**, **Wohnorte** und **Eintritte und Austritte**. Wählen Sie in der Liste über den Abschnitten einen Namen, um dorthin zu springen.',
+        ],
+        [
+            'text' => 'Im Barrierefrei-Modus stehen die Zahlen jedes Abschnitts als Tabelle da. Ohne Barrierefrei-Modus zeigt jeder Abschnitt ein Diagramm. Mit der Maus oder dem Finger sehen Sie dort die genaue Zahl zu einem Wert.',
+        ],
+        [
+            'text' => 'Ohne Barrierefrei-Modus: Wählen Sie unter dem Diagramm **Zahlen als Tabelle**. Die Tabelle klappt auf.',
+            'bild' => 'Der Abschnitt Altersgruppen mit dem Diagramm. Markiert ist der Eintrag Zahlen als Tabelle unter dem Diagramm.',
+            'tipp' => 'Im Barrierefrei-Modus ist die Tabelle schon aufgeklappt.',
+        ],
+        [
+            'text' => 'Gezählt werden die heutigen Mitglieder. Wer schon ausgetreten ist, zählt nicht mit. Nur bei **Eintritte und Austritte** sind auch Ehemalige dabei.',
+        ],
+    ],
+];

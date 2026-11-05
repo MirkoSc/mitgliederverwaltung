@@ -138,7 +138,10 @@ Konfiguration nicht `debug => true` hat, und nutzt kein `exec`.
   **Authenticator-App** mit festem Demo-Geheimnis. Passwort und Geheimnis
   stehen in `tools/hilfe-screenshots/konten.json` (erfundene Werte nur für
   die lokale Umgebung). Für Bilder, die ein anderes Recht brauchen, darf das
-  Skript weitere Zugänge anlegen.
+  Skript weitere Zugänge anlegen: `admin-normal` und `admin-barrierefrei`
+  (Rolle **Admin**) für `mitglied-loeschen`.
+- Zwei Ehemalige: Nr. 1031 für „Ehemalige anzeigen", Nr. 1032 nur für
+  `mitglied-loeschen`, dessen Aufnahme ihn löscht.
 - Am App-Code ändert sich für die Anmeldung **nichts** (keine Hintertür):
   das Skript rechnet den App-Code selbst aus (RFC 6238, wie
   `App\Service\Account\Totp`).
@@ -183,6 +186,10 @@ im Barrierefrei-Modus auf und räumt das Projekt ab.
   Element verdeckt (feste Speichern-Leiste, Karte), scheitert die Aufnahme.
 - **Kartenkacheln** beantwortet der Browser des Skripts mit einer
   einfarbigen Kachel – die Bilder hängen nicht vom Kachel-Server ab (#119).
+- **Anschriftvorschläge** (07 §1) beantwortet der Browser des Skripts für
+  Aufnahmen, die die Liste zeigen, mit festen, erfundenen Anschriften aus
+  Musterstadt (`lib/anschrift.js`, `seite.route`) – nicht vom externen Dienst
+  abhängig (#129).
 - **Bilder:** PNG, Fenster 1280 × 800, `deviceScaleFactor` 1, `de-DE`,
   `Europe/Berlin`, helles Farbschema, keine Animationen. Je Bild höchstens
   250 KB, alle Bilder zusammen höchstens 10 MB (sie gehen in jedes
@@ -220,9 +227,9 @@ sich ohne `debug`.
 Abschluss (#119):
 - Jeder Schritt mit `bild` hat beide Bilder; keine verwaisten Bilder unter
   `public/img/hilfe/`; echte PNG-Dateien; Größengrenzen aus §6.
-- Rollen mit den echten Anleitungen: Admin und Vorstand sehen alle neun,
-  Nur lesen genau `anmelden`, `mitglied-suchen`, `barrierefrei-modus`,
-  `geburtstagsliste`.
+- Rollen mit den echten Anleitungen: Admin sieht alle, Vorstand alle außer
+  `mitglied-loeschen`, Nur lesen genau `anmelden`, `mitglied-suchen`,
+  `barrierefrei-modus`, `geburtstagsliste`, `statistik`, `app-installieren`.
 
 ## 8. Die Anleitungen
 
@@ -237,6 +244,15 @@ Abschluss (#119):
 | `07-austritt-eintragen` | Austritt eintragen | `MitgliederBearbeiten` | #118 |
 | `08-barrierefrei-modus` | Barrierefrei-Modus ein- und ausschalten | – (`null`) | #116 |
 | `09-geburtstagsliste` | Geburtstagsliste anzeigen und exportieren | `ListenSehen` | #116 |
+| `10-mitglied-loeschen` | Ehemaliges Mitglied löschen | `MitgliederLoeschen` (nur Admin) | #129 |
+| `11-statistik` | Statistik ansehen | `ListenSehen` | #129 |
+| `12-app-installieren` | Als App auf Handy oder PC installieren | – (`null`) | #129 |
+
+`12-app-installieren` beschreibt den Browser, nicht unsere Oberfläche, und
+hat deshalb keine Bilder und keine Aufnahme-Datei; die Browser-Menünamen
+bleiben allgemein (Schreibregel 2 gilt für die eigene Oberfläche).
+`11-statistik`: der Reiter „Beiträge" bleibt dem Admin vorbehalten und
+steht nur als Tipp im Text.
 
 Für `01-anmelden` dürfen die Bilder die Anmeldung mit Authenticator-App
 zeigen (Demo-Zugang); der Text erklärt den Code per E-Mail als Standard und

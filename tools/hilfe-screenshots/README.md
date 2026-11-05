@@ -90,6 +90,11 @@ mit einer einfarbigen Kachel (`lib/kachel.js`): Die Bilder hängen so nicht vom
 Kachel-Server und vom Netz der Docker-Umgebung ab, und der Kachel-Server bekommt
 keine Abrufe für Bilder. Die Anwendung bleibt dafür unverändert.
 
+Anschriftvorschläge (`/app/anschrift/vorschlaege`) hängen sonst vom externen
+Dienst ab. Eine Aufnahme, die die Vorschlagsliste zeigt, ruft
+`anschriftVorschlaegeErsetzen(seite)` aus `lib/anschrift.js` auf: Der Browser
+des Skripts antwortet dann selbst mit erfundenen Anschriften aus Musterstadt.
+
 ## Beispieldaten und Demo-Zugänge
 
 `tools/hilfe-beispieldaten.php` (läuft im App-Container, nur mit `debug => true`)

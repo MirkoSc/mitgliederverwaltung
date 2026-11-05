@@ -10,27 +10,38 @@ return [
     'recht' => Permission::MitgliederBearbeiten,
     'schritte' => [
         [
-            'text' => 'Wählen Sie oben in der Leiste **Mitglieder** und öffnen Sie das Mitglied in der Liste.',
-            'tipp' => 'Wie Sie ein Mitglied finden, steht in der Anleitung „Mitglied suchen und öffnen“.',
+            'text' => 'Öffnen Sie das Mitglied. Wie das geht, steht in der Anleitung „Mitglied suchen und öffnen“.',
         ],
         [
-            'text' => 'Wählen Sie den Reiter **Daten**. Suchen Sie die Gruppe **Mitgliedschaft**.',
+            'text' => 'Wählen Sie den Reiter **Daten**.',
         ],
         [
-            'text' => 'Tragen Sie im Feld **Austrittsdatum** den Tag des Austritts ein.',
-            'bild' => 'Das Mitglied auf dem Reiter Daten. Das Feld Austrittsdatum ist markiert.',
+            'text' => 'Wählen Sie unter dem Formular den Knopf **Mitglied ausgetreten**.',
+            'bild' => 'Das Mitglied auf dem Reiter Daten. Der Knopf Mitglied ausgetreten unter dem Formular ist markiert.',
+        ],
+        [
+            'text' => 'Die Seite **Mitglied ausgetreten** öffnet sich. Im Feld **Austrittsdatum** steht schon der heutige Tag. Tragen Sie bei Bedarf einen anderen Tag ein.',
+            'tipp' => 'Sie können auch einen Tag in der Zukunft eintragen. Dann ist der Austritt nur vermerkt. Bis zu diesem Tag bleibt die Person Mitglied.',
+            'bild' => 'Die Seite Mitglied ausgetreten. Das Feld Austrittsdatum ist markiert.',
         ],
         [
             'text' => 'Tragen Sie im Feld **Austrittsgrund** den Grund ein. Sie können auch einen Vorschlag wählen.',
-            'tipp' => 'Der Grund ist freiwillig.',
+            'tipp' => 'Der Grund ist freiwillig. Vorschläge sind **Austritt** und **verstorben**.',
         ],
         [
-            'text' => 'Wählen Sie **Mitglied speichern**.',
+            'text' => 'Wählen Sie **Austritt eintragen**.',
         ],
         [
-            'text' => 'Oben erscheint die Meldung **Mitglied gespeichert.** Der Austritt ist damit eingetragen.',
-            'tipp' => 'Ab dem Austrittsdatum steht neben dem Namen **ehemalig**. Liegt das Datum in der Zukunft, steht dort bis dahin weiter aktiv oder passiv. Das Mitglied bleibt gespeichert. Löschen müssen Sie es nicht. In der Liste sehen Sie es nur, wenn Sie bei **Ehemalige anzeigen** einen Haken setzen.',
-            'bild' => 'Das Mitglied nach dem Speichern. Die Meldung Mitglied gespeichert ist markiert.',
+            'text' => 'Oben erscheint die Meldung **Austritt zum … eingetragen – das Mitglied ist jetzt ehemalig.** Neben dem Namen steht jetzt **ehemalig**.',
+            'tipp' => 'Bei einem Tag in der Zukunft lautet die Meldung **Austritt zum … vermerkt – bis dahin bleibt es Mitglied.** Ein ehemaliges Mitglied wird nicht mehr eingezogen. Es steht in keiner Liste mehr. Die Statistik zählt es nur noch bei den Austritten.',
+            'bild' => 'Das Mitglied nach dem Eintragen. Die Meldung Austritt eingetragen ist markiert.',
+        ],
+        [
+            'text' => 'War der Austritt ein Versehen? Wählen Sie im Mitglied unter dem Formular **Austritt zurücknehmen**.',
+            'tipp' => 'Ein ehemaliges Mitglied finden Sie in der Liste nur mit einem Haken bei **Ehemalige anzeigen**.',
+        ],
+        [
+            'text' => 'Wählen Sie auf der Rückfrage noch einmal **Austritt zurücknehmen**. Es erscheint die Meldung **Austritt zurückgenommen.**',
         ],
     ],
 ];

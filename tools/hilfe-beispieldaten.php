@@ -297,6 +297,27 @@ final class HilfeBeispieldaten
             zahlart: Zahlart::Selbst,
         ));
         $nachweis['mitglieder']++;
+        $nummer++;
+
+        // A second former member that only the guide "Ehemaliges Mitglied
+        // löschen" uses: its recording deletes it (no other guide needs it).
+        $this->speichern(new Mitglied(
+            mitgliedsnummer: $nummer,
+            nachname: 'Kranz',
+            vorname: 'Otto',
+            geschlecht: Geschlecht::M,
+            geburtsdatum: self::geburtsdatum($heute, 75, 310),
+            strasse: 'Bergstraße 2',
+            plz: '12345',
+            ort: 'Musterstadt',
+            eintrittsdatum: self::eintritt($heute, 75, 30),
+            austrittsdatum: $heute->modify('-3 years'),
+            austrittsgrund: 'Austritt',
+            aktiv: false,
+            beitragsartId: $beitragsarten['Passiv'] ?? null,
+            zahlart: Zahlart::Selbst,
+        ));
+        $nachweis['mitglieder']++;
 
         return $nachweis;
     }
