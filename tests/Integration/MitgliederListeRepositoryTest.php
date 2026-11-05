@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Integration;
 
 use App\Domain\FamilienRolle;
+use App\Domain\Geschlecht;
+use App\Domain\Zahlart;
+use App\Repository\FunktionRepository;
 use App\Domain\Mitglied;
 use App\Domain\MitgliederFilter;
 use App\Domain\VersionsAnlass;
@@ -419,5 +422,133 @@ final class MitgliederListeRepositoryTest extends DatabaseTestCase
         foreach ($this->liste->seite(MitgliederFilter::aus([]), $this->heute)->zeilen as $zeile) {
             self::assertSame('', $zeile->familienHinweis());
         }
+    }
+
+    /** Three members that differ in every field of the extended search (today is 2026-06-15). */
+    private function erweiterteBeispiele(): int
+    {
+        $funktion = (int) new FunktionRepository($this->pdo())->alle()[0]->id;
+        $familie = new FamilieRepository($this->pdo())->anlegen('Familie Alpha');
+        $this->anlegen(new Mitglied(
+            5001, 'Alpha', vorname: 'Anna', geschlecht: Geschlecht::W, geburtsdatum: new \DateTimeImmutable('2000-06-15'),
+            strasse: 'Lindenweg 5', plz: '80331', ort: 'Beispielstadt', telefon: '089 111', handy: '0170 222',
+            email: 'anna@example.org', eintrittsdatum: new \DateTimeImmutable('2010-01-01'), iban: 'DE89370400440532013000',
+            bemerkung: 'Zu 100% fit_', funktionIds: [$funktion], familieId: $familie->id, familieRolle: FamilienRolle::Zahler,
+        ));
+        $this->anlegen(new Mitglied(
+            5002, 'Beta', vorname: 'Ben', geschlecht: Geschlecht::M, geburtsdatum: new \DateTimeImmutable('2000-06-16'),
+            strasse: 'Ringstraße 9', plz: '10115', ort: 'Musterhausen', email: 'ben@example.net',
+            eintrittsdatum: new \DateTimeImmutable('2015-05-05'), zahlart: Zahlart::Selbst,
+            familieId: $familie->id, familieRolle: FamilienRolle::Kind,
+        ));
+        $this->anlegen(new Mitglied(
+            5003, 'Gamma', vorname: 'Gudrun', eintrittsdatum: new \DateTimeImmutable('2005-01-01'),
+            austrittsdatum: new \DateTimeImmutable('2026-01-31'), bemerkung: 'ohne Alter',
+        ));
+
+        return $funktion;
+    }
+
+    public function testTheExtendedTextFieldsContainAndIgnoreCase(): void
+    {
+        $this->erweiterteBeispiele();
+
+        self::assertSame(['Alpha Anna'], $this->namen(['nachname' => 'ALPH']));
+        self::assertSame(['Beta Ben'], $this->namen(['vorname' => 'en']));
+        self::assertSame(['Beta Ben'], $this->namen(['strasse' => 'ringstr']));
+        self::assertSame(['Alpha Anna'], $this->namen(['plz' => '803']));
+        self::assertSame(['Beta Ben'], $this->namen(['ort' => 'hausen']));
+        self::assertSame(['Beta Ben'], $this->namen(['email' => '@EXAMPLE.net']));
+        self::assertSame(['Alpha Anna', 'Beta Ben'], $this->namen(['ort' => 'e', 'sortierung' => 'nummer']));
+    }
+
+    public function testThePhoneFieldLooksInPhoneAndMobile(): void
+    {
+        $this->erweiterteBeispiele();
+
+        self::assertSame(['Alpha Anna'], $this->namen(['telefon' => '089']));
+        self::assertSame(['Alpha Anna'], $this->namen(['telefon' => '0170']));
+        self::assertSame([], $this->namen(['telefon' => '999']));
+    }
+
+    public function testTheIbanIsComparedWithoutBlanksAndCase(): void
+    {
+        $this->erweiterteBeispiele();
+
+        self::assertSame(['Alpha Anna'], $this->namen(['iban' => 'de89 3704 0044']));
+        self::assertSame(['Alpha Anna'], $this->namen(['iban' => '0532013000']));
+        self::assertSame([], $this->namen(['iban' => 'DE00']));
+    }
+
+    public function testTheRemarkEscapesWildcardsAndTheNumberIsExact(): void
+    {
+        $this->erweiterteBeispiele();
+
+        self::assertSame(['Alpha Anna'], $this->namen(['bemerkung' => '100% fit_']));
+        self::assertSame([], $this->namen(['bemerkung' => '1%0']), 'a percent sign is no wildcard');
+        self::assertSame([], $this->namen(['bemerkung' => 'fit_x']));
+        self::assertSame(['Beta Ben'], $this->namen(['mitgliedsnummer' => '5002']));
+        self::assertSame([], $this->namen(['mitgliedsnummer' => '500']), 'exact, not a piece');
+    }
+
+    public function testTheChoiceFields(): void
+    {
+        $funktion = $this->erweiterteBeispiele();
+
+        self::assertSame(['Alpha Anna'], $this->namen(['geschlecht' => 'w']));
+        self::assertSame(['Beta Ben'], $this->namen(['geschlecht' => 'm']));
+        self::assertSame(['Gamma Gudrun'], $this->namen(['geschlecht' => 'ohne', 'ehemalige' => '1']));
+        self::assertSame(['Alpha Anna'], $this->namen(['funktion' => (string) $funktion]));
+        self::assertSame(['Beta Ben'], $this->namen(['zahlart' => 'selbst']));
+        self::assertSame(['Alpha Anna'], $this->namen(['zahlart' => 'lastschrift']));
+        self::assertSame(['Alpha Anna', 'Beta Ben'], $this->namen(['familie' => 'mit', 'sortierung' => 'nummer']));
+        self::assertSame([], $this->namen(['familie' => 'ohne']), 'Gudrun is former and hidden');
+        self::assertSame(['Gamma Gudrun'], $this->namen(['familie' => 'ohne', 'ehemalige' => '1']));
+        self::assertSame(['Beta Ben'], $this->namen(['familie' => 'kind']));
+        self::assertSame(['Alpha Anna'], $this->namen(['familie' => 'zahler']));
+    }
+
+    public function testTheAgeCountsOnTheDay(): void
+    {
+        $this->erweiterteBeispiele();
+
+        // Anna turns 26 today, Ben tomorrow; Gudrun has no date of birth.
+        self::assertSame(['Alpha Anna'], $this->namen(['alter_von' => '26']));
+        self::assertSame(['Beta Ben'], $this->namen(['alter_bis' => '25']));
+        self::assertSame(['Alpha Anna', 'Beta Ben'], $this->namen(['alter_von' => '25', 'alter_bis' => '26', 'sortierung' => 'nummer']));
+        self::assertSame([], $this->namen(['alter_von' => '27']));
+        self::assertSame([], $this->namen(['alter_bis' => '24']));
+    }
+
+    public function testTheDateRangesAreInclusiveAndMayBeOpenOnOneSide(): void
+    {
+        $this->erweiterteBeispiele();
+
+        self::assertSame(['Beta Ben'], $this->namen(['geburt_von' => '2000-06-16']));
+        self::assertSame(['Alpha Anna'], $this->namen(['geburt_bis' => '2000-06-15']));
+        self::assertSame(['Alpha Anna', 'Beta Ben'], $this->namen(['geburt_von' => '2000-06-15', 'geburt_bis' => '2000-06-16', 'sortierung' => 'nummer']));
+        self::assertSame(['Alpha Anna'], $this->namen(['eintritt_von' => '2009-01-01', 'eintritt_bis' => '2010-01-01']));
+        self::assertSame(['Beta Ben'], $this->namen(['eintritt_von' => '2011-01-01']));
+    }
+
+    /** Asking for a leaving date lists former members although "Ehemalige anzeigen" is off. */
+    public function testALeavingDateSearchShowsFormerMembers(): void
+    {
+        $this->erweiterteBeispiele();
+
+        self::assertSame(['Gamma Gudrun'], $this->namen(['austritt_von' => '2026-01-01', 'austritt_bis' => '2026-01-31']));
+        self::assertSame([], $this->namen(['austritt_von' => '2026-02-01']));
+        $seite = $this->liste->seite(MitgliederFilter::aus(['austritt_bis' => '2026-12-31', 'ehemalige' => '0']), $this->heute);
+        self::assertTrue($seite->zeilen[0]->ehemalig);
+    }
+
+    public function testAllConditionsAreCombinedWithAndAndTheFreeText(): void
+    {
+        $this->erweiterteBeispiele();
+
+        self::assertSame(['Alpha Anna'], $this->namen(['ort' => 'beispielstadt', 'geschlecht' => 'w', 'familie' => 'zahler']));
+        self::assertSame([], $this->namen(['ort' => 'beispielstadt', 'geschlecht' => 'm']));
+        self::assertSame(['Alpha Anna'], $this->namen(['text' => 'anna', 'ort' => 'stadt']));
+        self::assertSame([], $this->namen(['text' => 'ben', 'ort' => 'stadt']));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Domain\ErweiterteSuche;
 use App\Domain\FamilienRolle;
 use App\Domain\MitgliederFilter;
 use App\Domain\MitgliederSeite;
@@ -127,12 +128,100 @@ final readonly class MitgliederListeRepository
                 SELECT 1 FROM mitglied z WHERE z.familie_id = m.familie_id AND z.familie_rolle = ? AND z.beitragsart_id = ?)))';
             array_push($werte, $filter->beitragsartId, FamilienRolle::Zahler->value, $filter->beitragsartId);
         }
-        if (!$filter->mitEhemaligen) {
+        if (!$filter->zeigtEhemalige()) {
             $bedingungen[] = '(m.austrittsdatum IS NULL OR m.austrittsdatum > ?)';
             $werte[] = Zeilen::fuerDatum($stichtag);
         }
+        [$erweitert, $erweitertWerte] = self::erweiterteBedingungen($filter->erweitert, $stichtag);
+        array_push($bedingungen, ...$erweitert);
+        array_push($werte, ...$erweitertWerte);
 
         return [$bedingungen === [] ? '' : ' WHERE ' . implode(' AND ', $bedingungen), $werte];
+    }
+
+    /**
+     * The conditions of the extended search, one per field that is set
+     * (all AND). Texts are "contains" with `%` and `_` escaped; the number
+     * is exact; ages count on $stichtag.
+     *
+     * @return array{list<string>, list<string|int>}
+     */
+    private static function erweiterteBedingungen(ErweiterteSuche $e, \DateTimeImmutable $stichtag): array
+    {
+        $bedingungen = [];
+        $werte = [];
+        $enthaelt = static fn(string $wert): string => '%' . addcslashes($wert, '%_\\') . '%';
+
+        foreach ([
+            'm.nachname' => $e->nachname, 'm.vorname' => $e->vorname, 'm.strasse' => $e->strasse, 'm.plz' => $e->plz,
+            'm.ort' => $e->ort, 'm.email' => $e->email, 'm.bemerkung' => $e->bemerkung,
+        ] as $spalte => $wert) {
+            if ($wert !== '') {
+                $bedingungen[] = $spalte . ' LIKE ?';
+                $werte[] = $enthaelt($wert);
+            }
+        }
+        if ($e->telefon !== '') {
+            $bedingungen[] = '(m.telefon LIKE ? OR m.handy LIKE ?)';
+            array_push($werte, $enthaelt($e->telefon), $enthaelt($e->telefon));
+        }
+        if ($e->iban !== '') {
+            $bedingungen[] = "UPPER(REPLACE(m.iban, ' ', '')) LIKE ?";
+            $werte[] = $enthaelt($e->iban);
+        }
+        if ($e->mitgliedsnummer !== null) {
+            $bedingungen[] = 'm.mitgliedsnummer = ?';
+            $werte[] = $e->mitgliedsnummer;
+        }
+        if ($e->geschlecht === ErweiterteSuche::OHNE_ANGABE) {
+            $bedingungen[] = 'm.geschlecht IS NULL';
+        } elseif ($e->geschlecht !== '') {
+            $bedingungen[] = 'm.geschlecht = ?';
+            $werte[] = $e->geschlecht;
+        }
+        if ($e->funktionId !== null) {
+            $bedingungen[] = 'EXISTS (SELECT 1 FROM mitglied_funktion mf WHERE mf.mitglied_id = m.id AND mf.funktion_id = ?)';
+            $werte[] = $e->funktionId;
+        }
+        if ($e->zahlart !== null) {
+            $bedingungen[] = 'm.zahlart = ?';
+            $werte[] = $e->zahlart->value;
+        }
+        if ($e->familie === ErweiterteSuche::MIT_FAMILIE) {
+            $bedingungen[] = 'm.familie_id IS NOT NULL';
+        } elseif ($e->familie === ErweiterteSuche::OHNE_FAMILIE) {
+            $bedingungen[] = 'm.familie_id IS NULL';
+        } elseif ($e->familie !== '') {
+            $bedingungen[] = 'm.familie_id IS NOT NULL AND m.familie_rolle = ?';
+            $werte[] = $e->familie;
+        }
+
+        // Age on the day: at least N years old = born on or before today minus N years;
+        // at most M years old = born after today minus (M + 1) years.
+        if ($e->alterVon !== null) {
+            $bedingungen[] = 'm.geburtsdatum <= ?';
+            $werte[] = Zeilen::fuerDatum($stichtag->modify('-' . $e->alterVon . ' years'));
+        }
+        if ($e->alterBis !== null) {
+            $bedingungen[] = 'm.geburtsdatum > ?';
+            $werte[] = Zeilen::fuerDatum($stichtag->modify('-' . ($e->alterBis + 1) . ' years'));
+        }
+        foreach ([
+            'm.geburtsdatum' => [$e->geburtVon, $e->geburtBis],
+            'm.eintrittsdatum' => [$e->eintrittVon, $e->eintrittBis],
+            'm.austrittsdatum' => [$e->austrittVon, $e->austrittBis],
+        ] as $spalte => [$von, $bis]) {
+            if ($von !== null) {
+                $bedingungen[] = $spalte . ' >= ?';
+                $werte[] = $von;
+            }
+            if ($bis !== null) {
+                $bedingungen[] = $spalte . ' <= ?';
+                $werte[] = $bis;
+            }
+        }
+
+        return [$bedingungen, $werte];
     }
 
     /**

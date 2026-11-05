@@ -13,6 +13,7 @@ use App\Http\Request;
 use App\Http\Response;
 use App\Repository\AbteilungRepository;
 use App\Repository\BeitragsartRepository;
+use App\Repository\FunktionRepository;
 use App\Repository\MitgliederListeRepository;
 use App\View\Area;
 
@@ -71,6 +72,7 @@ final readonly class MitgliederController
             'ergebnis' => $ergebnis,
             'abteilungen' => new AbteilungRepository($pdo)->alle(),
             'beitragsarten' => new BeitragsartRepository($pdo)->alle(),
+            'funktionen' => new FunktionRepository($pdo)->alle(),
             'mitglied' => $ansicht->mitglied,
             'ansicht' => $ansicht,
             'einbettung' => $einbettung,
