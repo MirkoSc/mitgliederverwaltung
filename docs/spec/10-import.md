@@ -52,7 +52,7 @@ Weil der Übergang länger dauern kann, gibt es zwei Arten:
   kaputtes Datum, ungültiges Geschlecht/`aktiv`/Zahlart, Familie ohne Rolle
   und umgekehrt, zu lange Werte, falsche Spaltenzahl. Mit Fehlern wird
   **nichts** importiert, auch nicht die fehlerfreien Zeilen.
-- `land`: deutscher Name, ISO-Code oder altes Kfz-Kennzeichen (gespeichert wird ISO); unbekannt = Fehlerzeile. Leere `land` = `DE`, leere `zahlart` = `lastschrift` (wie beim neuen
+- `land`: deutscher Name, ISO-Code oder altes Kfz-Kennzeichen (gespeichert wird ISO); ein unbekannter Code mit 1–3 Zeichen (Altdaten, z. B. `CDN`) wird unverändert übernommen (am Mitglied dann der Hinweis „Land unbekannt", 07 §6), ein längerer unbekannter Wert passt nicht in die Spalte = Fehlerzeile. Leere `land` = `DE`, leere `zahlart` = `lastschrift` (wie beim neuen
   Mitglied), leere `aktiv` = aktiv. Eine Familie ohne `familie_name` heißt
   „Familie <Nachname des ersten Mitglieds>“.
 - Die Vorschau zeigt Mitglieder, Familien, Mitglieder je Abteilung, die

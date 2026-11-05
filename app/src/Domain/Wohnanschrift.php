@@ -44,7 +44,7 @@ final readonly class Wohnanschrift
         $ort = trim(trim($this->plz) . ' ' . trim($this->ort));
         $land = Laender::iso(trim($this->land));
         $teile = array_filter(
-            [trim($this->strasse), $ort, $land === '' || $land === Mitglied::LAND_DEFAULT ? '' : Laender::name($land)],
+            [trim($this->strasse), $ort, $land === '' || $land === Laender::STANDARD ? '' : Laender::name($land)],
             static fn(string $teil): bool => $teil !== '',
         );
 

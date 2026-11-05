@@ -6,6 +6,7 @@ namespace App\Service\Karte;
 
 use App\Dienste;
 use App\Repository\GeoAnschriftRepository;
+use App\Support\Laender;
 
 /**
  * Address suggestions while typing in the member form (issue #127), from
@@ -51,34 +52,10 @@ final readonly class Anschriftvorschlaege
     public static function aus(Dienste $dienste): self
     {
         return $dienste->dienst(self::class, static function (Dienste $d): self {
-            $mitte = self::mitte(new GeoAnschriftRepository($d->pdo())->alle());
+            $mitte = new GeoAnschriftRepository($d->pdo())->mitte();
 
             return new self(KartenDienste::http($d), KartenDienste::userAgent($d), $mitte[0] ?? null, $mitte[1] ?? null);
         });
-    }
-
-    /**
-     * The middle of every point on the map - where the club's members live -
-     * or null without one.
-     *
-     * @param array<string, array{status: ?GeoStatus, lat: ?float, lon: ?float, ...}> $koordinaten
-     * @return array{float, float}|null
-     */
-    public static function mitte(array $koordinaten): ?array
-    {
-        $lat = 0.0;
-        $lon = 0.0;
-        $anzahl = 0;
-        foreach ($koordinaten as $geo) {
-            if ($geo['status']?->hatPunkt() !== true || $geo['lat'] === null || $geo['lon'] === null) {
-                continue;
-            }
-            $lat += $geo['lat'];
-            $lon += $geo['lon'];
-            ++$anzahl;
-        }
-
-        return $anzahl === 0 ? null : [$lat / $anzahl, $lon / $anzahl];
     }
 
     /**
@@ -111,7 +88,7 @@ final readonly class Anschriftvorschlaege
     /**
      * Suggestions for what was typed: at most ANZAHL, each with street and
      * house number, postcode, town, country (ISO 3166 alpha-2, upper case)
-     * and the text the list shows. Empty for a short text, on any failure
+     * and the text the list shows (the country by name, only abroad). Empty for a short text, on any failure
      * and when nothing fits.
      *
      * @return list<array{strasse: string, plz: string, ort: string, land: string, text: string}>
@@ -201,7 +178,7 @@ final readonly class Anschriftvorschlaege
             $land = '';
         }
 
-        $teile = array_filter([$strasse, trim($plz . ' ' . $ort), $land !== 'DE' ? $land : ''], static fn(string $t): bool => $t !== '');
+        $teile = array_filter([$strasse, trim($plz . ' ' . $ort), $land !== Laender::STANDARD ? Laender::name($land) : ''], static fn(string $t): bool => $t !== '');
 
         return [
             'strasse' => mb_substr($strasse, 0, self::MAX_ZEICHEN),

@@ -8,12 +8,9 @@
  *
  * Choosing a suggestion fills street, postcode, town and country - each
  * only when the suggestion has a value for it - and fires `input` and
- * `change` on every filled field. The country: the element marked
- * [data-land-iso] in the form, else the field named "land"; a <select>
- * gets the ISO code when it has that option, any other field the ISO code
- * itself. Afterwards the form receives the event "anschrift-vorschlag"
- * (bubbles, detail = {strasse, plz, ort, land}) for whatever shows the
- * country by name.
+ * `change` on every filled field. The country field "land" shows names:
+ * it gets the name of the datalist option with that ISO code (data-iso),
+ * else the code itself, which the server takes as well.
  *
  * Without the script the form is the plain form. Nothing is stored in the
  * browser. Delegated on the document and set up again after every htmx
@@ -204,7 +201,7 @@
     function feldDesFormulars(formular, name) {
         var feld = formular ? formular.elements.namedItem(name) : null;
 
-        return feld instanceof HTMLInputElement || feld instanceof HTMLSelectElement ? feld : null;
+        return feld instanceof HTMLInputElement ? feld : null;
     }
 
     function setzen(feld, wert) {
@@ -228,21 +225,10 @@
                     setzen(ziel, werte[name]);
                 }
             });
-            if (werte.land !== undefined && formular) {
-                var land = formular.querySelector('[data-land-iso]') || feldDesFormulars(formular, 'land');
-                if (land instanceof HTMLSelectElement) {
-                    var vorhanden = Array.prototype.some.call(land.options, function (o) { return o.value === werte.land; });
-                    if (vorhanden) {
-                        setzen(land, werte.land);
-                    }
-                } else if (land instanceof HTMLInputElement) {
-                    // The country field shows names (datalist options carry the ISO code); the server also takes the code.
-                    var option = land.list ? land.list.querySelector('option[data-iso="' + werte.land + '"]') : null;
-                    setzen(land, option ? option.value : werte.land);
-                }
-            }
-            if (formular) {
-                formular.dispatchEvent(new CustomEvent('anschrift-vorschlag', { bubbles: true, detail: werte }));
+            var land = werte.land !== undefined ? feldDesFormulars(formular, 'land') : null;
+            if (land !== null) {
+                var option = land.list ? land.list.querySelector('option[data-iso="' + werte.land + '"]') : null;
+                setzen(land, option ? option.value : werte.land);
             }
         } finally {
             z.still = false;

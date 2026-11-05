@@ -50,6 +50,24 @@ final class GeoAnschriftRepository
     }
 
     /**
+     * The middle of every dot on the map - where the club's members live -
+     * or null without one: the bias of the address suggestions (issue #127).
+     *
+     * @return array{float, float}|null [lat, lon]
+     */
+    public function mitte(): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT AVG(lat) AS lat, AVG(lon) AS lon FROM geo_anschrift
+            WHERE status IS NOT NULL AND status <> ? AND lat IS NOT NULL AND lon IS NOT NULL');
+        $stmt->execute([GeoStatus::NichtGefunden->value]);
+        $zeile = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return is_array($zeile) && $zeile['lat'] !== null && $zeile['lon'] !== null
+            ? [(float) $zeile['lat'], (float) $zeile['lon']]
+            : null;
+    }
+
+    /**
      * The row of one address, null when it was never asked (issue #106).
      *
      * @return array{status: ?GeoStatus, lat: ?float, lon: ?float, korrektur: ?array{strasse: string, plz: string, ort: string}}|null

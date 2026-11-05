@@ -64,6 +64,23 @@ final class MitgliedFormularTest extends TestCase
         self::assertStringContainsString('Land nicht gefunden', $unbekannt->fehler['land']);
     }
 
+    public function testAnUnknownCountryAlreadyStoredIsKept(): void
+    {
+        $basis = new Mitglied(87, 'Alt', land: 'CDN', id: 3);
+        $formular = MitgliedFormular::aus($basis);
+        self::assertSame('CDN', $formular->wert('land'), 'shown as it is');
+
+        foreach (['CDN', 'cdn'] as $eingabe) {
+            $gelesen = self::lesen(['nachname' => 'Alt', 'land' => $eingabe], $basis);
+            self::assertSame([], $gelesen->fehler, $eingabe);
+            self::assertSame('CDN', $gelesen->mitglied?->land);
+        }
+
+        $anderes = self::lesen(['nachname' => 'Alt', 'land' => 'XYZ'], $basis);
+        self::assertArrayHasKey('land', $anderes->fehler, 'another unknown value is still an input error');
+        self::assertSame('CA', self::lesen(['nachname' => 'Alt', 'land' => 'Kanada'], $basis)->mitglied?->land);
+    }
+
     public function testMissingSurnameIsAnError(): void
     {
         $formular = self::lesen(['nachname' => '  ', 'vorname' => 'Erika']);

@@ -377,6 +377,21 @@ final class HinweiseTest extends TestCase
         self::assertSame([], self::arten($kind, [$zahler, $kind]), 'a family counts as a way to pay');
     }
 
+    // Land unbekannt (issue #127)
+
+    public function testAnUnknownStoredCountryIsHintedUnlessFormer(): void
+    {
+        $unbekannt = self::mitglied(['land' => 'CDN']);
+
+        self::assertSame([HinweisArt::LandUnbekannt], self::arten($unbekannt));
+        self::assertStringContainsString('„CDN“', Hinweise::fuer($unbekannt, new HinweisKontext(self::tag(), [], [], self::beitragsarten()))[0]->text);
+        self::assertSame('daten', HinweisArt::LandUnbekannt->reiter());
+        self::assertSame([], self::arten($unbekannt->mit(['austrittsdatum' => self::tag('2026-01-01')])), 'former');
+        foreach (['DE', 'AT', 'D', 'DEU', ''] as $land) {
+            self::assertSame([], self::arten(self::mitglied(['land' => $land])), "known: '$land'");
+        }
+    }
+
     // Lastschrift ohne gültige IBAN
 
     public function testDirectDebitNeedsAValidIban(): void
@@ -502,7 +517,7 @@ final class HinweiseTest extends TestCase
         foreach (HinweisArt::cases() as $art) {
             self::assertNotSame('', $art->bezeichnung());
         }
-        self::assertCount(19, HinweisArt::cases(), 'one per row of the table in 07 section 6');
+        self::assertCount(20, HinweisArt::cases(), 'one per row of the table in 07 section 6');
     }
 
     /**

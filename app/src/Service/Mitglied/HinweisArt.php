@@ -30,6 +30,7 @@ enum HinweisArt: string
     case BeitragsfreiOhneGrund = 'beitragsfrei-ohne-grund';
     case EintrittsdatumUnbekannt = 'eintrittsdatum-unbekannt';
     case BlsvAngabenFehlen = 'blsv-angaben-fehlen';
+    case LandUnbekannt = 'land-unbekannt';
     case KarteNichtGefunden = 'karte-nicht-gefunden';
     case KarteUngefaehr = 'karte-ungefaehr';
 
@@ -41,7 +42,7 @@ enum HinweisArt: string
     public function reiter(): ?string
     {
         return match ($this) {
-            self::KarteNichtGefunden, self::KarteUngefaehr => 'daten',
+            self::KarteNichtGefunden, self::KarteUngefaehr, self::LandUnbekannt => 'daten',
             default => null,
         };
     }
@@ -67,6 +68,7 @@ enum HinweisArt: string
             self::BeitragsfreiOhneGrund => 'Beitragsfrei ohne Grund',
             self::EintrittsdatumUnbekannt => 'Eintrittsdatum unbekannt',
             self::BlsvAngabenFehlen => 'Pflichtangaben für BLSV fehlen',
+            self::LandUnbekannt => 'Land unbekannt',
             self::KarteNichtGefunden => 'Anschrift auf der Karte nicht gefunden',
             self::KarteUngefaehr => 'Anschrift auf der Karte nur ungefähr gefunden',
         };
