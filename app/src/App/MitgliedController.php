@@ -198,6 +198,7 @@ final readonly class MitgliedController
         return Response::html($this->dienste->view->render('mitglied/seite', [
             'title' => $titel,
             'meldung' => $meldung,
+            'scripts' => ['/js/bankverbindung.js'],
             ...$this->formularDaten($formular, $mitglied, $einbettung),
         ], Area::App), $status);
     }

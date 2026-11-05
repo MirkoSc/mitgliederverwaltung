@@ -59,6 +59,7 @@ $gruppen = [
         'Zahlart' => $mitglied->zahlart->bezeichnung(),
         'IBAN' => $mitglied->iban,
         'BIC' => $mitglied->bic,
+        'Bank' => \App\Support\Banken::fuerIban($mitglied->iban)?->name ?? '',
         'Kontoinhaber' => $mitglied->kontoinhaber,
         'Mandatsreferenz' => $mitglied->effektiveMandatsreferenz(),
         'Mandatsdatum' => datum($mitglied->effektivesMandatsdatum($listen->vereinsMandatsdatum)),

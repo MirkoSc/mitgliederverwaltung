@@ -26,6 +26,7 @@ enum HinweisArt: string
     case KindIst18 = 'kind-ist-18';
     case KeinBeitrag = 'kein-beitrag';
     case LastschriftOhneIban = 'lastschrift-ohne-iban';
+    case LastschriftMitFalscherBic = 'lastschrift-mit-falscher-bic';
     case BeitragsfreiOhneGrund = 'beitragsfrei-ohne-grund';
     case EintrittsdatumUnbekannt = 'eintrittsdatum-unbekannt';
     case BlsvAngabenFehlen = 'blsv-angaben-fehlen';
@@ -62,6 +63,7 @@ enum HinweisArt: string
             self::KindIst18 => 'Kind ist 18',
             self::KeinBeitrag => 'Kein Beitrag',
             self::LastschriftOhneIban => 'Lastschrift ohne gültige IBAN',
+            self::LastschriftMitFalscherBic => 'Lastschrift mit falscher BIC',
             self::BeitragsfreiOhneGrund => 'Beitragsfrei ohne Grund',
             self::EintrittsdatumUnbekannt => 'Eintrittsdatum unbekannt',
             self::BlsvAngabenFehlen => 'Pflichtangaben für BLSV fehlen',

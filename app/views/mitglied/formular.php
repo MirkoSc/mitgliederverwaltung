@@ -80,6 +80,15 @@ $funktionen = $listen->funktionenFuer($mitglied?->funktionIds ?? []);
 $beitragsarten = $listen->beitragsartenFuer($mitglied?->beitragsartId);
 $nummer = $formular->wert('mitgliedsnummer');
 $ibanUngueltig = $formular->wert('iban') !== '' && !Iban::istGueltig($formular->wert('iban'));
+// Bank and BIC check of the server; public/js/bankverbindung.js shows the
+// same while typing (07 section 1). A hint only, saving stays possible.
+$bank = \App\Support\Banken::fuerIban($formular->wert('iban'));
+$bicFehler = match (true) {
+    $formular->wert('bic') === '' => null,
+    !\App\Support\Bic::istGueltig($formular->wert('bic')) => 'Die BIC hat nicht die richtige Form (8 oder 11 Zeichen, z. B. COBADEFFXXX).',
+    \App\Support\Banken::bicPasst($formular->wert('bic'), $formular->wert('iban')) === false => 'Die BIC passt nicht zur IBAN – zur Bankleitzahl gehört ' . $bank?->bic . '.',
+    default => null,
+};
 
 $mandatsdatumDefault = $formular->wert('eintrittsdatum') !== '' ? null : $listen->vereinsMandatsdatum;
 $mandatsdatumHilfe = match (true) {
@@ -182,12 +191,16 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     </fieldset>
     <div class="feld">
         <label for="m-iban">IBAN</label>
-        <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false"<?= $ibanUngueltig ? ' aria-invalid="true" aria-describedby="m-iban-hinweis"' : '' ?>>
-        <?php if ($ibanUngueltig): ?>
-            <p class="feld-fehler" id="m-iban-hinweis">Die Prüfziffer passt nicht. Bitte die IBAN vom Kontoauszug abschreiben – gespeichert wird sie trotzdem.</p>
-        <?php endif; ?>
+        <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-iban-hinweis" data-bank-adresse="/app/bank"<?= $ibanUngueltig ? ' aria-invalid="true"' : '' ?>>
+        <p class="feld-fehler" id="m-iban-hinweis" aria-live="polite"<?= $ibanUngueltig ? '' : ' hidden' ?>><?= $ibanUngueltig ? 'Die Prüfziffer passt nicht. Bitte die IBAN vom Kontoauszug abschreiben – gespeichert wird sie trotzdem.' : '' ?></p>
     </div>
-    <?= $text('bic', 'BIC', 'feld-kurz', 'Nur nötig für Konten im Ausland.', 'spellcheck="false"') ?>
+    <div class="feld feld-kurz">
+        <label for="m-bic">BIC</label>
+        <input type="text" id="m-bic" name="bic" value="<?= e($formular->wert('bic')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['bic'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-bic-hinweis m-bic-bank m-bic-hilfe"<?= $bicFehler !== null ? ' aria-invalid="true"' : '' ?>>
+        <p class="feld-fehler" id="m-bic-hinweis" aria-live="polite"<?= $bicFehler === null ? ' hidden' : '' ?>><?= e($bicFehler ?? '') ?></p>
+        <p class="feld-hinweis" id="m-bic-bank" aria-live="polite"<?= $bank === null ? ' hidden' : '' ?>><?= e($bank === null ? '' : 'Bank: ' . $bank->name) ?></p>
+        <p class="feld-hinweis" id="m-bic-hilfe">Bei einer deutschen IBAN wird die BIC ergänzt, wenn das Feld leer ist.</p>
+    </div>
     <?= $text('kontoinhaber', 'Kontoinhaber', 'feld-breit', 'Nur eintragen, wenn das Konto nicht dem Mitglied gehört.') ?>
     <?= $text('mandatsreferenz', 'Mandatsreferenz', '', 'Leer lassen: es gilt die Mitgliedsnummer' . ($nummer !== '' && ctype_digit($nummer) ? ' (' . (int) $nummer . ')' : '') . '.') ?>
     <?= $datum('mandatsdatum', 'Mandatsdatum', $mandatsdatumHilfe) ?>

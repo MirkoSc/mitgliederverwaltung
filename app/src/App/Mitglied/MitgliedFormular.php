@@ -179,7 +179,8 @@ final readonly class MitgliedFormular
             'zahlart' => Zahlart::tryFrom($werte['zahlart']) ?? Zahlart::Lastschrift,
             // The repository normalises too; done here so the column width holds.
             'iban' => mb_substr(Iban::normalisieren($werte['iban']), 0, 34),
-            'bic' => $werte['bic'],
+            // An empty BIC is filled in from the bank of a German IBAN (07 section 1).
+            'bic' => \App\Support\Banken::bicErgaenzen($werte['bic'], $werte['iban']),
             'kontoinhaber' => $werte['kontoinhaber'],
             'mandatsreferenz' => $werte['mandatsreferenz'],
             'mandatsdatum' => $daten['mandatsdatum'],

@@ -357,6 +357,21 @@ alten Software wird in einer Merge-Ansicht verglichen; je Zeile wählen
 Sie, was übernommen wird. Jeder Abgleich wird im Verlauf des Mitglieds
 vermerkt.
 
+### Bankdaten aktualisieren
+
+Bankname und BIC zu einer deutschen IBAN stehen in `app/data/banken.php`
+(aus der Bankleitzahlendatei der Deutschen Bundesbank, über das npm-Paket
+`bankdata-germany`, Lizenz MIT; Stand im Kopf der Datei). Die Bundesbank
+ändert die Datei viermal im Jahr; aktualisiert wird mit einem Release, nicht
+auf dem Server. Auf dem Entwicklungsrechner:
+
+    npm pack bankdata-germany@latest
+    tar -xzf bankdata-germany-*.tgz
+    php tools/banken-erzeugen.php package
+
+Änderungen, die erst später gelten (`next.json` des Pakets), übernimmt das
+Skript, sobald ihr Stichtag erreicht ist (oder mit `--mit-naechsten`).
+
 ---
 
 ## 10. Einzug (Lastschrift)

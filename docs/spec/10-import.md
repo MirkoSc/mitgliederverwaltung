@@ -157,7 +157,11 @@ sonst Abgleich (Dienst `App\Service\Import\Abgleich`, Routen
   ganze Stand von `Mitglied::daten()` mit dem Stand, den die Zeile
   verlangt (IBAN/BIC normalisiert wie gespeichert). Eine Spalte, die der
   Datei ganz fehlt, sagt nichts: der Wert in der Anwendung bleibt (und ist
-  keine Änderung). Familie: Zeile ohne
+  keine Änderung). Eine leere BIC wird aus der Bank einer gültigen
+  deutschen IBAN ergänzt (#127, `Banken::bicErgaenzen()`) – auch wenn der
+  Datei die Spalte `bic` fehlt; so erscheint eine fehlende BIC beim
+  Abgleich als Änderung und wird mit übernommen. Der Erstimport ergänzt sie
+  ebenso (`ImportLeser`). Familie: Zeile ohne
   `familie` = keine Familie; vorhandener Schlüssel = diese Familie;
   unbekannter Schlüssel = neue Familie (Name aus `familie_name`). Den
   Familiennamen selbst gleicht der Abgleich nicht ab. „Bereits

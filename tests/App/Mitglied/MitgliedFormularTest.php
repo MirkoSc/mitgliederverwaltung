@@ -177,7 +177,7 @@ final class MitgliedFormularTest extends TestCase
         $gespeichert = new Mitglied(
             mitgliedsnummer: 87, nachname: 'Mustermann', vorname: 'Max', geschlecht: Geschlecht::M,
             geburtsdatum: new \DateTimeImmutable('2012-11-02'), aktiv: false, abteilungIds: [1], beitragsartId: 8,
-            iban: 'DE89370400440532013000', funktionIds: [5, 6], bemerkung: "zwei\nZeilen", id: 3, version: 2,
+            iban: 'DE89370400440532013000', bic: 'COBADEFFXXX', funktionIds: [5, 6], bemerkung: "zwei\nZeilen", id: 3, version: 2,
         );
 
         $formular = MitgliedFormular::aus($gespeichert);
@@ -187,6 +187,18 @@ final class MitgliedFormularTest extends TestCase
 
         $post = [...$formular->werte, 'abteilungen' => array_map(strval(...), $formular->abteilungIds), 'funktionen' => array_map(strval(...), $formular->funktionIds)];
         self::assertSame($gespeichert->daten(), self::lesen($post, $gespeichert)->mitglied?->daten(), 'an unchanged form is no change');
+    }
+
+    public function testAnEmptyBicIsFilledInFromAGermanIban(): void
+    {
+        $m = self::lesen(['mitgliedsnummer' => '1', 'nachname' => 'Muster', 'iban' => 'DE89 3704 0044 0532 0130 00', 'bic' => ''])->mitglied;
+        self::assertSame('COBADEFFXXX', $m?->bic);
+
+        $m = self::lesen(['mitgliedsnummer' => '1', 'nachname' => 'Muster', 'iban' => 'DE89 3704 0044 0532 0130 00', 'bic' => 'ingd deff'])->mitglied;
+        self::assertSame('INGDDEFF', $m?->bic, 'a BIC typed stays, even one that does not fit (hint only)');
+
+        $m = self::lesen(['mitgliedsnummer' => '1', 'nachname' => 'Muster', 'iban' => 'AT611904300234573201', 'bic' => ''])->mitglied;
+        self::assertSame('', $m?->bic, 'only German IBANs');
     }
 
     public function testANewFormCarriesTheNextNumber(): void

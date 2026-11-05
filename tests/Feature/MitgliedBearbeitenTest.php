@@ -133,6 +133,7 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertSame(412, $mitglied->mitgliedsnummer);
         self::assertSame([(int) $fussball], $mitglied->abteilungIds);
         self::assertSame('DE89370400440532013000', $mitglied->iban, 'normalised');
+        self::assertSame('COBADEFFXXX', $mitglied->bic, 'filled in from the bank of the IBAN');
         $versionen = $this->repo()->versionen($id);
         self::assertCount(1, $versionen);
         self::assertSame('angelegt', $versionen[0]->anlass->text);

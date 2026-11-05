@@ -9,6 +9,7 @@ use App\Domain\Geschlecht;
 use App\Domain\Herkunft;
 use App\Domain\Mitglied;
 use App\Domain\Zahlart;
+use App\Support\Banken;
 use App\Support\Datum;
 use App\Support\Iban;
 
@@ -327,7 +328,8 @@ final class ImportLeser
             beitragsartId: $beitragsartId,
             zahlart: $zahlart,
             iban: Iban::normalisieren($text('iban')),
-            bic: $text('bic'),
+            // An empty BIC is filled in from the bank of a German IBAN.
+            bic: Banken::bicErgaenzen($text('bic'), $text('iban')),
             kontoinhaber: $text('kontoinhaber'),
             mandatsreferenz: $text('mandatsreferenz'),
             mandatsdatum: $mandatsdatum,
