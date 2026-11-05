@@ -20,6 +20,7 @@ use App\Repository\MitgliedsnummerVergebenException;
 use App\Repository\VersionKonfliktException;
 use App\Service\Mitglied\HinweisLader;
 use App\Service\Storage\BlobService;
+use App\Support\Datum;
 use App\View\Area;
 use App\View\FlashArt;
 
@@ -41,6 +42,9 @@ final readonly class MitgliedController
 {
     public const string PFAD_LISTE = '/app/mitglieder';
     public const string PFAD_NEU = '/app/mitglieder/neu';
+
+    private const string KONFLIKT = 'Jemand anderes hat dieses Mitglied gespeichert, während Sie diese Seite offen hatten. '
+        . 'Prüfen Sie den Stand und senden Sie die Seite erneut ab – dann gilt Ihre Angabe.';
 
     public function __construct(private Dienste $dienste, private MitgliedRepository $mitglieder)
     {
@@ -65,6 +69,18 @@ final readonly class MitgliedController
     public static function loeschAdresse(int $id): string
     {
         return self::PFAD_LISTE . '/' . $id . '/loeschen';
+    }
+
+    /** "Mitglied ausgetreten": the page with leaving date and reason. */
+    public static function austrittAdresse(int $id): string
+    {
+        return self::PFAD_LISTE . '/' . $id . '/austritt';
+    }
+
+    /** "Austritt zurücknehmen": the question, then the post. */
+    public static function zuruecknehmenAdresse(int $id): string
+    {
+        return self::PFAD_LISTE . '/' . $id . '/austritt-zuruecknehmen';
     }
 
     /** "Neues Mitglied": the empty form with the next free number (07 section 1). */
@@ -130,8 +146,132 @@ final readonly class MitgliedController
     }
 
     /**
-     * The question before deleting (06 section 4, "Rückfragen"): in whole
-     * sentences, what goes and what stays.
+     * "Mitglied ausgetreten" (07 section 1): leaving date (today by default)
+     * and reason on a page of their own. A date in the future only notes the
+     * leaving - until then the person stays a member.
+     *
+     * @param array<string, string> $params
+     */
+    public function austrittFragen(Request $r, array $params): Response
+    {
+        $mitglied = $this->mitglieder->finde((int) $params['id']);
+        if ($mitglied === null) {
+            return $this->gibtEsNicht();
+        }
+
+        return $this->austrittSeite($mitglied, [
+            'austrittsdatum' => ($mitglied->austrittsdatum ?? self::heute())->format('Y-m-d'),
+            'austrittsgrund' => $mitglied->austrittsgrund,
+        ], Einbettung::ausAnfrage($r));
+    }
+
+    /**
+     * Saves leaving date and reason as an ordinary save of the member: a
+     * new version, the optimistic lock of the form (07 section 8). Audited
+     * by id only.
+     *
+     * @param array<string, string> $params
+     */
+    public function austritt(Request $r, array $params): Response
+    {
+        $gespeichert = $this->mitglieder->finde((int) $params['id']);
+        if ($gespeichert === null) {
+            return $this->gibtEsNicht();
+        }
+        $einbettung = Einbettung::ausAnfrage($r);
+        $werte = [
+            'austrittsdatum' => $r->feld('austrittsdatum'),
+            'austrittsgrund' => mb_substr((string) preg_replace('/\s+/u', ' ', $r->feld('austrittsgrund')), 0, MitgliedFormular::LAENGEN['austrittsgrund']),
+        ];
+        $datum = MitgliedFormular::datum($werte['austrittsdatum']);
+        $version = self::version($r, $gespeichert);
+        if ($datum === null) {
+            return $this->austrittSeite($gespeichert->mit(['version' => $version]), $werte, $einbettung, 422, fehler: $werte['austrittsdatum'] === ''
+                ? 'Bitte das Austrittsdatum eintragen.'
+                : 'Bitte das Datum als Tag, Monat und Jahr eintragen, zum Beispiel 31.12.2026.');
+        }
+
+        $mitglied = $gespeichert->mit(['austrittsdatum' => $datum, 'austrittsgrund' => $werte['austrittsgrund'], 'version' => $version]);
+        try {
+            $ergebnis = $this->mitglieder->speichern($mitglied, VersionsAnlass::geaendert(), $this->dienste->session->userId());
+        } catch (VersionKonfliktException) {
+            $aktuell = $this->mitglieder->finde((int) $gespeichert->id);
+
+            return $aktuell === null ? $this->gibtEsNicht() : $this->austrittSeite($aktuell, $werte, $einbettung, 409, meldung: self::KONFLIKT);
+        }
+        if ($ergebnis->neueVersion) {
+            $this->protokollieren(AuditAktion::MitgliedAusgetreten, $ergebnis->mitglied, $r);
+        }
+
+        return $this->fertig($ergebnis->mitglied, $ergebnis->mitglied->istEhemalig(self::heute())
+            ? sprintf('Austritt zum %s eingetragen – das Mitglied ist jetzt ehemalig.', Datum::anzeigen($datum))
+            : sprintf('Austritt zum %s vermerkt – bis dahin bleibt es Mitglied.', Datum::anzeigen($datum)), $einbettung);
+    }
+
+    /**
+     * The short question before "Austritt zurücknehmen". A member without
+     * a leaving date has nothing to take back: straight back to it.
+     *
+     * @param array<string, string> $params
+     */
+    public function zuruecknehmenFragen(Request $r, array $params): Response
+    {
+        $mitglied = $this->mitglieder->finde((int) $params['id']);
+        if ($mitglied === null) {
+            return $this->gibtEsNicht();
+        }
+        $einbettung = Einbettung::ausAnfrage($r);
+        if ($mitglied->austrittsdatum === null) {
+            return Response::redirect($einbettung->adresse((int) $mitglied->id));
+        }
+
+        return $this->zuruecknehmenSeite($mitglied, $einbettung);
+    }
+
+    /**
+     * Clears leaving date and reason: a new version, the old state stays
+     * in the history. Audited by id only.
+     *
+     * @param array<string, string> $params
+     */
+    public function zuruecknehmen(Request $r, array $params): Response
+    {
+        $gespeichert = $this->mitglieder->finde((int) $params['id']);
+        if ($gespeichert === null) {
+            return $this->gibtEsNicht();
+        }
+        $einbettung = Einbettung::ausAnfrage($r);
+        if ($gespeichert->austrittsdatum === null) {
+            $this->dienste->session->flash('Für dieses Mitglied ist kein Austritt eingetragen.', FlashArt::Warnung);
+
+            return Response::redirect($einbettung->adresse((int) $gespeichert->id));
+        }
+
+        $mitglied = $gespeichert->mit(['austrittsdatum' => null, 'austrittsgrund' => '', 'version' => self::version($r, $gespeichert)]);
+        try {
+            $ergebnis = $this->mitglieder->speichern($mitglied, VersionsAnlass::geaendert(), $this->dienste->session->userId());
+        } catch (VersionKonfliktException) {
+            $aktuell = $this->mitglieder->finde((int) $gespeichert->id);
+            if ($aktuell === null) {
+                return $this->gibtEsNicht();
+            }
+            if ($aktuell->austrittsdatum === null) {
+                return Response::redirect($einbettung->adresse((int) $aktuell->id));
+            }
+
+            return $this->zuruecknehmenSeite($aktuell, $einbettung, 409, self::KONFLIKT);
+        }
+        $this->protokollieren(AuditAktion::AustrittZurueckgenommen, $ergebnis->mitglied, $r);
+
+        return $this->fertig($ergebnis->mitglied, 'Austritt zurückgenommen.', $einbettung);
+    }
+
+    /**
+     * Deleting, steps 1 and 2 (06 section 4, "Rückfragen"; 07 section 1):
+     * first the question in whole sentences - what goes, what stays -,
+     * then ("Weiter", ?schritt=2) "Endgültig löschen?" with the member
+     * number to type. Only a former member can be deleted; for anyone else
+     * the page says so (409).
      *
      * @param array<string, string> $params
      */
@@ -142,18 +282,15 @@ final readonly class MitgliedController
             return $this->gibtEsNicht();
         }
 
-        return Response::html($this->dienste->view->render('mitglied/loeschen', [
-            'title' => 'Mitglied löschen',
-            'mitglied' => $mitglied,
-            'ehemalig' => $mitglied->istEhemalig(new \DateTimeImmutable('today')),
-            'einbettung' => Einbettung::ausAnfrage($r),
-        ], Area::App));
+        return $this->loeschSeite($mitglied, Einbettung::ausAnfrage($r), $r->feld('schritt') === '2' ? 2 : 1);
     }
 
     /**
      * Deletes the member for good (admin only, 07 section 1): member,
      * versions, proofs with their files, annual fees. Direct debits keep
-     * their own copy. Recorded in the audit log by id and number only.
+     * their own copy. Only a former member, and only with its member
+     * number typed in step 2 - checked here, not only in the browser.
+     * Recorded in the audit log by id and number only.
      *
      * @param array<string, string> $params
      */
@@ -162,6 +299,16 @@ final readonly class MitgliedController
         $mitglied = $this->mitglieder->finde((int) $params['id']);
         if ($mitglied === null) {
             return $this->gibtEsNicht();
+        }
+        $einbettung = Einbettung::ausAnfrage($r);
+        if (!$mitglied->istEhemalig(self::heute())) {
+            return $this->loeschSeite($mitglied, $einbettung, 1);
+        }
+        $eingabe = $r->feld('mitgliedsnummer');
+        if (!ctype_digit($eingabe) || ltrim($eingabe, '0') !== (string) $mitglied->mitgliedsnummer) {
+            return $this->loeschSeite($mitglied, $einbettung, 2, $eingabe === ''
+                ? 'Bitte die Mitgliedsnummer eintippen. Es wurde nichts gelöscht.'
+                : 'Die Mitgliedsnummer stimmt nicht. Es wurde nichts gelöscht.');
         }
         $id = (int) $mitglied->id;
 
@@ -179,7 +326,63 @@ final readonly class MitgliedController
         $this->dienste->session->flash(sprintf('Mitglied Nr. %d ist gelöscht.', $mitglied->mitgliedsnummer));
 
         // Back to the page it was opened on, without a member.
-        return Response::redirect(Einbettung::ausAnfrage($r)->rueckweg());
+        return Response::redirect($einbettung->rueckweg());
+    }
+
+    /**
+     * @param array{austrittsdatum: string, austrittsgrund: string} $werte
+     */
+    private function austrittSeite(Mitglied $mitglied, array $werte, Einbettung $einbettung, int $status = 200, ?string $fehler = null, ?string $meldung = null): Response
+    {
+        return Response::html($this->dienste->view->render('mitglied/austritt', [
+            'title' => 'Mitglied ausgetreten',
+            'mitglied' => $mitglied,
+            'werte' => $werte,
+            'fehler' => $fehler,
+            'meldung' => $meldung,
+            'einbettung' => $einbettung,
+        ], Area::App), $status);
+    }
+
+    private function zuruecknehmenSeite(Mitglied $mitglied, Einbettung $einbettung, int $status = 200, ?string $meldung = null): Response
+    {
+        return Response::html($this->dienste->view->render('mitglied/austritt-zuruecknehmen', [
+            'title' => 'Austritt zurücknehmen',
+            'mitglied' => $mitglied,
+            'ehemalig' => $mitglied->istEhemalig(self::heute()),
+            'meldung' => $meldung,
+            'einbettung' => $einbettung,
+        ], Area::App), $status);
+    }
+
+    /** Step 1 or 2 of deleting; a member that has not left (yet) gets the reason why not, 409. */
+    private function loeschSeite(Mitglied $mitglied, Einbettung $einbettung, int $schritt, ?string $fehler = null): Response
+    {
+        $ehemalig = $mitglied->istEhemalig(self::heute());
+
+        return Response::html($this->dienste->view->render('mitglied/loeschen', [
+            'title' => 'Mitglied löschen',
+            'mitglied' => $mitglied,
+            'ehemalig' => $ehemalig,
+            'schritt' => $schritt,
+            'fehler' => $fehler,
+            'einbettung' => $einbettung,
+        ], Area::App), match (true) {
+            !$ehemalig => 409,
+            $fehler !== null => 422,
+            default => 200,
+        });
+    }
+
+    /** Leaving entered or taken back: by id and version, never with a name or date (02 section 8). */
+    private function protokollieren(AuditAktion $aktion, Mitglied $mitglied, Request $r): void
+    {
+        $this->dienste->audit()->protokollieren($aktion, $this->dienste->session->userId(), 'mitglied', $mitglied->id, ['version' => $mitglied->version], $r->ip);
+    }
+
+    private static function heute(): \DateTimeImmutable
+    {
+        return new \DateTimeImmutable('today', new \DateTimeZone(Datum::ZEITZONE));
     }
 
     private function listen(): Auswahllisten
@@ -221,7 +424,8 @@ final readonly class MitgliedController
             'familie' => $familie,
             'aktion' => $mitglied?->id === null ? self::PFAD_NEU : self::speicherAdresse($mitglied->id),
             'darfBearbeiten' => $konto !== null && $konto->darf(Permission::MitgliederBearbeiten),
-            'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen),
+            // Only a former member can be deleted (07 section 1); everyone else leaves first.
+            'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen) && $mitglied->istEhemalig(self::heute()),
             'einbettung' => $einbettung ?? Einbettung::mitgliederSeite(),
         ];
     }

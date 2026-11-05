@@ -148,7 +148,8 @@ Ablauf auf **einer** Seite (06 §2), von oben nach unten:
 1. **Zusammenstellen**: Liste der offenen Jahresbeiträge mit Zahlart
    `lastschrift` und gültiger IBAN, alle vorausgewählt, abwählbar.
    Daneben, nicht auswählbar: offene Beiträge ohne gültige IBAN bzw. mit
-   Zahlart `selbst` (Verweis auf Liste „Selbst kassieren", 09).
+   Zahlart `selbst` (Verweis auf Liste „Selbst kassieren", 09) und
+   offene Beiträge ausgetretener Mitglieder.
    Fälligkeitsdatum wählen (Vorschlag: nächster Bankarbeitstag + 1).
 2. **Erzeugen**: legt den Einzug an, alle gewählten Beiträge gehen auf
    `im_einzug`. Die Lastschriftdatei wird **in diesem Moment einmal
@@ -180,7 +181,14 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
 `beitraege.verwalten`).
 
 - **Zusammenstellen** (`App\Service\Beitraege\Einzuege::zusammenstellen()`):
-  alle offenen Beiträge aller Jahre, nach Namen. Auswählbar ist ein
+  alle offenen Beiträge aller Jahre, nach Namen. **Nie einziehbar** ist
+  ein Beitrag eines Mitglieds, dessen Austrittsdatum am Einzugstag
+  erreicht ist (`istEhemalig(heute)`; geprüft als Erstes, Grund
+  „ausgetreten am TT.MM.JJJJ"; Austritt morgen = heute noch einziehbar).
+  Das gilt beim Zusammenstellen und noch einmal beim Erzeugen; ein
+  Rücklastschrift- oder verworfener Beitrag kommt nur über dasselbe
+  Erzeugen wieder in einen Einzug. Die Erzeugung der Jahresbeiträge bleibt
+  davon unberührt (Stichtag 1.1., §2). Auswählbar ist sonst ein
   Beitrag mit Zahlart `lastschrift`, gültiger IBAN und brauchbarem Mandat
   (Mandatsreferenz im SEPA-Zeichensatz, höchstens 35 Zeichen – sie wird
   nie umgeschrieben, weil die Bank sie mit dem unterschriebenen Mandat
@@ -197,7 +205,8 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
   Hinweis nach dem Erzeugen, keine Sperre.
 - **Erzeugen** (`POST /app/beitraege/einzug`) läuft in einer Transaktion:
   gewählte Beiträge sperren und erneut prüfen – ist einer nicht mehr offen
-  oder einziehbar, entsteht nichts –, Einzug anlegen, Datei erzeugen und
+  oder einziehbar (auch: sein Mitglied ist inzwischen ausgetreten), entsteht
+  nichts –, Einzug anlegen, Datei erzeugen und
   als Blob speichern, `datei_blob_id`/`msg_id`/`daten` setzen, Beiträge auf
   `im_einzug` mit Vermerk „In Einzug Nr. X aufgenommen, fällig am …".
   Danach die Seite des Einzugs.
@@ -298,7 +307,10 @@ eingecheckt) mit und ohne BIC, mit abweichendem Kontoinhaber, mit
 Umlauten; Kontrollsumme und Anzahl stimmen; die Datei wird beim Erzeugen
 verschlüsselt gespeichert, jeder Download liefert byte-gleich dieselbe
 Datei, auch nachdem sich Mitgliedsdaten geändert haben; Archiv zeigt
-verworfene Einzüge; Vorstand und Nur lesen bekommen auf jeder Route der
+verworfene Einzüge; ein Mitglied mit erreichtem Austrittsdatum (gestern,
+heute) ist beim Zusammenstellen und beim Erzeugen nie einziehbar – auch
+wenn es zwischen Auswahl und Erzeugen austritt und nach Rücklastschrift
+oder Verwerfen –, mit Austritt morgen noch einziehbar (`EinzuegeTest`); Vorstand und Nur lesen bekommen auf jeder Route der
 Seite „Beiträge“ 403, sehen aber den Reiter „Beiträge“ ohne Links.
 Zu §2a: Löschen mit falschem Bestätigungswort scheitert; Löschen eines
 bezahlten Jahres mit Einzug entfernt alles des Jahres (Beiträge, Einzüge,

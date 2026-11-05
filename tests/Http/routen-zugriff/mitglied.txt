@@ -1,7 +1,11 @@
-# app/routes/mitglied.php - create and edit a member: both roles; delete:
-# admin only (07 section 9).
+# app/routes/mitglied.php - create and edit a member, enter or take back
+# its leaving: both roles; delete (former members only): admin (07 section 1, 9).
 GET /app/mitglieder/neu -> mitglieder.bearbeiten
 POST /app/mitglieder/neu -> mitglieder.bearbeiten
 POST /app/mitglieder/{id:[0-9]+} -> mitglieder.bearbeiten
+GET /app/mitglieder/{id:[0-9]+}/austritt -> mitglieder.bearbeiten
+POST /app/mitglieder/{id:[0-9]+}/austritt -> mitglieder.bearbeiten
+GET /app/mitglieder/{id:[0-9]+}/austritt-zuruecknehmen -> mitglieder.bearbeiten
+POST /app/mitglieder/{id:[0-9]+}/austritt-zuruecknehmen -> mitglieder.bearbeiten
 GET /app/mitglieder/{id:[0-9]+}/loeschen -> mitglieder.loeschen
 POST /app/mitglieder/{id:[0-9]+}/loeschen -> mitglieder.loeschen

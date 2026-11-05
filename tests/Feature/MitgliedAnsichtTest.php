@@ -109,7 +109,7 @@ final class MitgliedAnsichtTest extends AppTestCase
         $daten = $this->zeigen($id, 'daten');
         self::assertStringContainsString($feld, $daten, 'the member form');
         self::assertStringContainsString('href="/app/listen/geburtstage?zeitraum=monat&amp;mitglied=' . $id . '">Änderungen verwerfen<', $daten);
-        self::assertStringContainsString('href="/app/mitglieder/' . $id . '/loeschen?zurueck=%2Fapp%2Flisten%2Fgeburtstage%3Fzeitraum%3Dmonat"', $daten);
+        self::assertStringContainsString('href="/app/mitglieder/' . $id . '/austritt?zurueck=%2Fapp%2Flisten%2Fgeburtstage%3Fzeitraum%3Dmonat"', $daten);
 
         $familie = $this->zeigen($id, 'familie');
         self::assertStringContainsString('href="/app/mitglieder/' . $id . '/familie?zurueck=%2Fapp%2Flisten%2Fgeburtstage%3Fzeitraum%3Dmonat"', $familie);
@@ -189,13 +189,17 @@ final class MitgliedAnsichtTest extends AppTestCase
     public function testDeletingAsksOnItsOwnPageAndReturnsToTheList(): void
     {
         $this->konto = $this->als(Rolle::Admin);
-        $id = (int) $this->mitglied()->id;
+        $m = $this->mitglied();
+        $id = (int) $m->id;
+        $this->repo()->speichern($m->mit(['austrittsdatum' => new \DateTimeImmutable('2020-12-31')]), VersionsAnlass::geaendert(), null);
 
         $frage = $this->get("/app/mitglieder/$id/loeschen", ['zurueck' => self::BASIS])->body;
-        self::assertStringContainsString('<input type="hidden" name="zurueck" value="/app/listen/geburtstage?zeitraum=monat">', $frage);
+        self::assertStringContainsString('href="/app/mitglieder/' . $id . '/loeschen?schritt=2&amp;zurueck=%2Fapp%2Flisten%2Fgeburtstage%3Fzeitraum%3Dmonat">Weiter', $frage);
         self::assertStringContainsString('href="/app/listen/geburtstage?zeitraum=monat&amp;mitglied=' . $id . '">Nicht löschen', $frage);
+        $endgueltig = $this->get("/app/mitglieder/$id/loeschen", ['schritt' => '2', 'zurueck' => self::BASIS])->body;
+        self::assertStringContainsString('<input type="hidden" name="zurueck" value="/app/listen/geburtstage?zeitraum=monat">', $endgueltig);
 
-        self::assertWeiterleitungNach(self::BASIS, $this->post("/app/mitglieder/$id/loeschen", ['zurueck' => self::BASIS]));
+        self::assertWeiterleitungNach(self::BASIS, $this->post("/app/mitglieder/$id/loeschen", ['zurueck' => self::BASIS, 'mitgliedsnummer' => '1']));
     }
 
     public function testChoosingAFamilyLeadsBackToTheEmbeddingPage(): void

@@ -495,4 +495,94 @@ final class EinzuegeTest extends DatabaseTestCase
         self::assertSame('Mitgliedsbeitrag 2026 Nr. 4711 Zoe Oelmann', Einzuege::verwendungszweck(Einzuege::VERWENDUNGSZWECK, 2026, $mitglied));
         self::assertSame(Pain008::ZWECK_LAENGE, strlen(Einzuege::verwendungszweck(str_repeat('{name} ', 20), 2026, $mitglied)));
     }
+
+    /*
+     * A member whose leaving date is reached is never collected (08
+     * section 3): checked when composing and again when creating - the
+     * one way money is taken (a returned or discarded fee goes back to
+     * `offen` and through erzeugen() again).
+     */
+
+    public function testComposingNeverOffersAMemberWhoHasLeft(): void
+    {
+        $gestern = $this->beitrag($this->mitglied('Albrecht', ['austrittsdatum' => new \DateTimeImmutable('2026-02-09')]));
+        $heute = $this->beitrag($this->mitglied('Brandt', ['austrittsdatum' => new \DateTimeImmutable('2026-02-10'), 'austrittsgrund' => 'Austritt']));
+        $morgen = $this->beitrag($this->mitglied('Christ', ['austrittsdatum' => new \DateTimeImmutable('2026-02-11')]));
+        // Leaving comes first, whatever else would also keep the fee out.
+        $selbst = $this->beitrag($this->mitglied('Diehl', ['zahlart' => Zahlart::Selbst, 'austrittsdatum' => new \DateTimeImmutable('2025-12-31')]));
+
+        $auswahl = $this->service->zusammenstellen(new \DateTimeImmutable('2026-02-10 18:30:00'));
+
+        self::assertSame([$morgen], array_map(static fn($k): int => (int) $k->beitrag->id, $auswahl->auswaehlbar), 'leaving tomorrow: still a member today');
+        $gruende = [];
+        foreach ($auswahl->nichtAuswaehlbar as $k) {
+            $gruende[(int) $k->beitrag->id] = [$k->grund, $k->ausgetreten, $k->selbstKassieren];
+        }
+        self::assertSame([
+            $gestern => ['ausgetreten am 09.02.2026', true, false],
+            $heute => ['ausgetreten am 10.02.2026', true, false],
+            $selbst => ['ausgetreten am 31.12.2025', true, false],
+        ], $gruende);
+    }
+
+    public function testCreatingRefusesAMemberWhoLeftAfterTheChoice(): void
+    {
+        $bleibt = $this->beitrag($this->mitglied('Albrecht'));
+        $mitglied = $this->mitglied('Brandt', ['iban' => self::BERT]);
+        $geht = $this->beitrag($mitglied);
+        $auswahl = $this->service->zusammenstellen(new \DateTimeImmutable('2026-02-10'));
+        self::assertCount(2, $auswahl->auswaehlbar, 'both could be collected when the page was shown');
+
+        // Meanwhile the member leaves, as of today.
+        $this->mitglieder->speichern($mitglied->mit(['austrittsdatum' => new \DateTimeImmutable('2026-02-10')]), VersionsAnlass::geaendert(), 1);
+
+        try {
+            $this->erzeugen([$bleibt, $geht]);
+            self::fail('a member who has left is never collected');
+        } catch (EinzugNichtMoeglich $e) {
+            self::assertStringContainsString('nicht mehr einziehbar', $e->getMessage());
+        }
+        self::assertSame(0, $this->anzahl('einzug'));
+        self::assertSame(0, $this->anzahl('file_blob'));
+        self::assertSame(JahresbeitragStatus::Offen, $this->beitraege->finde($geht)?->status);
+        self::assertSame(JahresbeitragStatus::Offen, $this->beitraege->finde($bleibt)?->status);
+    }
+
+    public function testCreatingStillCollectsAMemberWhoLeavesTomorrow(): void
+    {
+        $morgen = $this->beitrag($this->mitglied('Albrecht', ['austrittsdatum' => new \DateTimeImmutable('2026-02-11')]));
+
+        $einzug = $this->erzeugen([$morgen]);
+
+        self::assertSame(1, $einzug->anzahl);
+        self::assertSame(JahresbeitragStatus::ImEinzug, $this->beitraege->finde($morgen)?->status);
+    }
+
+    public function testAReturnedOrDiscardedFeeOfAMemberWhoLeftIsNotCollectedAgain(): void
+    {
+        $anna = $this->mitglied('Albrecht');
+        $bert = $this->mitglied('Brandt', ['iban' => self::BERT]);
+        $verworfen = $this->beitrag($anna);
+        $zurueck = $this->beitrag($bert);
+        $this->service->verwerfen((int) $this->erzeugen([$verworfen])->id, 9);
+        $this->service->bestaetigen((int) $this->erzeugen([$zurueck])->id, 9);
+        Jahresbeitraege::mit($this->pdo())->ruecklastschrift($zurueck, 'Konto erloschen', 1);
+        self::assertSame(JahresbeitragStatus::Offen, $this->beitraege->finde($verworfen)?->status);
+        self::assertSame(JahresbeitragStatus::Offen, $this->beitraege->finde($zurueck)?->status);
+
+        foreach ([$anna, $bert] as $mitglied) {
+            $this->mitglieder->speichern($mitglied->mit(['austrittsdatum' => new \DateTimeImmutable('2026-01-31')]), VersionsAnlass::geaendert(), 1);
+        }
+
+        self::assertSame([], $this->service->zusammenstellen(new \DateTimeImmutable('2026-02-10'))->auswaehlbar);
+        foreach ([$verworfen, $zurueck] as $beitragId) {
+            try {
+                $this->erzeugen([$beitragId], '2026-03-02');
+                self::fail('collected again after leaving');
+            } catch (EinzugNichtMoeglich) {
+                self::assertSame(JahresbeitragStatus::Offen, $this->beitraege->finde($beitragId)?->status);
+            }
+        }
+        self::assertSame(2, $this->anzahl('einzug'), 'only the two runs from before');
+    }
 }
