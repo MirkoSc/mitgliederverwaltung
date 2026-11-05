@@ -149,6 +149,33 @@ final class PasswortResetTest extends DatabaseTestCase
         self::assertTrue($this->reset->anfordern('erika@example.org', '203.0.113.99', $jetzt)->zuVieleVersuche);
     }
 
+    /**
+     * As for the login: the limit per address answers alike whether or not
+     * the address has an account, and another spelling the database
+     * compares as equal sends no link to the account's mailbox.
+     */
+    public function testTheAddressLimitDoesNotTellWhetherTheAddressExists(): void
+    {
+        Benutzerdaten::anlegen($this->pdo());
+        $jetzt = new \DateTimeImmutable('2026-03-02 10:00:00');
+        $anfragen = 2 * PasswortReset::JE_KONTO + 2;
+
+        $gesperrt = [];
+        foreach (['erika@example.org' => 'érika@example.org', 'niemand@example.org' => 'niémand@example.org'] as $adresse => $andere) {
+            for ($i = 0; $i < $anfragen; $i++) {
+                $anfrage = $this->reset->anfordern($i % 2 === 0 ? $adresse : $andere, '203.0.113.' . $i, $jetzt);
+                $gesperrt[$adresse][] = $anfrage->zuVieleVersuche;
+                if ($i % 2 === 1) {
+                    self::assertNull($anfrage->token, $andere);
+                }
+            }
+        }
+
+        self::assertSame($gesperrt['niemand@example.org'], $gesperrt['erika@example.org']);
+        self::assertFalse($gesperrt['erika@example.org'][PasswortReset::JE_KONTO]);
+        self::assertTrue($gesperrt['erika@example.org'][$anfragen - 1]);
+    }
+
     public function testGarbageTokensAreNotEvenLookedUp(): void
     {
         foreach (['', 'abc', str_repeat('g', 64), str_repeat('A', 64), str_repeat('a', 64) . "\n"] as $token) {

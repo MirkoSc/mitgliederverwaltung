@@ -175,6 +175,14 @@ final class AbgleichTest extends AppTestCase
         return (int) $this->dienste->pdo()->query('SELECT COUNT(*) FROM ' . $tabelle)->fetchColumn();
     }
 
+    /** Gives a member another number, as the member form does for the Vorstand. */
+    private function umnummerieren(int $von, int $nach): void
+    {
+        $mitglied = $this->repo()->findeNachNummer($von);
+        self::assertNotNull($mitglied);
+        $this->repo()->speichern($mitglied->mit(['mitgliedsnummer' => $nach]), VersionsAnlass::geaendert(), null);
+    }
+
     public function testAnUploadIntoAStockThatIsNotEmptyShowsTheMergeView(): void
     {
         $this->als(Rolle::Admin);
@@ -380,6 +388,96 @@ final class AbgleichTest extends AppTestCase
         self::assertSame(2, $stand['ausgetreten']);
         self::assertSame(156, $this->anzahlZeilen('mitglied'), 'no member twice');
         self::assertSame(1, (int) $this->dienste->pdo()->query("SELECT COUNT(*) FROM familie WHERE import_schluessel = 'F9'")->fetchColumn());
+    }
+
+    public function testADeletionDoesNotFollowItsNumberToAnotherMember(): void
+    {
+        $this->als(Rolle::Admin);
+        $this->erstimport();
+        $drei = $this->repo()->findeNachNummer(3);
+        $vier = $this->repo()->findeNachNummer(4);
+        self::assertNotNull($drei);
+        self::assertNotNull($vier);
+        $this->hochladen(self::csv(self::zeile(1, familie: 'F1;Familie Eins;zahler', beitrag: 'Familie'), self::zeile(2, familie: 'F1;;kind', beitrag: '')));
+        self::assertSame(200, $this->post('/admin/import/abgleich/starten', ['loeschen' => '3'])->status);
+
+        // Before the step runs, 3 gets another number and 4 gets number 3.
+        $this->umnummerieren(3, 903);
+        $this->umnummerieren(4, 3);
+        do {
+            $stand = $this->json($this->post('/admin/import/abgleich/schritt'));
+        } while ($stand['fertig'] === false);
+
+        self::assertSame(0, $stand['geloescht']);
+        self::assertSame(1, $stand['uebersprungen']);
+        self::assertSame(3, $this->repo()->finde((int) $vier->id)?->mitgliedsnummer, 'the member who holds 3 now stays');
+        self::assertSame(903, $this->repo()->finde((int) $drei->id)?->mitgliedsnummer, 'renumbered since the start: left alone');
+        $aktionen = array_map(static fn($e): string => $e->action, $this->dienste->audit()->neueste(5));
+        self::assertNotContains('mitglied.geloescht', $aktionen);
+    }
+
+    public function testAChangeAndADepartureDoNotFollowTheirNumbersToOtherMembers(): void
+    {
+        $this->als(Rolle::Admin);
+        $this->erstimport();
+        $ids = [];
+        foreach ([3, 4, 5, 6] as $nr) {
+            $ids[$nr] = (int) $this->repo()->findeNachNummer($nr)?->id;
+        }
+        // 3 has moved, 4 is missing.
+        $this->hochladen(self::csv(
+            self::zeile(1, familie: 'F1;Familie Eins;zahler', beitrag: 'Familie'),
+            self::zeile(2, familie: 'F1;;kind', beitrag: ''),
+            self::zeile(3, 'Neustadt'),
+            self::zeile(5),
+            self::zeile(6),
+        ));
+        self::assertSame(200, $this->post('/admin/import/abgleich/starten', ['aendern' => '3', 'austritt' => '4', 'austrittsdatum' => '2026-09-30'])->status);
+
+        // Before the step runs, 5 takes the number 3 and 6 the number 4.
+        $this->umnummerieren(3, 903);
+        $this->umnummerieren(5, 3);
+        $this->umnummerieren(4, 904);
+        $this->umnummerieren(6, 4);
+        $versionen = $this->anzahlZeilen('mitglied_version');
+        do {
+            $stand = $this->json($this->post('/admin/import/abgleich/schritt'));
+        } while ($stand['fertig'] === false);
+
+        self::assertSame(0, $stand['geaendert']);
+        self::assertSame(0, $stand['ausgetreten']);
+        self::assertSame(2, $stand['uebersprungen']);
+        self::assertSame($versionen, $this->anzahlZeilen('mitglied_version'), 'nobody was changed');
+        self::assertSame('Altstadt', $this->repo()->finde($ids[5])?->ort);
+        self::assertNull($this->repo()->finde($ids[6])?->austrittsdatum);
+        self::assertSame('Altstadt', $this->repo()->finde($ids[3])?->ort);
+        self::assertNull($this->repo()->finde($ids[4])?->austrittsdatum);
+    }
+
+    public function testAChainStartedBeforeIdsWereStoredSkipsItsChangesDeparturesAndDeletions(): void
+    {
+        $this->als(Rolle::Admin);
+        $this->erstimport();
+        $this->hochladen(self::spaetereDatei());
+        self::assertSame(200, $this->post('/admin/import/abgleich/starten', ['neu' => '8', 'aendern' => '3', 'austritt' => '4', 'loeschen' => '5', 'austrittsdatum' => '2026-09-30'])->status);
+
+        // The state as the version before this one wrote it: (operation, number) only.
+        $job = $this->abgleich()->aktuellerJob();
+        self::assertNotNull($job);
+        $ops = array_map(static fn(array $op): array => array_slice($op, 0, 2), $job->state['ops']);
+        $this->dienste->pdo()->prepare('UPDATE job SET state = ? WHERE id = ?')
+            ->execute([json_encode([...$job->state, 'ops' => $ops]), $job->id]);
+        do {
+            $stand = $this->json($this->post('/admin/import/abgleich/schritt'));
+        } while ($stand['fertig'] === false);
+
+        self::assertSame(1, $stand['neu']);
+        self::assertSame(3, $stand['uebersprungen']);
+        self::assertSame(0, $stand['geaendert'] + $stand['ausgetreten'] + $stand['geloescht']);
+        self::assertNotNull($this->repo()->findeNachNummer(8));
+        self::assertSame('Altstadt', $this->repo()->findeNachNummer(3)?->ort);
+        self::assertNull($this->repo()->findeNachNummer(4)?->austrittsdatum);
+        self::assertNotNull($this->repo()->findeNachNummer(5));
     }
 
     public function testACancelledChainKeepsWhatItDidAndIsRecordedInTheAuditLog(): void

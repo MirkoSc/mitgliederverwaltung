@@ -104,7 +104,8 @@ final readonly class AnmeldungController
     /**
      * The same answer whether or not the address has an account (no user
      * enumeration); only "too many requests" differs, and that answer is
-     * the same for every address too.
+     * the same for every address too. In time as well: the mail is only
+     * queued here and goes out after the response (Kontomails::resetLink()).
      */
     public function vergessen(Request $request): Response
     {

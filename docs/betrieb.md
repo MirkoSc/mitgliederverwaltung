@@ -46,9 +46,20 @@ die Anwendung wird über `setup.php` geladen.
    (meist ist es eine Einstellung im Kontrollpanel des Hosters).
 4. **Update-Kanal** wählen: `stable` für den Echtbetrieb (empfohlen).
    `beta` nur für eine Testinstanz.
-5. Die Seite lädt die Anwendung und leitet auf **`/install?token=…`**
+5. **Freigabe per FTP**: Die Seite zeigt einen Code. Legen Sie per FTP
+   im **Datenverzeichnis** (der Ordner über `web/`, auf der Seite
+   angezeigt – nicht neben `setup.php`) eine Textdatei
+   `setup_freigabe.txt` an, die nur diesen Code enthält, und klicken Sie
+   dann auf „Installation starten". Windows hängt oft unbemerkt ein
+   zweites `.txt` an (ausgeblendete Dateiendungen): Die Datei muss genau
+   `setup_freigabe.txt` heißen, nicht `setup_freigabe.txt.txt`. Laden Sie
+   die Seite neu, erscheint ein neuer Code, der dann in die Datei gehört.
+   Ohne passende Datei meldet die Seite „Freigabe fehlt". So kann niemand
+   ohne Ihren FTP-Zugang die Installation an sich ziehen. `setup.php`
+   löscht die Datei wieder.
+6. Die Seite lädt die Anwendung und leitet auf **`/install?token=…`**
    weiter. Der Token ist nur für diesen Durchlauf gültig.
-6. Im Installer der Reihe nach:
+7. Im Installer der Reihe nach:
    1. **Datenbank**: Zugangsdaten eintragen, Verbindung wird getestet.
    2. **Art der Installation**: **Frische Installation** wählen (oder
       „Backup einspielen", siehe Abschnitt 7).
@@ -70,7 +81,7 @@ die Anwendung wird über `setup.php` geladen.
       den Installer. `setup.php` und der Token werden gelöscht. Die
       Abschlussseite zeigt die **Cron-Adresse**, die Sie im nächsten
       Schritt brauchen.
-7. **Ersten Login** mit E-Mail und Passwort. Anschließend richten Sie den
+8. **Ersten Login** mit E-Mail und Passwort. Anschließend richten Sie den
    **zweiten Faktor** ein (Pflicht für alle Konten, siehe Abschnitt 6).
 
 Nach der Installation: Die Seite `/admin/systemcheck` zeigt, ob alles so

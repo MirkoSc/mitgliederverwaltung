@@ -177,19 +177,46 @@ final class AnmeldungTest extends DatabaseTestCase
     }
 
     /**
-     * The database finds the account under other spellings (accents do not
-     * count in its comparison); the account counter must not care either.
+     * The database's comparison also matches the address with accents or
+     * invisible characters, but only the account's own address logs in: a
+     * spelling that can never succeed is no way around the account limit.
      */
-    public function testOtherSpellingsOfTheAddressShareTheAccountLimit(): void
+    public function testOtherSpellingsOfTheAddressDoNotReachTheAccount(): void
     {
         Benutzerdaten::anlegen($this->pdo());
-        $schreibweisen = ['erika@example.org', 'érika@example.org', 'erikä@example.org', 'erikà@example.org', 'ERÍKA@example.org'];
+        $schreibweisen = ['érika@example.org', 'erikä@example.org', 'erikà@example.org', 'ERÍKA@example.org', "eri\u{200B}ka@example.org"];
 
-        for ($i = 0; $i < RateLimiter::LOGIN_JE_KONTO; $i++) {
-            $this->anmeldung->versuch($schreibweisen[$i % count($schreibweisen)], 'falsch-falsch-falsch', '198.51.100.' . $i);
+        foreach ($schreibweisen as $i => $schreibweise) {
+            $ergebnis = $this->anmeldung->versuch($schreibweise, Benutzerdaten::PASSWORT, '198.51.100.' . $i);
+            self::assertSame(AnmeldeFehler::Zugangsdaten, $ergebnis->fehler, $schreibweise);
+            self::assertNull($ergebnis->versuchtVon, $schreibweise);
+        }
+        self::assertTrue($this->anmeldung->versuch('erika@example.org', Benutzerdaten::PASSWORT, '198.51.100.200')->istErfolg());
+    }
+
+    /**
+     * The account limit must not tell an outsider whether an address has
+     * an account: the same run of failures, alternating between two
+     * spellings the database compares as equal, gets the same answers for
+     * an existing and an unknown address - each spelling is shut after its
+     * own ten.
+     */
+    public function testTheAccountLimitDoesNotTellWhetherTheAddressExists(): void
+    {
+        Benutzerdaten::anlegen($this->pdo());
+        $jetzt = new \DateTimeImmutable('2026-03-02 10:00:00');
+        $versuche = 2 * RateLimiter::LOGIN_JE_KONTO + 2;
+
+        $antworten = [];
+        foreach (['erika@example.org' => 'érika@example.org', 'niemand@example.org' => 'niemänd@example.org'] as $adresse => $andere) {
+            for ($i = 0; $i < $versuche; $i++) {
+                // A different IP each time: only the account counter is in play.
+                $antworten[$adresse][] = $this->anmeldung->versuch($i % 2 === 0 ? $adresse : $andere, 'falsch-falsch-falsch', '203.0.113.' . $i, $jetzt)->fehler;
+            }
         }
 
-        $ergebnis = $this->anmeldung->versuch('erika@example.org', Benutzerdaten::PASSWORT, '198.51.100.200');
-        self::assertSame(AnmeldeFehler::ZuVieleVersuche, $ergebnis->fehler);
+        self::assertSame($antworten['niemand@example.org'], $antworten['erika@example.org']);
+        self::assertSame(AnmeldeFehler::Zugangsdaten, $antworten['erika@example.org'][RateLimiter::LOGIN_JE_KONTO]);
+        self::assertSame(AnmeldeFehler::ZuVieleVersuche, $antworten['erika@example.org'][$versuche - 1]);
     }
 }

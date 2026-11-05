@@ -76,6 +76,11 @@ Release-ZIP mit, `setup.php` kopiert sie, der Updater hält sie aktuell
   neue Route ändert sie sichtbar im Diff.
 - Antworten: HTML-Seiten (ein Layout), htmx-Fragmente, Datei-Downloads
   (Exporte, Lastschriftdatei); JSON nur für Schrittketten.
+- Arbeit, deren Dauer die Antwortzeit nicht verraten darf (Versand des
+  Reset-Links, 02 §3), läuft erst nach der Antwort:
+  `App\Http\NachDerAntwort` – Session schließen, `fastcgi_finish_request()`
+  (PHP-FPM wie beim Hoster), dann die Arbeit; ohne diese Funktion (CLI,
+  mod_php im Docker) sofort.
 
 ## 4. Lange Vorgänge: Schrittketten
 
@@ -121,7 +126,8 @@ Kein Request darf lange laufen. Muster (übernommen aus Vereinsbelege 06 §4):
   Mails werden nach 7 Tagen entfernt, endgültig fehlgeschlagene
   (`fehler`, nach 5 Versuchen mit Wartezeit) bleiben sichtbar.
 - **Mail-Queue** (`mail_queue`), Versand im Cron. Sicherheitsmails (Reset, 2FA-Code, neues Gerät) gehen
-  sofort raus.
+  sofort raus – der Reset-Link direkt nach der Antwort (§3), damit die
+  Laufzeit nicht verrät, ob es zur Adresse ein Konto gibt.
 - Link-Basis aus dem Setting `oeffentliche_url` (Schutz vor
   Host-Header-Injection).
 - Mails gehen nur an Benutzer (Anmeldung, Sicherheit) und enthalten keine

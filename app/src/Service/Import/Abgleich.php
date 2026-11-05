@@ -30,7 +30,8 @@ use App\Service\Storage\BlobService;
  *
  * Like the first import, the file waits encrypted as a blob and the job row
  * (`job`, typ "abgleich") holds only numbers: the phase, the ticked member
- * numbers as a list of operations, the position and the counters. Phases in
+ * numbers (with the member ids) as a list of operations, the position and
+ * the counters. Phases in
  * `state.phase`: `vorschau` (merge view), `abgleich` (chain started),
  * `fertig` (done; the row stays as the record of the last reconciliation).
  *
@@ -155,6 +156,10 @@ final readonly class Abgleich
 
         $neu = self::gewaehlt($auswahl['neu'] ?? [], array_map(static fn(ImportEintrag $e): int => $e->mitglied->mitgliedsnummer, $vergleich->neu));
         $aendern = self::gewaehlt($auswahl['aendern'] ?? [], array_map(static fn(AbgleichAenderung $a): int => $a->vorher->mitgliedsnummer, $vergleich->geaendert));
+        $geaendert = [];
+        foreach ($vergleich->geaendert as $aenderung) {
+            $geaendert[$aenderung->vorher->mitgliedsnummer] = (int) $aenderung->vorher->id;
+        }
         $fehlt = [];
         foreach ($vergleich->fehlt as $zeile) {
             $fehlt[$zeile->mitglied->mitgliedsnummer] = $zeile;
@@ -177,11 +182,13 @@ final readonly class Abgleich
             throw new ImportNichtMoeglich('Bitte ein gültiges Austrittsdatum angeben.');
         }
 
+        // Changes, departures and deletions keep the id of the member checked
+        // here: a number can be given to somebody else before the step runs.
         $ops = [
             ...array_map(static fn(int $n): array => [self::NEU, $n], $neu),
-            ...array_map(static fn(int $n): array => [self::AENDERN, $n], $aendern),
-            ...array_map(static fn(int $n): array => [self::AUSTRITT, $n], $austritt),
-            ...array_map(static fn(int $n): array => [self::LOESCHEN, $n], $loeschen),
+            ...array_map(static fn(int $n): array => [self::AENDERN, $n, $geaendert[$n]], $aendern),
+            ...array_map(static fn(int $n): array => [self::AUSTRITT, $n, (int) $fehlt[$n]->mitglied->id], $austritt),
+            ...array_map(static fn(int $n): array => [self::LOESCHEN, $n, (int) $fehlt[$n]->mitglied->id], $loeschen),
         ];
 
         $sperre = $this->jobs->sperren($job->id, self::SPERRE_SEKUNDEN) ?? throw new ImportLaeuftBereits();
@@ -237,7 +244,7 @@ final readonly class Abgleich
                 throw new ImportNichtMoeglich('Die Stammdaten (Abteilungen, Beitragsarten, Funktionen) haben sich seit der Vorschau geändert. Bitte den Abgleich abbrechen und neu beginnen.');
             }
 
-            /** @var list<array{string, int}> $ops */
+            /** @var list<array{0: string, 1: int, 2?: int}> $ops */
             $ops = is_array($state['ops'] ?? null) ? $state['ops'] : [];
             $offset = (int) ($state['offset'] ?? 0);
             $teil = array_slice($ops, $offset, self::SCHRITT);
@@ -335,7 +342,7 @@ final readonly class Abgleich
     /**
      * Carries out the operations of one step in one transaction.
      *
-     * @param list<array{string, int}> $teil
+     * @param list<array{0: string, 1: int, 2?: int}> $teil operation, member number and - except for new members - member id
      * @return array{array<string, int>, list<int>} counters; the proof files of deleted members
      */
     private function ausfuehren(array $teil, ImportDatei $datei, ?\DateTimeImmutable $austrittsdatum, ?int $userId, ?string $ip): array
@@ -352,8 +359,19 @@ final readonly class Abgleich
 
             foreach ($teil as $op) {
                 [$art, $nummer] = [(string) ($op[0] ?? ''), (int) ($op[1] ?? 0)];
-                $vorhanden = $this->mitglieder->findeNachNummer($nummer);
                 $eintrag = $eintraege[$nummer] ?? null;
+                if ($art === self::NEU) {
+                    $vorhanden = $this->mitglieder->findeNachNummer($nummer);
+                } else {
+                    // Only the member checked at the start: found by its id, still with its number.
+                    $id = (int) ($op[2] ?? 0);
+                    $vorhanden = $id > 0 ? $this->mitglieder->finde($id) : null;
+                    if ($id <= 0 || ($vorhanden !== null && $vorhanden->mitgliedsnummer !== $nummer)) {
+                        // Started without ids (before an update) or renumbered since: leave it alone.
+                        $zaehler['uebersprungen']++;
+                        continue;
+                    }
+                }
 
                 switch ($art) {
                     case self::NEU:

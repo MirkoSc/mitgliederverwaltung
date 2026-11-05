@@ -86,9 +86,13 @@ final readonly class RateLimiter
 
     /**
      * The value an account counter is kept under: the account's id when the
-     * address belongs to one. The database finds an account under many
-     * spellings (accents and case do not count in its comparison), so a
-     * counter on the typed address could be dodged with "érika@…".
+     * address belongs to one, else the address. The caller finds the
+     * account by its own address only (BenutzerRepository::
+     * findByExactEmail()), not by every spelling the database's comparison
+     * calls equal ("érika@…" for "erika@…"): then each spelling has a
+     * counter of its own whether or not there is an account, and the
+     * counter cannot tell an outsider which addresses exist - nor be
+     * dodged, since no other spelling can log in.
      */
     public static function konto(?int $userId, string $email): string
     {

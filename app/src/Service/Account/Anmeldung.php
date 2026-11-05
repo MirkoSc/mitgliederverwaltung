@@ -26,8 +26,10 @@ use App\Service\RateLimiter;
  *   - **Brute force.** Every attempt counts against the IP (an IPv6
  *     address by its /64) *and* the account BEFORE the password is
  *     checked, in one atomic step each (App\Service\RateLimiter); the
- *     account counter is kept under the account's id, whatever spelling of
- *     the address found it. A success clears the account's counter, so for
+ *     account counter is kept under the account's id, and only the
+ *     account's own address finds it (BenutzerRepository::
+ *     findByExactEmail()), so every other spelling counts for itself, as
+ *     for an unknown address. A success clears the account's counter, so for
  *     an account only failures stay counted. The IP counter runs its window
  *     out.
  */
@@ -61,7 +63,7 @@ final readonly class Anmeldung
         $now ??= new \DateTimeImmutable();
         $email = Benutzer::normalisiereEmail($email);
 
-        $benutzer = $email === '' ? null : $this->benutzer->findByEmail($email);
+        $benutzer = $email === '' ? null : $this->benutzer->findByExactEmail($email);
         $konto = RateLimiter::konto($benutzer?->id, $email);
 
         // Both counters first, and both always: an attacker who is stopped

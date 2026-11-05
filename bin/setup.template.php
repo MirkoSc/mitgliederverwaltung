@@ -39,6 +39,10 @@ ini_set('display_errors', '1');
 $webDir = __DIR__;
 $rootDir = dirname(__DIR__);
 
+// Proof of FTP access before the installation token is handed out (see the
+// POST guard below): a file in the data directory, which no browser reaches.
+const SETUP_FREIGABE_DATEI = 'setup_freigabe.txt';
+
 /** @return list<array{label: string, ok: bool, detail: string}> */
 function setup_checks(string $webDir, string $rootDir): array
 {
@@ -113,7 +117,7 @@ function setup_checks(string $webDir, string $rootDir): array
  */
 function setup_fremde_eintraege(string $webDir, string $rootDir): array
 {
-    $eigene = [basename($webDir), 'current', 'releases', 'shared'];
+    $eigene = [basename($webDir), 'current', 'releases', 'shared', SETUP_FREIGABE_DATEI];
     $fremd = [];
     foreach (scandir($rootDir) ?: [] as $eintrag) {
         if ($eintrag === '.' || $eintrag === '..' || in_array($eintrag, $eigene, true)) {
@@ -125,9 +129,26 @@ function setup_fremde_eintraege(string $webDir, string $rootDir): array
     return $fremd;
 }
 
+/**
+ * The release code as the form and setup_freigabe.txt carry it, null when
+ * there is none. Whitespace, a BOM and case do not count - an editor adds
+ * them unasked. Same format as App\Installer\InstallToken.
+ */
+function setup_freigabe_code(mixed $wert): ?string
+{
+    if (!is_string($wert)) {
+        return null;
+    }
+    $wert = strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', $wert)));
+
+    return preg_match('/^[0-9a-z]{16,64}$/D', $wert) === 1 ? $wert : null;
+}
+
 function setup_page(string $title, string $body): never
 {
     header('Content-Type: text/html; charset=utf-8');
+    // The form carries the release code: no cache may keep it.
+    header('Cache-Control: no-store');
     echo '<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width, initial-scale=1">'
         . '<title>' . htmlspecialchars($title, ENT_QUOTES) . '</title>'
@@ -202,14 +223,46 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
             . ' ein Zertifikat einrichten und setup.php über https:// aufrufen.</p>';
     }
 
+    // The release code for the POST guard: a fresh one for every call, sent
+    // only in this response (no-store, setup_page()).
+    $freigabeCode = bin2hex(random_bytes(16));
+    $freigabe = '<h2>Freigabe per FTP</h2><p>Damit nur jemand mit FTP-Zugang die Installation starten kann:'
+        . ' Bitte per FTP im Datenverzeichnis <code>' . htmlspecialchars($rootDir, ENT_QUOTES) . '</code>'
+        . ' (neben dem Ordner <code>' . htmlspecialchars(basename($webDir), ENT_QUOTES) . '</code>, nicht darin)'
+        . ' eine Textdatei <code>' . SETUP_FREIGABE_DATEI . '</code> anlegen, die nur diesen Code enthält:</p>'
+        . '<p><code>' . $freigabeCode . '</code></p>'
+        . '<p><small>Windows hängt oft unbemerkt ein zweites <code>.txt</code> an (ausgeblendete Dateiendungen) – die Datei'
+        . ' muss genau <code>' . SETUP_FREIGABE_DATEI . '</code> heißen, nicht <code>setup_freigabe.txt.txt</code>.'
+        . ' Wird diese Seite neu geladen, erscheint ein neuer Code; dann diesen in die Datei schreiben.</small></p>';
+
     $form = $allOk
-        ? '<form method="post"><p><label>Release-Kanal: <select name="kanal">'
+        ? $freigabe . '<form method="post"><p><label>Release-Kanal: <select name="kanal">'
             . '<option value="stable">stable (empfohlen)</option>'
             . '<option value="beta">beta (Vorabversionen, Testinstanz)</option>'
-            . '</select></label></p>' . $bestaetigung . '<button type="submit">Installation starten</button></form>'
+            . '</select></label></p>' . $bestaetigung
+            . '<input type="hidden" name="freigabe" value="' . $freigabeCode . '">'
+            . '<button type="submit">Installation starten</button></form>'
         : '<p class="fehlertext">Bitte zuerst die markierten Punkte beheben und die Seite neu laden.</p>';
 
     setup_page('Umgebungscheck', '<h2>Umgebungscheck</h2><ul>' . $items . '</ul>' . $layout . $warnung . $form);
+}
+
+// POST guard: proof of FTP access (docs/spec/04-installation-und-update.md
+// section 2). Until current/ exists this file answers anyone, and this
+// request hands out the installation token that releases /install. So it
+// only runs for someone who wrote the code of the form into
+// setup_freigabe.txt in the data directory. Checked before anything is
+// written: a refused POST changes nothing.
+$freigabeDatei = $rootDir . '/' . SETUP_FREIGABE_DATEI;
+$freigabeErwartet = setup_freigabe_code(is_file($freigabeDatei) ? @file_get_contents($freigabeDatei, length: 256) : null);
+$freigabe = setup_freigabe_code($_POST['freigabe'] ?? null);
+if ($freigabeErwartet === null || $freigabe === null || !hash_equals($freigabeErwartet, $freigabe)) {
+    setup_page('Freigabe fehlt', '<p class="fehlertext">Installation nicht gestartet: Im Datenverzeichnis <code>'
+        . htmlspecialchars($rootDir, ENT_QUOTES) . '</code> fehlt die Datei <code>' . SETUP_FREIGABE_DATEI
+        . '</code>, oder sie enthält nicht den Code von der vorherigen Seite.</p>'
+        . '<p>Bitte zurück zum Umgebungscheck, den dort angezeigten neuen Code in die Datei schreiben'
+        . ' (unter Windows auf ein doppeltes <code>.txt</code> achten) und die Installation erneut starten.</p>'
+        . '<p><a href="setup.php">Zurück zum Umgebungscheck</a></p>');
 }
 
 // POST guard: with a suspicious layout the confirmation checkbox is required
@@ -317,6 +370,8 @@ try {
     if (!rename($target, $rootDir . '/current')) {
         throw new RuntimeException('Release kann nicht nach current/ verschoben werden.');
     }
+    // Done with the release code: current/ locks setup.php from here on.
+    @unlink($freigabeDatei);
 
     $hinweise = '';
     if ($ungeschuetzt !== []) {
