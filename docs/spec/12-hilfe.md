@@ -167,7 +167,17 @@ im Barrierefrei-Modus auf und räumt das Projekt ab.
   Beschriftung** finden (`getByRole`, `getByLabel`), Mitglieder über ihre
   Nummer – so fällt eine geänderte Oberfläche sofort auf.
 - **Abgleich:** Die Nummern aus `foto()` müssen genau die Schritte mit
-  `bild` sein (JSON aus §2); sonst bricht das Skript ab.
+  `bild` sein (JSON aus §2, je Anleitung `slug`, `titel`, `recht` und
+  `bilder` = Liste der Schrittnummern mit `bild`); sonst bricht das Skript
+  ab. Dazu gehört: jede Anleitung mit Bildern braucht eine Aufnahme-Datei,
+  jede Aufnahme-Datei eine Anleitung.
+- **Zugang und Probe:** Eine Aufnahme darf `export const zugang = 'admin'`
+  setzen (Konto `admin-normal` / `admin-barrierefrei` in `konten.json`) und
+  mit `export const probe = true` als Probe ohne Anleitung laufen (Bilder
+  nach `tools/hilfe-screenshots/probe-ausgabe/`, nicht in git).
+  `anleitungen/beispiel.mjs` ist so eine Probe. Das Skript legt die Daten nur
+  zwischen den Modi neu an; Aufnahmen, die etwas ändern, stellen den
+  Ausgangszustand selbst wieder her.
 - **Markieren:** ein kräftiger Rahmen um das gemeinte Element (nur im
   Browser des Skripts eingefügt; dafür `bypassCSP` nur dort).
 - **Bilder:** PNG, Fenster 1280 × 800, `deviceScaleFactor` 1, `de-DE`,

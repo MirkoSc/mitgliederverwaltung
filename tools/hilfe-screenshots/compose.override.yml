@@ -1,0 +1,8 @@
+# Used only by tools/hilfe-screenshots/start.sh (docs/spec/12-hilfe.md
+# section 6): the app gets a FREE host port instead of 8080, so several
+# agents can check their guides at the same time. The script asks
+# `docker compose port app 80` for the port that was chosen.
+services:
+  app:
+    ports: !override
+      - "80"
