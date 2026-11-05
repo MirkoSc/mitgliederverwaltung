@@ -299,6 +299,24 @@ SQL.
     für das Jahr zählen zum laufenden Jahrhundert, außer das läge in der
     Zukunft. Eine vierstellige Zahl passt zusätzlich auf das Geburtsjahr.
   Die Suche ist mit allen Filtern kombinierbar.
+- **Erweiterte Suche** (#127): aufklappbar unter den Filtern (`<details>`,
+  offen, sobald ein Feld gefüllt ist), ein Feld je Spalte, **alle
+  Bedingungen UND**, zusätzlich zum Suchfeld. Textfelder „enthält", ohne
+  Groß-/Kleinschreibung (`LIKE`, `%`/`_` maskiert): Nachname, Vorname,
+  Straße, PLZ, Ort, E-Mail, Telefon (Telefon **oder** Handy), IBAN (ohne
+  Leerzeichen verglichen), Bemerkung; Mitgliedsnummer **exakt**. Auswahl:
+  Geschlecht (m/w/d/ohne Angabe), Funktion, Zahlart, Familie (in einer
+  Familie / ohne Familie / Rolle Zahler, Elternteil, Kind); dazu die
+  vorhandenen Filter Abteilung, Beitragsart, aktiv/passiv. Bereiche (von
+  und/oder bis, einschließlich; Gruppe mit `fieldset/legend`): Alter in
+  Jahren **zum heutigen Tag** (Mitglieder ohne Geburtsdatum fallen heraus),
+  Geburtsdatum, Eintritt, Austritt. **Austritt von/bis blendet Ehemalige
+  automatisch ein** – wer noch Mitglied ist, ist nicht ausgetreten, das
+  Feld fände sonst nichts. Ungültige Werte gelten als nicht gesetzt.
+  **Datenschutz:** Texte, Nummer, Alter und alle Datumsangaben reisen nur im
+  POST-Body, nie in URL, `parameter()` oder `HX-Push-URL`; nur die reinen
+  Auswahlwerte (Funktion, Geschlecht, Zahlart, Familie) stehen wie die
+  anderen Filter in der Adresse. „Filter zurücksetzen" leert alle Felder.
 - **Filter Beitragsart**: „X" findet die Mitglieder mit der Beitragsart X
   **und** die Mitglieder der Familien, deren Zahler (Rolle `zahler`) X hat
   (sie zahlen ja darüber, §3). Wer nur über die Familie gefunden wird,

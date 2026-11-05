@@ -41,7 +41,10 @@ umgeschaltet statt verlinkt.
    - Suchfeld (Name, Anschrift, Kontakt, IBAN, Geburtsdatum …, 07 §8)
      mit Live-Ergebnis und einer Beschreibung, wonach gesucht wird
      (`aria-describedby`), darunter die Liste; einfache Filter
-     (Abteilung, aktiv/passiv, Beitragsart, Ehemalige anzeigen). „Je
+     (Abteilung, aktiv/passiv, Beitragsart, Ehemalige anzeigen) und der
+     aufklappbaren **Erweiterten Suche** (ein Feld je Spalte, alle UND,
+     07 §8; Handy: Felder untereinander, PC: Raster; von–bis als
+     `fieldset/legend`). „Je
      Seite" (50, 100, 200, Alle) steht in der Blätterleiste unter der Liste.
    - Klick auf ein Mitglied öffnet es **auf derselben Seite** (am PC
      rechts neben der Liste, am Handy als eigene Ansicht mit „Zurück").

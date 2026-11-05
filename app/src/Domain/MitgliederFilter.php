@@ -40,6 +40,8 @@ final readonly class MitgliederFilter
         public int $seite = 1,
         /** Members per page, one of ANZAHLEN; 0 = all on one page. */
         public int $anzahl = self::SEITENGROESSE,
+        /** One field per column, all conditions AND (07 section 8). */
+        public ErweiterteSuche $erweitert = new ErweiterteSuche(),
     ) {
     }
 
@@ -63,6 +65,7 @@ final readonly class MitgliederFilter
             absteigend: $absteigend,
             seite: max(1, self::id($daten, 'seite') ?? 1),
             anzahl: self::anzahl(self::text($daten, 'anzahl')),
+            erweitert: ErweiterteSuche::aus($daten),
         );
     }
 
@@ -104,7 +107,17 @@ final readonly class MitgliederFilter
     public function istGefiltert(): bool
     {
         return $this->woerter() !== [] || $this->abteilungId !== null || $this->beitragsartId !== null
-            || $this->status !== MitgliederStatus::Alle || $this->mitEhemaligen;
+            || $this->status !== MitgliederStatus::Alle || $this->mitEhemaligen || !$this->erweitert->istLeer();
+    }
+
+    /**
+     * True when former members are listed: asked for with the box, or
+     * implied by a search for the date of leaving (nobody who is still a
+     * member has left yet - the field would find nothing otherwise).
+     */
+    public function zeigtEhemalige(): bool
+    {
+        return $this->mitEhemaligen || $this->erweitert->fragtAustritt();
     }
 
     /** The value of the URL parameter "sortierung". */
@@ -126,14 +139,16 @@ final readonly class MitgliederFilter
 
     /**
      * The values that differ from the default as URL parameters - WITHOUT
-     * the search text: a name must not end up in a URL (CLAUDE.md section 4),
-     * so the text only ever travels in the body of a POST.
+     * the search text and the personal fields of the extended search: a name
+     * must not end up in a URL (CLAUDE.md section 4), so they only ever
+     * travel in the body of a POST. The plain choices of the extended search
+     * (function, sex, payment method, family) do.
      *
      * @return array<string, string>
      */
     public function parameter(): array
     {
-        $parameter = [];
+        $parameter = $this->erweitert->parameter();
         if ($this->abteilungId !== null) {
             $parameter['abteilung'] = (string) $this->abteilungId;
         }

@@ -136,4 +136,48 @@ final class MitgliederFilterTest extends TestCase
         $filter = MitgliederFilter::aus(['anzahl' => '200', 'seite' => '2']);
         self::assertEquals($filter, MitgliederFilter::aus($filter->parameter()));
     }
+
+    /** CLAUDE.md section 4: no personal value of the extended search in a URL; plain choices may be. */
+    public function testTheExtendedSearchTextsAndDatesNeverBecomeUrlParameters(): void
+    {
+        $filter = MitgliederFilter::aus([
+            'nachname' => 'Mustermann', 'vorname' => 'Erika', 'strasse' => 'Hauptstr', 'plz' => '12345', 'ort' => 'Musterort',
+            'email' => 'erika@example.org', 'telefon' => '0170', 'iban' => 'DE89 3704', 'bemerkung' => 'Notiz',
+            'mitgliedsnummer' => '1001', 'alter_von' => '18', 'alter_bis' => '40',
+            'geburt_von' => '1980-01-01', 'geburt_bis' => '1990-12-31', 'eintritt_von' => '2000-01-01', 'austritt_bis' => '2020-01-01',
+            'geschlecht' => 'w', 'funktion' => '3', 'zahlart' => 'selbst', 'familie' => 'kind',
+        ]);
+
+        self::assertSame(
+            ['geschlecht' => 'w', 'funktion' => '3', 'zahlart' => 'selbst', 'familie' => 'kind'],
+            $filter->parameter(),
+        );
+        self::assertFalse($filter->erweitert->istLeer());
+        self::assertTrue($filter->istGefiltert());
+        self::assertSame('DE893704', $filter->erweitert->iban, 'blanks dropped, upper case');
+        self::assertSame(1001, $filter->erweitert->mitgliedsnummer);
+        self::assertSame(18, $filter->erweitert->alterVon);
+        self::assertEquals($filter->erweitert->parameter(), MitgliederFilter::aus($filter->parameter())->erweitert->parameter());
+    }
+
+    public function testTheExtendedSearchReadsGarbageAsNotSet(): void
+    {
+        $filter = MitgliederFilter::aus([
+            'mitgliedsnummer' => 'abc', 'alter_von' => '-5', 'alter_bis' => '999', 'geburt_von' => '31.12.1980',
+            'eintritt_von' => '2020-02-30', 'geschlecht' => 'x', 'funktion' => '0', 'zahlart' => 'bar', 'familie' => 'onkel',
+            'nachname' => ['array'],
+        ]);
+
+        self::assertTrue($filter->erweitert->istLeer());
+        self::assertFalse($filter->istGefiltert());
+        self::assertSame([], $filter->parameter());
+    }
+
+    public function testSearchingForTheLeavingDateShowsFormerMembers(): void
+    {
+        self::assertFalse(MitgliederFilter::aus([])->zeigtEhemalige());
+        self::assertTrue(MitgliederFilter::aus(['ehemalige' => '1'])->zeigtEhemalige());
+        self::assertTrue(MitgliederFilter::aus(['austritt_von' => '2020-01-01'])->zeigtEhemalige());
+        self::assertFalse(MitgliederFilter::aus(['eintritt_von' => '2020-01-01'])->zeigtEhemalige());
+    }
 }
