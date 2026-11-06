@@ -27,18 +27,20 @@ final readonly class ErmittlungsStand
         public int $ungefaehr = 0,
         /** Points set by hand at a member (GeoStatus::VonHand). */
         public int $vonHand = 0,
+        /** The street without the house (GeoStatus::Strasse, issue #135). */
+        public int $strasse = 0,
     ) {
     }
 
     /** A copy with what one call did on top of the counts. */
     public function mit(int $bearbeitet = 0, bool $laeuftBereits = false, ?\DateTimeImmutable $pauseBis = null, string $fehler = ''): self
     {
-        return new self($this->gesamt, $this->gefunden, $this->nichtGefunden, $bearbeitet, $laeuftBereits, $pauseBis, $fehler, $this->ungefaehr, $this->vonHand);
+        return new self($this->gesamt, $this->gefunden, $this->nichtGefunden, $bearbeitet, $laeuftBereits, $pauseBis, $fehler, $this->ungefaehr, $this->vonHand, $this->strasse);
     }
 
     public function offen(): int
     {
-        return max(0, $this->gesamt - $this->gefunden - $this->ungefaehr - $this->vonHand - $this->nichtGefunden);
+        return max(0, $this->gesamt - $this->gefunden - $this->strasse - $this->ungefaehr - $this->vonHand - $this->nichtGefunden);
     }
 
     /** Nothing left this chain could do now: all asked, or the service rests. */
@@ -54,6 +56,9 @@ final readonly class ErmittlungsStand
     public function text(): string
     {
         $text = sprintf('%d von %d %s gefunden', $this->gefunden, $this->gesamt, $this->gesamt === 1 ? 'Anschrift' : 'Anschriften');
+        if ($this->strasse > 0) {
+            $text .= sprintf(', %d ungefähr (Straße)', $this->strasse);
+        }
         if ($this->ungefaehr > 0) {
             $text .= sprintf(', %d ungefähr', $this->ungefaehr);
         }
@@ -73,6 +78,7 @@ final readonly class ErmittlungsStand
             'gesamt' => $this->gesamt,
             'gefunden' => $this->gefunden,
             'ungefaehr' => $this->ungefaehr,
+            'strasse' => $this->strasse,
             'von_hand' => $this->vonHand,
             'nicht_gefunden' => $this->nichtGefunden,
             'offen' => $this->offen(),

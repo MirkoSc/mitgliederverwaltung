@@ -311,7 +311,7 @@ final readonly class Koordinatenermittlung
      */
     private function zaehlen(array $anschriften, array $bekannt, int $bearbeitet, ?\DateTimeImmutable $pauseBis): ErmittlungsStand
     {
-        $anzahl = ['gefunden' => 0, 'ungefaehr' => 0, 'von_hand' => 0, 'nicht_gefunden' => 0];
+        $anzahl = ['gefunden' => 0, 'strasse' => 0, 'ungefaehr' => 0, 'von_hand' => 0, 'nicht_gefunden' => 0];
         foreach (array_keys($anschriften) as $hash) {
             $status = $bekannt[$hash]['status'] ?? null;
             if ($status !== null) {
@@ -327,6 +327,7 @@ final readonly class Koordinatenermittlung
             pauseBis: $pauseBis,
             ungefaehr: $anzahl['ungefaehr'],
             vonHand: $anzahl['von_hand'],
+            strasse: $anzahl['strasse'],
         );
     }
 }

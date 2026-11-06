@@ -145,7 +145,7 @@
     }
 
     /** What a marker says about how exact it is (issue #108); '' for a found address. */
-    const GENAUIGKEIT = { ungefaehr: 'ungefähr', von_hand: 'von Hand' };
+    const GENAUIGKEIT = { strasse: 'ungefähr, Straße', ungefaehr: 'ungefähr', von_hand: 'von Hand' };
 
     /** Tooltip and accessible name of a marker - an approximate or hand-set dot says so. */
     function punktTitel(anschrift, anzahl, genauigkeit) {
@@ -444,7 +444,7 @@
             icon: L.divIcon({
                 // An approximate dot is drawn hollow (issue #108); the
                 // title says it in words as well.
-                className: 'karte-punkt' + (ort.anzahl > 1 ? ' karte-punkt-mehr' : '') + (ort.klasse ? ' ' + ort.klasse : '') + (ort.genauigkeit === 'ungefaehr' ? ' karte-punkt-ungefaehr' : ''),
+                className: 'karte-punkt' + (ort.anzahl > 1 ? ' karte-punkt-mehr' : '') + (ort.klasse ? ' ' + ort.klasse : '') + (ort.genauigkeit === 'ungefaehr' || ort.genauigkeit === 'strasse' ? ' karte-punkt-ungefaehr' : ''),
                 html: zahl,
                 iconSize: [groesse, groesse],
             }),

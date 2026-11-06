@@ -296,6 +296,48 @@ final class KartenPruefungUndPunktVonHandTest extends DatabaseTestCase
         self::assertSame('Kirchplatz 5', $alle[$korrigiert->hash()]['korrektur']['strasse'] ?? null);
     }
 
+    /** #135: OpenStreetMap without house numbers - the street is counted and stored as such. */
+    public function testAStreetWithoutHouseNumberIsStoredAndCountedAsStreet(): void
+    {
+        $anschrift = $this->mitglied(1, 'Hauptstraße 10', '63867', 'Johannesberg');
+        $this->antwort = static fn(string $url): HttpAntwort => FakeHttpAbruf::antwort([FakeHttpAbruf::hit(50.02987, 9.14082, '63867', 'Johannesberg', hausnummer: '')]);
+
+        $stand = $this->ermittlung()->ermitteln($this->jetzt, 10, 22.0);
+
+        self::assertSame(0, $stand->gefunden);
+        self::assertSame(1, $stand->strasse);
+        self::assertSame(0, $stand->offen());
+        self::assertSame('0 von 1 Anschrift gefunden, 1 ungefähr (Straße)', $stand->text());
+        self::assertSame(GeoStatus::Strasse, $this->geo()->eintrag($anschrift->hash())['status'] ?? null);
+    }
+
+    public function testMigration303ForgetsOnlyFoundResultsAndKeepsSearchAddresses(): void
+    {
+        $gefunden = $this->mitglied(1, 'Hauptstraße 10', '63867', 'Johannesberg');
+        $ungefaehr = $this->mitglied(2, 'Am Hang 12', '63867', 'Johannesberg');
+        $korrigiert = $this->mitglied(3, 'Kirchweg 5');
+        $vonHand = $this->mitglied(4, 'Lindenweg 4');
+        $geo = $this->geo();
+        $geo->speichern($gefunden->hash(), GeoStatus::Gefunden, 50.02987, 9.14082, $this->jetzt);
+        $geo->speichern($ungefaehr->hash(), GeoStatus::Ungefaehr, 50.0329, 9.1424, $this->jetzt);
+        $geo->korrekturSetzen($korrigiert->hash(), 'Kirchplatz 5', '12345', 'Musterstadt', $this->jetzt);
+        $geo->speichern($korrigiert->hash(), GeoStatus::Gefunden, 50.0, 9.0, $this->jetzt);
+        $geo->punktSetzen($vonHand->hash(), 50.1, 9.1, $this->jetzt);
+
+        $sql = (string) file_get_contents(dirname(__DIR__, 2) . '/migrations/303_geo_anschrift_hausnummer.sql');
+        $sql = (string) preg_replace('/^--.*$/m', '', $sql);
+        foreach (array_filter(array_map('trim', explode(';', $sql))) as $anweisung) {
+            $this->pdo()->exec($anweisung);
+        }
+
+        $alle = $geo->alle();
+        self::assertArrayNotHasKey($gefunden->hash(), $alle, 'asked again');
+        self::assertSame(GeoStatus::Ungefaehr, $alle[$ungefaehr->hash()]['status']);
+        self::assertSame(GeoStatus::VonHand, $alle[$vonHand->hash()]['status']);
+        self::assertNull($alle[$korrigiert->hash()]['status']);
+        self::assertSame('Kirchplatz 5', $alle[$korrigiert->hash()]['korrektur']['strasse'] ?? null);
+    }
+
     public function testTheMiddleForSettingAPointComesFromTheDotsThereAre(): void
     {
         $ich = new Anschrift('Am Hang 12', '63867', 'Johannesberg - OAB');

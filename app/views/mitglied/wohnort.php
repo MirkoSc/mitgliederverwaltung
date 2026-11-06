@@ -66,6 +66,8 @@ $koordinate = static function (string $name, string $label, string $wert, string
 
     <?php if ($zustand === WohnortZustand::Gefunden): ?>
         <p class="wohnort-stand"><span class="etikett etikett-ok">gefunden</span> Die Anschrift steht auf der Karte.</p>
+    <?php elseif ($zustand === WohnortZustand::Strasse): ?>
+        <p class="wohnort-stand"><span class="etikett etikett-warnung">ungefähr (Straße)</span> Die Straße wurde gefunden, das Haus nicht – der Kartendienst kennt dort keine Hausnummern. Der Punkt steht auf der Straße; Sie können ihn von Hand aufs Haus setzen.</p>
     <?php elseif ($zustand === WohnortZustand::Ungefaehr): ?>
         <p class="wohnort-stand"><span class="etikett etikett-warnung">ungefähr</span> Die Straße wurde nicht gefunden, nur PLZ und Ort. Der Punkt steht in der Ortsmitte, nicht am Haus.</p>
     <?php elseif ($zustand === WohnortZustand::VonHand): ?>
@@ -83,7 +85,7 @@ $koordinate = static function (string $name, string $label, string $wert, string
     <?php if ($mitKarte): ?>
         <div class="karte-flaeche wohnort-karte" data-wohnort-karte
              <?php if ($punkt): ?>data-lat="<?= e($zahl($wohnort->lat)) ?>" data-lon="<?= e($zahl($wohnort->lon)) ?>"<?php endif; ?>
-             <?php if ($zustand === WohnortZustand::Ungefaehr): ?>data-genauigkeit="ungefaehr"<?php elseif ($zustand === WohnortZustand::VonHand): ?>data-genauigkeit="von_hand"<?php endif; ?>
+             <?php if ($zustand === WohnortZustand::Ungefaehr): ?>data-genauigkeit="ungefaehr"<?php elseif ($zustand === WohnortZustand::Strasse): ?>data-genauigkeit="strasse"<?php elseif ($zustand === WohnortZustand::VonHand): ?>data-genauigkeit="von_hand"<?php endif; ?>
              <?php if ($wohnortMitte !== null): ?>data-mitte-lat="<?= e($zahl($wohnortMitte->lat)) ?>" data-mitte-lon="<?= e($zahl($wohnortMitte->lon)) ?>" data-mitte-zoom="<?= (int) $wohnortMitte->zoom ?>"<?php endif; ?>
              <?php if ($bearbeitbar): ?>data-setzen="#wohnort-punkt"<?php endif; ?>
              data-kacheln="<?= e(KarteController::PFAD_KACHEL . '/{z}/{x}/{y}.png') ?>"

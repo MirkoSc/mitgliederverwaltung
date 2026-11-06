@@ -118,6 +118,12 @@ umgeschaltet statt verlinkt.
    „… (ungefähr)") und Punkte von Hand; in der Tabelle tragen sie das
    Etikett „ungefähr" bzw. „von Hand". Eigene Liste „Ungefähr gefundene
    Anschriften" mit Links in den Reiter „Daten" wie bei „nicht gefunden".
+   Seit #135 zusätzlich „ungefähr (Straße)" (01 §8): hohler Marker wie
+   „ungefähr", Name „… (ungefähr, Straße)", Etikett in der Tabelle und am
+   Mitglied, im Stand „z ungefähr (Straße)"; keine eigene Liste (es wären
+   fast alle). Die Kartenfläche ist ein eigener Stapelkontext
+   (`isolation: isolate`), damit Leaflets Ebenen nie über der festen
+   Speichern-Leiste liegen.
    Für den Admin unter dem Knopf der Satz „Am schnellsten: Knopf drücken und
    den Tab offen lassen (etwa eine Anschrift pro Sekunde)." und, hinter
    einem aufklappbaren „Alle neu ermitteln", die Rückfrage in ganzen Sätzen

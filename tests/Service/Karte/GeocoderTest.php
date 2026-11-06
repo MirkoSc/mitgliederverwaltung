@@ -120,6 +120,29 @@ final class GeocoderTest extends TestCase
         self::assertCount(1, $http->anfragen);
     }
 
+    /** #135: OpenStreetMap without house numbers answers with the street - that is no house. */
+    public function testAStreetWithoutHouseNumberIsTheStreetAndAHouseIsPreferred(): void
+    {
+        $strasse = FakeHttpAbruf::hit(50.02987, 9.14082, '63867', 'Johannesberg', hausnummer: '');
+        $haus = FakeHttpAbruf::hit(50.03011, 9.14107, '63867', 'Johannesberg', hausnummer: '10');
+
+        $http = new FakeHttpAbruf(static fn(): HttpAntwort => FakeHttpAbruf::antwort([$strasse]));
+        $ergebnis = new Geocoder($http, 'ua')->suchen(new Anschrift('Hauptstraße 10', '63867', 'Johannesberg'));
+        self::assertSame(GeoStatus::Strasse, $ergebnis->status);
+        self::assertEqualsWithDelta(50.02987, $ergebnis->lat, 0.000001);
+        self::assertCount(1, $http->anfragen, 'the street is better than the middle of the place - no second query');
+        self::assertSame('ungefähr (Straße)', GeoStatus::Strasse->etikett());
+
+        $http = new FakeHttpAbruf(static fn(): HttpAntwort => FakeHttpAbruf::antwort([$strasse, $haus]));
+        $ergebnis = new Geocoder($http, 'ua')->suchen(new Anschrift('Hauptstraße 10', '63867', 'Johannesberg'));
+        self::assertSame(GeoStatus::Gefunden, $ergebnis->status);
+        self::assertEqualsWithDelta(50.03011, $ergebnis->lat, 0.000001, 'the house, though it came second');
+
+        // An address without a house number cannot be more exact than its street.
+        $http = new FakeHttpAbruf(static fn(): HttpAntwort => FakeHttpAbruf::antwort([$strasse]));
+        self::assertSame(GeoStatus::Gefunden, new Geocoder($http, 'ua')->suchen(new Anschrift('Am Sportplatz', '63867', 'Johannesberg'))->status);
+    }
+
     public function testWhenTheApproximateQueryDoesNotFitEitherItIsNotFound(): void
     {
         [$kLat, $kLon] = self::KUERTEN;
