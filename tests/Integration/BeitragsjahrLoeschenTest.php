@@ -12,6 +12,7 @@ use App\Domain\Mitglied;
 use App\Domain\VersionsAnlass;
 use App\Domain\Zahlweise;
 use App\Repository\BlobRepository;
+use App\Repository\AbteilungRepository;
 use App\Repository\EinzugRepository;
 use App\Repository\JahresbeitragRepository;
 use App\Repository\MitgliedRepository;
@@ -84,7 +85,7 @@ final class BeitragsjahrLoeschenTest extends DatabaseTestCase
             'glaeubiger_id' => Pain008Test::GLAEUBIGER_ID,
             'mandatsdatum' => '2016-01-01',
         ]));
-        $this->einzugService = new Einzuege($pdo, $this->einzuege, $this->beitraege, $this->mitglieder, $verein, $this->blobs, $audit);
+        $this->einzugService = new Einzuege($pdo, $this->einzuege, $this->beitraege, $this->mitglieder, new AbteilungRepository($pdo), $verein, $this->blobs, $audit);
         $this->loeschen = new BeitragsjahrLoeschen($pdo, $this->beitraege, $this->einzuege, $blobRepo, $this->blobs, $audit);
         $this->jahresbeitraege = Jahresbeitraege::mit($pdo);
     }

@@ -247,7 +247,9 @@ pain.001 in Vereinsbelege (`App\Service\Bank\Sepa`).
   Betrag, Mandatsreferenz, Mandatsdatum, Name des Kontoinhabers (falls
   abweichend, sonst des Mitglieds), IBAN, BIC optional, Verwendungszweck
   aus einer Vorlage in den Einstellungen (Default „Mitgliedsbeitrag
-  {jahr} Nr. {mitgliedsnummer} {name}", max. 140 Zeichen).
+  {jahr} Nr. {mitgliedsnummer} {name} {abteilung} {betrag}", max. 140
+  Zeichen, darüber wird hinten gekürzt) – nach dem Muster der alten
+  Software (E6).
 - Zeichensatz: Umlaute und ß werden umschrieben (ä → ae …), andere
   Zeichen außerhalb des SEPA-Zeichensatzes ersetzt – so nimmt jede Bank
   die Datei an.
@@ -272,7 +274,11 @@ Regel selbst; `SepaText` unverändert aus Vereinsbelege), aufgerufen von
 - Eine BIC (Verein wie Mitglied) wird nur mit gültiger Form verwendet,
   sonst `NOTPROVIDED`. Namen und Verwendungszweck werden in den
   SEPA-Zeichensatz umgeschrieben, die Mandatsreferenz nicht (siehe §3);
-  `{name}` in der Vorlage ist Vor- und Nachname des Mitglieds, der Name in
+  `{name}` in der Vorlage ist „Nachname Vorname" des Mitglieds (ohne
+  Komma), `{abteilung}` die Namen seiner Abteilungen in der Reihenfolge
+  der Einstellungen mit „, " (auch deaktivierte; keine → leer, doppelte
+  Leerzeichen fallen weg), `{betrag}` der Betrag wie „30,00" (ohne €);
+  der Name in
   `Dbtr` der Kontoinhaber (falls abweichend, sonst Vor- und Nachname);
   Gläubiger ist der Kontoinhaber des Vereins, ergibt er umgeschrieben
   nichts, der Vereinsname.

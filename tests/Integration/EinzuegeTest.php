@@ -6,6 +6,7 @@ namespace App\Tests\Integration;
 
 use App\Domain\AuditAktion;
 use App\Domain\BlobStorage;
+use App\Domain\Abteilung;
 use App\Domain\Einzug;
 use App\Domain\EinzugStatus;
 use App\Domain\Jahresbeitrag;
@@ -15,6 +16,7 @@ use App\Domain\VersionsAnlass;
 use App\Domain\Zahlart;
 use App\Domain\Zahlweise;
 use App\Repository\BlobRepository;
+use App\Repository\AbteilungRepository;
 use App\Repository\EinzugRepository;
 use App\Repository\JahresbeitragRepository;
 use App\Repository\MitgliedRepository;
@@ -104,6 +106,7 @@ final class EinzuegeTest extends DatabaseTestCase
             $this->einzuege,
             $this->beitraege,
             $this->mitglieder,
+            new AbteilungRepository($pdo),
             new VereinRepository($pdo, new SettingRepository($pdo)),
             $this->blobs,
             new AuditLog($pdo, str_repeat('a', 32)),
@@ -263,7 +266,7 @@ final class EinzuegeTest extends DatabaseTestCase
         self::assertSame(Pain008Test::GLAEUBIGER_ID, $wert('//p:CdtrSchmeId/p:Id/p:PrvtId/p:Othr/p:Id'));
         self::assertSame('1001', $wert('//p:DrctDbtTxInf[1]/p:DrctDbtTx/p:MndtRltdInf/p:MndtId'), 'default: the member number');
         self::assertSame('2015-03-01', $wert('//p:DrctDbtTxInf[1]/p:DrctDbtTx/p:MndtRltdInf/p:DtOfSgntr'), 'default: the entry date');
-        self::assertSame('Mitgliedsbeitrag 2025 Nr. 1003 Carla Christ', $wert('//p:DrctDbtTxInf[3]/p:RmtInf/p:Ustrd'));
+        self::assertSame('Mitgliedsbeitrag 2025 Nr. 1003 Christ Carla 70,83', $wert('//p:DrctDbtTxInf[3]/p:RmtInf/p:Ustrd'));
         self::assertSame(1, $this->anzahl('file_blob'));
         self::assertCount(1, glob($this->blobDir . '/*') ?: []);
     }
@@ -291,7 +294,7 @@ final class EinzuegeTest extends DatabaseTestCase
         self::assertSame('COBADEFFXXX', $wert('//p:DrctDbtTxInf[1]/p:DbtrAgt/p:FinInstnId/p:BICFI'));
         self::assertSame('MV-0815/A', $wert('//p:DrctDbtTxInf[1]/p:DrctDbtTx/p:MndtRltdInf/p:MndtId'), 'as entered');
         self::assertSame('2020-07-01', $wert('//p:DrctDbtTxInf[1]/p:DrctDbtTx/p:MndtRltdInf/p:DtOfSgntr'));
-        self::assertSame('Beitrag 2026 - Juergen Mueller (1001)', $wert('//p:DrctDbtTxInf[1]/p:RmtInf/p:Ustrd'), 'the member, not the account holder');
+        self::assertSame('Beitrag 2026 - Mueller Juergen (1001)', $wert('//p:DrctDbtTxInf[1]/p:RmtInf/p:Ustrd'), 'the member, not the account holder');
         self::assertSame('Asa Weiss', $wert('//p:DrctDbtTxInf[2]/p:Dbtr/p:Nm'));
         self::assertSame('NOTPROVIDED', $wert('//p:DrctDbtTxInf[2]/p:DbtrAgt/p:FinInstnId/p:Othr/p:Id'));
         self::assertSame('2016-01-01', $wert('//p:DrctDbtTxInf[2]/p:DrctDbtTx/p:MndtRltdInf/p:DtOfSgntr'), 'no entry date: the club default');
@@ -490,10 +493,36 @@ final class EinzuegeTest extends DatabaseTestCase
 
     public function testTheRemittanceTemplateIsFilledAndCut(): void
     {
-        $mitglied = new Mitglied(4711, 'Ölmann', vorname: 'Zoë');
+        $abteilungen = [3 => 'Fußball', 5 => 'Kegeln', 8 => 'Turnen'];
+        $mitglied = new Mitglied(4711, 'Ölmann', vorname: 'Zoë', abteilungIds: [8, 3]);
+        $beitrag = new Jahresbeitrag(1, 2026, 3000);
 
-        self::assertSame('Mitgliedsbeitrag 2026 Nr. 4711 Zoe Oelmann', Einzuege::verwendungszweck(Einzuege::VERWENDUNGSZWECK, 2026, $mitglied));
-        self::assertSame(Pain008::ZWECK_LAENGE, strlen(Einzuege::verwendungszweck(str_repeat('{name} ', 20), 2026, $mitglied)));
+        self::assertSame(
+            'Mitgliedsbeitrag 2026 Nr. 4711 Oelmann Zoe Fussball, Turnen 30,00',
+            Einzuege::verwendungszweck(Einzuege::VERWENDUNGSZWECK, $beitrag, $mitglied, $abteilungen),
+            'departments in display order, amount as the old software wrote it',
+        );
+        self::assertSame(
+            'Mitgliedsbeitrag 2026 Nr. 4711 Oelmann Zoe 1234,56',
+            Einzuege::verwendungszweck(Einzuege::VERWENDUNGSZWECK, new Jahresbeitrag(1, 2026, 123456), $mitglied->mit(['abteilungIds' => []]), $abteilungen),
+            'no department: no double space',
+        );
+        self::assertSame(Pain008::ZWECK_LAENGE, strlen(Einzuege::verwendungszweck(str_repeat('x{name}', 20), $beitrag, $mitglied, $abteilungen)));
+    }
+
+    public function testTheDefaultRemittanceNamesTheMembersDepartmentsInTheFile(): void
+    {
+        $repo = new AbteilungRepository($this->pdo());
+        $turnen = $repo->speichern(new Abteilung('Turnen', sortierung: 2));
+        $kegeln = $repo->speichern(new Abteilung('Kegeln', sortierung: 1, aktiv: false));
+        $beitrag = $this->beitrag($this->mitglied('Albrecht', ['vorname' => 'Anna', 'abteilungIds' => [(int) $turnen->id, (int) $kegeln->id]]), 3000);
+
+        $xml = $this->datei((int) $this->erzeugen([$beitrag])->id);
+
+        self::assertSame([], Pain008Test::fehler($xml));
+        $wert = Pain008Test::xpath($xml);
+        self::assertSame('Mitgliedsbeitrag 2026 Nr. 1001 Albrecht Anna Kegeln, Turnen 30,00', $wert('//p:RmtInf/p:Ustrd'), 'an inactive department still counts');
+        self::assertSame('1001', $wert('//p:MndtRltdInf/p:MndtId'), 'mandate reference = member number, as in the old files (E6)');
     }
 
     /*

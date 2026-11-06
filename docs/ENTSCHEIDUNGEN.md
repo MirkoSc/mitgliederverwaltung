@@ -84,8 +84,8 @@ Die Sammlung und Klärung läuft in `docs/fachlichkeit.md`.
 Steht fest: Stammdaten mit Versionen, Abteilungen, Familien, Funktionen,
 Beiträge mit SEPA-Lastschriftdatei, Geburtstagskalender, Ehrungen,
 BLSV-Meldung, Exporte (xlsx/csv), Erstimport. Details:
-`docs/fachlichkeit.md`, umgesetzt in den Specs 07–10. Offen nur noch E6
-(Mandatsreferenz) und L3 (BLSV-Formate).
+`docs/fachlichkeit.md`, umgesetzt in den Specs 07–10. Offen nur noch L3
+(BLSV-Formate); E6 (Mandatsreferenz = Mitgliedsnummer) ist geklärt.
 
 ### E-F2 ✅ Wer meldet sich an? – nur der Vorstand
 Nur ein kleiner Verwaltungskreis (Vorstand). Kein Zugang für Mitglieder.

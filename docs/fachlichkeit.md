@@ -2,7 +2,7 @@
 
 Protokoll der fachlichen Klärung. **Verbindlich sind die Specs 07–10**
 unter `docs/spec/`, die daraus entstanden sind; bei Widerspruch gelten
-die Specs. Offene Punkte (E6, L3) werden hier geklärt und dann in die
+die Specs. Offene Punkte (L3) werden hier geklärt und dann in die
 Specs übernommen. Einstufung: **muss** · **soll** · **später** · **nicht**.
 Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 
@@ -172,19 +172,19 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
   der Vorstand persönlich.
 - Technisch verlangt die Datei je Mitglied eine Mandatsreferenz und ein
   Mandatsdatum sowie die Gläubiger-ID des Vereins. Einfach gelöst:
-  Mandatsreferenz wie bisher (E6), Mandatsdatum = Eintrittsdatum bzw.
+  Mandatsreferenz wie bisher (E6 ✅), Mandatsdatum = Eintrittsdatum bzw.
   einstellbares Datum, Gläubiger-ID als Einstellung.
 - Vorlage für den Code: Vereinsbelege erzeugt schon pain.001-Dateien
   (Überweisungen); pain.008 folgt demselben Muster.
 
-Offen:
-- E6 (Mirko prüft; wird erst vor der ersten echten Lastschriftdatei
-  gebraucht, blockiert den Start nicht): Der Export der alten Software enthält **keine
-  Mandatsreferenz**. Welche Referenz stand in den bisherigen
-  Lastschriften? Im Online-Banking bei einer Lastschrift nachsehen, wie
-  die Mandatsreferenz aussieht (nur das Muster, z. B. „Mitgliedsnummer"
-  oder „VEREIN-0123"). Bleibt die Referenz gleich, sieht die Bank keinen
-  Unterschied.
+- E6 ✅ (geklärt 06.11.2026 an einer anonymisierten Lastschriftdatei der
+  alten Software, nicht im Repo): Die Mandatsreferenz ist die
+  **Mitgliedsnummer** ohne führende Nullen – genau der Default
+  (07 §1). Der Verwendungszweck lautete „Vereinsbeitragseinzug
+  Nr. <Mitgliedsnummer> <Nachname Vorname> <Abteilung> <Betrag>"; neu
+  ist er „Mitgliedsbeitrag {jahr} Nr. {mitgliedsnummer} {name}
+  {abteilung} {betrag}" (08 §4). Format pain.008.003.02 und `COR1` der
+  alten Datei sind veraltet und werden nicht übernommen.
 
 ## 6. Geburtstagskalender
 
@@ -366,7 +366,7 @@ Zuordnung (Vorschlag):
 | `Multifeld 1`, `Multifeld 1_` (Kürzel/Zahlen, selten befüllt) | – | Bedeutung unbekannt, wird nicht übernommen (X4 ✅) |
 | `Post*`, `Zahler*`-Anschrift, `Konto2/3*`, `Fax*`, `*Dienst`, `Homepage`, `Nation`, `GeburtsOrt`, `Sortierfeld`, `Wahlfeld*`, `Zeitung`, `Helfer`, `Mahnstufe`, `offenerPosten*`, `UnbedenkBesch*`, `Uel*` (Übungsleiter) | – | nicht übernommen (in der Beispieldatei leer, 0 oder doppelt) |
 
-Offen zum Import ist nur noch E6.
+Zum Import ist nichts mehr offen (E6 ✅).
 
 ## 9. Versionen je Mitglied
 
