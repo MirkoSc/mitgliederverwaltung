@@ -6,9 +6,11 @@
  * that waits for the bank with its file, "bestätigen" and "verwerfen".
  * Included by beitraege/seite.php, which holds the variables.
  *
- * The checkboxes are preselected and are sent as `beitrag[]`; the hidden
- * field after them tells the server the list arrived complete (a server
- * cuts input beyond max_input_vars without a word).
+ * The checkboxes are preselected - all but fees after a returned debit
+ * (#133) - and are sent as `beitrag[]`; the hidden field after them tells
+ * the server the list arrived complete (a server cuts input beyond
+ * max_input_vars without a word). Search, "Alle auswählen", range and the
+ * counter come from public/js/beitraege-auswahl.js (group "einzug").
  *
  * @var \App\Service\Beitraege\EinzugAuswahl $einzugAuswahl
  * @var list<\App\Domain\Einzug> $einzuegeOffen
@@ -25,6 +27,7 @@ use App\View\Navigation;
 // ($einzugAnzahl, $zeilen …) are still needed after it.
 $einzugAnzahl = count($einzugAuswahl->auswaehlbar);
 $einzugJahre = $einzugAuswahl->jahre();
+$einzugZurueck = count(array_filter($einzugAuswahl->auswaehlbar, static fn($k): bool => !$k->vorausgewaehlt()));
 ?>
 <section class="abschnitt einzug" id="einzug" aria-labelledby="einzug-titel">
     <h2 id="einzug-titel">Einzug per Lastschrift</h2>
@@ -45,17 +48,34 @@ $einzugJahre = $einzugAuswahl->jahre();
             <p>Keine offenen Beiträge, die per Lastschrift eingezogen werden können.</p>
         </div>
     <?php else: ?>
-        <form class="formular einzug-formular" method="post" action="<?= e(Navigation::BEITRAEGE) ?>/einzug">
+        <form class="formular einzug-formular" method="post" action="<?= e(Navigation::BEITRAEGE) ?>/einzug" data-mehrfach-auswahl="einzug">
             <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
             <ul class="beitragsjahr-stand">
                 <li><span><strong><?= e($einzugAnzahl) ?></strong> <?= $einzugAnzahl === 1 ? 'offener Beitrag' : 'offene Beiträge' ?> mit Lastschrift</span></li>
                 <li><span><strong><?= e(geld($einzugAuswahl->summeCent())) ?></strong> zusammen</span></li>
             </ul>
-            <p class="einzug-text">Alle sind ausgewählt<?= count($einzugJahre) > 1 ? ' (Beitragsjahre ' . e(implode(', ', $einzugJahre)) . ')' : '' ?>.
-                Wählen Sie ab, was diesmal nicht eingezogen werden soll.</p>
+            <p class="einzug-text">
+                <?php if ($einzugZurueck === $einzugAnzahl): ?>
+                    Nichts ist vorausgewählt: Nach einer Rücklastschrift wählen Sie selbst aus, was erneut eingezogen werden soll.
+                <?php else: ?>
+                    Alle sind ausgewählt<?= count($einzugJahre) > 1 ? ' (Beitragsjahre ' . e(implode(', ', $einzugJahre)) . ')' : '' ?><?php if ($einzugZurueck > 0): ?>,
+                    außer <?= $einzugZurueck === 1 ? 'einem Beitrag' : e($einzugZurueck) . ' Beiträgen' ?> nach einer Rücklastschrift – die wählen Sie bei Bedarf selbst aus<?php endif; ?>.
+                    Wählen Sie ab, was diesmal nicht eingezogen werden soll.
+                <?php endif; ?>
+                Abgewählte Beiträge bleiben offen und sind beim nächsten Einzug wieder dabei.</p>
 
-            <details class="einzug-klappe"<?= $einzugAnzahl <= 20 ? ' open' : '' ?>>
+            <details class="einzug-klappe"<?= $einzugAnzahl <= 20 || $einzugZurueck > 0 ? ' open' : '' ?>>
                 <summary>Beiträge ansehen und abwählen</summary>
+                <div class="mehrfach-kopf einzug-auswahl-kopf" data-mehrfach-kopf hidden>
+                    <div class="feld suche-feld">
+                        <label for="einzug-suche">Mitglied suchen</label>
+                        <input id="einzug-suche" type="search" autocomplete="off" placeholder="z. B. Müller" data-mehrfach-suche aria-describedby="einzug-suche-hilfe">
+                        <p class="feld-hinweis" id="einzug-suche-hilfe">Sucht in Name und Mitgliedsnummer. Ausgeblendete Beiträge behalten ihr Häkchen.</p>
+                    </div>
+                    <label class="feld-haken"><input type="checkbox" data-mehrfach-alle> Alle angezeigten auswählen</label>
+                    <label class="feld-haken"><input type="checkbox" data-mehrfach-nur-leer> Nur nicht ausgewählte zeigen</label>
+                    <p class="mehrfach-zaehler" role="status" data-mehrfach-zaehler><?= e($einzugAnzahl) ?> Beiträge</p>
+                </div>
                 <div class="tabelle-rahmen">
                     <table class="liste">
                         <caption><?= $einzugAnzahl === 1 ? '1 Beitrag' : e($einzugAnzahl) . ' Beiträge' ?>, nach Namen</caption>
@@ -70,10 +90,13 @@ $einzugJahre = $einzugAuswahl->jahre();
                         <tbody>
                             <?php foreach ($einzugAuswahl->auswaehlbar as $kandidat): ?>
                                 <?php $einzugBeitragId = (int) $kandidat->beitrag->id; ?>
-                                <tr>
+                                <tr data-suche="<?= e($kandidat->name() . ' ' . $kandidat->mitglied->vorname . ' ' . $kandidat->mitglied->mitgliedsnummer) ?>">
                                     <td class="liste-titel">
-                                        <label class="feld-haken"><input type="checkbox" name="beitrag[]" value="<?= e($einzugBeitragId) ?>" checked>
+                                        <label class="feld-haken"><input type="checkbox" data-mehrfach-haken="einzug" data-cent="<?= e($kandidat->beitrag->betragCent) ?>" name="beitrag[]" value="<?= e($einzugBeitragId) ?>"<?= $kandidat->vorausgewaehlt() ? ' checked' : '' ?>>
                                             <span><?= e($kandidat->name()) ?><span class="nur-lesehilfe">: Beitrag <?= e($kandidat->beitrag->jahr) ?> einziehen</span></span></label>
+                                        <?php if ($kandidat->beitrag->ruecklastschriftAm !== null): ?>
+                                            <span class="etikett etikett-warnung">Rücklastschrift am <?= e(datum($kandidat->beitrag->ruecklastschriftAm)) ?></span>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="Nr."><span class="nummer"><?= e($kandidat->mitglied->mitgliedsnummer) ?></span></td>
                                     <td data-label="Jahr"><?= e($kandidat->beitrag->jahr) ?></td>

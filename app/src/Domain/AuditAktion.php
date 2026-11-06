@@ -38,6 +38,7 @@ enum AuditAktion: string
     case EinzugVerworfen = 'einzug.verworfen';
     case EinzugDateiHeruntergeladen = 'einzug.datei_heruntergeladen';
     case BeitraegeBezahlt = 'beitraege.bezahlt';
+    case BeitraegeRuecklastschrift = 'beitraege.ruecklastschrift';
     case BeitraegeJahrGeloescht = 'beitraege.jahr_geloescht';
     case VersionZurueckgeholt = 'mitglied.version_zurueckgeholt';
     case MitgliedGeloescht = 'mitglied.geloescht';
@@ -79,6 +80,7 @@ enum AuditAktion: string
             self::EinzugVerworfen => 'Einzug verworfen',
             self::EinzugDateiHeruntergeladen => 'Lastschriftdatei heruntergeladen',
             self::BeitraegeBezahlt => 'Beiträge als bezahlt markiert',
+            self::BeitraegeRuecklastschrift => 'Rücklastschriften vermerkt',
             self::BeitraegeJahrGeloescht => 'Beiträge eines Jahres gelöscht',
             self::VersionZurueckgeholt => 'Version zurückgeholt',
             self::MitgliedGeloescht => 'Mitglied gelöscht',

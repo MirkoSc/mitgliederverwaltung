@@ -228,7 +228,10 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
     <h3>Sonstiges</h3>
     <div class="feld feld-breit">
         <label for="m-bemerkung">Bemerkung</label>
-        <textarea id="m-bemerkung" name="bemerkung" rows="4" maxlength="<?= MitgliedFormular::LAENGEN['bemerkung'] ?>"><?= e($formular->wert('bemerkung')) ?></textarea>
+        <textarea id="m-bemerkung" name="bemerkung" rows="4" maxlength="<?= MitgliedFormular::LAENGEN['bemerkung'] ?>"<?= ($ruecklastschriftJahre ?? []) !== [] ? ' aria-describedby="m-ruecklastschrift"' : '' ?>><?= e($formular->wert('bemerkung')) ?></textarea>
+        <?php if (($ruecklastschriftJahre ?? []) !== []): ?>
+            <p class="feld-hinweis" id="m-ruecklastschrift">Rücklastschrift in: <?= e(implode(', ', $ruecklastschriftJahre)) ?></p>
+        <?php endif; ?>
     </div>
 
     <div class="formular-aktionen">

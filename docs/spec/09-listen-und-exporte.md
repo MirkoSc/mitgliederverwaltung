@@ -79,6 +79,12 @@ Ansicht und Export zeigen genau das, was es liefert.
   #108 „Anschrift auf der Karte nicht gefunden" und „Anschrift auf der Karte
   nur ungefähr gefunden" (07 §6): Mirko sieht hier, welche Anschriften er
   auf der Karte noch korrigieren muss.
+- Seit #133 zusätzlich die Art **„Rücklastschrift"**: je aktuellem
+  Mitglied mit Rücklastschrift eine Zeile „Rücklastschrift in 2025, 2027"
+  (08 §2), nur mit `beitraege.sehen`. Sie ist kein Hinweis am Mitglied
+  (07 §6), sondern kommt aus `JahresbeitragRepository::
+  ruecklastschriftJahre()`; die Zeilen werden mit den Hinweisen nach Namen
+  sortiert und öffnen den Reiter „Daten".
 - Eine Zeile kann das Mitglied auf einem bestimmten Reiter öffnen
   (`ListenZeile::$reiter`): die beiden Karten-Hinweise öffnen es im Reiter
   „Daten", wo der Block „Wohnort auf der Karte" steht.

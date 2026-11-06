@@ -17,7 +17,7 @@ Server – auch hier gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 | Beitrag | Beitragsart (oder keine), Zahlart (`lastschrift`/`selbst`), IBAN, BIC (optional), Kontoinhaber falls abweichend, Mandatsreferenz, Mandatsdatum |
 | Familie | Familie (oder keine), Rolle (`zahler`/`elternteil`/`kind`) |
 | Funktionen | Häkchen je Funktion (§4), Übungsleiter-Lizenznummer |
-| Sonstiges | Bemerkung (Freitext, mehrzeilig) |
+| Sonstiges | Bemerkung (Freitext, mehrzeilig); darunter, nur mit `beitraege.sehen`, „Rücklastschrift in: 2025, 2027" (08 §2, #133 – bewusst kein Hinweis oben am Mitglied) |
 
 - **Mitgliedsnummer**: ganze Zahl, eindeutig; **automatisch, unveränderbar**
   (Mirko, 05.11.2026): der Server vergibt beim ersten Speichern höchste + 1

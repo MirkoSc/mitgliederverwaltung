@@ -6,8 +6,10 @@ namespace App\App;
 
 use App\Dienste;
 use App\Domain\AuditAktion;
+use App\Domain\BeitragNichtAenderbar;
 use App\Domain\Einzug;
 use App\Domain\EinzugStatus;
+use App\Domain\Jahresbeitrag;
 use App\Http\Request;
 use App\Http\Response;
 use App\Http\ResponseInterface;
@@ -18,6 +20,7 @@ use App\Repository\JahresbeitragRepository;
 use App\Service\Beitraege\Bankarbeitstage;
 use App\Service\Beitraege\EinzugNichtMoeglich;
 use App\Service\Beitraege\Einzuege;
+use App\Service\Beitraege\Jahresbeitraege;
 use App\Support\Datum;
 use App\Support\Geld;
 use App\View\Area;
@@ -155,6 +158,7 @@ final readonly class EinzugController
             'einzugNamen' => $this->namen([$einzug]),
             'dateiVorhanden' => $this->service->datei($einzug) !== null,
             'hier' => self::adresse((int) $einzug->id),
+            'scripts' => ['/js/beitraege-auswahl.js'],
         ], Area::App));
     }
 
@@ -194,6 +198,58 @@ final readonly class EinzugController
     public function verwerfen(Request $r, array $params): Response
     {
         return $this->abschliessen($r, (int) $params['id'], EinzugStatus::Verworfen);
+    }
+
+    /**
+     * Returned debits of several fees of a confirmed run at once (#133):
+     * back to `offen` with the note, all or nothing.
+     *
+     * @param array<string, string> $params
+     */
+    public function ruecklastschrift(Request $r, array $params): Response
+    {
+        $id = (int) $params['id'];
+        $ziel = self::adresse($id);
+        $session = $this->dienste->session;
+        $einzug = $this->einzuege->finde($id);
+        if ($einzug === null) {
+            return $this->nichtGefunden();
+        }
+        $auswahl = $r->post['beitrag'] ?? [];
+        $ids = is_array($auswahl) ? array_values(array_map(intval(...), array_filter($auswahl, is_string(...)))) : [];
+
+        $warnung = match (true) {
+            $einzug->status !== EinzugStatus::Bestaetigt => 'Rücklastschriften gibt es nur bei einem bestätigten Einzug.',
+            $r->feld(self::VOLLSTAENDIG) !== '1' => 'Die Auswahl kam nicht vollständig beim Server an, es wurde nichts geändert. Bitte versuchen Sie es erneut.',
+            default => null,
+        };
+        if ($warnung !== null) {
+            $session->flash($warnung, FlashArt::Warnung);
+
+            return Response::redirect($ziel);
+        }
+
+        try {
+            $offen = Jahresbeitraege::mit($this->dienste->pdo())->mehrereRuecklastschriften($id, $ids, $r->feld('vermerk'), $session->userId());
+        } catch (BeitragNichtAenderbar $e) {
+            $session->flash($e->getMessage(), FlashArt::Warnung);
+
+            return Response::redirect($ziel);
+        }
+
+        $summe = array_sum(array_map(static fn(Jahresbeitrag $b): int => $b->betragCent, $offen));
+        $this->dienste->audit()->protokollieren(AuditAktion::BeitraegeRuecklastschrift, $session->userId(), 'einzug', $id, [
+            'anzahl' => count($offen),
+            'summe_cent' => $summe,
+            'ids' => array_map(static fn(Jahresbeitrag $b): int => (int) $b->id, $offen),
+        ], $r->ip);
+        $session->flash(sprintf(
+            '%s als Rücklastschrift vermerkt (%s) – wieder offen.',
+            count($offen) === 1 ? '1 Beitrag' : count($offen) . ' Beiträge',
+            Geld::anzeigen($summe),
+        ));
+
+        return Response::redirect($ziel);
     }
 
     /**

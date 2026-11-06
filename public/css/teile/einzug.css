@@ -121,3 +121,26 @@
 .einzug-posten {
     margin-top: var(--abstand-6);
 }
+
+/* Search and "Alle auswählen" above a tick list (#133). A row the search
+   hides stays hidden on the phone too, where list rows are blocks. */
+.einzug-auswahl-kopf {
+    margin-bottom: var(--abstand-3);
+}
+
+.einzug-auswahl-kopf .suche-feld {
+    flex: 1 1 18rem;
+    max-width: 28rem;
+    margin: 0;
+}
+
+.liste tr[hidden] {
+    display: none;
+}
+
+/* Returned debits of a run (#133): note and button side by side. */
+@media (min-width: 48rem) {
+    :root:not(.modus-barrierefrei) .mehrfach-angaben.einzug-ruecklastschrift-angaben {
+        grid-template-columns: minmax(10rem, 32rem) auto;
+    }
+}
