@@ -15,7 +15,12 @@
 
 /* The map is the page: full content width, tall enough to read a town,
    never taller than the screen. */
+/* isolation: Leaflet gives its panes and controls z-indexes up to 1000.
+   The map keeps them to itself, so it never covers what lies above it on
+   the page - the sticky "Mitglied speichern" bar of the member form
+   (z-index 2) slid under the small map when scrolling. */
 .karte-flaeche {
+    isolation: isolate;
     height: clamp(20rem, 62vh, 44rem);
     margin-bottom: var(--abstand-5);
     border: 1px solid var(--farbe-rand);
