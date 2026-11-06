@@ -23,6 +23,7 @@ use App\Service\Beitraege\Bankarbeitstage;
 use App\Service\Storage\BlobService;
 use App\Service\Verein\VereinRepository;
 use App\Service\Verein\Vereinsdaten;
+use App\Support\Datum;
 use App\Tests\Service\Beitraege\Pain008Test;
 use App\Tests\Support\AppTestCase;
 
@@ -145,7 +146,7 @@ final class EinzugSeiteTest extends AppTestCase
         foreach (["/app/beitraege/einzuege/$id", "/app/beitraege/einzuege/$id/datei"] as $pfad) {
             self::assertSame(403, $this->kernel->handle(new Request(HttpMethod::Get, $pfad))->status, $pfad);
         }
-        foreach (['/app/beitraege/einzug', "/app/beitraege/einzuege/$id/bestaetigen", "/app/beitraege/einzuege/$id/verwerfen"] as $pfad) {
+        foreach (['/app/beitraege/einzug', "/app/beitraege/einzuege/$id/bestaetigen", "/app/beitraege/einzuege/$id/verwerfen", "/app/beitraege/einzuege/$id/ruecklastschrift"] as $pfad) {
             self::assertSame(403, $this->post($pfad, ['sicher' => '1', 'faellig_am' => $this->faellig(), 'auswahl_vollstaendig' => '1'])->status, $pfad);
         }
         self::assertSame(EinzugStatus::Erzeugt, $this->einzuege()->finde($id)?->status);
@@ -311,6 +312,80 @@ final class EinzugSeiteTest extends AppTestCase
         self::assertStringContainsString('bestätigt', $seite);
         self::assertWeiterleitungNach('/app/beitraege', $this->post("$hier/verwerfen", ['sicher' => '1', 'zurueck' => 'https://example.org/']));
         self::assertStringContainsString('schon bestätigt', $this->flash());
+    }
+
+    /*
+     * Returned debits of several fees at once (#133): only on a confirmed
+     * run, the note required, all or nothing; afterwards the fees are open,
+     * not preselected for the next run, and the member shows the year.
+     */
+    public function testReturnedDebitsOfSeveralFeesAtOnce(): void
+    {
+        $this->vereinsdaten();
+        $anna = $this->beitrag('Albrecht', ['vorname' => 'Anna']);
+        $bert = $this->beitrag('Berger', ['vorname' => 'Bert']);
+        $carla = $this->beitrag('Christ', ['vorname' => 'Carla']);
+        $this->als(Rolle::Admin);
+        $this->erzeugen([$anna, $bert, $carla]);
+        $id = $this->neuesterEinzug();
+        $hier = '/app/beitraege/einzuege/' . $id;
+        $zurueck = static fn(array $ids, string $vermerk = 'Konto erloschen'): array => [
+            'beitrag' => array_map(strval(...), $ids), 'vermerk' => $vermerk, 'auswahl_vollstaendig' => '1',
+        ];
+
+        // Not before the bank has collected.
+        self::assertStringNotContainsString('Rücklastschriften vermerken', $this->get($hier)->body);
+        self::assertWeiterleitungNach($hier, $this->post("$hier/ruecklastschrift", $zurueck([$anna])));
+        self::assertStringContainsString('nur bei einem bestätigten Einzug', $this->flash());
+
+        $this->post("$hier/bestaetigen", ['zurueck' => $hier, 'sicher' => '1']);
+        $this->flash();
+        $seite = $this->get($hier)->body;
+        self::assertStringContainsString('Rücklastschriften vermerken', $seite);
+        self::assertSame(3, substr_count($seite, 'form="einzug-ruecklastschrift" data-mehrfach-haken="ruecklastschrift"'));
+        self::assertStringContainsString('/js/beitraege-auswahl.js', $seite);
+
+        // The note is required, the list must be complete, and a fee of another run spoils all.
+        self::assertWeiterleitungNach($hier, $this->post("$hier/ruecklastschrift", $zurueck([$anna], ' ')));
+        self::assertStringContainsString('Vermerk', $this->flash());
+        $this->post("$hier/ruecklastschrift", ['beitrag' => [(string) $anna], 'vermerk' => 'x']);
+        self::assertStringContainsString('nicht vollständig', $this->flash());
+        $fremd = $this->beitrag('Fremd');
+        $this->post("$hier/ruecklastschrift", $zurueck([$anna, $fremd]));
+        self::assertStringContainsString('Es wurde nichts geändert', $this->flash());
+        self::assertSame(JahresbeitragStatus::Bezahlt, $this->beitraege()->finde($anna)?->status);
+
+        self::assertWeiterleitungNach($hier, $this->post("$hier/ruecklastschrift", $zurueck([$anna, $carla])));
+        self::assertSame('2 Beiträge als Rücklastschrift vermerkt (170,00 €) – wieder offen.', str_replace("\u{00A0}", ' ', $this->flash()));
+        foreach ([$anna, $carla] as $b) {
+            $beitrag = $this->beitraege()->finde($b);
+            self::assertSame(JahresbeitragStatus::Offen, $beitrag?->status);
+            self::assertSame(Datum::heute()->format('Y-m-d'), $beitrag->ruecklastschriftAm?->format('Y-m-d'));
+            self::assertStringContainsString(sprintf('Rücklastschrift aus Einzug Nr. %d: Konto erloschen', $id), $beitrag->vermerke[array_key_last($beitrag->vermerke)]->text);
+        }
+        self::assertSame(JahresbeitragStatus::Bezahlt, $this->beitraege()->finde($bert)?->status);
+        $audit = $this->dienste->pdo()->query("SELECT entity_id, details FROM audit_log WHERE action = 'beitraege.ruecklastschrift'")->fetchAll(\PDO::FETCH_ASSOC);
+        self::assertCount(1, $audit);
+        self::assertSame((string) $id, (string) $audit[0]['entity_id']);
+        self::assertSame(2, json_decode((string) $audit[0]['details'], true)['anzahl']);
+
+        // The next run shows them, unticked and marked.
+        $seite = $this->get('/app/beitraege', ['jahr' => '2026'])->body;
+        self::assertStringContainsString(sprintf('name="beitrag[]" value="%d">', $anna), $seite);
+        self::assertStringContainsString(sprintf('name="beitrag[]" value="%d" checked', $fremd), $seite);
+        self::assertStringContainsString('außer 2 Beiträgen nach einer Rücklastschrift', $seite);
+        self::assertStringContainsString('Rücklastschrift am ' . Datum::heute()->format('d.m.Y'), $seite);
+
+        // The member: next to the remark, not among the hints on top; and the list "Auffälligkeiten".
+        $mitgliedId = (int) $this->beitraege()->finde($anna)?->mitgliedId;
+        $mitglied = $this->get('/app/mitglieder', ['mitglied' => (string) $mitgliedId])->body;
+        self::assertStringContainsString('<p class="feld-hinweis" id="m-ruecklastschrift">Rücklastschrift in: 2026</p>', $mitglied);
+        self::assertGreaterThan(strpos($mitglied, 'id="m-bemerkung"'), strpos($mitglied, 'Rücklastschrift in: 2026'));
+        $liste = $this->get('/app/listen/auffaelligkeiten', ['art' => 'ruecklastschrift'])->body;
+        self::assertStringContainsString('Albrecht, Anna', $liste);
+        self::assertStringContainsString('Christ, Carla', $liste);
+        self::assertStringContainsString('Rücklastschrift in 2026', $liste);
+        self::assertStringNotContainsString('Berger, Bert', $liste);
     }
 
     public function testADiscardedRunStaysInTheArchiveWithItsFile(): void

@@ -29,8 +29,8 @@ final readonly class JahresbeitragRepository
     public function anlegenWennFehlt(Jahresbeitrag $beitrag): ?Jahresbeitrag
     {
         $stmt = $this->pdo->prepare(
-            'INSERT IGNORE INTO jahresbeitrag (mitglied_id, jahr, betrag_cent, status, einzug_id, zahlweise, bezahlt_am, vermerke)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT IGNORE INTO jahresbeitrag (mitglied_id, jahr, betrag_cent, status, einzug_id, zahlweise, bezahlt_am, ruecklastschrift_am, vermerke)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         );
         $stmt->execute([
             $beitrag->mitgliedId,
@@ -40,6 +40,7 @@ final readonly class JahresbeitragRepository
             $beitrag->einzugId,
             $beitrag->zahlweise?->value,
             Zeilen::fuerDatum($beitrag->bezahltAm),
+            Zeilen::fuerDatum($beitrag->ruecklastschriftAm),
             self::vermerkeJson($beitrag->vermerke),
         ]);
 
@@ -249,6 +250,28 @@ final readonly class JahresbeitragRepository
     }
 
     /**
+     * The years with a returned direct debit (#133) per member, oldest
+     * first - for the member page and the list "Auffälligkeiten".
+     *
+     * @return array<int, list<int>> by member id
+     */
+    public function ruecklastschriftJahre(?int $mitgliedId = null): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT mitglied_id, jahr FROM jahresbeitrag WHERE ruecklastschrift_am IS NOT NULL'
+            . ($mitgliedId === null ? '' : ' AND mitglied_id = ?')
+            . ' ORDER BY mitglied_id, jahr',
+        );
+        $stmt->execute($mitgliedId === null ? [] : [$mitgliedId]);
+        $jahre = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $z) {
+            $jahre[(int) $z['mitglied_id']][] = (int) $z['jahr'];
+        }
+
+        return $jahre;
+    }
+
+    /**
      * Writes amount, status, direct debit, payment and notes of an existing
      * fee. Which transition is allowed (amount only while `offen`, 08
      * section 2) is decided by the service that changes it; this only stores.
@@ -261,7 +284,7 @@ final readonly class JahresbeitragRepository
 
         $this->pdo->prepare(
             'UPDATE jahresbeitrag
-             SET betrag_cent = ?, status = ?, einzug_id = ?, zahlweise = ?, bezahlt_am = ?, vermerke = ?
+             SET betrag_cent = ?, status = ?, einzug_id = ?, zahlweise = ?, bezahlt_am = ?, ruecklastschrift_am = ?, vermerke = ?
              WHERE id = ?',
         )->execute([
             $beitrag->betragCent,
@@ -269,6 +292,7 @@ final readonly class JahresbeitragRepository
             $beitrag->einzugId,
             $beitrag->zahlweise?->value,
             Zeilen::fuerDatum($beitrag->bezahltAm),
+            Zeilen::fuerDatum($beitrag->ruecklastschriftAm),
             self::vermerkeJson($beitrag->vermerke),
             $beitrag->id,
         ]);
@@ -307,6 +331,7 @@ final readonly class JahresbeitragRepository
             einzugId: Zeilen::idOderNull($z['einzug_id']),
             zahlweise: $z['zahlweise'] === null ? null : Zahlweise::tryFrom((string) $z['zahlweise']),
             bezahltAm: Zeilen::datum($z['bezahlt_am']),
+            ruecklastschriftAm: Zeilen::datum($z['ruecklastschrift_am']),
             vermerke: array_values(array_map(
                 static fn(mixed $v): Vermerk => Vermerk::ausArray(is_array($v) ? $v : []),
                 Zeilen::jsonArray($z['vermerke']),

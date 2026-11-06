@@ -78,6 +78,24 @@ final class JahresbeitragTest extends TestCase
         self::assertSame(20, $offen->inEinzug(20)->einzugId);
     }
 
+    /** #133: only a debit the bank returned is remembered, and it stays remembered. */
+    public function testOnlyAReturnedDirectDebitRemembersItsDay(): void
+    {
+        $perEinzug = self::offen()->inEinzug(12)->bezahltPerEinzug(new \DateTimeImmutable('2026-03-02'));
+        self::assertTrue($perEinzug->perLastschriftBezahlt());
+        $zurueck = $perEinzug->ruecklastschrift(self::vermerk('Konto erloschen'));
+        self::assertSame('2026-02-01', $zurueck->ruecklastschriftAm?->format('Y-m-d'));
+        self::assertSame('00:00', $zurueck->ruecklastschriftAm->format('H:i'));
+
+        $spaeterBar = $zurueck->bezahltVonHand(Zahlweise::Bar, new \DateTimeImmutable('2026-04-01'), self::vermerk());
+        self::assertFalse($spaeterBar->perLastschriftBezahlt());
+        self::assertSame('2026-02-01', $spaeterBar->ruecklastschriftAm?->format('Y-m-d'), 'kept when paid later');
+        self::assertSame('2026-02-01', $spaeterBar->ruecklastschrift(self::vermerk('Barzahlung irrtümlich'))->ruecklastschriftAm?->format('Y-m-d'));
+
+        $bar = self::offen()->bezahltVonHand(Zahlweise::Bar, new \DateTimeImmutable('2026-04-01'), self::vermerk());
+        self::assertNull($bar->ruecklastschrift(self::vermerk('irrtümlich'))->ruecklastschriftAm, 'taking back cash is no returned debit');
+    }
+
     public function testAReturnedDebitNeedsANote(): void
     {
         $bezahlt = self::offen()->bezahltVonHand(Zahlweise::Ueberweisung, new \DateTimeImmutable('2026-02-03'), self::vermerk());

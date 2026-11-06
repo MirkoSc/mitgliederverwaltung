@@ -31,6 +31,15 @@ final readonly class EinzugKandidat
         return $this->grund === null;
     }
 
+    /**
+     * Ticked when the page opens - all but a fee whose debit came back once
+     * (#133): the account may be closed, a second try only costs fees.
+     */
+    public function vorausgewaehlt(): bool
+    {
+        return $this->auswaehlbar() && $this->beitrag->ruecklastschriftAm === null;
+    }
+
     /** "Mustermann, Erika" - the sort order of the fee pages. */
     public function name(): string
     {

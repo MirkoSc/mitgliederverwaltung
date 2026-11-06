@@ -60,6 +60,14 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
   - **Rücklastschrift**: `bezahlt` → `offen`, Pflicht-Vermerk; der
     Beitrag kann erneut eingezogen oder von Hand bezahlt werden. Derselbe
     Weg nimmt eine irrtümlich vermerkte Barzahlung zurück.
+    War der Beitrag **per Lastschrift** bezahlt
+    (`Jahresbeitrag::perLastschriftBezahlt()`: Einzug, keine Zahlweise),
+    merkt er sich den Tag (`ruecklastschrift_am`, #133) – auch wenn er
+    später doch bezahlt wird; eine zurückgenommene Barzahlung zählt nicht.
+    Folgen: Im nächsten Einzug ist er **nicht vorausgewählt** (§3); am
+    Mitglied stehen die Jahre neben der Bemerkung (07 §1); die Liste
+    „Auffälligkeiten" hat die Art „Rücklastschrift" (09 §2). Gebühren der
+    Bank bildet die Anwendung nicht ab – das klärt der Vorstand persönlich.
   - Die Übergänge stehen an einer Stelle (`App\Domain\Jahresbeitrag`:
     `inEinzug`, `bezahltPerEinzug`, `ausEinzugZurueck`, `bezahltVonHand`,
     `ruecklastschrift`, `mitBetrag`); ein unzulässiger wirft
@@ -150,7 +158,9 @@ Mitgliedern, Beitragsarten, Abteilungen und den Jahresbeiträgen;
 Ablauf auf **einer** Seite (06 §2), von oben nach unten:
 
 1. **Zusammenstellen**: Liste der offenen Jahresbeiträge mit Zahlart
-   `lastschrift` und gültiger IBAN, alle vorausgewählt, abwählbar.
+   `lastschrift` und gültiger IBAN, alle vorausgewählt (außer nach einer
+   Rücklastschrift, §2), abwählbar. Abgewählte bleiben `offen` und sind
+   beim nächsten Einzug wieder dabei – auch im selben Jahr.
    Daneben, nicht auswählbar: offene Beiträge ohne gültige IBAN bzw. mit
    Zahlart `selbst` (Verweis auf Liste „Selbst kassieren", 09) und
    offene Beiträge ausgetretener Mitglieder.
@@ -202,6 +212,17 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
   kassieren" (09). Die Häkchen gehen als `beitrag[]`, danach ein
   verstecktes Feld `auswahl_vollstaendig` – fehlt es (der Server schneidet
   über `max_input_vars` stillschweigend ab), wird nichts erzeugt.
+- **Auswahl** (#133): Ein Beitrag mit `ruecklastschrift_am` ist nicht
+  vorausgewählt und trägt das Etikett „Rücklastschrift am TT.MM.JJJJ"
+  (`EinzugKandidat::vorausgewaehlt()`); der Text darüber nennt ihre Zahl.
+  Mit JS (`public/js/beitraege-auswahl.js`, Gruppe `einzug`) steht über
+  der Liste: Suchfeld wie in der Mitgliederliste ohne erweiterte Suche
+  (Name und Mitgliedsnummer, jedes Wort muss passen, ohne Rücksicht auf
+  Groß-/Kleinschreibung und Akzente; gefiltert wird im Browser, nichts
+  gespeichert, ausgeblendete Zeilen behalten ihr Häkchen), „Alle
+  angezeigten auswählen", „Nur nicht ausgewählte zeigen", Shift-Bereich
+  und der Zähler „n von m ausgewählt, Summe". Ohne JS bleibt es die
+  einfache Liste.
 - **Fälligkeit**: Vorschlag = nächster Bankarbeitstag + 1 Bankarbeitstag
   im TARGET-Kalender (Sa/So, 1.1., Karfreitag, Ostermontag, 1.5., 25./26.12.;
   `App\Service\Beitraege\Bankarbeitstage`). Ein früheres Datum als der
@@ -230,6 +251,18 @@ Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
   Einzug Nr. X am …" bzw. „Einzug Nr. X verworfen, wieder offen".
   Audit-Log `einzug.erzeugt`/`einzug.bestaetigt`/`einzug.verworfen` mit
   Anzahl und Summe.
+- **Rücklastschriften vermerken** (#133, `POST …/ruecklastschrift`): Auf
+  der Seite eines **bestätigten** Einzugs hat jede Zeile, deren Beitrag
+  noch per Lastschrift aus diesem Einzug bezahlt ist, ein Häkchen
+  (`form="einzug-ruecklastschrift"`); darüber dieselbe Suche (auch nach
+  der Referenz), „Alle angezeigten auswählen", Zähler, ein
+  Pflicht-Vermerk und „Ausgewählte als Rücklastschrift zurücksetzen".
+  `Jahresbeitraege::mehrereRuecklastschriften()`: eine Transaktion, jede
+  ID gesperrt und geprüft (gehört zu diesem Einzug, per Lastschrift
+  bezahlt) – sonst ändert sich nichts. Vermerk je Beitrag
+  „Rücklastschrift aus Einzug Nr. X: <Vermerk>", Audit
+  `beitraege.ruecklastschrift` mit Anzahl, Summe und Beitrags-IDs. Der
+  einzelne Weg über die Seite des Beitrags bleibt.
 
 ## 4. Lastschriftdatei
 
@@ -293,7 +326,7 @@ Verwendungszweck-Vorlage stehen in den Vereinsdaten (11).
 | Tabelle | Spalten |
 |---|---|
 | `beitragsart` | id, name, betrag_cent, regel, aktiv_art, sortierung, aktiv |
-| `jahresbeitrag` | id, mitglied_id, jahr, betrag_cent, status, einzug_id NULL, zahlweise NULL, bezahlt_am NULL, vermerke (JSON-Liste) – UNIQUE(mitglied_id, jahr) |
+| `jahresbeitrag` | id, mitglied_id, jahr, betrag_cent, status, einzug_id NULL, zahlweise NULL, bezahlt_am NULL, ruecklastschrift_am NULL (Migration 302, #133), vermerke (JSON-Liste) – UNIQUE(mitglied_id, jahr) |
 | `einzug` | id, status, faellig_am, erstellt_von, erstellt_am, bestaetigt_am NULL, bestaetigt_von NULL, anzahl, summe_cent, msg_id, datei_blob_id (verschlüsselte XML-Datei), daten (JSON: Transaktionsangaben für die Anzeige im Archiv) |
 
 - `jahresbeitrag.vermerke`: JSON-Liste `{von: user_id|null, am, text}`
@@ -332,6 +365,13 @@ Dateien) und nichts anderer Jahre, ein Einzug mit mehreren Jahren bleibt;
 Audit-Eintrag; danach ist „Bestand leeren" wieder möglich. Mehrfach-bezahlt
 setzt genau die gewählten, ein nicht mehr offener ändert nichts;
 Bereichslogik in `tests/js/beitraege-auswahl.test.js`.
+Zu #133: nur eine Rücklastschrift nach Lastschrift merkt sich den Tag,
+auch nach späterer Zahlung (`JahresbeitragTest`); mehrere Rücklastschriften
+nur bei bestätigtem Einzug, Pflicht-Vermerk, vollständige Auswahl, ein
+fremder Beitrag ändert nichts, Audit; danach nicht vorausgewählt, Jahr am
+Mitglied neben der Bemerkung, Zeile in „Auffälligkeiten"; Vorstand 403
+(`EinzugSeiteTest`); Suche, Geld und Zähler in
+`tests/js/beitraege-auswahl.test.js`.
 Zu §2b: Hochrechnung wie Erzeugen (ehemalig, späterer Eintritt, anteilig,
 beitragsfrei); erzeugte Beiträge zählen mit ihrem Betrag; Teilung über
 mehrere Abteilungen und über die Familie (ohne Mitglieder mit eigenem

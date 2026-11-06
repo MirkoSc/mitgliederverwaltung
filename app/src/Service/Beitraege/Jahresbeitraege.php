@@ -170,6 +170,46 @@ final readonly class Jahresbeitraege
         });
     }
 
+    /**
+     * Several returned debits of one confirmed run at once (#133): every fee
+     * back to `offen` with the same note, which is required. All or nothing
+     * - in one transaction, every id checked after locking its row; if one
+     * does not exist, is not paid by this run or no longer paid, no fee
+     * changes.
+     *
+     * @param list<int> $ids
+     * @return list<Jahresbeitrag> the reopened fees, in the order of $ids
+     * @throws BeitragNichtAenderbar
+     */
+    public function mehrereRuecklastschriften(int $einzugId, array $ids, string $text, ?int $von): array
+    {
+        $ids = array_values(array_unique(array_filter($ids, static fn(int $id): bool => $id > 0)));
+        if ($ids === []) {
+            throw new BeitragNichtAenderbar('Bitte wählen Sie mindestens einen Beitrag aus.');
+        }
+        if (trim($text) === '') {
+            throw new BeitragNichtAenderbar('Bitte schreiben Sie in den Vermerk, warum die Lastschriften zurückgekommen sind.');
+        }
+
+        return Zeilen::transaktion($this->pdo, function () use ($einzugId, $ids, $text, $von): array {
+            $gefunden = $this->beitraege->mitIds($ids, zumAendern: true);
+            $vermerk = self::vermerk($von, self::mitZusatz(sprintf('Rücklastschrift aus Einzug Nr. %d', $einzugId), $text));
+            $offen = [];
+            foreach ($ids as $id) {
+                $beitrag = $gefunden[$id] ?? null;
+                if ($beitrag === null || $beitrag->einzugId !== $einzugId || !$beitrag->perLastschriftBezahlt()) {
+                    throw new BeitragNichtAenderbar('Mindestens ein gewählter Beitrag ist nicht mehr per Lastschrift aus diesem Einzug bezahlt. '
+                        . 'Es wurde nichts geändert – die Liste ist jetzt wieder aktuell, bitte wählen Sie erneut.');
+                }
+                $neu = $beitrag->ruecklastschrift($vermerk);
+                $this->beitraege->speichern($neu);
+                $offen[] = $neu;
+            }
+
+            return $offen;
+        });
+    }
+
     /** A note of its own, in any status. */
     public function vermerken(int $id, string $text, ?int $von): Jahresbeitrag
     {

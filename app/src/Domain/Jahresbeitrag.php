@@ -27,6 +27,11 @@ final readonly class Jahresbeitrag
         public ?Zahlweise $zahlweise = null,
         public ?\DateTimeImmutable $bezahltAm = null,
         public array $vermerke = [],
+        /**
+         * Day of the last returned direct debit (#133); kept once set, also
+         * when the fee is paid later. Null = never returned.
+         */
+        public ?\DateTimeImmutable $ruecklastschriftAm = null,
         public ?int $id = null,
     ) {
     }
@@ -111,10 +116,17 @@ final readonly class Jahresbeitrag
         ]);
     }
 
+    /** Whether it was paid by a direct debit - only then can the bank return it. */
+    public function perLastschriftBezahlt(): bool
+    {
+        return $this->status === JahresbeitragStatus::Bezahlt && $this->einzugId !== null && $this->zahlweise === null;
+    }
+
     /**
      * Returned debit (or a payment noted by mistake): `bezahlt` back to
      * `offen`, the note is required. The fee can then be collected again or
-     * paid by hand.
+     * paid by hand. Only a fee paid by direct debit remembers the day
+     * (#133) - taking back a cash payment is no returned debit.
      */
     public function ruecklastschrift(Vermerk $vermerk): self
     {
@@ -129,6 +141,7 @@ final readonly class Jahresbeitrag
             'zahlweise' => null,
             'bezahltAm' => null,
             'vermerke' => [...$this->vermerke, $vermerk],
+            'ruecklastschriftAm' => $this->perLastschriftBezahlt() ? $vermerk->am->setTime(0, 0) : $this->ruecklastschriftAm,
         ]);
     }
 

@@ -15,6 +15,7 @@ use App\Domain\VersionsAnlass;
 use App\Http\Request;
 use App\Http\Response;
 use App\Repository\FamilieRepository;
+use App\Repository\JahresbeitragRepository;
 use App\Repository\MitgliedRepository;
 use App\Repository\VersionKonfliktException;
 use App\Service\Mitglied\HinweisLader;
@@ -418,6 +419,10 @@ final readonly class MitgliedController
             // Only a former member can be deleted (07 section 1); everyone else leaves first.
             'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen) && $mitglied->istEhemalig(Datum::heute()),
             'einbettung' => $einbettung ?? Einbettung::mitgliederSeite(),
+            // Next to the remark, not among the hints on top (#133); fee data, so only with beitraege.sehen.
+            'ruecklastschriftJahre' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::BeitraegeSehen)
+                ? new JahresbeitragRepository($this->dienste->pdo())->ruecklastschriftJahre($mitglied->id)[$mitglied->id] ?? []
+                : [],
         ];
     }
 

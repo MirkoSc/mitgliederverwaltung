@@ -14,7 +14,7 @@ use App\View\Navigation;
 /**
  * The direct debit (docs/spec/08-beitraege.md sections 3 and 4, issue #30):
  * create a run, the page of one run, download its stored file, confirm or
- * discard it. Admin only: every route declares BeitraegeVerwalten, so the
+ * discard it, note returned debits of several of its fees at once (#133). Admin only: every route declares BeitraegeVerwalten, so the
  * Vorstand gets 403 on each. The compose list and the archive are part of
  * the page "Beiträge" (app/routes/beitraege.php).
  */
@@ -28,4 +28,5 @@ return static function (Routen $routen): void {
     $routen->get($einzug . '/datei', $zugriff, static fn(Request $r, array $p): ResponseInterface => $controller()->datei($r, $p));
     $routen->post($einzug . '/bestaetigen', $zugriff, static fn(Request $r, array $p): Response => $controller()->bestaetigen($r, $p));
     $routen->post($einzug . '/verwerfen', $zugriff, static fn(Request $r, array $p): Response => $controller()->verwerfen($r, $p));
+    $routen->post($einzug . '/ruecklastschrift', $zugriff, static fn(Request $r, array $p): Response => $controller()->ruecklastschrift($r, $p));
 };

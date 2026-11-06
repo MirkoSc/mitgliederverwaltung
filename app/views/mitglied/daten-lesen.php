@@ -10,6 +10,7 @@
  * @var \App\Domain\Familie|null $familie
  * @var \App\App\Mitglied\Auswahllisten $listen
  * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (issue #106), without buttons
+ * @var list<int> $ruecklastschriftJahre years with a returned direct debit (#133); [] without beitraege.sehen
  */
 
 use App\Support\Banken;
@@ -72,6 +73,7 @@ $gruppen = [
     ],
     'Sonstiges' => [
         'Bemerkung' => $mitglied->bemerkung,
+        'Rücklastschrift in' => implode(', ', $ruecklastschriftJahre ?? []),
     ],
 ];
 ?>

@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { bereich, anzahl, zaehlerText, alleZustand } = require('../../public/js/beitraege-auswahl.js');
+const { bereich, anzahl, zaehlerText, alleZustand, passt, geld, summenText } = require('../../public/js/beitraege-auswahl.js');
 
 const AUS = [false, false, false, false, false, false];
 
@@ -53,4 +53,21 @@ test('counter and "Alle auswählen"', () => {
     assert.equal(alleZustand([false, false]), 'keine');
     assert.equal(alleZustand([true, false]), 'teils');
     assert.equal(alleZustand([true, true]), 'alle');
+});
+
+test('the search: every word must match, in any order, without regard to case and accents', () => {
+    assert.equal(passt('Müller, Jürgen Jürgen 1001', ''), true);
+    assert.equal(passt('Müller, Jürgen Jürgen 1001', 'muller'), true);
+    assert.equal(passt('Müller, Jürgen Jürgen 1001', 'Jürgen 1001'), true);
+    assert.equal(passt('Müller, Jürgen Jürgen 1001', '1001 MÜLLER'), true);
+    assert.equal(passt('Müller, Jürgen Jürgen 1001', 'Müller Anna'), false);
+    assert.equal(passt('Weiß, Åsa Åsa 7', 'weiss asa'), true);
+    assert.equal(passt('Albrecht, Anna Anna 12 E3-12-2026', 'e3-12'), true);
+});
+
+test('money and the counter with the sum', () => {
+    assert.equal(geld(0), '0,00\u00a0€');
+    assert.equal(geld(3000), '30,00\u00a0€');
+    assert.equal(geld(123456789), '1.234.567,89\u00a0€');
+    assert.equal(summenText(2, 5, 8500), '2 von 5 ausgewählt, 85,00\u00a0€');
 });
