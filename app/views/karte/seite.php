@@ -139,9 +139,9 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
                 </thead>
                 <tbody>
                     <?php foreach ($ansicht->gefunden as $ort): ?>
-                        <?php $genau = $ort->status === GeoStatus::Ungefaehr || $ort->status === GeoStatus::VonHand ? $ort->status : null; ?>
+                        <?php $genau = in_array($ort->status, [GeoStatus::Strasse, GeoStatus::Ungefaehr, GeoStatus::VonHand], true) ? $ort->status : null; ?>
                         <tr<?= $genau !== null ? ' data-genauigkeit="' . e($genau->value) . '"' : '' ?><?= $fokusMitglied !== null && in_array($fokusMitglied, array_map(static fn($m): int => $m->id, $ort->mitglieder), true) ? ' data-fokus' : '' ?> data-lat="<?= e(number_format((float) $ort->lat, 6, '.', '')) ?>" data-lon="<?= e(number_format((float) $ort->lon, 6, '.', '')) ?>">
-                            <td class="liste-titel"><span data-karte-anschrift><?= e($ort->anschrift->text()) ?></span><?php if ($genau !== null): ?> <span class="etikett <?= $genau === GeoStatus::Ungefaehr ? 'etikett-warnung' : 'etikett-info' ?>" data-karte-etikett><?= e($genau->etikett()) ?></span><?php endif; ?></td>
+                            <td class="liste-titel"><span data-karte-anschrift><?= e($ort->anschrift->text()) ?></span><?php if ($genau !== null): ?> <span class="etikett <?= $genau === GeoStatus::VonHand ? 'etikett-info' : 'etikett-warnung' ?>" data-karte-etikett><?= e($genau->etikett()) ?></span><?php endif; ?></td>
                             <td class="zahl" data-label="Anzahl" data-karte-anzahl><?= count($ort->mitglieder) ?></td>
                             <td data-label="Mitglieder" data-karte-mitglieder><?= $mitgliederListe($ort) ?></td>
                         </tr>

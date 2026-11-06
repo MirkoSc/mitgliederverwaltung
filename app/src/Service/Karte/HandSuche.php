@@ -14,6 +14,9 @@ enum HandSuche
 {
     case Gefunden;
 
+    /** The street without the house number (issue #135). */
+    case Strasse;
+
     /** Only postcode and town were found (issue #108). */
     case Ungefaehr;
 
@@ -38,6 +41,7 @@ enum HandSuche
     {
         return match ($status) {
             GeoStatus::Gefunden => self::Gefunden,
+            GeoStatus::Strasse => self::Strasse,
             GeoStatus::Ungefaehr => self::Ungefaehr,
             GeoStatus::NichtGefunden => self::NichtGefunden,
             GeoStatus::VonHand => self::PunktVonHand,

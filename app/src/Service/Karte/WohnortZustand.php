@@ -9,6 +9,9 @@ enum WohnortZustand
 {
     case Gefunden;
 
+    /** The street without the house number (issue #135). */
+    case Strasse;
+
     /** Only postcode and town were found: the dot stands in the middle of the place (issue #108). */
     case Ungefaehr;
 
@@ -30,6 +33,7 @@ enum WohnortZustand
     {
         return match ($status) {
             GeoStatus::Gefunden => self::Gefunden,
+            GeoStatus::Strasse => self::Strasse,
             GeoStatus::Ungefaehr => self::Ungefaehr,
             GeoStatus::VonHand => self::VonHand,
             GeoStatus::NichtGefunden => self::NichtGefunden,
@@ -40,6 +44,6 @@ enum WohnortZustand
     /** Whether the address has a dot on the map. */
     public function hatPunkt(): bool
     {
-        return in_array($this, [self::Gefunden, self::Ungefaehr, self::VonHand], true);
+        return in_array($this, [self::Gefunden, self::Strasse, self::Ungefaehr, self::VonHand], true);
     }
 }

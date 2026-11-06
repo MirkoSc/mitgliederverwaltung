@@ -26,6 +26,12 @@ use App\Support\Laender;
  * Without a fitting hit a second query asks for postcode, town and country
  * only; a fitting hit there is "ungefähr" (the middle of the place). An
  * address without a street can only ever be found "ungefähr".
+ *
+ * Where OpenStreetMap has no house numbers, Nominatim answers with the
+ * street (issue #135). When the address has a house number (a digit in the
+ * street) and no fitting hit has one, the result is "Straße" - the dot
+ * lies on the street, not at the house. A fitting hit with a house number
+ * is preferred to one without.
  */
 final readonly class Geocoder
 {
@@ -77,7 +83,7 @@ final readonly class Geocoder
     {
         if ($anschrift->strasse !== '') {
             $genau = $this->fragen($this->url($anschrift, $wortgetreu), $anschrift, $wortgetreu, $jeAnfrage);
-            if ($genau->istFehler() || $genau->status === GeoStatus::Gefunden) {
+            if ($genau->istFehler() || $genau->status === GeoStatus::Gefunden || $genau->status === GeoStatus::Strasse) {
                 return $genau;
             }
         }
@@ -161,14 +167,38 @@ final readonly class Geocoder
                 return GeoErgebnis::fehler('ungültige Antwort');
             }
         }
-        foreach ($daten as $treffer) {
-            /** @var array<array-key, mixed> $treffer */
-            if (self::passt($treffer, $anschrift, $wortgetreu)) {
+        $passend = array_values(array_filter($daten, static fn(mixed $t): bool => is_array($t) && self::passt($t, $anschrift, $wortgetreu)));
+        if ($passend === []) {
+            return GeoErgebnis::nichtGefunden();
+        }
+        if (!self::mitHausnummer($anschrift->strasse)) {
+            return GeoErgebnis::gefunden((float) $passend[0]['lat'], (float) $passend[0]['lon']);
+        }
+        foreach ($passend as $treffer) {
+            if (self::hatHausnummer($treffer)) {
                 return GeoErgebnis::gefunden((float) $treffer['lat'], (float) $treffer['lon']);
             }
         }
 
-        return GeoErgebnis::nichtGefunden();
+        return GeoErgebnis::strasse((float) $passend[0]['lat'], (float) $passend[0]['lon']);
+    }
+
+    /** Whether the searched street carries a house number ("Hauptstraße 10", "Am Hang 3a"). */
+    public static function mitHausnummer(string $strasse): bool
+    {
+        return preg_match('/\d/u', $strasse) === 1;
+    }
+
+    /**
+     * Whether a hit is a house: its address details name a house number.
+     *
+     * @param array<array-key, mixed> $treffer
+     */
+    public static function hatHausnummer(array $treffer): bool
+    {
+        $nummer = is_array($treffer['address'] ?? null) ? ($treffer['address']['house_number'] ?? null) : null;
+
+        return is_string($nummer) && trim($nummer) !== '';
     }
 
     /** The town as it goes to the geocoder - and as a hit's town is compared. */

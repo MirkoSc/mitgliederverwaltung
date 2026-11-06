@@ -26,6 +26,12 @@ final readonly class GeoErgebnis
         return new self(GeoStatus::Gefunden, $lat, $lon);
     }
 
+    /** The street without the house number (issue #135). */
+    public static function strasse(float $lat, float $lon): self
+    {
+        return new self(GeoStatus::Strasse, $lat, $lon);
+    }
+
     public static function ungefaehr(float $lat, float $lon): self
     {
         return new self(GeoStatus::Ungefaehr, $lat, $lon);

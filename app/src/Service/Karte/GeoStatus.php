@@ -10,8 +10,15 @@ namespace App\Service\Karte;
  */
 enum GeoStatus: string
 {
-    /** The geocoder found the street - with the right postcode (issue #108). */
+    /** The geocoder found the house - with the right postcode (issue #108). */
     case Gefunden = 'gefunden';
+
+    /**
+     * The geocoder knows the street but not the house number (OpenStreetMap
+     * has none there, issue #135): the dot stands on the street, usually
+     * its middle. Drawn like an approximate dot.
+     */
+    case Strasse = 'strasse';
 
     /**
      * The street was not found, but postcode and town were (issue #108):
@@ -45,6 +52,7 @@ enum GeoStatus: string
     {
         return match ($this) {
             self::Gefunden => 'gefunden',
+            self::Strasse => 'ungefähr (Straße)',
             self::Ungefaehr => 'ungefähr',
             self::NichtGefunden => 'nicht gefunden',
             self::VonHand => 'von Hand',

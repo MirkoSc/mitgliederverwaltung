@@ -192,6 +192,7 @@ final readonly class WohnortController
                 'korrektur' => $aktion === self::AKTION_KORRIGIEREN ? 'gesetzt' : 'entfernt',
                 'ergebnis' => match ($ergebnis) {
                     HandSuche::Gefunden => 'gefunden',
+                    HandSuche::Strasse => 'strasse',
                     HandSuche::Ungefaehr => 'ungefaehr',
                     HandSuche::NichtGefunden => 'nicht_gefunden',
                     default => 'offen',
@@ -217,6 +218,10 @@ final readonly class WohnortController
 
         return match ($ergebnis) {
             HandSuche::Gefunden => [$gemerkt . 'Die Anschrift wurde auf der Karte gefunden.', FlashArt::Ok],
+            HandSuche::Strasse => [
+                $gemerkt . 'Die Straße wurde gefunden, das Haus nicht: Der Kartendienst kennt dort keine Hausnummern. Der Punkt steht ungefähr, auf der Straße. Sie können ihn von Hand aufs Haus setzen.',
+                FlashArt::Info,
+            ],
             HandSuche::Ungefaehr => [
                 $gemerkt . 'Die Straße wurde nicht gefunden, nur PLZ und Ort: Der Punkt steht ungefähr, in der Ortsmitte. Sie können die Suche ändern oder den Punkt von Hand setzen.',
                 FlashArt::Warnung,

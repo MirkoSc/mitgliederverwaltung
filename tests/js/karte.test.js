@@ -67,6 +67,7 @@ test('an approximate or hand-set dot says so in its name (issue #108)', () => {
     assert.equal(punktTitel('Am Hang 12, 63867 Johannesberg', 1, 'ungefaehr'), 'Am Hang 12, 63867 Johannesberg: 1 Mitglied (ungefähr)');
     assert.equal(punktTitel('Am Hang 12, 63867 Johannesberg', 2, 'von_hand'), 'Am Hang 12, 63867 Johannesberg: 2 Mitglieder (von Hand)');
     assert.equal(punktTitel('A', 1, 'irgendwas'), 'A: 1 Mitglied');
+    assert.equal(punktTitel('Hauptstraße 10, 63867 Johannesberg', 1, 'strasse'), 'Hauptstraße 10, 63867 Johannesberg: 1 Mitglied (ungefähr, Straße)');
     const orte = orteAus([
         { lat: '50.1', lon: '9.1', anschrift: 'A', anzahl: '1', genauigkeit: 'ungefaehr' },
         { lat: '50.2', lon: '9.2', anschrift: 'B', anzahl: '1', genauigkeit: '<script>' },

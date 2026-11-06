@@ -172,6 +172,21 @@ Projektadresse), wie es ihre Nutzungsregeln verlangen.
   sein. Die Such-Anschrift von Hand wird genauso geprüft (mit ihrer PLZ
   bzw. ihrem Ort). Migration 194 hat alle automatischen Ergebnisse
   vergessen, damit sie mit der Prüfung neu gesucht werden.
+  **Haus oder Straße** (#135): Wo OpenStreetMap keine Hausnummern kennt
+  (z. B. Johannesberg), liefert Nominatim nur die Straße. Hat die
+  gesuchte Straße eine Hausnummer (eine Ziffer) und kein passender Treffer
+  eine `address.house_number`, heißt das Ergebnis **Straße**
+  (`GeoStatus::Strasse`, Etikett „ungefähr (Straße)", Koordinaten des
+  ersten passenden Treffers); ein passender Treffer mit Hausnummer geht
+  vor. Ohne Hausnummer in der Anschrift ist die Straße „gefunden". Es gibt
+  keine zweite Anfrage – die Straße ist genauer als die Ortsmitte – und
+  keinen Hinweis am Mitglied (sonst hätte fast jedes einen). Migration 303
+  hat alle automatischen „gefunden" vergessen (Zeilen mit Such-Anschrift
+  bleiben mit status NULL), damit sie so neu gesucht werden. Genau aufs Haus
+  kommt ein Punkt über „Punkt von Hand" oder über Hausnummern in
+  OpenStreetMap; andere Geocoder wurden geprüft und verworfen (amtliche
+  Hauskoordinaten nur mit Lizenz, kommerzielle Dienste nicht ohne Kosten und
+  Änderung der Datenschutzerklärung).
   **Punkt von Hand** (#108, `GeoStatus::VonHand`): am Mitglied gesetzt (07
   §1), ohne Anfrage, gilt vor jeder automatischen Suche; Cron, „Jetzt
   suchen", Such-Anschrift und „Alle neu ermitteln" überschreiben ihn nie.

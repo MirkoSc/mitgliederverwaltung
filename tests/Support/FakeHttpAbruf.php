@@ -62,13 +62,17 @@ final class FakeHttpAbruf implements HttpAbruf
     }
 
     /**
-     * One hit as Nominatim gives it with addressdetails=1.
+     * One hit as Nominatim gives it with addressdetails=1 - a house (with a
+     * house number) unless $hausnummer is '' (the street only, issue #135).
      *
      * @return array<string, mixed>
      */
-    public static function hit(float $lat, float $lon, string $plz = '', string $ort = '', string $ortArt = 'village'): array
+    public static function hit(float $lat, float $lon, string $plz = '', string $ort = '', string $ortArt = 'village', string $hausnummer = '1'): array
     {
         $adresse = ['country' => 'Deutschland', 'country_code' => 'de'];
+        if ($hausnummer !== '') {
+            $adresse['house_number'] = $hausnummer;
+        }
         if ($plz !== '') {
             $adresse['postcode'] = $plz;
         }
