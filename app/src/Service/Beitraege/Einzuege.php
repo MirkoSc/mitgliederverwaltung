@@ -16,6 +16,7 @@ use App\Domain\JahresbeitragStatus;
 use App\Domain\Mitglied;
 use App\Domain\Vermerk;
 use App\Domain\Zahlart;
+use App\Repository\AbteilungRepository;
 use App\Repository\EinzugRepository;
 use App\Repository\JahresbeitragRepository;
 use App\Repository\MitgliedRepository;
@@ -29,6 +30,7 @@ use App\Service\Storage\BlobService;
 use App\Service\Verein\VereinRepository;
 use App\Service\Verein\Vereinsdaten;
 use App\Support\Datum;
+use App\Support\Geld;
 use App\Support\Iban;
 
 /**
@@ -46,13 +48,15 @@ use App\Support\Iban;
 final readonly class Einzuege
 {
     /** Remittance text when the club data has no template of its own (08 section 4). */
-    public const string VERWENDUNGSZWECK = 'Mitgliedsbeitrag {jahr} Nr. {mitgliedsnummer} {name}';
+    public const string VERWENDUNGSZWECK = 'Mitgliedsbeitrag {jahr} Nr. {mitgliedsnummer} {name} {abteilung} {betrag}';
 
     /** The placeholders of the template, as the page explains them. */
     public const array PLATZHALTER = [
         '{jahr}' => 'Beitragsjahr',
         '{mitgliedsnummer}' => 'Mitgliedsnummer',
-        '{name}' => 'Vor- und Nachname des Mitglieds',
+        '{name}' => 'Nachname und Vorname des Mitglieds',
+        '{abteilung}' => 'Abteilungen des Mitglieds',
+        '{betrag}' => 'Betrag (z. B. 30,00)',
     ];
 
     public function __construct(
@@ -60,6 +64,7 @@ final readonly class Einzuege
         private EinzugRepository $einzuege,
         private JahresbeitragRepository $beitraege,
         private MitgliedRepository $mitglieder,
+        private AbteilungRepository $abteilungen,
         private VereinRepository $verein,
         private BlobService $blobs,
         private AuditLog $audit,
@@ -73,6 +78,7 @@ final readonly class Einzuege
             new EinzugRepository($d->pdo()),
             new JahresbeitragRepository($d->pdo()),
             new MitgliedRepository($d->pdo()),
+            new AbteilungRepository($d->pdo()),
             VereinRepository::aus($d),
             BlobService::aus($d),
             $d->audit(),
@@ -134,9 +140,10 @@ final readonly class Einzuege
             throw new EinzugNichtMoeglich('Bitte wählen Sie mindestens einen Beitrag für den Einzug aus.');
         }
 
+        $abteilungen = $this->abteilungsnamen();
         $blob = null;
         try {
-            $einzug = Zeilen::transaktion($this->pdo, function () use ($ids, $faelligAm, $von, $jetzt, $verein, &$blob): Einzug {
+            $einzug = Zeilen::transaktion($this->pdo, function () use ($ids, $faelligAm, $von, $jetzt, $verein, $abteilungen, &$blob): Einzug {
                 $kandidaten = [];
                 // Locks in a fixed order - the fees, then their members by
                 // id - and the members read under their lock: a member saved
@@ -172,7 +179,7 @@ final readonly class Einzuege
                 $lastschriften = [];
                 $posten = [];
                 foreach ($kandidaten as $k) {
-                    $lastschrift = self::lastschrift($k, $verein, $id, $jetzt);
+                    $lastschrift = self::lastschrift($k, $verein, $abteilungen, $id, $jetzt);
                     $lastschriften[] = $lastschrift;
                     $posten[] = new EinzugPosten(
                         beitragId: (int) $k->beitrag->id,
@@ -317,14 +324,21 @@ final readonly class Einzuege
 
     /**
      * The remittance text of one fee: the template with its placeholders
-     * filled, in the SEPA character set, at most 140 characters.
+     * filled, in the SEPA character set, at most 140 characters. `{name}`
+     * is "Nachname Vorname" and `{betrag}` "30,00", as the old software
+     * wrote them; `{abteilung}` the member's departments, empty for none.
+     *
+     * @param array<int, string> $abteilungen department names by id, in display order
      */
-    public static function verwendungszweck(string $vorlage, int $jahr, Mitglied $mitglied): string
+    public static function verwendungszweck(string $vorlage, Jahresbeitrag $beitrag, Mitglied $mitglied, array $abteilungen): string
     {
+        $namen = array_values(array_intersect_key($abteilungen, array_flip($mitglied->abteilungIds)));
         $text = strtr($vorlage, [
-            '{jahr}' => (string) $jahr,
+            '{jahr}' => (string) $beitrag->jahr,
             '{mitgliedsnummer}' => (string) $mitglied->mitgliedsnummer,
-            '{name}' => trim($mitglied->vorname . ' ' . $mitglied->nachname),
+            '{name}' => trim($mitglied->nachname . ' ' . $mitglied->vorname),
+            '{abteilung}' => implode(', ', $namen),
+            '{betrag}' => Geld::eingabeWert($beitrag->betragCent),
         ]);
 
         return SepaText::bereinigen($text, Pain008::ZWECK_LAENGE);
@@ -411,8 +425,12 @@ final readonly class Einzuege
         return new EinzugKandidat($beitrag, $mitglied);
     }
 
-    /** The transaction of one collectable fee; the EndToEndId names run, member number and year. */
-    private static function lastschrift(EinzugKandidat $k, Vereinsdaten $verein, int $einzugId, \DateTimeImmutable $heute): Pain008Lastschrift
+    /**
+     * The transaction of one collectable fee; the EndToEndId names run, member number and year.
+     *
+     * @param array<int, string> $abteilungen department names by id
+     */
+    private static function lastschrift(EinzugKandidat $k, Vereinsdaten $verein, array $abteilungen, int $einzugId, \DateTimeImmutable $heute): Pain008Lastschrift
     {
         $mandatsdatum = self::mandatsdatum($k->mitglied, $verein) ?? $heute;
 
@@ -424,7 +442,7 @@ final readonly class Einzuege
             name: self::kontoinhaber($k->mitglied),
             iban: Iban::normalisieren($k->mitglied->iban),
             bic: self::bic($k->mitglied->bic),
-            verwendungszweck: self::verwendungszweck(self::vorlage($verein), $k->beitrag->jahr, $k->mitglied),
+            verwendungszweck: self::verwendungszweck(self::vorlage($verein), $k->beitrag, $k->mitglied, $abteilungen),
         );
     }
 
@@ -463,6 +481,22 @@ final readonly class Einzuege
         $bic = strtoupper((string) preg_replace('/\s+/', '', $bic));
 
         return Pain008::istBic($bic) ? $bic : '';
+    }
+
+    /**
+     * Every department's name by id in display order, inactive ones too (a
+     * member may still belong to one).
+     *
+     * @return array<int, string>
+     */
+    private function abteilungsnamen(): array
+    {
+        $namen = [];
+        foreach ($this->abteilungen->alle() as $abteilung) {
+            $namen[(int) $abteilung->id] = $abteilung->name;
+        }
+
+        return $namen;
     }
 
     /**

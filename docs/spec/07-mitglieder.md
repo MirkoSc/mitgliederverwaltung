@@ -49,8 +49,8 @@ Server – auch hier gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
   „Endgültig löschen?" mit der eingetippten Mitgliedsnummer. Gelöscht
   werden Mitglied, Versionen, Nachweise und Jahresbeiträge; bereits
   erzeugte Einzüge behalten ihre eigene Kopie (08 §4).
-- **Mandatsreferenz**: Default = Mitgliedsnummer (Muster folgt E6 aus der
-  Sammlung, vor dem ersten echten Einzug). **Mandatsdatum**: Default =
+- **Mandatsreferenz**: Default = Mitgliedsnummer ohne führende Nullen,
+  wie in den Lastschriften der alten Software (E6 ✅). **Mandatsdatum**: Default =
   Eintrittsdatum, sonst das Default-Mandatsdatum aus den Einstellungen.
 - IBAN wird beim Speichern normalisiert (Großbuchstaben, ohne
   Leerzeichen) und per Prüfziffer geprüft – falsch ⇒ Hinweis, gespeichert
