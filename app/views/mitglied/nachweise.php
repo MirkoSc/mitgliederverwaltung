@@ -58,6 +58,37 @@ $einbettung ??= Einbettung::mitgliederSeite();
                             </form>
                         <?php endif; ?>
                     </div>
+                    <?php if ($darfPflegen): ?>
+                        <?php $feld = 'nachweis-' . $nachweis->id; ?>
+                        <details class="nachweis-bearbeiten">
+                            <summary>Nachweis bearbeiten</summary>
+                            <form method="post" action="<?= e(NachweisController::adresse($mitgliedId, $nachweis->id . '/bearbeiten')) ?>" class="formular">
+                                <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
+                                <?= $einbettung->feld() ?>
+                                <div class="feld">
+                                    <label for="<?= e($feld) ?>-art">Art</label>
+                                    <select id="<?= e($feld) ?>-art" name="art" required>
+                                        <?php foreach ($arten as $art): ?>
+                                            <option value="<?= e($art->value) ?>"<?= $art === $nachweis->art ? ' selected' : '' ?>><?= e($art->bezeichnung()) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="feld">
+                                    <label for="<?= e($feld) ?>-bis">Gültig bis (optional)</label>
+                                    <input type="date" id="<?= e($feld) ?>-bis" name="gueltig_bis" value="<?= e($nachweis->gueltigBis?->format('Y-m-d') ?? '') ?>" aria-describedby="<?= e($feld) ?>-bis-hinweis">
+                                    <p id="<?= e($feld) ?>-bis-hinweis" class="feld-hinweis">Leer heißt: ohne Ablaufdatum.</p>
+                                </div>
+                                <div class="feld">
+                                    <label for="<?= e($feld) ?>-bemerkung">Bemerkung (optional)</label>
+                                    <input type="text" id="<?= e($feld) ?>-bemerkung" name="bemerkung" maxlength="500" value="<?= e($nachweis->bemerkung) ?>">
+                                </div>
+                                <p class="feld-hinweis">Die Datei und „vermerkt von/am“ bleiben, wie sie sind.</p>
+                                <div class="knopfreihe">
+                                    <button type="submit" class="knopf knopf-haupt">Änderungen speichern</button>
+                                </div>
+                            </form>
+                        </details>
+                    <?php endif; ?>
                 </li>
             <?php endforeach; ?>
         </ul>

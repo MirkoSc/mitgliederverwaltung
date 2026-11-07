@@ -21,7 +21,8 @@ use App\View\FlashArt;
 
 /**
  * Proofs of a member (docs/spec/07-mitglieder.md section 5, issue #23):
- * note one with an optional file, download the file, delete (admin only).
+ * note one with an optional file, change its kind, end date and remark
+ * (#137), download the file, delete (admin only).
  * Who noted it and when are set here and in the repository, never taken
  * from the form. Answers with a redirect to the member - on the page it was
  * opened on (App\App\Mitglied\Einbettung) - and a message.
@@ -80,17 +81,11 @@ final readonly class NachweisController
         }
         $id = (int) $mitglied->id;
 
-        $art = NachweisArt::tryFrom($r->feld('art'));
-        if ($art === null) {
-            return $this->zurueck($r, $id, 'Bitte die Art des Nachweises wählen.', FlashArt::Warnung);
+        $angaben = self::angaben($r);
+        if (is_string($angaben)) {
+            return $this->zurueck($r, $id, $angaben, FlashArt::Warnung);
         }
-        $bis = null;
-        if (trim($r->feld('gueltig_bis')) !== '') {
-            $bis = \DateTimeImmutable::createFromFormat('!Y-m-d', trim($r->feld('gueltig_bis')));
-            if ($bis === false || $bis->format('Y-m-d') !== trim($r->feld('gueltig_bis'))) {
-                return $this->zurueck($r, $id, 'Das Datum bei „gültig bis" ist ungültig.', FlashArt::Warnung);
-            }
-        }
+        [$art, $bis, $bemerkung] = $angaben;
 
         $blobId = null;
         $datei = $r->files['datei'] ?? null;
@@ -109,12 +104,41 @@ final readonly class NachweisController
             mitgliedId: $id,
             art: $art,
             gueltigBis: $bis,
-            bemerkung: mb_substr(trim($r->feld('bemerkung')), 0, 500),
+            bemerkung: $bemerkung,
             blobId: $blobId,
             vermerktVon: $this->dienste->session->userId(),
         ));
 
         return $this->zurueck($r, $id, 'Nachweis vermerkt.');
+    }
+
+    /**
+     * Changes kind, end date and remark of a proof (issue #137) - checked as
+     * when noting one. The file and who noted it when stay as they are. A
+     * proof of another member is not found (404), whatever its id.
+     *
+     * @param array<string, string> $params
+     */
+    public function bearbeiten(Request $r, array $params): Response
+    {
+        $id = (int) $params['id'];
+        $nachweis = $this->nachweise->finde((int) $params['nachweis']);
+        if ($nachweis === null || $nachweis->mitgliedId !== $id) {
+            return Response::html($this->dienste->view->render('fehler', [
+                'title' => 'Nachweis nicht gefunden',
+                'meldung' => 'Diesen Nachweis gibt es bei diesem Mitglied nicht (mehr).',
+                'startseite' => MitgliedController::PFAD_LISTE,
+            ], Area::App), 404);
+        }
+
+        $angaben = self::angaben($r);
+        if (is_string($angaben)) {
+            return $this->zurueck($r, $id, $angaben, FlashArt::Warnung);
+        }
+        [$art, $bis, $bemerkung] = $angaben;
+        $this->nachweise->aendern($nachweis->mit(['art' => $art, 'gueltigBis' => $bis, 'bemerkung' => $bemerkung]));
+
+        return $this->zurueck($r, $id, 'Nachweis gespeichert.');
     }
 
     /** @param array<string, string> $params */
@@ -168,6 +192,31 @@ final readonly class NachweisController
         }
 
         return $this->zurueck($r, $id, 'Nachweis gelöscht.');
+    }
+
+    /**
+     * Kind, end date and remark from the form, the same for noting and
+     * changing a proof; a message when one of them is not right. The remark
+     * is cut at 500 characters (the field allows no more).
+     *
+     * @return array{NachweisArt, ?\DateTimeImmutable, string}|string
+     */
+    private static function angaben(Request $r): array|string
+    {
+        $art = NachweisArt::tryFrom($r->feld('art'));
+        if ($art === null) {
+            return 'Bitte die Art des Nachweises wählen.';
+        }
+        $bis = null;
+        $eingabe = trim($r->feld('gueltig_bis'));
+        if ($eingabe !== '') {
+            $bis = \DateTimeImmutable::createFromFormat('!Y-m-d', $eingabe);
+            if ($bis === false || $bis->format('Y-m-d') !== $eingabe) {
+                return 'Das Datum bei „gültig bis" ist ungültig.';
+            }
+        }
+
+        return [$art, $bis, mb_substr(trim($r->feld('bemerkung')), 0, 500)];
     }
 
     /**

@@ -1,0 +1,24 @@
+/* "Nachweis bearbeiten" (issue #137): a <details> per proof, so it works
+   without a script and by keyboard. The summary reads as a link, as in
+   karte.css; the open form keeps the look of the design system. */
+.nachweis-bearbeiten > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tippflaeche);
+    color: var(--farbe-link);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.nachweis-bearbeiten[open] > summary {
+    margin-bottom: var(--abstand-3);
+}
+
+.nachweis-bearbeiten > .formular {
+    max-width: 32rem;
+    margin: 0;
+}
+
+.modus-barrierefrei .nachweis-bearbeiten > summary {
+    text-decoration: underline;
+}
