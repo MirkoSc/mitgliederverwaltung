@@ -87,6 +87,23 @@ final readonly class NachweisRepository
     }
 
     /**
+     * Saves kind, end date and remark of a stored proof (issue #137). File,
+     * who noted it and when stay as they are, whatever the object says. The
+     * member is part of the condition, so a proof never moves to another one.
+     */
+    public function aendern(Nachweis $nachweis): void
+    {
+        $this->pdo->prepare('UPDATE nachweis SET art = ?, gueltig_bis = ?, bemerkung = ? WHERE id = ? AND mitglied_id = ?')
+            ->execute([
+                $nachweis->art->value,
+                Zeilen::fuerDatum($nachweis->gueltigBis),
+                $nachweis->bemerkung,
+                $nachweis->id,
+                $nachweis->mitgliedId,
+            ]);
+    }
+
+    /**
      * Deletes a proof (admin only). Returns the blob id of its file for the
      * caller to delete, null when it had none or did not exist.
      */

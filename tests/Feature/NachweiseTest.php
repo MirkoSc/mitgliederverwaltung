@@ -13,6 +13,8 @@ use App\Http\HttpMethod;
 use App\Http\Request;
 use App\Http\Session;
 use App\Http\StreamResponse;
+use App\Service\Mitglied\HinweisArt;
+use App\Service\Mitglied\HinweisLader;
 use App\Repository\MitgliedRepository;
 use App\Repository\NachweisRepository;
 use App\Service\Storage\BlobService;
@@ -20,7 +22,8 @@ use App\Tests\Support\AppTestCase;
 
 /**
  * Proofs with an optional file through the whole application (docs/spec/
- * 07-mitglieder.md sections 5 and 9; issue #23). All data is made up.
+ * 07-mitglieder.md sections 5 and 9; issues #23 and #137). All data is
+ * made up.
  */
 final class NachweiseTest extends AppTestCase
 {
@@ -189,5 +192,142 @@ final class NachweiseTest extends AppTestCase
         $html = $this->dienste->view->fragment('mitglied/nachweise', $daten);
         self::assertStringContainsString('abgelaufen', $html);
         self::assertStringNotContainsString('Nachweis löschen', $html);
+    }
+
+    /**
+     * Edit (#137): the proof $nachweisId through the route of member $id.
+     *
+     * @param array<string, string> $felder
+     */
+    private function bearbeiten(int $id, int $nachweisId, array $felder): \App\Http\Response
+    {
+        return $this->post("/app/mitglieder/$id/nachweise/$nachweisId/bearbeiten", $felder);
+    }
+
+    private function flash(): string
+    {
+        return (string) $this->dienste->session->pullFlash()?->text;
+    }
+
+    public function testEditingChangesExactlyKindEndDateAndRemark(): void
+    {
+        $konto = $this->als(Rolle::Vorstand);
+        $id = $this->mitglied();
+        $this->anlegen($id, ['art' => 'studium', 'gueltig_bis' => '2027-09-30', 'bemerkung' => 'Immatrikulation'], $this->pdf());
+        $vorher = $this->repo()->fuerMitglied($id)[0];
+        $this->flash();
+
+        // Another account changes it; the record fields and the file in the form are ignored.
+        $this->als(Rolle::Admin);
+        $antwort = $this->bearbeiten($id, (int) $vorher->id, [
+            'art' => 'ausbildung', 'gueltig_bis' => '2028-08-31', 'bemerkung' => '  Ausbildungsvertrag  ',
+            'vermerkt_von' => '1', 'vermerkt_am' => '2000-01-01', 'blob_id' => '999', 'mitglied_id' => '999',
+        ]);
+
+        self::assertSame(302, $antwort->status);
+        self::assertSame('Nachweis gespeichert.', $this->flash());
+        $nachher = $this->repo()->finde((int) $vorher->id);
+        self::assertNotNull($nachher);
+        self::assertSame(NachweisArt::Ausbildung, $nachher->art);
+        self::assertSame('2028-08-31', $nachher->gueltigBis?->format('Y-m-d'));
+        self::assertSame('Ausbildungsvertrag', $nachher->bemerkung);
+        self::assertSame($id, $nachher->mitgliedId);
+        self::assertSame($vorher->blobId, $nachher->blobId);
+        self::assertSame($konto->id, $nachher->vermerktVon);
+        self::assertEquals($vorher->vermerktAm, $nachher->vermerktAm);
+    }
+
+    public function testTheEndDateCanBeCleared(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $id = $this->mitglied();
+        $this->anlegen($id, ['art' => 'rente', 'gueltig_bis' => '2030-06-30', 'bemerkung' => 'Bescheid']);
+        $n = $this->repo()->fuerMitglied($id)[0];
+
+        $this->bearbeiten($id, (int) $n->id, ['art' => 'rente', 'gueltig_bis' => '', 'bemerkung' => 'Bescheid']);
+
+        $nachher = $this->repo()->finde((int) $n->id);
+        self::assertNull($nachher?->gueltigBis);
+        self::assertSame('Bescheid', $nachher?->bemerkung);
+    }
+
+    public function testAWrongKindOrDateChangesNothingAndSaysSo(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $id = $this->mitglied();
+        $this->anlegen($id, ['art' => 'rente', 'gueltig_bis' => '2030-06-30', 'bemerkung' => 'Bescheid']);
+        $n = $this->repo()->fuerMitglied($id)[0];
+        $this->flash();
+
+        $antwort = $this->bearbeiten($id, (int) $n->id, ['art' => 'unbekannt', 'gueltig_bis' => '2031-01-01', 'bemerkung' => 'neu']);
+        self::assertSame(302, $antwort->status);
+        self::assertSame('Bitte die Art des Nachweises wählen.', $this->flash());
+
+        $this->bearbeiten($id, (int) $n->id, ['art' => 'studium', 'gueltig_bis' => '31.12.2031', 'bemerkung' => 'neu']);
+        self::assertSame('Das Datum bei „gültig bis" ist ungültig.', $this->flash());
+
+        $this->bearbeiten($id, (int) $n->id, ['art' => 'studium', 'gueltig_bis' => '2031-02-30', 'bemerkung' => 'neu']);
+        self::assertSame('Das Datum bei „gültig bis" ist ungültig.', $this->flash());
+
+        $nachher = $this->repo()->finde((int) $n->id);
+        self::assertSame(NachweisArt::Rente, $nachher?->art);
+        self::assertSame('2030-06-30', $nachher?->gueltigBis?->format('Y-m-d'));
+        self::assertSame('Bescheid', $nachher?->bemerkung);
+    }
+
+    public function testAProofOfAnotherMemberIsNotFoundThroughThisOne(): void
+    {
+        $this->als(Rolle::Admin);
+        $a = $this->mitglied(1);
+        $b = $this->mitglied(2);
+        $this->anlegen($a, ['art' => 'rente', 'bemerkung' => 'von A']);
+        $n = $this->repo()->fuerMitglied($a)[0];
+
+        self::assertSame(404, $this->bearbeiten($b, (int) $n->id, ['art' => 'sonstiges', 'bemerkung' => 'von B'])->status);
+        self::assertSame(404, $this->bearbeiten($a, 999999, ['art' => 'sonstiges'])->status);
+
+        $nachher = $this->repo()->finde((int) $n->id);
+        self::assertSame($a, $nachher?->mitgliedId);
+        self::assertSame(NachweisArt::Rente, $nachher?->art);
+        self::assertSame('von A', $nachher?->bemerkung);
+    }
+
+    public function testReadOnlyGets403AndNoEditButton(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $id = $this->mitglied();
+        $this->anlegen($id, ['art' => 'rente', 'bemerkung' => 'Bescheid']);
+        $n = $this->repo()->fuerMitglied($id)[0];
+        $html = $this->dienste->view->fragment('mitglied/nachweise', new NachweiseReiter($this->dienste)->daten($id));
+        self::assertStringContainsString('Nachweis bearbeiten', $html, 'the Vorstand may edit');
+        self::assertStringContainsString('/nachweise/' . $n->id . '/bearbeiten', $html);
+
+        $this->als(Rolle::Lesend);
+        self::assertSame(403, $this->bearbeiten($id, (int) $n->id, ['art' => 'sonstiges'])->status);
+        self::assertSame(NachweisArt::Rente, $this->repo()->finde((int) $n->id)?->art);
+
+        $html = $this->dienste->view->fragment('mitglied/nachweise', new NachweiseReiter($this->dienste)->daten($id));
+        self::assertStringNotContainsString('Nachweis bearbeiten', $html);
+        self::assertStringNotContainsString('/bearbeiten', $html);
+    }
+
+    public function testTheExpiredHintGoesWhenTheEndDateMovesToTheFuture(): void
+    {
+        $this->als(Rolle::Vorstand);
+        $id = $this->mitglied();
+        $this->anlegen($id, ['art' => 'sonstiges', 'gueltig_bis' => '2020-01-31']);
+        $n = $this->repo()->fuerMitglied($id)[0];
+        $abgelaufen = function () use ($id): bool {
+            $mitglied = new MitgliedRepository($this->dienste->pdo())->finde($id);
+            self::assertNotNull($mitglied);
+            $arten = array_map(static fn($h): HinweisArt => $h->art, HinweisLader::aus($this->dienste->pdo())->fuer($mitglied));
+
+            return in_array(HinweisArt::NachweisAbgelaufen, $arten, true);
+        };
+        self::assertTrue($abgelaufen());
+
+        $this->bearbeiten($id, (int) $n->id, ['art' => 'sonstiges', 'gueltig_bis' => new \DateTimeImmutable('+1 year')->format('Y-m-d')]);
+
+        self::assertFalse($abgelaufen());
     }
 }

@@ -241,6 +241,13 @@ Je Mitglied 0..n Nachweise: Art (`rente`/`studium`/`ausbildung`/
 und **am** – automatisch gesetzt, nicht änderbar. Nachweise werden nicht
 versioniert (sie sind selbst ein Verlauf); löschen nur Admin.
 
+Art, gültig bis und Bemerkung lassen sich nachträglich bearbeiten (#137):
+je Nachweis ein aufklappbares Formular „Nachweis bearbeiten“ (`<details>`,
+vorbefüllt, ohne JS), Route `POST …/nachweise/{nachweis}/bearbeiten`, geprüft
+wie beim Vermerken. Die Datei und „vermerkt von/am“ bleiben unverändert; ein
+Nachweis eines anderen Mitglieds ergibt 404. Wie Vermerken und Löschen nicht
+im Audit-Log.
+
 Die Datei (PDF, JPEG, PNG, WebP, höchstens 10 MB; der Typ wird am Inhalt
 erkannt) kommt mit dem Formular (multipart), nicht als Chunk-Upload: ein Scan
 ist klein, das Formular geht ohne JavaScript. Der Download ist ein gestreamter
@@ -450,7 +457,7 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
 |---|:-:|:-:|:-:|
 | Mitglieder suchen, ansehen, Verlauf, Familie und Nachweise ansehen/herunterladen | ✓ | ✓ | ✓ |
 | Mitglieder anlegen, bearbeiten, Version zurückholen | ✓ | ✓ | – |
-| Nachweis vermerken | ✓ | ✓ | – |
+| Nachweis vermerken/bearbeiten | ✓ | ✓ | – |
 | Nachweis löschen, Mitglied löschen | ✓ | – | – |
 | Familien pflegen | ✓ | ✓ | – |
 | Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106), Punkt von Hand setzen/verschieben/entfernen (#108) | ✓ | ✓ | – |
