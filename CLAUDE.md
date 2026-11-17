@@ -99,7 +99,7 @@ Teil eines Releases sind.
 
 - **Öffentlich**: Anmeldung, „Passwort vergessen", `/impressum`,
   `/datenschutz`, dazu für die installierbare App `/manifest.webmanifest`
-  (nur Vereinsname und Logo-Adressen) – sonst nichts (E-F3).
+  (nur fester App-Name und Logo-Adressen) – sonst nichts (E-F3).
 - **Anwenderseite** (`/app/...`): alles Fachliche, je nach Recht.
 - **Adminseite** (`/admin/...`): Benutzer (drei feste Rollen Admin/
   Vorstand/Nur lesen), Mail, Rechtstexte, Einstellungen, Backup,

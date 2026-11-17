@@ -324,13 +324,16 @@ Die Anwendung lässt sich am Handy und PC als App installieren („Zum
 Startbildschirm hinzufügen"), sonst ändert sich nichts:
 
 - **Manifest** `GET /manifest.webmanifest` (öffentlich, `no-cache`,
-  `App\PublicPages\ManifestController`): `name` = Vereinsname, `short_name`
-  = Kurzname (auf 15 Zeichen gekürzt), ohne Vereinsdaten
-  „Mitgliederverwaltung"/„Mitglieder"; `id` und `start_url` `/app`,
+  `App\PublicPages\ManifestController`): `name` immer
+  „Mitgliederverwaltung", `short_name` immer „Mitglieder" (Beschriftung
+  unter dem Icon; Startbildschirme kürzen ab etwa 12 Zeichen) – nicht der
+  Vereinsname; `id` und `start_url` `/app`,
   `scope` `/`, `display` `standalone`, Farben des Designsystems (hell).
   Icons aus dem Vereinslogo (`/logo/icon192`, `/logo/icon512`,
   `/logo/maskable`, 11 §2), ohne Logo `public/icon.svg`. Jede Seite
-  (auch die Anmeldung) verlinkt es und setzt `<meta name="theme-color">`.
+  (auch die Anmeldung) verlinkt es und setzt `<meta name="theme-color">`
+  sowie dieselben Namen als `application-name` und
+  `apple-mobile-web-app-title` (iOS).
 - **Service Worker** `public/sw.js` (Scope `/`, `Cache-Control: no-cache`),
   registriert von `public/js/pwa.js` nur im sicheren Kontext (HTTPS,
   localhost). Er speichert **nichts** und beantwortet keine Anfrage
@@ -351,7 +354,7 @@ Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite
 `MitgliedAnsichtTest`, `EinbettungTest`; Familien-Seite (#92) mit dem
 Mitglied an Stelle der Familie, „Zurück zur Familie", Fokus –
 `FamilienSeiteTest`; installierbare App (Manifest öffentlich mit
-Vereinsname und Logo-Icons, `sw.js` mit `no-cache`, ohne Cache) –
+festem Namen und Logo-Icons, `sw.js` mit `no-cache`, ohne Cache) –
 `PwaTest`, `tests/js/pwa.test.js`; Kopfleiste – `tests/js/kopfleiste.test.js`;
 manuelle Prüfliste
 je UI-PR: 360 px Handy, PC, PC im Barrierefrei-Modus (nur Tastatur).

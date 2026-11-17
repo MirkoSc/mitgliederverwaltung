@@ -7,15 +7,16 @@ namespace App\PublicPages;
 use App\Dienste;
 use App\Http\Response;
 use App\Service\Verein\LogoService;
-use App\Service\Verein\VereinRepository;
 
 /**
  * The web app manifest (docs/spec/06-oberflaeche.md section 6): makes the
- * application installable as an app on the phone and the PC, named after
- * the club and with its logo as the icon.
+ * application installable as an app on the phone and the PC, always named
+ * "Mitgliederverwaltung" ("Mitglieder" under the icon) and with the club's
+ * logo as the icon.
  *
  * Public: a browser fetches the manifest without cookies. It carries only
- * the club's name and the logo URLs - both stand on the login page anyway.
+ * the fixed names and the logo URLs - the logo stands on the login page
+ * anyway.
  */
 final readonly class ManifestController
 {
@@ -26,8 +27,14 @@ final readonly class ManifestController
 
     private const string HINTERGRUND = '#f1f4f1';
 
-    /** Launchers cut a longer short_name themselves, often mid-word. */
-    private const int KURZ_MAX = 15;
+    /** The installed app's name, also in the layout (application-name). */
+    public const string NAME = 'Mitgliederverwaltung';
+
+    /**
+     * The label under the icon, also in the layout (apple-mobile-web-app-
+     * title): launchers cut anything longer than about 12 characters.
+     */
+    public const string KURZNAME = 'Mitglieder';
 
     public function __construct(private Dienste $dienste)
     {
@@ -36,26 +43,17 @@ final readonly class ManifestController
     public function anzeigen(): Response
     {
         try {
-            $verein = VereinRepository::aus($this->dienste)->get();
-            $name = $verein->wert('vereinsname');
-            $kurz = $verein->anzeigename();
             $logo = LogoService::aus($this->dienste)->version();
         } catch (\Throwable) {
-            // no database (yet): the plain application, never an error
-            $name = $kurz = '';
+            // no database (yet): the application icon, never an error
             $logo = null;
-        }
-        $name = $name !== '' ? $name : ($kurz !== '' ? $kurz : 'Mitgliederverwaltung');
-        $kurz = $kurz !== '' ? $kurz : 'Mitglieder';
-        if (mb_strlen($kurz) > self::KURZ_MAX) {
-            $kurz = rtrim(mb_substr($kurz, 0, self::KURZ_MAX - 1)) . '…';
         }
 
         $manifest = [
             'id' => '/app',
-            'name' => $name,
-            'short_name' => $kurz,
-            'description' => 'Mitgliederverwaltung',
+            'name' => self::NAME,
+            'short_name' => self::KURZNAME,
+            'description' => self::NAME,
             'lang' => 'de',
             'dir' => 'ltr',
             'start_url' => '/app',

@@ -65,7 +65,7 @@ $einzugZurueck = count(array_filter($einzugAuswahl->auswaehlbar, static fn($k): 
                 Abgewählte Beiträge bleiben offen und sind beim nächsten Einzug wieder dabei.</p>
 
             <details class="einzug-klappe"<?= $einzugAnzahl <= 20 || $einzugZurueck > 0 ? ' open' : '' ?>>
-                <summary>Beiträge ansehen und abwählen</summary>
+                <summary><?= $einzugAnzahl === 1 ? '1 Beitrag' : e($einzugAnzahl) . ' Beiträge' ?> ansehen und abwählen</summary>
                 <div class="mehrfach-kopf einzug-auswahl-kopf" data-mehrfach-kopf hidden>
                     <div class="feld suche-feld">
                         <label for="einzug-suche">Mitglied suchen</label>
