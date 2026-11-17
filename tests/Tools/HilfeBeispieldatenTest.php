@@ -98,7 +98,7 @@ final class HilfeBeispieldatenTest extends DatabaseTestCase
         $mitglieder = new MitgliedRepository($this->pdo());
         $familien = new FamilieRepository($this->pdo());
         $gefunden = 0;
-        foreach ($familien->suche('Familie') as $familie) {
+        foreach ($familien->suche('') as $familie) {
             $gefunden++;
             $rollen = array_map(
                 static fn(Mitglied $m): string => $m->familieRolle?->value ?? '',

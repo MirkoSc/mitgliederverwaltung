@@ -245,7 +245,7 @@ final class HilfeBeispieldaten
         $nachweis = ['mitglieder' => 0, 'familien' => 0];
 
         foreach (self::FAMILIEN as [$familienName, $strasse, $personen]) {
-            $familie = $familien->anlegen('Familie ' . $familienName);
+            $familie = $familien->anlegen($familienName);
             $nachweis['familien']++;
             foreach ($personen as [$vorname, $geschlecht, $wird, $tage, $rolle, $sparten]) {
                 $zahler = $rolle === 'zahler';
