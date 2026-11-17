@@ -38,7 +38,7 @@ final class DesignsystemTest extends AppTestCase
             'muster-farben', 'knopf knopf-haupt', 'knopf knopf-gefahr', 'knopf knopf-still',
             'hinweis hinweis-ok', 'hinweis hinweis-info', 'hinweis hinweis-warnung', 'hinweis hinweis-fehler',
             'etikett etikett-ok', 'formular formular-zweispaltig', 'feld-fehler', 'feld-hinweis', 'feld-haken',
-            'formular-aktionen', 'class="suche"', 'class="filter"', 'class="liste"', 'aria-sort="ascending"',
+            'formular-aktionen', 'abschnitt formular-gruppe', 'class="feldreihe"', 'feldgruppe haken-spalten', 'class="suche"', 'class="filter"', 'class="liste"', 'aria-sort="ascending"',
             'data-label="Nr."', 'class="blaettern"', 'class="leer"', 'class="geteilt"', 'class="abschnitt"',
             'class="auswahl"', 'htmx-indicator', 'class="laedt',
             // The help (issue #114, 12 section 3).

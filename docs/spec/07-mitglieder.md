@@ -21,8 +21,9 @@ Server – auch hier gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 
 - **Mitgliedsnummer**: ganze Zahl, eindeutig; **automatisch, unveränderbar**
   (Mirko, 05.11.2026): der Server vergibt beim ersten Speichern höchste + 1
-  (bei gleichzeitigem Anlegen erneut versuchen), das Formular zeigt sie nur
-  an (bei „Neu" die voraussichtliche) und kennt kein Feld dafür; eine
+  (bei gleichzeitigem Anlegen erneut versuchen). Das Formular kennt kein
+  Feld dafür: beim Bearbeiten steht sie in der Überschrift des Mitglieds
+  („Nr. 1001"), bei „Neu" nennt ein Hinweis die voraussichtliche; eine
   mitgeschickte Nummer wird ignoriert, auch beim Admin; Zurückholen einer
   Version ändert sie nie. Wird die höchste Nummer gelöscht, wird sie wieder
   vergeben. Importierte Mitglieder behalten ihre alte `Adressnummer`.
@@ -89,6 +90,20 @@ bleiben beim Speichern erhalten (§3). Abteilungen, Funktionen und
 Beitragsarten bietet das Formular an, wenn sie aktiv sind oder das Mitglied
 sie schon hat. Die Felder Austrittsdatum und Austrittsgrund bleiben im
 Formular: dort wird ein bestehender Austritt korrigiert.
+
+Aufbau des Formulars (Handy und PC, beide Modi gleich; der
+Barrierefrei-Modus hat nur die größere Schrift): jede Gruppe ist ein Kasten
+mit Überschrift – **Person, Anschrift, Kontakt, Mitgliedschaft, Beitrag und
+Bank, Funktionen, Bemerkung** –, Zusammengehöriges steht nebeneinander, jedes
+Feld so breit wie sein Inhalt (Muster „Formular in Gruppen", 06 §3):
+Vorname | Nachname; Titel | Namenszusatz; Geschlecht | Geburtsdatum –
+Straße und Hausnummer; PLZ | Ort | Land, darunter „Wohnort auf der Karte" –
+Telefon | Handy | E-Mail – Status; Abteilungen als Häkchen in Spalten;
+Eintritt | Austritt | Austrittsgrund – Beitragsart | Zahlart; IBAN | BIC;
+Kontoinhaber; Mandatsreferenz | Mandatsdatum – Funktionen als Häkchen in
+Spalten, daneben die Lizenznummer – Bemerkung. Reicht die Breite nicht (das
+Mitglied neben der Liste), bricht eine Reihe um; am Handy steht alles
+untereinander.
 
 Austritt (#127): Unter dem Formular steht „Mitglied ausgetreten" bzw.
 „Austritt zurücknehmen", für Ehemalige beim Admin daneben „Mitglied
