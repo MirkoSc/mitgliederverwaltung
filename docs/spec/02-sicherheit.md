@@ -239,8 +239,8 @@ fremden Host an. Vorlage: `docs/betrieb.md` §11.
   Jede Route unter `/admin` verlangt ein `admin.*`-Recht, jede unter
   `/app` eine Anmeldung; öffentlich sind nur `/`, `/anmelden…`,
   `/abmelden`, `/impressum`, `/datenschutz`, das Vereinslogo
-  `/logo/{groesse}` und `/manifest.webmanifest` (PWA, #127: nur Vereinsname
-  und Logo-Adressen) (E-F3,
+  `/logo/{groesse}` und `/manifest.webmanifest` (PWA, #127: nur fester
+  App-Name und Logo-Adressen) (E-F3,
   `tests/Http/RoutenZugriffTest.php`).
 
 ## 7. Web-Sicherheit
@@ -272,8 +272,9 @@ fremden Host an. Vorlage: `docs/betrieb.md` §11.
   **keinen** Cache, keinen `fetch`-Handler und keinen Speicher – jede
   Anfrage geht wie ohne ihn ans Netz (`tests/js/pwa.test.js`). Er wird
   mit `Cache-Control: no-cache` ausgeliefert. Das Manifest
-  `/manifest.webmanifest` ist öffentlich und enthält nur Vereinsname und
-  Logo-URLs (stehen ohnehin auf der Anmeldeseite).
+  `/manifest.webmanifest` ist öffentlich und enthält nur den festen
+  App-Namen („Mitgliederverwaltung"/„Mitglieder") und die Logo-URLs (das
+  Logo steht ohnehin auf der Anmeldeseite).
 - Ausgaben escapen (`e()`), SQL nur mit Prepared Statements.
 - **Logs**: keine Mitgliederdaten in Logs, Fehlermeldungen, Dateinamen
   oder URLs (Mitgliedsnummer bzw. ID genügt). Passwörter nie loggen.

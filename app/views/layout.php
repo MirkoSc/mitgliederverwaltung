@@ -62,6 +62,11 @@ $htmlKlasse = $barrierefrei ? ' class="modus-barrierefrei"' : '';
              included, so it can be installed from there. */ ?>
     <link rel="manifest" href="<?= e(\App\PublicPages\ManifestController::PFAD) ?>">
     <meta name="theme-color" content="<?= e(\App\PublicPages\ManifestController::THEME_FARBE) ?>">
+    <?php /* The same names as the manifest: Safari on iOS prefers
+             apple-mobile-web-app-title for the label under the icon and
+             would otherwise take the page title. */ ?>
+    <meta name="application-name" content="<?= e(\App\PublicPages\ManifestController::NAME) ?>">
+    <meta name="apple-mobile-web-app-title" content="<?= e(\App\PublicPages\ManifestController::KURZNAME) ?>">
     <?php /* Only external files (CLAUDE.md section 4); values a script needs
              travel as data-* attributes. */ ?>
     <script src="/js/vendor/htmx.min.js?v=<?= e($version) ?>" defer></script>
