@@ -53,8 +53,11 @@ Weil der Übergang länger dauern kann, gibt es zwei Arten:
   und umgekehrt, zu lange Werte, falsche Spaltenzahl. Mit Fehlern wird
   **nichts** importiert, auch nicht die fehlerfreien Zeilen.
 - `land`: deutscher Name, ISO-Code oder altes Kfz-Kennzeichen (gespeichert wird ISO); ein unbekannter Code mit 1–3 Zeichen (Altdaten, z. B. `CDN`) wird unverändert übernommen (am Mitglied dann der Hinweis „Land unbekannt", 07 §6), ein längerer unbekannter Wert passt nicht in die Spalte = Fehlerzeile. Leere `land` = `DE`, leere `zahlart` = `lastschrift` (wie beim neuen
-  Mitglied), leere `aktiv` = aktiv. Eine Familie ohne `familie_name` heißt
-  „Familie <Nachname des ersten Mitglieds>“.
+  Mitglied), leere `aktiv` = aktiv. Eine neue Familie heißt **nur nach dem
+  Nachnamen** ihres Zahlers (ohne Zahler: des ersten Mitglieds der Familie
+  in der Datei), z. B. „Muster“ – ohne Vornamen; den Zahler zeigt die
+  Familienliste in eigener Spalte. Gilt für Erstimport und Abgleich; schon
+  angelegte Familien behalten ihren Namen.
 - Die Vorschau zeigt Mitglieder, Familien, Mitglieder je Abteilung, die
   Fehler und je Mitglied die Hinweise (07 §6, mit den Familien der Datei).
   **Nachweis-Hinweise** (Rentennachweis fehlt, Jugendbeitrag ab 18, Nachweis
@@ -92,7 +95,7 @@ leere Zelle = kein Wert. Eine Zeile je Mitglied.
 | `iban`, `bic`, `kontoinhaber` | Text |
 | `mandatsreferenz`, `mandatsdatum` | Text, Datum (leer = Default, 07 §1) |
 | `familie` | Schlüssel der Familie (gleicher Wert = gleiche Familie) |
-| `familie_name` | Anzeigename der Familie |
+| `familie_name` | entfallen: die alte Software liefert dort Vor- und Nachname des Zahlers; der Name kommt aus dem Nachnamen (§1), die Spalte wird ignoriert, ohne Hinweis |
 | `familie_rolle` | `zahler`/`elternteil`/`kind` |
 | `funktionen` | Funktionsnamen mit Komma |
 | `lizenznummer` | Text |
@@ -168,7 +171,8 @@ sonst Abgleich (Dienst `App\Service\Import\Abgleich`, Routen
   Abgleich als Änderung und wird mit übernommen. Der Erstimport ergänzt sie
   ebenso (`ImportLeser`). Familie: Zeile ohne
   `familie` = keine Familie; vorhandener Schlüssel = diese Familie;
-  unbekannter Schlüssel = neue Familie (Name aus `familie_name`). Den
+  unbekannter Schlüssel = neue Familie (Name wie beim Erstimport: Nachname
+  des Zahlers, §1). Den
   Familiennamen selbst gleicht der Abgleich nicht ab. „Ehemalig“ heißt:
   Austrittsdatum erreicht (`Mitglied::istEhemalig()`, Stichtag heute). Ein von
   Hand angelegtes Mitglied, das in der Datei steht, kann unter „Geändert“
