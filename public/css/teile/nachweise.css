@@ -3,11 +3,8 @@
    karte.css; the open form keeps the look of the design system. */
 .nachweis-bearbeiten > summary {
     display: inline-flex;
-    align-items: center;
-    min-height: var(--tippflaeche);
     color: var(--farbe-link);
     font-weight: 650;
-    cursor: pointer;
 }
 
 .nachweis-bearbeiten[open] > summary {

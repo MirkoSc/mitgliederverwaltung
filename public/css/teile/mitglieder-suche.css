@@ -7,12 +7,8 @@
 }
 
 .suche-erweitert > summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--tippflaeche);
     padding: 0 var(--abstand-3);
     font-weight: 650;
-    cursor: pointer;
 }
 
 .suche-erweitert[open] > summary {

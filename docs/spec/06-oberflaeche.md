@@ -214,7 +214,16 @@ der Kopf nicht.
   Blättern (`blaettern`), Leerzustand (`leer`), Reiter (`reiter`, Links mit
   `aria-current="page"`), Liste neben Detail (`geteilt`, vom Server mit
   `geteilt-mit-detail` markiert, ohne Skript), Angaben (`angaben`),
-  Ladeanzeige (`htmx-indicator`, `laedt`).
+  Ladeanzeige (`htmx-indicator`, `laedt`), Aufklappen (`aufklapper`).
+- **Aufklappen:** Was erst auf Wunsch erscheint, ist ein
+  `<details class="aufklapper">` (ohne Skript, per Tastatur). Die Klasse
+  blendet den Marker des Browsers aus und setzt davor einen Pfeil in
+  Textfarbe – rechts = zu, unten = offen, im Barrierefrei-Modus dicker; die
+  Klickfläche ist mindestens `--tippflaeche` hoch
+  (`public/css/teile/aufklapper.css`). Das übrige Aussehen der Zeile
+  (Kasten, Listenzeile, Link, Knopf) bestimmt die Seite. Ausnahmen: das
+  Benutzermenü in der Kopfzeile und ein schlichtes `<details>` mit dem
+  Marker des Browsers (Statistik-Tabelle, Import-Vorschau).
 - Schrift: **Atkinson Hyperlegible Next** (Braille Institute, OFL),
   selbst ausgeliefert unter `public/css/schrift/`; Logo in der Kopfzeile
   über `App\View\View::setLogo()`, ohne Upload ein neutrales Wappen
@@ -365,5 +374,6 @@ Mitglied an Stelle der Familie, „Zurück zur Familie", Fokus –
 `FamilienSeiteTest`; installierbare App (Manifest öffentlich mit
 festem Namen und Logo-Icons, `sw.js` mit `no-cache`, ohne Cache) –
 `PwaTest`, `tests/js/pwa.test.js`; Kopfleiste – `tests/js/kopfleiste.test.js`;
+jedes gestaltete `<details>` trägt `aufklapper` – `DesignsystemTest`;
 manuelle Prüfliste
 je UI-PR: 360 px Handy, PC, PC im Barrierefrei-Modus (nur Tastatur).

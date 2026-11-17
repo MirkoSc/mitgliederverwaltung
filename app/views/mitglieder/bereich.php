@@ -109,7 +109,7 @@
             ?>
             <?php /* Open when a field is filled, so a search in progress is never hidden. The
                      values travel in the body only (hx-post/POST), see MitgliederFilter::parameter(). */ ?>
-            <details class="suche-erweitert" id="suche-erweitert"<?= $e->istLeer() ? '' : ' open' ?>>
+            <details class="aufklapper suche-erweitert" id="suche-erweitert"<?= $e->istLeer() ? '' : ' open' ?>>
                 <summary>Erweiterte Suche</summary>
                 <div class="suche-erweitert-felder">
                     <?= $textfeld('nachname', 'Nachname', $e->nachname) ?>

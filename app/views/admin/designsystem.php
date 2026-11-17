@@ -507,6 +507,15 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
             Thema.</p>
     </div>
 
+    <h3>Aufklappen</h3>
+    <p>Was erst auf Wunsch erscheint, steht in einem <code>&lt;details class="aufklapper"&gt;</code>: Der Pfeil zeigt
+        nach rechts, solange es zu ist, und nach unten, wenn es offen ist. Die Seite gibt dem
+        <code>summary</code> ihr eigenes Aussehen (Kasten, Zeile, Link, Knopf) – den Pfeil bringt die Klasse mit.</p>
+    <details class="aufklapper">
+        <summary>Weitere Angaben</summary>
+        <p>Geht ohne Skript und mit der Tastatur: Tab bis zur Zeile, dann Leertaste oder Eingabe.</p>
+    </details>
+
     <h3>Auswahl</h3>
     <ul class="auswahl">
         <li>

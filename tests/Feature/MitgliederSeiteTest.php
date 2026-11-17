@@ -458,14 +458,14 @@ final class MitgliederSeiteTest extends AppTestCase
         $this->als(Rolle::Vorstand);
 
         $zu = $this->get('/app/mitglieder')->body;
-        self::assertStringContainsString('<details class="suche-erweitert" id="suche-erweitert">', $zu);
+        self::assertStringContainsString('<details class="aufklapper suche-erweitert" id="suche-erweitert">', $zu);
         self::assertStringContainsString('<summary>Erweiterte Suche</summary>', $zu);
         self::assertStringContainsString('<legend>Alter (heute)</legend>', $zu);
         self::assertStringContainsString('<legend>Austritt</legend>', $zu);
         self::assertStringContainsString('for="erweitert-nachname"', $zu);
 
         $offen = $this->htmx(['nachname' => 'Muster'], 'mitglieder-bereich')->body;
-        self::assertStringContainsString('<details class="suche-erweitert" id="suche-erweitert" open>', $offen);
+        self::assertStringContainsString('<details class="aufklapper suche-erweitert" id="suche-erweitert" open>', $offen);
         self::assertStringContainsString('id="erweitert-nachname" name="nachname" type="text" value="Muster"', $offen);
     }
 

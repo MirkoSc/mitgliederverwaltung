@@ -32,7 +32,7 @@ $etikett = static fn(BenutzerStatus $status): string => match ($status) {
 <ul class="benutzer-liste">
     <?php foreach ($zeilen as $zeile): $b = $zeile['benutzer']; $id = 'benutzer-' . $b->id; ?>
         <li>
-            <details class="benutzer-eintrag">
+            <details class="aufklapper benutzer-eintrag">
                 <summary>
                     <span class="benutzer-name"><?= e($b->name) ?><?= $zeile['selbst'] ? ' <span class="gedaempft">(Sie)</span>' : '' ?></span>
                     <span class="benutzer-rolle"><?= e($b->rolle->bezeichnung()) ?></span>
