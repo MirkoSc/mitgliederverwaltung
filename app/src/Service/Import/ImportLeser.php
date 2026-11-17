@@ -34,7 +34,7 @@ final class ImportLeser
         'geburtsdatum', 'eintrittsdatum', 'austrittsdatum', 'austrittsgrund',
         'strasse', 'plz', 'ort', 'land', 'telefon', 'handy', 'email',
         'aktiv', 'abteilungen', 'beitragsart', 'zahlart', 'iban', 'bic', 'kontoinhaber',
-        'mandatsreferenz', 'mandatsdatum', 'familie', 'familie_name', 'familie_rolle',
+        'mandatsreferenz', 'mandatsdatum', 'familie', 'familie_rolle',
         'funktionen', 'lizenznummer', 'bemerkung',
     ];
 
@@ -47,7 +47,7 @@ final class ImportLeser
         'austrittsgrund' => 255, 'strasse' => 150, 'plz' => 10, 'ort' => 100, 'land' => 60,
         'telefon' => 50, 'handy' => 50, 'email' => 254, 'iban' => 34, 'bic' => 11,
         'kontoinhaber' => 140, 'mandatsreferenz' => 35, 'lizenznummer' => 64,
-        'familie' => 64, 'familie_name' => 150, 'bemerkung' => 10000,
+        'familie' => 64, 'bemerkung' => 10000,
     ];
 
     /**
@@ -89,14 +89,16 @@ final class ImportLeser
                 implode('“, „', $fehlt),
             ));
         }
-        // "anrede" was dropped (07 section 1); old files still carry it, silently ignored.
-        $unbekannt = array_values(array_diff($kopf, self::SPALTEN, ['', 'anrede']));
+        // "anrede" was dropped (07 section 1), "familie_name" too (a family is
+        // called after its payer's surname); old files still carry them,
+        // silently ignored.
+        $unbekannt = array_values(array_diff($kopf, self::SPALTEN, ['', 'anrede', 'familie_name']));
 
         $eintraege = [];
         $fehler = [];
         $nummern = [];
         $familien = [];
-        $familienNamen = [];
+        $zahlerNamen = [];
         foreach ($zeilen as ['zeile' => $zeile, 'felder' => $felder]) {
             $ergebnis = self::zeile($zeile, $felder, $kopf, $stammdaten);
             $nummer = $ergebnis['nummer'];
@@ -112,9 +114,10 @@ final class ImportLeser
             $eintrag = $ergebnis['eintrag'];
             $eintraege[] = $eintrag;
             if ($eintrag->familie !== null) {
-                $familien[$eintrag->familie] ??= 'Familie ' . $eintrag->mitglied->nachname;
-                if ($ergebnis['familienname'] !== '' && !isset($familienNamen[$eintrag->familie])) {
-                    $familienNamen[$eintrag->familie] = $ergebnis['familienname'];
+                // A family is called by its surname only: the payer's, else the first member's.
+                $familien[$eintrag->familie] ??= $eintrag->mitglied->nachname;
+                if ($eintrag->mitglied->familieRolle === FamilienRolle::Zahler) {
+                    $zahlerNamen[$eintrag->familie] ??= $eintrag->mitglied->nachname;
                 }
             }
         }
@@ -143,7 +146,7 @@ final class ImportLeser
             return self::dateiFehler('Die Datei enthält keine Mitglieder, nur die Kopfzeile.');
         }
 
-        return new ImportDatei($eintraege, $fehler, array_replace($familien, $familienNamen), $unbekannt, array_values(array_intersect(self::SPALTEN, $kopf)));
+        return new ImportDatei($eintraege, $fehler, array_replace($familien, $zahlerNamen), $unbekannt, array_values(array_intersect(self::SPALTEN, $kopf)));
     }
 
     /**
@@ -184,7 +187,7 @@ final class ImportLeser
     /**
      * @param list<string> $felder
      * @param list<string> $kopf
-     * @return array{nummer: ?int, eintrag: ?ImportEintrag, fehler: list<string>, familienname: string}
+     * @return array{nummer: ?int, eintrag: ?ImportEintrag, fehler: list<string>}
      */
     private static function zeile(int $zeile, array $felder, array $kopf, ImportStammdaten $stammdaten): array
     {
@@ -194,7 +197,6 @@ final class ImportLeser
                 'nummer' => null,
                 'eintrag' => null,
                 'fehler' => [sprintf('Die Zeile hat %d statt %d Spalten (Anführungszeichen oder „;“ im Text?).', count($felder), count($kopf))],
-                'familienname' => '',
             ];
         }
         $wert = array_combine($kopf, array_map(trim(...), $felder));
@@ -319,7 +321,7 @@ final class ImportLeser
         }
 
         if ($fehler !== [] || $nummer === null) {
-            return ['nummer' => $nummer, 'eintrag' => null, 'fehler' => $fehler, 'familienname' => ''];
+            return ['nummer' => $nummer, 'eintrag' => null, 'fehler' => $fehler];
         }
 
         $mitglied = new Mitglied(
@@ -360,7 +362,6 @@ final class ImportLeser
             'nummer' => $nummer,
             'eintrag' => new ImportEintrag($zeile, $familie === null ? $mitglied : $mitglied->mit(['familieRolle' => $rolle]), $familie),
             'fehler' => [],
-            'familienname' => $text('familie_name'),
         ];
     }
 

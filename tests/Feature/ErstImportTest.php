@@ -219,7 +219,7 @@ final class ErstImportTest extends AppTestCase
         $familien = new FamilieRepository($this->dienste->pdo());
         $f1 = $familien->findeNachImportSchluessel('F1');
         self::assertNotNull($f1);
-        self::assertSame('Familie Beispiel1', $f1->name);
+        self::assertSame('Beispiel1', $f1->name, 'the surname only, not familie_name');
         $personen = $this->repo()->derFamilie($f1->id);
         self::assertSame([1, 2, 3], array_map(static fn(Mitglied $m): int => $m->mitgliedsnummer, $personen));
         self::assertSame(
@@ -252,8 +252,8 @@ final class ErstImportTest extends AppTestCase
         self::assertSame(2, $stand['familien']);
         self::assertSame(2, $this->anzahlZeilen('familie'));
         $familien = new FamilieRepository($this->dienste->pdo());
-        self::assertSame('Familie Familie', $familien->findeNachImportSchluessel('501')?->name);
-        self::assertSame('Familie Gemeinsam', $familien->findeNachImportSchluessel('502')?->name);
+        self::assertSame('Beispiel1', $familien->findeNachImportSchluessel('501')?->name);
+        self::assertSame('Beispiel3', $familien->findeNachImportSchluessel('502')?->name);
     }
 
     public function testMembersEnteredByHandDuringTheImportAreNotCountedAsImported(): void

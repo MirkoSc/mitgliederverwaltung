@@ -72,6 +72,26 @@ final class ListenAnsichtTest extends TestCase
         self::assertCount(4, $ansicht->ergebnis->spalten);
     }
 
+    public function testAColumnForTheExportOnlyIsNotInTheViewAndDoesNotSort(): void
+    {
+        $liste = new class extends BeispielListe {
+            public function ergebnis(array $filter, Konto $konto): \App\Listen\ListenErgebnis
+            {
+                return new \App\Listen\ListenErgebnis(
+                    [Spalte::text('name', 'Name'), Spalte::fuerExport('ort', 'Ort')],
+                    [new \App\Listen\ListenZeile(['name' => 'Anna', 'ort' => 'Zell']), new \App\Listen\ListenZeile(['name' => 'Bert', 'ort' => 'Au'])],
+                );
+            }
+        };
+
+        $ansicht = ListenAnsicht::aus($liste, ['sortierung' => 'ort'], self::admin());
+
+        self::assertSame(['Name', 'Ort'], array_map(static fn(Spalte $s): string => $s->titel, $ansicht->ergebnis->spalten), 'the export takes all');
+        self::assertSame(['Name'], array_map(static fn(Spalte $s): string => $s->titel, $ansicht->ergebnis->ansichtSpalten()));
+        self::assertNull($ansicht->sortierung);
+        self::assertSame(['Anna', 'Bert'], self::namen($ansicht));
+    }
+
     public function testNumbersSortByValueDatesByDayAndTextWithUmlautsNextToTheirLetter(): void
     {
         $liste = new class extends BeispielListe {

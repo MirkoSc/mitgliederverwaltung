@@ -20,7 +20,10 @@ Gesamtexport mit Häkchen „Ehemalige einschließen".
   Mitglieder-Seite. Wer `mitglieder.sehen` nicht hat, sieht die Namen ohne
   Link.
 - **Export** jeder Liste wahlweise als **xlsx** oder **csv**, mit genau
-  den Spalten und Filtern der Ansicht.
+  den Spalten und Filtern der Ansicht. Ausnahme: Spalten „nur im Export"
+  (`Spalte::fuerExport()`, z. B. Anschrift und Kontakt bei Geburtstagen und
+  Ehrungen, §2) stehen nur in der Datei, damit die Tabelle lesbar bleibt;
+  nach ihnen sortiert die Seite nicht.
   - csv: UTF-8 mit BOM, Trennzeichen `;`, Datum `TT.MM.JJJJ` (öffnet in
     deutschem Excel direkt richtig).
   - xlsx: ein Blatt, erste Zeile Spaltennamen fett und fixiert, Datum als
@@ -65,13 +68,19 @@ Ansicht und Export zeigen genau das, was es liefert.
 
 | Liste | Inhalt | Filter | Rolle |
 |---|---|---|---|
-| **Geburtstage** | Name, Geburtstag, neues Alter, Abteilungen; runde Geburtstage markiert | Zeitraum: Woche / Monat / Jahr (mit Vor/Zurück), „nur runde" | alle |
-| **Ehrungen** | Name, Eintrittsdatum, Jahre, Stufe, Abteilungen, geehrt am | Jahr, „nur offene" | alle |
+| **Geburtstage** | Name, Geburtstag, neues Alter, Abteilungen; runde Geburtstage markiert; im Export zusätzlich Kontakt¹ | Zeitraum: Woche / Monat / Jahr (mit Vor/Zurück), „nur runde" | alle |
+| **Ehrungen** | Name, Eintrittsdatum, Jahre, Stufe, Abteilungen, geehrt am; im Export zusätzlich Kontakt¹ | Jahr, „nur offene" | alle |
 | **Funktionen** | Name, Funktion, Lizenznummer, Abteilungen, Kontakt | Funktion | alle |
 | **Selbst kassieren** | offene Jahresbeiträge mit Zahlart `selbst` oder ohne gültige IBAN: Name, Jahr, Betrag, Kontakt | Jahr | Admin, Nur lesen |
 | **Auffälligkeiten** | alle Hinweise aller Mitglieder (07 §6): Name, Hinweis | Art des Hinweises | alle |
 | **BLSV-Meldung** | §4 | Stichtag | alle |
 | **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | alle (Beitragsspalten nur Admin und Nur lesen) |
+
+¹ Damit ein Brief geschrieben, ein Geschenk vorbeigebracht oder angerufen
+werden kann: nach den Spalten der Ansicht `Straße` · `PLZ` · `Ort` ·
+`Telefon` · `Handy` · `E-Mail` (Namen und Reihenfolge wie im Gesamtexport,
+ohne Anrede und Titel), nur im Export, nicht in der Tabelle
+(`App\Listen\KontaktSpalten`).
 
 ### Auffälligkeiten
 
@@ -231,7 +240,9 @@ Alter; Ehrungsjahr-Berechnung inkl. unbekanntem Eintritt und „nur offene";
 csv mit BOM, `;` und Feldern mit Semikolon/Anführungszeichen/Zeilenumbruch;
 xlsx öffnet sich (gültiges ZIP, Inhalt per Rücklesen geprüft), Datum als
 Datumszelle; BLSV-Export hat exakt die Spalten der Vorlage in der
-Reihenfolge; Vorstand und Nur lesen sehen „Selbst kassieren" und die
+Reihenfolge; Export von Geburtstagen und Ehrungen mit den Kontaktspalten,
+die Ansicht ohne sie (`GeburtstageListeTest`, `EhrungenListeTest`,
+`ListenAnsichtTest`); Vorstand und Nur lesen sehen „Selbst kassieren" und die
 Beitragsspalten, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.
 `/app/listen` liefert die Geburtstagsliste; Personen-Links zeigen auf die
 Listenseite mit `mitglied=<id>`, Sortieren und Filter behalten die Person,

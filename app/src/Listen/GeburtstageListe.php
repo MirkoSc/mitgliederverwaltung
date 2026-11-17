@@ -14,7 +14,8 @@ use App\Support\Datum;
 /**
  * Birthdays of a week, month or year, round ones marked
  * (docs/spec/09-listen-und-exporte.md section 2). Former members are left
- * out; the round ages are the setting `runde_geburtstage`.
+ * out; the round ages are the setting `runde_geburtstage`. The export also
+ * carries address and contact (for a card, a visit or a call).
  */
 final readonly class GeburtstageListe implements Liste
 {
@@ -100,6 +101,7 @@ final readonly class GeburtstageListe implements Liste
                         'geburtstag' => $tag,
                         'alter' => $alter,
                         'abteilungen' => implode(', ', $m['abteilungen']),
+                        ...$m['kontakt'],
                     ],
                     (int) $m['id'],
                     $istRund ? 'rund' : null,
@@ -114,6 +116,7 @@ final readonly class GeburtstageListe implements Liste
                 Spalte::datum('geburtstag', 'Geburtstag'),
                 Spalte::zahl('alter', 'Neues Alter'),
                 Spalte::text('abteilungen', 'Abteilungen', true),
+                ...KontaktSpalten::spalten(),
             ],
             array_column($zeilen, 'zeile'),
             [],
@@ -141,14 +144,14 @@ final readonly class GeburtstageListe implements Liste
      * Members with a birth date in the months of the period, not yet left;
      * the exact day is decided in PHP (29 February, New Year).
      *
-     * @return list<array{id: int, nachname: string, vorname: string, geburtsdatum: string, abteilungen: list<string>}>
+     * @return list<array{id: int, nachname: string, vorname: string, geburtsdatum: string, abteilungen: list<string>, kontakt: array<string, string>}>
      */
     private function mitglieder(GeburtstageZeitraum $zeitraum, \DateTimeImmutable $heute): array
     {
         $monate = $zeitraum->monate();
         [$nichtAusgetreten, $tag] = Zeilen::nichtAusgetreten('m', $heute);
         $stmt = ($this->pdo)()->prepare(sprintf(
-            'SELECT m.id, m.nachname, m.vorname, m.geburtsdatum FROM mitglied m
+            'SELECT m.id, m.nachname, m.vorname, m.geburtsdatum, ' . KontaktSpalten::SQL . ' FROM mitglied m
              WHERE m.geburtsdatum IS NOT NULL AND MONTH(m.geburtsdatum) IN (%s)
                AND ' . $nichtAusgetreten . '
              ORDER BY m.nachname, m.vorname, m.mitgliedsnummer',
@@ -178,6 +181,7 @@ final readonly class GeburtstageListe implements Liste
             'vorname' => (string) $z['vorname'],
             'geburtsdatum' => (string) $z['geburtsdatum'],
             'abteilungen' => $namen[(int) $z['id']] ?? [],
+            'kontakt' => KontaktSpalten::werte($z),
         ], $zeilen);
     }
 }

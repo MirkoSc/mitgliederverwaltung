@@ -31,7 +31,7 @@ return [
             'bild' => 'Der Bereich Liste exportieren unter der Liste. Markiert ist das Feld Dateiformat.',
         ],
         [
-            'text' => 'Wählen Sie **Liste exportieren**. Die Datei wird auf Ihr Gerät geladen. Sie enthält alle Einträge der Auswahl.',
+            'text' => 'Wählen Sie **Liste exportieren**. Die Datei wird auf Ihr Gerät geladen. Sie enthält alle Einträge der Auswahl. Dazu kommen Anschrift, Telefon, Handy und E-Mail.',
             'tipp' => 'Die Datei enthält Mitgliederdaten. Löschen Sie sie, sobald Sie sie nicht mehr brauchen.',
         ],
         [

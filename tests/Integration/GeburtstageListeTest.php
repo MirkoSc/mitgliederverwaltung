@@ -10,8 +10,10 @@ use App\Domain\Rolle;
 use App\Domain\VersionsAnlass;
 use App\Listen\GeburtstageListe;
 use App\Listen\ListenAnsicht;
+use App\Listen\Spalte;
 use App\Repository\MitgliedRepository;
 use App\Repository\SettingRepository;
+use App\Service\Export\CsvWriter;
 use App\Service\Migration\Migrator;
 use App\Tests\Support\DatabaseTestCase;
 
@@ -122,6 +124,33 @@ final class GeburtstageListeTest extends DatabaseTestCase
         self::assertSame('März 2027', $e->navigation?->titel);
         self::assertSame(['datum' => '2027-02-01'], $e->navigation->zurueck);
         self::assertSame(['datum' => '2027-04-01'], $e->navigation->vor);
+    }
+
+    /** For a card, a present or a call: address and contact in the file, not on the screen. */
+    public function testTheExportCarriesAddressAndContactTheViewDoesNot(): void
+    {
+        new MitgliedRepository($this->pdo())->speichern(new Mitglied(
+            1,
+            'Beispiel',
+            vorname: 'Erika',
+            geburtsdatum: new \DateTimeImmutable('1977-03-20'),
+            strasse: 'Musterweg 1',
+            plz: '12345',
+            ort: 'Beispielstadt',
+            telefon: '0123 456',
+            handy: '0170 789',
+            email: 'erika@example.org',
+        ), VersionsAnlass::angelegt(), 1);
+        $ergebnis = $this->liste->ergebnis(['zeitraum' => 'monat', 'datum' => '', 'nur_runde' => false], new Konto(1, 'A', Rolle::Lesend));
+
+        $csv = implode('', iterator_to_array(CsvWriter::stuecke($ergebnis->spalten, $ergebnis->zeilen), false));
+
+        self::assertSame(
+            "\xEF\xBB\xBFName;Geburtstag;Neues Alter;Abteilungen;Straße;PLZ;Ort;Telefon;Handy;E-Mail\r\n"
+            . "Beispiel, Erika;20.03.2027;50;;Musterweg 1;12345;Beispielstadt;0123 456;0170 789;erika@example.org\r\n",
+            $csv,
+        );
+        self::assertSame(['Name', 'Geburtstag', 'Neues Alter', 'Abteilungen'], array_map(static fn(Spalte $s): string => $s->titel, $ergebnis->ansichtSpalten()));
     }
 
     public function testViewAndFileNameFollowThePeriod(): void

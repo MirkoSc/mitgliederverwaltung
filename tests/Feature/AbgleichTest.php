@@ -209,7 +209,7 @@ final class AbgleichTest extends AppTestCase
 
         $seite = $this->get('/admin')->body;
         self::assertStringContainsString('Fehlt in der Datei', $seite);
-        self::assertStringContainsString('neue Familie „Familie Sieben“', $seite);
+        self::assertStringContainsString('neue Familie „Name7“', $seite, 'the payer\'s surname, not familie_name');
         self::assertStringContainsString('<del>Altstadt</del>', $seite);
         self::assertStringContainsString('<ins>Neustadt</ins>', $seite);
         self::assertMatchesRegularExpression('/name="neu" value="7" checked/', $seite, 'new rows are ticked');
@@ -265,7 +265,7 @@ final class AbgleichTest extends AppTestCase
 
         $f7 = new FamilieRepository($this->dienste->pdo())->findeNachImportSchluessel('F7');
         self::assertNotNull($f7);
-        self::assertSame('Familie Sieben', $f7->name);
+        self::assertSame('Name7', $f7->name);
         $personen = $this->repo()->derFamilie($f7->id);
         self::assertSame([7, 6], array_map(static fn(Mitglied $m): int => $m->mitgliedsnummer, $personen));
         self::assertSame([FamilienRolle::Zahler, FamilienRolle::Kind], array_map(static fn(Mitglied $m): ?FamilienRolle => $m->familieRolle, $personen));
