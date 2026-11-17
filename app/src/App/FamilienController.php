@@ -250,7 +250,7 @@ final readonly class FamilienController
     {
         $name = trim($r->feld('name'));
         if ($name === '') {
-            return $this->weiter(null, 'Bitte einen Namen für die neue Familie eintragen, z. B. „Familie Muster“.', FlashArt::Warnung);
+            return $this->weiter(null, 'Bitte einen Namen für die neue Familie eintragen, z. B. „Muster“.', FlashArt::Warnung);
         }
         $familie = $this->familien->anlegen(mb_substr($name, 0, 200));
 
