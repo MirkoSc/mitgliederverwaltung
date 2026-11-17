@@ -13,13 +13,9 @@
 }
 
 .benutzer-eintrag > summary {
-    display: flex;
     flex-wrap: wrap;
-    align-items: center;
     gap: var(--abstand-1) var(--abstand-3);
-    min-height: var(--tippflaeche);
     padding: var(--abstand-2) 0;
-    cursor: pointer;
 }
 
 .benutzer-name {

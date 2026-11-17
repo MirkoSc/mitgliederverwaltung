@@ -113,7 +113,7 @@ $koordinate = static function (string $name, string $label, string $wert, string
             </p>
         <?php elseif ($zustand !== WohnortZustand::VonHand): ?>
             <?php $offen = $zustand === WohnortZustand::NichtGefunden; ?>
-            <details class="wohnort-korrektur"<?= $offen ? ' open' : '' ?>>
+            <details class="aufklapper wohnort-korrektur"<?= $offen ? ' open' : '' ?>>
                 <summary><?= $offen ? 'Mit einer anderen Anschrift suchen' : 'Lage stimmt nicht? Anders suchen' ?></summary>
                 <p class="feld-hinweis" id="wohnort-hilfe">Diese Anschrift gilt nur für die Suche auf der Karte. Die Anschrift des Mitglieds bleibt, wie sie ist.</p>
                 <div class="wohnort-felder">
@@ -131,7 +131,7 @@ $koordinate = static function (string $name, string $label, string $wert, string
         <?php endif; ?>
 
         <?php $vonHand = $zustand === WohnortZustand::VonHand; ?>
-        <details class="wohnort-korrektur" id="wohnort-punkt"<?= $vonHand ? ' open' : '' ?>>
+        <details class="aufklapper wohnort-korrektur" id="wohnort-punkt"<?= $vonHand ? ' open' : '' ?>>
             <summary><?= $vonHand ? 'Punkt verschieben oder entfernen' : 'Punkt von Hand setzen' ?></summary>
             <p class="feld-hinweis" id="wohnort-punkt-hilfe">Klicken Sie in die kleine Karte oder ziehen Sie den Punkt – oder tragen Sie Breite und Länge ein (zum Beispiel aus einem Kartendienst). Ein Punkt von Hand gilt vor jeder automatischen Suche.</p>
             <div class="wohnort-felder wohnort-koordinaten">

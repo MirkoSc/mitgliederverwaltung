@@ -40,7 +40,7 @@ final class DesignsystemTest extends AppTestCase
             'etikett etikett-ok', 'formular formular-zweispaltig', 'feld-fehler', 'feld-hinweis', 'feld-haken',
             'formular-aktionen', 'abschnitt formular-gruppe', 'class="feldreihe"', 'feldgruppe haken-spalten', 'class="suche"', 'class="filter"', 'class="liste"', 'aria-sort="ascending"',
             'data-label="Nr."', 'class="blaettern"', 'class="leer"', 'class="geteilt"', 'class="abschnitt"',
-            'class="auswahl"', 'htmx-indicator', 'class="laedt',
+            'class="auswahl"', 'htmx-indicator', 'class="laedt', '<details class="aufklapper">',
             // The help (issue #114, 12 section 3).
             'class="anleitung"', 'class="anleitung-schritt"', 'anleitung-tipp', 'class="anleitung-weiter"',
             'class="abschnitt hilfe-tastatur"', 'class="hilfe-tasten"',
@@ -73,6 +73,33 @@ final class DesignsystemTest extends AppTestCase
         }
 
         self::assertSame([], array_values(array_unique($fehlend)));
+    }
+
+    /**
+     * Every fold-out shows the chevron of the design system (aufklapper.css):
+     * a summary restyled by its page hides the browser's marker, so without
+     * the class it reads as a heading, not as something to open. Only the
+     * user menu (its own look in the header) and the statistics table and
+     * plain <details> (the browser's marker stays visible) go without it.
+     */
+    public function testEveryStyledFoldOutShowsTheChevron(): void
+    {
+        $ohne = [];
+        $views = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(dirname(__DIR__, 2) . '/app/views', \FilesystemIterator::SKIP_DOTS));
+        foreach ($views as $datei) {
+            if ($datei->getExtension() !== 'php') {
+                continue;
+            }
+            preg_match_all('/<details\s+class="([^"]*)"/', (string) file_get_contents($datei->getPathname()), $treffer);
+            foreach ($treffer[1] as $klassen) {
+                $liste = preg_split('/\s+/', trim($klassen)) ?: [];
+                if (!in_array('aufklapper', $liste, true) && array_intersect($liste, ['benutzermenue', 'statistik-tabelle']) === []) {
+                    $ohne[] = $datei->getFilename() . ': ' . $klassen;
+                }
+            }
+        }
+
+        self::assertSame([], $ohne);
     }
 
     /**

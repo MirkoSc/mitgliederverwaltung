@@ -60,7 +60,7 @@ $einbettung ??= Einbettung::mitgliederSeite();
                     </div>
                     <?php if ($darfPflegen): ?>
                         <?php $feld = 'nachweis-' . $nachweis->id; ?>
-                        <details class="nachweis-bearbeiten">
+                        <details class="aufklapper nachweis-bearbeiten">
                             <summary>Nachweis bearbeiten</summary>
                             <form method="post" action="<?= e(NachweisController::adresse($mitgliedId, $nachweis->id . '/bearbeiten')) ?>" class="formular">
                                 <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">

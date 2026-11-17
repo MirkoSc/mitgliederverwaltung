@@ -1,0 +1,45 @@
+/* Fold-out (06 section 3): a <details class="aufklapper"> shows a chevron
+   before its summary - pointing right while closed, down while open - so
+   it reads as something to open, not as a heading. The browser's own
+   marker is hidden everywhere, so the chevron is the only one.
+
+   The layout defaults sit in :where() (no specificity): a page keeps its
+   own look of the summary (panel, row, link, button) by setting display,
+   gap, padding or colour, whatever order the files load in. The chevron
+   takes currentColor; reduced motion and the Barrierefrei-Modus switch the
+   turn off in app.css. */
+:where(.aufklapper) > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--abstand-2);
+    min-height: var(--tippflaeche);
+}
+
+.aufklapper > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.aufklapper > summary::-webkit-details-marker {
+    display: none;
+}
+
+.aufklapper > summary::before {
+    content: "";
+    flex: none;
+    width: 0.55em;
+    height: 0.55em;
+    margin-inline: 0.1em;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease-out;
+}
+
+.aufklapper[open] > summary::before {
+    transform: translateY(-0.15em) rotate(45deg);
+}
+
+.modus-barrierefrei .aufklapper > summary::before {
+    border-width: 0 3px 3px 0;
+}
