@@ -185,7 +185,9 @@ der Kopf nicht.
   die Änderung sofort, ohne Skript der Knopf „Übernehmen". Die Leiste
   erscheint auch bei nur einer Seite, sobald eine größere Anzahl gewählt ist
   (sonst käme man von „Alle" nicht zurück).
-- Formulare: einspaltig am Handy, zweispaltig am PC; Speichern-Knopf
+- Formulare: einspaltig am Handy, zweispaltig am PC; das lange Formular
+  des Mitglieds in Gruppen (Kästen, Zusammengehöriges nebeneinander, 07 §1),
+  auch im Barrierefrei-Modus; Speichern-Knopf
   immer sichtbar; Hinweise erscheinen nach dem Speichern oben, blockieren
   nie.
 - Texte nach dem Skill `frontend-design` (Abschnitt „Writing"): Knöpfe
@@ -200,7 +202,9 @@ der Kopf nicht.
   (`etikett-*`), Formular (`formular`, auf langen Formularen
   `formular-zweispaltig`, `feld`, `feld-hinweis`, `feld-fehler`,
   `feld-haken`, `formular-aktionen` = Speichern-Leiste, die am unteren
-  Rand klebt), Suche und Filter (`suche`, `filter`), Liste (`liste` –
+  Rand klebt), Formular in Gruppen (`abschnitt formular-gruppe` je Gruppe,
+  `feldreihe` mit `feld-kurz`/`feld`/`feld-breit` nebeneinander,
+  `haken-spalten`; `public/css/teile/formular-gruppen.css`), Suche und Filter (`suche`, `filter`), Liste (`liste` –
   Tabelle am PC, Karten am Handy über `data-label` je Zelle;
   `nebenspalte` entfällt neben dem Detail und im Barrierefrei-Modus),
   Blättern (`blaettern`), Leerzustand (`leer`), Reiter (`reiter`, Links mit
@@ -225,7 +229,7 @@ nichts Wesentliches.
 | Schrift | deutlich größer (Grundschrift ~150 %), größere Zeilenabstände |
 | Kontrast | sehr hoher Kontrast, kein grauer Text, deutliche Rahmen um Felder und Knöpfe; heller Hintergrund unabhängig vom Dunkelmodus |
 | Bedienflächen | große Knöpfe und Klickflächen, Knöpfe immer mit Text, keine reinen Symbole |
-| Aufbau | Mitglied öffnet sich über die ganze Breite statt neben der Liste („Zurück zur Liste“), seine Überschrift bekommt den Fokus (§5); Formulare einspaltig; Listen mit weniger Spalten und größeren Zeilen |
+| Aufbau | Mitglied öffnet sich über die ganze Breite statt neben der Liste („Zurück zur Liste“), seine Überschrift bekommt den Fokus (§5); Formulare einspaltig (das Formular des Mitglieds behält seine Gruppen und Reihen, die Felder wachsen mit der Schrift); Listen mit weniger Spalten und größeren Zeilen |
 | Bewegung | keine Animationen, nichts erscheint nur beim Darüberfahren mit der Maus |
 | Tastatur | vollständig mit Tastatur bedienbar, sehr deutlicher Fokusrahmen |
 | Zeit | Leerlaufzeit der Sitzung 60 statt 30 Minuten, Warnung mit „Weiterarbeiten" vor dem Abmelden |

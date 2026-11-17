@@ -1,0 +1,63 @@
+/* A long form in groups (the member form): every group of fields is a
+   panel (.abschnitt .formular-gruppe) with its heading; inside, a
+   .feldreihe sets the fields that belong together side by side, each as
+   wide as its content needs - .feld-kurz narrow (postcode, date), a plain
+   .feld of normal width, .feld-breit wider (IBAN) -, and .haken-spalten
+   sets checkboxes or radios in columns. A row wraps where the room ends,
+   fields never overlap. On a phone everything is one column.
+
+   Widths are in em: in the Barrierefrei-Modus the large type widens the
+   fields with it, so a row wraps sooner instead of cutting a date.
+   Pattern page: /admin/designsystem#muster-gruppen. */
+
+.formular-gruppe {
+    display: grid;
+    gap: var(--abstand-4);
+    min-width: 0;
+    margin: 0;
+}
+
+.formular-gruppe > h3 {
+    margin: 0;
+}
+
+.feldreihe {
+    display: grid;
+    gap: var(--abstand-4);
+    min-width: 0;
+}
+
+@media (min-width: 48rem) {
+    .feldreihe {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: start;
+        gap: var(--abstand-4);
+    }
+
+    .feldreihe > * {
+        flex: 1 1 10em;
+        min-width: 0;
+    }
+
+    /* Never narrower than its field: a date input has a least width. */
+    .feldreihe > .feld-kurz {
+        flex: 0 1 11em;
+        min-width: auto;
+    }
+
+    .feldreihe > .feld-breit {
+        flex: 2 1 18em;
+    }
+
+    /* The box gives the width; the 12rem of .feld-kurz would cut a date
+       in the large type of the Barrierefrei-Modus. */
+    .feldreihe .feld-kurz :is(input, select) {
+        max-width: none;
+    }
+
+    .formular .haken-spalten {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 11em), 1fr));
+        column-gap: var(--abstand-4);
+    }
+}
