@@ -41,7 +41,12 @@ final class Anwendung
         $routen = new Routen(
             $router,
             $dienste,
-            new LoginGuard($dienste->session, $dienste->view, $dienste->kontoquelle()),
+            new LoginGuard(
+                $dienste->session,
+                $dienste->view,
+                $dienste->kontoquelle(),
+                static fn(): bool => MaintenanceMode::aus($dienste)->isActive(),
+            ),
             new CsrfSchutz($dienste->session, $dienste->view),
             $ersatz,
         );

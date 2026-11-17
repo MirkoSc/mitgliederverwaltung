@@ -34,11 +34,12 @@ umgeschaltet statt verlinkt.
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Mitglieder Familien Listen Karte Statistik Beiträge* Einstellungen*  │
 └──────────────────────────────────────────────────────────────────────┘
-* nur Admin
+* nur Admin und Verwaltung (02 §6)
 ```
 
 1. **Mitglieder** (Startseite)
-   - Suchfeld (Name, Anschrift, Kontakt, IBAN, Geburtsdatum …, 07 §8)
+   - Suchfeld (Name, Anschrift, Kontakt, IBAN, Geburtsdatum …, 07 §8;
+     IBAN und Kontoinhaber nicht für Nur lesen)
      mit Live-Ergebnis und einer Beschreibung, wonach gesucht wird
      (`aria-describedby`), darunter die Liste; einfache Filter
      (Abteilung, aktiv/passiv, Beitragsart, Ehemalige anzeigen) und der
@@ -133,19 +134,22 @@ umgeschaltet statt verlinkt.
    die Seite mit Meldung, der Cron sucht weiter).
 5. **Statistik** (#127, alle Rollen, `listen.sehen`) – Reiter
    „Mitglieder" (Anzahlen: Kennzahlen, Altersgruppen, Wohnorte, Abteilungen,
-   Familien, Mitgliedsdauer, Ein- und Austritte) und, nur für den Admin
-   (`beitraege.verwalten`), „Beiträge" (Geld je Jahr; die frühere
+   Familien, Mitgliedsdauer, Ein- und Austritte) und, für Admin, Verwaltung
+   und Vorstand (`beitraege.auswerten`, nicht Nur lesen), „Beiträge" (Geld je Jahr; die frühere
    „Verteilung der Beiträge"). Je Auswertung ein Diagramm (Chart.js,
    vendored) über der aufklappbaren Tabelle mit denselben Zahlen; ohne JS
    und im Barrierefrei-Modus nur die Tabellen. Details 09 §7.
-6. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
+6. **Beiträge** (Admin, Verwaltung) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
    „bezahlt setzen".
-7. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
+7. **Einstellungen** (Admin; Verwaltung nur die fachlichen Abschnitte,
+   02 §6) – eine Seite mit Abschnitten: Verein
    (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
-   Systemcheck – übernommen). Links (PC) bzw. oben (Handy, waagerecht
+   Systemcheck – übernommen). Jeder Abschnitt erscheint nur mit seinem
+   Recht; die Verwaltung sieht Verein bis Ehrungsstufen, nicht Mail,
+   Rechtstexte, Benutzer, Import, System, Update, Backups, Audit-Log. Links (PC) bzw. oben (Handy, waagerecht
    wischbar) klebt ein **Inhaltsverzeichnis** (`verzeichnis`, aus den
    sichtbaren Abschnitten erzeugt, normale Anker-Links; Abschnittsüberschriften
    haben `tabindex="-1"` und bekommen nach dem Klick den Fokus).
@@ -185,7 +189,9 @@ der Kopf nicht.
   die Änderung sofort, ohne Skript der Knopf „Übernehmen". Die Leiste
   erscheint auch bei nur einer Seite, sobald eine größere Anzahl gewählt ist
   (sonst käme man von „Alle" nicht zurück).
-- Formulare: einspaltig am Handy, zweispaltig am PC; Speichern-Knopf
+- Formulare: einspaltig am Handy, zweispaltig am PC; das lange Formular
+  des Mitglieds in Gruppen (Kästen, Zusammengehöriges nebeneinander, 07 §1),
+  auch im Barrierefrei-Modus; Speichern-Knopf
   immer sichtbar; Hinweise erscheinen nach dem Speichern oben, blockieren
   nie.
 - Texte nach dem Skill `frontend-design` (Abschnitt „Writing"): Knöpfe
@@ -200,13 +206,24 @@ der Kopf nicht.
   (`etikett-*`), Formular (`formular`, auf langen Formularen
   `formular-zweispaltig`, `feld`, `feld-hinweis`, `feld-fehler`,
   `feld-haken`, `formular-aktionen` = Speichern-Leiste, die am unteren
-  Rand klebt), Suche und Filter (`suche`, `filter`), Liste (`liste` –
+  Rand klebt), Formular in Gruppen (`abschnitt formular-gruppe` je Gruppe,
+  `feldreihe` mit `feld-kurz`/`feld`/`feld-breit` nebeneinander,
+  `haken-spalten`; `public/css/teile/formular-gruppen.css`), Suche und Filter (`suche`, `filter`), Liste (`liste` –
   Tabelle am PC, Karten am Handy über `data-label` je Zelle;
   `nebenspalte` entfällt neben dem Detail und im Barrierefrei-Modus),
   Blättern (`blaettern`), Leerzustand (`leer`), Reiter (`reiter`, Links mit
   `aria-current="page"`), Liste neben Detail (`geteilt`, vom Server mit
   `geteilt-mit-detail` markiert, ohne Skript), Angaben (`angaben`),
-  Ladeanzeige (`htmx-indicator`, `laedt`).
+  Ladeanzeige (`htmx-indicator`, `laedt`), Aufklappen (`aufklapper`).
+- **Aufklappen:** Was erst auf Wunsch erscheint, ist ein
+  `<details class="aufklapper">` (ohne Skript, per Tastatur). Die Klasse
+  blendet den Marker des Browsers aus und setzt davor einen Pfeil in
+  Textfarbe – rechts = zu, unten = offen, im Barrierefrei-Modus dicker; die
+  Klickfläche ist mindestens `--tippflaeche` hoch
+  (`public/css/teile/aufklapper.css`). Das übrige Aussehen der Zeile
+  (Kasten, Listenzeile, Link, Knopf) bestimmt die Seite. Ausnahmen: das
+  Benutzermenü in der Kopfzeile und ein schlichtes `<details>` mit dem
+  Marker des Browsers (Statistik-Tabelle, Import-Vorschau).
 - Schrift: **Atkinson Hyperlegible Next** (Braille Institute, OFL),
   selbst ausgeliefert unter `public/css/schrift/`; Logo in der Kopfzeile
   über `App\View\View::setLogo()`, ohne Upload ein neutrales Wappen
@@ -225,7 +242,7 @@ nichts Wesentliches.
 | Schrift | deutlich größer (Grundschrift ~150 %), größere Zeilenabstände |
 | Kontrast | sehr hoher Kontrast, kein grauer Text, deutliche Rahmen um Felder und Knöpfe; heller Hintergrund unabhängig vom Dunkelmodus |
 | Bedienflächen | große Knöpfe und Klickflächen, Knöpfe immer mit Text, keine reinen Symbole |
-| Aufbau | Mitglied öffnet sich über die ganze Breite statt neben der Liste („Zurück zur Liste“), seine Überschrift bekommt den Fokus (§5); Formulare einspaltig; Listen mit weniger Spalten und größeren Zeilen |
+| Aufbau | Mitglied öffnet sich über die ganze Breite statt neben der Liste („Zurück zur Liste“), seine Überschrift bekommt den Fokus (§5); Formulare einspaltig (das Formular des Mitglieds behält seine Gruppen und Reihen, die Felder wachsen mit der Schrift); Listen mit weniger Spalten und größeren Zeilen |
 | Bewegung | keine Animationen, nichts erscheint nur beim Darüberfahren mit der Maus |
 | Tastatur | vollständig mit Tastatur bedienbar, sehr deutlicher Fokusrahmen |
 | Zeit | Leerlaufzeit der Sitzung 60 statt 30 Minuten, Warnung mit „Weiterarbeiten" vor dem Abmelden |
@@ -324,13 +341,16 @@ Die Anwendung lässt sich am Handy und PC als App installieren („Zum
 Startbildschirm hinzufügen"), sonst ändert sich nichts:
 
 - **Manifest** `GET /manifest.webmanifest` (öffentlich, `no-cache`,
-  `App\PublicPages\ManifestController`): `name` = Vereinsname, `short_name`
-  = Kurzname (auf 15 Zeichen gekürzt), ohne Vereinsdaten
-  „Mitgliederverwaltung"/„Mitglieder"; `id` und `start_url` `/app`,
+  `App\PublicPages\ManifestController`): `name` immer
+  „Mitgliederverwaltung", `short_name` immer „Mitglieder" (Beschriftung
+  unter dem Icon; Startbildschirme kürzen ab etwa 12 Zeichen) – nicht der
+  Vereinsname; `id` und `start_url` `/app`,
   `scope` `/`, `display` `standalone`, Farben des Designsystems (hell).
   Icons aus dem Vereinslogo (`/logo/icon192`, `/logo/icon512`,
   `/logo/maskable`, 11 §2), ohne Logo `public/icon.svg`. Jede Seite
-  (auch die Anmeldung) verlinkt es und setzt `<meta name="theme-color">`.
+  (auch die Anmeldung) verlinkt es und setzt `<meta name="theme-color">`
+  sowie dieselben Namen als `application-name` und
+  `apple-mobile-web-app-title` (iOS).
 - **Service Worker** `public/sw.js` (Scope `/`, `Cache-Control: no-cache`),
   registriert von `public/js/pwa.js` nur im sicheren Kontext (HTTPS,
   localhost). Er speichert **nichts** und beantwortet keine Anfrage
@@ -342,7 +362,8 @@ Startbildschirm hinzufügen"), sonst ändert sich nichts:
 ## Pflicht-Tests
 
 `CspComplianceTest` (kein Inline-JS, kein `hx-on`), Routen-Zugriffsmatrix
-inkl. „Vorstand und Nur lesen sehen die Seite Beiträge nicht", Barrierefrei-Modus wird aus der
+inkl. „Vorstand und Nur lesen sehen die Seite Beiträge nicht" und „die Verwaltung erreicht
+unter `/admin` nur die fachlichen Einstellungen", Barrierefrei-Modus wird aus der
 Benutzereinstellung gesetzt und überlebt das Neuladen; Mitglied als
 Baustein mit einer zweiten einbettenden Seite (Reiter, Speichern-
 Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite
@@ -351,7 +372,8 @@ Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite
 `MitgliedAnsichtTest`, `EinbettungTest`; Familien-Seite (#92) mit dem
 Mitglied an Stelle der Familie, „Zurück zur Familie", Fokus –
 `FamilienSeiteTest`; installierbare App (Manifest öffentlich mit
-Vereinsname und Logo-Icons, `sw.js` mit `no-cache`, ohne Cache) –
+festem Namen und Logo-Icons, `sw.js` mit `no-cache`, ohne Cache) –
 `PwaTest`, `tests/js/pwa.test.js`; Kopfleiste – `tests/js/kopfleiste.test.js`;
+jedes gestaltete `<details>` trägt `aufklapper` – `DesignsystemTest`;
 manuelle Prüfliste
 je UI-PR: 360 px Handy, PC, PC im Barrierefrei-Modus (nur Tastatur).

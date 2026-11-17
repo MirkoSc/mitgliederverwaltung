@@ -71,10 +71,20 @@ final class NavigationTest extends TestCase
         self::assertNotContains('Hilfe', self::labels(Navigation::haupt()), 'no extra main area');
     }
 
-    public function testBothRolesStartWithTheMembers(): void
+    public function testEveryRoleStartsWithTheMembers(): void
     {
-        self::assertSame('/app/mitglieder', Navigation::startseiteFuer(new Konto(1, 'A', Rolle::Admin)));
-        self::assertSame('/app/mitglieder', Navigation::startseiteFuer(new Konto(1, 'V', Rolle::Vorstand)));
+        foreach (Rolle::cases() as $rolle) {
+            self::assertSame('/app/mitglieder', Navigation::startseiteFuer(new Konto(1, 'K', $rolle)), $rolle->value);
+        }
+    }
+
+    /** "Verwaltung" has the page "Beiträge" and the settings (its business sections), like the admin. */
+    public function testVerwaltungSeesFeesPageAndSettings(): void
+    {
+        self::assertSame(
+            ['Mitglieder', 'Familien', 'Listen', 'Karte', 'Statistik', 'Beiträge', 'Einstellungen'],
+            self::labels(Navigation::haupt(), new Konto(1, 'W', Rolle::Verwaltung)),
+        );
     }
 
     public function testSubPagesKeepTheirEntryMarked(): void

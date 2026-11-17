@@ -55,6 +55,8 @@ final readonly class VerlaufReiter implements Reiter
         $versionen = new MitgliedRepository($this->dienste->pdo())->versionen($mitgliedId);
         $konto = $this->dienste->view->konto();
         $benutzer = new BenutzerRepository($this->dienste->pdo());
+        // "Nur lesen" sees no bank details, so neither their changes (02 section 6).
+        $mitBankdaten = $konto !== null && $konto->darf(Permission::BankdatenSehen);
 
         $eintraege = [];
         $namen = [];
@@ -65,7 +67,7 @@ final readonly class VerlaufReiter implements Reiter
             }
             $eintraege[] = [
                 'version' => $version,
-                'aenderungen' => VerlaufAenderungen::zwischen($versionen[$i + 1] ?? null, $version),
+                'aenderungen' => VerlaufAenderungen::zwischen($versionen[$i + 1] ?? null, $version, $mitBankdaten),
                 'wer' => $von === null ? null : $namen[$von],
                 'aktuell' => $i === 0,
             ];

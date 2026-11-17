@@ -21,15 +21,18 @@ $etikett = static fn(BenutzerStatus $status): string => match ($status) {
     BenutzerStatus::Gesperrt => 'etikett-fehler',
 };
 ?>
-<p>Admins dürfen alles. Der Vorstand sucht, sieht und bearbeitet Mitglieder und nutzt die Listen –
-    Beiträge, Einzug, Einstellungen und Benutzer bleiben dem Admin vorbehalten.
-    „Nur lesen“ sieht Mitglieder, Familien, Nachweise und Listen samt Exporten und, ob ein Mitglied bezahlt hat –
-    ändern kann diese Rolle nichts.</p>
+<p>Admins dürfen alles. Die Verwaltung darf alles wie der Vorstand, dazu Beiträge und Einzug samt
+    Lastschriftdatei und die Vereinseinstellungen (Vereinsdaten, Abteilungen, Beitragsarten, Funktionen,
+    Geburtstage, Ehrungen) – Mitglieder endgültig löschen, Import, Benutzer, Mail, Rechtstexte und System
+    bleiben dem Admin vorbehalten.
+    Der Vorstand sucht, sieht und bearbeitet Mitglieder, nutzt die Listen und sieht die Statistik der Beiträge.
+    „Nur lesen“ sieht Mitglieder, Familien, Nachweise und Listen samt Exporten und, ob ein Mitglied bezahlt hat,
+    aber keine Bankverbindungen – ändern kann diese Rolle nichts.</p>
 
 <ul class="benutzer-liste">
     <?php foreach ($zeilen as $zeile): $b = $zeile['benutzer']; $id = 'benutzer-' . $b->id; ?>
         <li>
-            <details class="benutzer-eintrag">
+            <details class="aufklapper benutzer-eintrag">
                 <summary>
                     <span class="benutzer-name"><?= e($b->name) ?><?= $zeile['selbst'] ? ' <span class="gedaempft">(Sie)</span>' : '' ?></span>
                     <span class="benutzer-rolle"><?= e($b->rolle->bezeichnung()) ?></span>

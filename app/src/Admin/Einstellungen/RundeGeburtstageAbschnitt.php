@@ -9,7 +9,7 @@ use App\Domain\Permission;
 use App\Repository\SettingRepository;
 
 /**
- * Settings section runde Geburtstage (docs/spec/09-listen-und-exporte.md section 3): a list of ages. The forms post to app/routes/stammdaten.php. Admin only.
+ * Settings section runde Geburtstage (docs/spec/09-listen-und-exporte.md section 3): a list of ages. The forms post to app/routes/stammdaten.php. Admin and Verwaltung (admin.verein).
  */
 final readonly class RundeGeburtstageAbschnitt implements Abschnitt
 {
@@ -39,7 +39,7 @@ final readonly class RundeGeburtstageAbschnitt implements Abschnitt
 
     public function recht(): Permission
     {
-        return Permission::AdminEinstellungen;
+        return Permission::AdminVerein;
     }
 
     public function template(): string

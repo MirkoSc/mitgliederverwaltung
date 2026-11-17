@@ -17,8 +17,8 @@ use App\Tests\Support\TestBilder;
 
 /**
  * The installable app (docs/spec/06-oberflaeche.md section 6): the manifest
- * names the club and uses its logo, the service worker is revalidated and
- * every page links both.
+ * always names the application and uses the club's logo, the service worker
+ * is revalidated and every page links both.
  */
 final class PwaTest extends AppTestCase
 {
@@ -61,7 +61,7 @@ final class PwaTest extends AppTestCase
         return $daten;
     }
 
-    public function testTheManifestIsPublicAndWithoutClubDataNamesTheApplication(): void
+    public function testTheManifestIsPublicAndWithoutLogoUsesTheApplicationIcon(): void
     {
         $manifest = $this->manifest();
 
@@ -78,7 +78,7 @@ final class PwaTest extends AppTestCase
         );
     }
 
-    public function testTheClubNameAndLogoMakeTheApp(): void
+    public function testTheLogoMakesTheIconButTheNameStaysTheApplications(): void
     {
         if (!extension_loaded('gd')) {
             self::markTestSkipped('GD is not available.');
@@ -91,8 +91,8 @@ final class PwaTest extends AppTestCase
 
         $manifest = $this->manifest();
 
-        self::assertSame('Turn- und Sportverein Beispielstadt 1888 e. V.', $manifest['name']);
-        self::assertSame('TSV Beispielst…', $manifest['short_name']);
+        self::assertSame('Mitgliederverwaltung', $manifest['name']);
+        self::assertSame('Mitglieder', $manifest['short_name']);
         $icons = $manifest['icons'];
         self::assertIsArray($icons);
         self::assertSame(['any', 'any', 'maskable'], array_column($icons, 'purpose'));
@@ -114,6 +114,8 @@ final class PwaTest extends AppTestCase
 
         self::assertStringContainsString('<link rel="manifest" href="/manifest.webmanifest">', $login);
         self::assertStringContainsString('<meta name="theme-color" content="#1e5b45">', $login);
+        self::assertStringContainsString('<meta name="application-name" content="Mitgliederverwaltung">', $login);
+        self::assertStringContainsString('<meta name="apple-mobile-web-app-title" content="Mitglieder">', $login);
         self::assertStringContainsString('<script src="/js/pwa.js?v=0.0.0-test" defer></script>', $login);
         self::assertStringContainsString('<script src="/js/kopfleiste.js?v=0.0.0-test" defer></script>', $login);
     }

@@ -168,7 +168,9 @@ die nächsten Anfragen schon auf dem neuen Code.
 Start). Der Shim beantwortet alles außer `/admin`, der Anmeldung
 (`/anmelden…` – ein Admin, dessen Sitzung während eines abgestürzten
 Updates abgelaufen ist, muss wieder hineinkommen) und den Assets, die diese
-Seiten brauchen, mit 503.
+Seiten brauchen, mit 503. Weil auch die Rolle Verwaltung Rechte unter
+`/admin` hat (Vereinsdaten, 02 §6), lässt der `LoginGuard` bei gesetztem
+Flag unter `/admin` nur den Admin durch; alle anderen bekommen 503.
 Das Admin-Layout zeigt bei gesetztem Flag auf jeder Seite ein Banner mit
 „Freigeben" (`POST /admin/wartung/aufheben`) – ein abgestürztes Update darf
 die Instanz nicht dauerhaft sperren.

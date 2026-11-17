@@ -7,12 +7,8 @@
 }
 
 .suche-erweitert > summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--tippflaeche);
     padding: 0 var(--abstand-3);
     font-weight: 650;
-    cursor: pointer;
 }
 
 .suche-erweitert[open] > summary {
@@ -47,10 +43,21 @@
     gap: var(--abstand-2);
 }
 
+/* A date input keeps a least width of its own; inside the pair it may
+   shrink to its column (narrow phones). */
+.suche-bereich-paar input {
+    min-width: 0;
+}
+
 @media (min-width: 48rem) {
     .suche-erweitert-felder {
         grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
         gap: var(--abstand-3) var(--abstand-4);
+    }
+
+    /* Two date inputs do not fit into one column: a date range takes two. */
+    .suche-bereich:has(input[type="date"]) {
+        grid-column: span 2;
     }
 }
 

@@ -29,21 +29,29 @@
 }
 
 /* A list that folds away: the long checkbox list and the fees that cannot
-   go into a run. A <details>, so it works without a script. */
+   go into a run. A <details>, so it works without a script. The summary is
+   a button (the look of .knopf); the chevron comes from .aufklapper
+   (aufklapper.css) - a full-width grey bar read as a heading, not as
+   something to open. */
 .einzug-klappe {
     margin: 0 0 var(--abstand-4);
 }
 
 .einzug-klappe > summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--tippflaeche);
-    padding: 0 var(--abstand-3);
-    border: 1px solid var(--farbe-rand);
+    gap: var(--abstand-3);
+    width: fit-content;
+    max-width: 100%;
+    padding: var(--abstand-1) var(--abstand-5) var(--abstand-1) var(--abstand-4);
+    border: 2px solid var(--farbe-haupt);
     border-radius: var(--radius-klein);
-    background: var(--farbe-flaeche-2);
+    background: var(--farbe-flaeche);
+    color: var(--farbe-link);
     font-weight: 650;
-    cursor: pointer;
+    line-height: 1.2;
+}
+
+.einzug-klappe > summary:hover {
+    background: var(--farbe-flaeche-2);
 }
 
 .einzug-klappe[open] > summary {
@@ -51,7 +59,7 @@
 }
 
 .modus-barrierefrei .einzug-klappe > summary {
-    border: 2px solid var(--farbe-text);
+    border-color: var(--farbe-text);
 }
 
 /* A run that waits for the bank, marked by the colour of its status. */

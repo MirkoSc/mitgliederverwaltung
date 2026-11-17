@@ -20,7 +20,7 @@ final class VerlaufAenderungenTest extends TestCase
 
     public function testTheFirstVersionHasNoChanges(): void
     {
-        self::assertSame([], VerlaufAenderungen::zwischen(null, $this->version(1, new Mitglied(1, 'Muster'))));
+        self::assertSame([], VerlaufAenderungen::zwischen(null, $this->version(1, new Mitglied(1, 'Muster')), true));
     }
 
     public function testOnlyChangedFieldsAreListed(): void
@@ -32,7 +32,7 @@ final class VerlaufAenderungenTest extends TestCase
             ['feld' => 'Geburtsdatum', 'alt' => '04.03.2010', 'neu' => '–'],
             ['feld' => 'Ort', 'alt' => 'Altdorf', 'neu' => 'Neustadt'],
             ['feld' => 'Status', 'alt' => 'aktiv', 'neu' => 'passiv'],
-        ], VerlaufAenderungen::zwischen($alt, $neu));
+        ], VerlaufAenderungen::zwischen($alt, $neu, true));
     }
 
     public function testNamesComeFromTheVersionsThemselves(): void
@@ -40,13 +40,13 @@ final class VerlaufAenderungenTest extends TestCase
         $alt = $this->version(1, new Mitglied(1, 'Muster', abteilungIds: [3]), ['bezeichnungen' => ['abteilungen' => ['3' => 'Fußball']]]);
         $neu = $this->version(2, new Mitglied(1, 'Muster', abteilungIds: [3, 4]), ['bezeichnungen' => ['abteilungen' => ['3' => 'Fußball', '4' => 'Tennis']]]);
 
-        self::assertSame([['feld' => 'Abteilungen', 'alt' => 'Fußball', 'neu' => 'Fußball, Tennis']], VerlaufAenderungen::zwischen($alt, $neu));
+        self::assertSame([['feld' => 'Abteilungen', 'alt' => 'Fußball', 'neu' => 'Fußball, Tennis']], VerlaufAenderungen::zwischen($alt, $neu, true));
     }
 
     public function testNoChangeMeansNoEntries(): void
     {
         $v = $this->version(1, new Mitglied(1, 'Muster'));
 
-        self::assertSame([], VerlaufAenderungen::zwischen($v, $v));
+        self::assertSame([], VerlaufAenderungen::zwischen($v, $v, true));
     }
 }

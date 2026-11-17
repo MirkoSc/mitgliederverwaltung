@@ -85,6 +85,37 @@ final class VereinTest extends AppTestCase
         self::assertSame(403, $this->get('/admin')->status);
     }
 
+    /**
+     * "Verwaltung" (02 section 6) opens the same settings page with the
+     * business sections only, saves club data and logo - and no technical
+     * section is on the page or reachable.
+     */
+    public function testVerwaltungSeesAndSavesTheBusinessSettingsOnly(): void
+    {
+        $this->als(Rolle::Verwaltung);
+
+        $seite = $this->get('/admin');
+        self::assertSame(200, $seite->status);
+        foreach (['verein', 'abteilungen', 'beitragsarten', 'funktionen', 'geburtstage', 'ehrungsstufen'] as $abschnitt) {
+            self::assertStringContainsString('id="titel-' . $abschnitt . '"', $seite->body, $abschnitt);
+        }
+        foreach (['mail', 'rechtstexte', 'benutzer', 'import', 'system', 'update', 'backups', 'audit'] as $abschnitt) {
+            self::assertStringNotContainsString('id="titel-' . $abschnitt . '"', $seite->body, $abschnitt);
+        }
+        self::assertStringContainsString('href="/admin"', $seite->body, 'the main entry "Einstellungen"');
+
+        self::assertWeiterleitungNach('/admin#verein', $this->post('/admin/verein', self::formular()));
+        self::assertStringContainsString('value="DE98ZZZ09999999999"', $this->get('/admin')->body);
+        self::assertSame(302, $this->hochladen(TestBilder::png($this->wurzel))->status, 'the logo');
+
+        foreach (['/admin/mail', '/admin/mail/test', '/admin/rechtstexte/impressum', '/admin/benutzer'] as $pfad) {
+            self::assertSame(403, $this->post($pfad, ['text' => 'x', 'email' => 'x@example.org', 'name' => 'X', 'rolle' => 'admin'])->status, $pfad);
+        }
+        foreach (['/admin/audit', '/admin/designsystem'] as $pfad) {
+            self::assertSame(403, $this->get($pfad)->status, $pfad);
+        }
+    }
+
     public function testVorstandCannotSave(): void
     {
         $this->als(Rolle::Vorstand);

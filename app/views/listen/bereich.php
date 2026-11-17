@@ -28,6 +28,7 @@ use App\Listen\SpaltenTyp;
 
 $liste = $ansicht->liste;
 $ergebnis = $ansicht->ergebnis;
+$spalten = $ergebnis->ansichtSpalten(); // export-only columns stay out of the table
 $anzahl = count($ansicht->zeilen);
 $seiten = $ansicht->seitenzahl();
 $hatAktion = array_filter($ansicht->zeilen, static fn(\App\Listen\ListenZeile $z): bool => $z->aktion !== null) !== [];
@@ -152,7 +153,7 @@ $versteckt = static function () use ($ansicht): array {
                     <caption><?= $anzahl === 1 ? '1 Eintrag' : e((string) $anzahl) . ' Einträge' ?><?= $ansicht->sortierung !== null ? ', sortiert' : '' ?></caption>
                     <thead>
                         <tr>
-                            <?php foreach ($ergebnis->spalten as $spalte): ?>
+                            <?php foreach ($spalten as $spalte): ?>
                                 <?php
                                 $sortiert = $spalte->schluessel === $ansicht->sortierung;
                                 $richtung = $sortiert && !$ansicht->absteigend ? 'ab' : null;
@@ -165,7 +166,7 @@ $versteckt = static function () use ($ansicht): array {
                     <tbody>
                         <?php foreach ($zeilen as $zeile): ?>
                             <tr>
-                                <?php foreach ($ergebnis->spalten as $nr => $spalte): ?>
+                                <?php foreach ($spalten as $nr => $spalte): ?>
                                     <?php
                                     $text = $zelle($spalte, $zeile->werte[$spalte->schluessel] ?? null);
                                     $klassen = array_filter([

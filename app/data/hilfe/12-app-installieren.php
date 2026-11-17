@@ -20,7 +20,7 @@ return [
             'text' => 'Am iPhone mit Safari: Wählen Sie das Symbol **Teilen**. Wählen Sie dann **Zum Home-Bildschirm**.',
         ],
         [
-            'text' => 'Bestätigen Sie die Frage des Browsers. Danach finden Sie die App mit dem Namen und Logo des Vereins auf dem Startbildschirm oder in der Programmliste.',
+            'text' => 'Bestätigen Sie die Frage des Browsers. Danach finden Sie die App **Mitglieder** mit dem Logo des Vereins auf dem Startbildschirm oder in der Programmliste.',
             'tipp' => 'Auf dem Gerät werden keine Mitgliederdaten gespeichert. Sie müssen sich wie gewohnt anmelden. Ohne Internet funktioniert die App nicht.',
         ],
     ],

@@ -12,8 +12,10 @@ namespace App\Domain;
  *
  * COMPLETE on purpose (docs/spec/05-entwicklung.md section 6): later issues
  * use these rights and do not add new ones - a missing one is argued for in
- * the pull request (#87 added beitraege.sehen for the role "Nur lesen").
- * Which role holds which right is App\Domain\Rolle.
+ * the pull request and in 02 section 6 (#87 added beitraege.sehen for the
+ * role "Nur lesen"; the role "Verwaltung" added admin.verein,
+ * bankdaten.sehen and beitraege.auswerten). Which role holds which right is
+ * App\Domain\Rolle.
  */
 enum Permission: string
 {
@@ -23,8 +25,20 @@ enum Permission: string
     /**
      * Create and edit members (including IBAN, departments, fee type),
      * restore a version, maintain families, note a proof or an honour.
+     * Whoever holds it also holds BankdatenSehen - the form shows the IBAN
+     * (tests/Domain/RolleTest.php).
      */
     case MitgliederBearbeiten = 'mitglieder.bearbeiten';
+
+    /**
+     * See the bank details of members: IBAN, BIC (and the bank named by
+     * it), Kontoinhaber, Mandatsreferenz, Mandatsdatum - in the tab
+     * "Daten", the history, the search, the lists and every export. Without
+     * it ("Nur lesen": whoever congratulates or visits members) they are
+     * left out everywhere; fee type, amounts and paid status are
+     * BeitraegeSehen.
+     */
+    case BankdatenSehen = 'bankdaten.sehen';
 
     /** Delete a member or a proof (07 section 9: admin only). */
     case MitgliederLoeschen = 'mitglieder.loeschen';
@@ -48,8 +62,22 @@ enum Permission: string
     case BeitraegeVerwalten = 'beitraege.verwalten';
 
     /**
-     * The settings page: club data, departments, fee types, functions,
-     * birthdays, honour levels (11, 07), mail and legal texts.
+     * The tab "Beiträge" of the page "Statistik" (09 section 7): what a
+     * year's fees bring in, figures only. Not the page "Beiträge".
+     */
+    case BeitraegeAuswerten = 'beitraege.auswerten';
+
+    /**
+     * The settings page (/admin) with the business settings: club data
+     * with bank account, creditor id, association numbers and logo (11),
+     * departments, fee types, functions, round birthdays, honour levels
+     * (07). The only admin.* right of the role "Verwaltung".
+     */
+    case AdminVerein = 'admin.verein';
+
+    /**
+     * The technical settings on the same page: mail and legal texts
+     * (Impressum, Datenschutz), and the design system page. Admin only.
      */
     case AdminEinstellungen = 'admin.einstellungen';
 
@@ -70,11 +98,14 @@ enum Permission: string
         return match ($this) {
             self::MitgliederSehen => 'Mitglieder suchen und ansehen',
             self::MitgliederBearbeiten => 'Mitglieder anlegen und bearbeiten',
+            self::BankdatenSehen => 'Bankverbindung und Mandat der Mitglieder ansehen',
             self::MitgliederLoeschen => 'Mitglieder und Nachweise löschen',
             self::ListenSehen => 'Listen ansehen und exportieren',
             self::BeitraegeSehen => 'Bezahlt-Status und Beitragsangaben ansehen',
             self::BeitraegeVerwalten => 'Beiträge und Einzug',
-            self::AdminEinstellungen => 'Einstellungen',
+            self::BeitraegeAuswerten => 'Statistik der Beiträge ansehen',
+            self::AdminVerein => 'Vereinsdaten, Abteilungen, Beitragsarten und weitere Vereinseinstellungen',
+            self::AdminEinstellungen => 'Mail und Rechtstexte',
             self::AdminBenutzer => 'Benutzer verwalten',
             self::AdminImport => 'Daten importieren',
             self::AdminSystem => 'System (Update, Backup, Systemcheck)',
@@ -84,7 +115,8 @@ enum Permission: string
 
     /**
      * The `admin.*` rights - the only ones a route under /admin may declare
-     * (tests/Http/RoutenZugriffTest.php).
+     * (tests/Http/RoutenZugriffTest.php). Vorstand and "Nur lesen" hold
+     * none, "Verwaltung" holds admin.verein only.
      */
     public function istAdmin(): bool
     {

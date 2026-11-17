@@ -23,19 +23,26 @@ use App\Support\Alter;
  * text must match in one of them, so "max muster" finds Max Mustermann and
  * "Müller 1980" finds the Müller born in 1980 (07 section 8). Case does not
  * matter (collation).
+ *
+ * Without $mitBankdaten (role "Nur lesen", no bankdaten.sehen, 02 section
+ * 6) the search never looks at IBAN or Kontoinhaber - a hit would tell a
+ * piece of them.
  */
 final readonly class MitgliederListeRepository
 {
     /** The text columns a search word may occur in ("mitgliedsnummer" is a number, see wortBedingung()). */
     private const array SUCHSPALTEN = [
         'm.nachname', 'm.vorname', 'm.strasse', 'm.plz', 'm.ort', 'm.email',
-        'm.telefon', 'm.handy', 'm.kontoinhaber', 'm.bemerkung',
+        'm.telefon', 'm.handy', 'm.bemerkung',
     ];
+
+    /** The bank columns a search word may occur in - only with bankdaten.sehen. */
+    private const array SUCHSPALTEN_BANK = ['m.kontoinhaber'];
 
     /** Shortest word compared with the IBAN: a piece of two characters would hit nearly every IBAN. */
     private const int IBAN_MINDESTLAENGE = 4;
 
-    public function __construct(private \PDO $pdo)
+    public function __construct(private \PDO $pdo, private bool $mitBankdaten)
     {
     }
 
@@ -110,7 +117,7 @@ final readonly class MitgliederListeRepository
         $werte = [];
 
         foreach ($filter->woerter() as $wort) {
-            [$bedingung, $wortWerte] = self::wortBedingung($wort, $stichtag);
+            [$bedingung, $wortWerte] = self::wortBedingung($wort, $stichtag, $this->mitBankdaten);
             $bedingungen[] = $bedingung;
             array_push($werte, ...$wortWerte);
         }
@@ -134,7 +141,7 @@ final readonly class MitgliederListeRepository
             $bedingungen[] = $nichtAusgetreten;
             $werte[] = $tag;
         }
-        [$erweitert, $erweitertWerte] = self::erweiterteBedingungen($filter->erweitert, $stichtag);
+        [$erweitert, $erweitertWerte] = self::erweiterteBedingungen($filter->erweitert, $stichtag, $this->mitBankdaten);
         array_push($bedingungen, ...$erweitert);
         array_push($werte, ...$erweitertWerte);
 
@@ -144,11 +151,12 @@ final readonly class MitgliederListeRepository
     /**
      * The conditions of the extended search, one per field that is set
      * (all AND). Texts are "contains" with `%` and `_` escaped; the number
-     * is exact; ages count on $stichtag.
+     * is exact; ages count on $stichtag. The IBAN field counts only
+     * $mitBankdaten.
      *
      * @return array{list<string>, list<string|int>}
      */
-    private static function erweiterteBedingungen(ErweiterteSuche $e, \DateTimeImmutable $stichtag): array
+    private static function erweiterteBedingungen(ErweiterteSuche $e, \DateTimeImmutable $stichtag, bool $mitBankdaten): array
     {
         $bedingungen = [];
         $werte = [];
@@ -167,7 +175,7 @@ final readonly class MitgliederListeRepository
             $bedingungen[] = '(m.telefon LIKE ? OR m.handy LIKE ?)';
             array_push($werte, $enthaelt($e->telefon), $enthaelt($e->telefon));
         }
-        if ($e->iban !== '') {
+        if ($mitBankdaten && $e->iban !== '') {
             $bedingungen[] = "UPPER(REPLACE(m.iban, ' ', '')) LIKE ?";
             $werte[] = $enthaelt($e->iban);
         }
@@ -229,19 +237,21 @@ final readonly class MitgliederListeRepository
     /**
      * The condition one search word must fulfil: it occurs in a text
      * column or the member number, or - when it looks like one - it is the
-     * date of birth, the year of birth or a piece of the IBAN.
+     * date of birth, the year of birth or a piece of the IBAN. Kontoinhaber
+     * and IBAN only $mitBankdaten.
      *
      * @return array{string, list<string|int>}
      */
-    private static function wortBedingung(string $wort, \DateTimeImmutable $stichtag): array
+    private static function wortBedingung(string $wort, \DateTimeImmutable $stichtag, bool $mitBankdaten): array
     {
         $muster = '%' . addcslashes($wort, '%_\\') . '%';
-        $teile = array_map(static fn(string $spalte): string => $spalte . ' LIKE ?', self::SUCHSPALTEN);
+        $spalten = $mitBankdaten ? [...self::SUCHSPALTEN, ...self::SUCHSPALTEN_BANK] : self::SUCHSPALTEN;
+        $teile = array_map(static fn(string $spalte): string => $spalte . ' LIKE ?', $spalten);
         $teile[] = 'CAST(m.mitgliedsnummer AS CHAR) LIKE ?';
         $werte = array_fill(0, count($teile), $muster);
 
         // IBAN: without blanks and independent of case, a piece is enough.
-        if (preg_match('/^[A-Za-z0-9]{' . self::IBAN_MINDESTLAENGE . ',}$/D', $wort) === 1) {
+        if ($mitBankdaten && preg_match('/^[A-Za-z0-9]{' . self::IBAN_MINDESTLAENGE . ',}$/D', $wort) === 1) {
             $teile[] = "UPPER(REPLACE(m.iban, ' ', '')) LIKE ?";
             $werte[] = '%' . strtoupper($wort) . '%';
         }

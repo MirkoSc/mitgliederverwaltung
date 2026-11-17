@@ -10,6 +10,7 @@ use App\Domain\Mitglied;
 use App\Domain\Permission;
 use App\Repository\JahresbeitragRepository;
 use App\Repository\MitgliedRepository;
+use App\Service\Mitglied\Hinweis;
 use App\Service\Mitglied\HinweisArt;
 use App\Service\Mitglied\HinweisLader;
 use App\Service\Mitglied\MitgliedHinweise;
@@ -81,7 +82,7 @@ final readonly class AuffaelligkeitenListe implements Liste
         $heute = new \DateTimeImmutable('today');
         $pdo = $this->dienste->pdo();
         $art = (string) $filter['art'];
-        $zeilen = $art === self::RUECKLASTSCHRIFT ? [] : self::zeilen(HinweisLader::aus($pdo)->fuerAlle($heute), $art);
+        $zeilen = $art === self::RUECKLASTSCHRIFT ? [] : self::zeilen(HinweisLader::aus($pdo)->fuerAlle($heute), $art, $konto);
         $jahre = $konto->darf(Permission::BeitraegeSehen) && ($art === self::ALLE || $art === self::RUECKLASTSCHRIFT)
             ? new JahresbeitragRepository($pdo)->ruecklastschriftJahre()
             : [];
@@ -149,18 +150,20 @@ final readonly class AuffaelligkeitenListe implements Liste
     }
 
     /**
-     * One row per hint of the kind $art ("alle" for every kind).
+     * One row per hint of the kind $art ("alle" for every kind), as
+     * $konto may see it (Hinweis::fuer(): no bank details without
+     * bankdaten.sehen).
      *
      * @param list<MitgliedHinweise> $eintraege
      * @return list<ListenZeile>
      */
-    public static function zeilen(array $eintraege, string $art): array
+    public static function zeilen(array $eintraege, string $art, ?Konto $konto = null): array
     {
         $zeilen = [];
         foreach ($eintraege as $eintrag) {
             $m = $eintrag->mitglied;
             $name = self::name($m);
-            foreach ($eintrag->hinweise as $hinweis) {
+            foreach (Hinweis::fuer($eintrag->hinweise, $konto) as $hinweis) {
                 if ($art !== self::ALLE && $hinweis->art->value !== $art) {
                     continue;
                 }

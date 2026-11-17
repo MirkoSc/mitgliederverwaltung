@@ -400,6 +400,10 @@ final class MitgliedBearbeitenTest extends AppTestCase
         self::assertStringContainsString('Mitglied speichern', $html);
         self::assertStringContainsString('Die Prüfziffer passt nicht', $html);
         self::assertStringContainsString('Leer lassen: es gilt die Mitgliedsnummer (14).', $html);
+        self::assertStringNotContainsString('id="m-mitgliedsnummer"', $html, 'the heading shows the number, the form does not repeat it');
+        foreach (['Person', 'Anschrift', 'Kontakt', 'Mitgliedschaft', 'Beitrag und Bank', 'Funktionen', 'Bemerkung'] as $gruppe) {
+            self::assertStringContainsString('<h3>' . $gruppe . '</h3>', $html, 'every group is a panel with its heading');
+        }
         self::assertStringNotContainsString('Mitglied löschen', $html, 'the board does not delete');
 
         $admin = $this->als(Rolle::Admin);

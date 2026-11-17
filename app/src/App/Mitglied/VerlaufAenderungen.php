@@ -56,15 +56,22 @@ final class VerlaufAenderungen
         'bemerkung' => 'Bemerkung',
     ];
 
+    /**
+     * The bank details among them (bankdaten.sehen, 02 section 6): left
+     * out for an account without that right, value and label alike.
+     */
+    public const array BANKDATEN = ['iban', 'bic', 'kontoinhaber', 'mandatsreferenz', 'mandatsdatum'];
+
     private const string LEER = '–';
 
     /**
      * The changed fields from $alt to $neu; with $alt null (the first
-     * version) nothing is listed - there was no "before".
+     * version) nothing is listed - there was no "before". Without
+     * $mitBankdaten the fields of BANKDATEN are never listed.
      *
      * @return list<array{feld: string, alt: string, neu: string}>
      */
-    public static function zwischen(?MitgliedVersion $alt, MitgliedVersion $neu): array
+    public static function zwischen(?MitgliedVersion $alt, MitgliedVersion $neu, bool $mitBankdaten): array
     {
         if ($alt === null) {
             return [];
@@ -72,6 +79,9 @@ final class VerlaufAenderungen
 
         $aenderungen = [];
         foreach (self::FELDER as $schluessel => $bezeichnung) {
+            if (!$mitBankdaten && in_array($schluessel, self::BANKDATEN, true)) {
+                continue;
+            }
             $vorher = $alt->daten[$schluessel] ?? null;
             $nachher = $neu->daten[$schluessel] ?? null;
             if ($schluessel === 'land') {

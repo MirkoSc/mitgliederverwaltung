@@ -70,7 +70,7 @@ final readonly class FamilieController
             'mitglied' => $mitglied,
             'suche' => $suche,
             'treffer' => $this->familien->suche($suche),
-            'vorschlag' => 'Familie ' . $mitglied->nachname,
+            'vorschlag' => $mitglied->nachname,
             'rollen' => FamilienRolle::cases(),
             'einbettung' => Einbettung::ausAnfrage($r),
         ], Area::App));
@@ -100,7 +100,7 @@ final readonly class FamilieController
         }
         $name = trim($r->feld('name'));
         if ($name === '') {
-            $name = 'Familie ' . $mitglied->nachname;
+            $name = $mitglied->nachname;
         }
 
         $familie = $this->familien->anlegen(mb_substr($name, 0, 200));

@@ -2,17 +2,19 @@
    from app.css only.
 
    Other parts set .formular and .feldgruppe for their own pages (a width
-   of 32rem, framed groups); the member form is long and two-columned and
-   keeps the look of the design system, so it says so here. */
+   of 32rem, framed groups); the member form is long, in panels with rows
+   (teile/formular-gruppen.css), and keeps the look of the design system,
+   so it says so here. The width is in em: the large type of the
+   Barrierefrei-Modus gets the room for its rows. */
 
 .formular.mitglied-formular {
-    max-width: 60rem;
+    max-width: 60em;
 }
 
 .mitglied-formular .feldgruppe {
     align-self: start;
     align-content: start;
-    gap: 0;
+    row-gap: 0;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -23,16 +25,9 @@
     font-weight: 650;
 }
 
-.mitglied-formular > h3 {
-    margin: var(--abstand-4) 0 0;
-}
-
-.mitglied-formular > h3:first-of-type {
-    margin-top: 0;
-}
-
-/* Short fields (number, date, gender) keep room for the large font of the
-   Barrierefrei-Modus - the date picker and "nicht angegeben" must not be cut. */
+/* Short fields (date, gender) keep room for the large font of the
+   Barrierefrei-Modus on a phone too, where the rows of formular-gruppen.css
+   do not apply - the date picker and "nicht angegeben" must not be cut. */
 .modus-barrierefrei .mitglied-formular .feld-kurz :is(input, select) {
     max-width: 20rem;
 }

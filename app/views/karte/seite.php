@@ -62,7 +62,7 @@ $anzahlText = static fn(int $n, string $eins, string $mehr): string => $n . ' ' 
         <p class="feld-hinweis">Am schnellsten: Knopf drücken und den Tab offen lassen (etwa eine Anschrift pro Sekunde).</p>
     <?php endif; ?>
     <?php if ($darfErmitteln && $stand->gesamt > 0): ?>
-        <details class="karte-neu">
+        <details class="aufklapper karte-neu">
             <summary>Alle neu ermitteln</summary>
             <form id="karte-neu-ermitteln" method="post" action="<?= e($neuErmittelnPfad) ?>" data-csrf="<?= e((string) $csrf) ?>" data-kette="<?= e(KarteController::PFAD_ERMITTELN) ?>">
                 <input type="hidden" name="_csrf" value="<?= e((string) $csrf) ?>">

@@ -14,7 +14,7 @@ use App\View\Navigation;
 /**
  * The direct debit (docs/spec/08-beitraege.md sections 3 and 4, issue #30):
  * create a run, the page of one run, download its stored file, confirm or
- * discard it, note returned debits of several of its fees at once (#133). Admin only: every route declares BeitraegeVerwalten, so the
+ * discard it, note returned debits of several of its fees at once (#133). Admin and Verwaltung only: every route declares BeitraegeVerwalten, so the
  * Vorstand gets 403 on each. The compose list and the archive are part of
  * the page "Beiträge" (app/routes/beitraege.php).
  */

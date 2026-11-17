@@ -21,8 +21,9 @@ Server – auch hier gilt: fehlt etwas, gibt es einen Hinweis, keine Sperre):
 
 - **Mitgliedsnummer**: ganze Zahl, eindeutig; **automatisch, unveränderbar**
   (Mirko, 05.11.2026): der Server vergibt beim ersten Speichern höchste + 1
-  (bei gleichzeitigem Anlegen erneut versuchen), das Formular zeigt sie nur
-  an (bei „Neu" die voraussichtliche) und kennt kein Feld dafür; eine
+  (bei gleichzeitigem Anlegen erneut versuchen). Das Formular kennt kein
+  Feld dafür: beim Bearbeiten steht sie in der Überschrift des Mitglieds
+  („Nr. 1001"), bei „Neu" nennt ein Hinweis die voraussichtliche; eine
   mitgeschickte Nummer wird ignoriert, auch beim Admin; Zurückholen einer
   Version ändert sie nie. Wird die höchste Nummer gelöscht, wird sie wieder
   vergeben. Importierte Mitglieder behalten ihre alte `Adressnummer`.
@@ -89,6 +90,20 @@ bleiben beim Speichern erhalten (§3). Abteilungen, Funktionen und
 Beitragsarten bietet das Formular an, wenn sie aktiv sind oder das Mitglied
 sie schon hat. Die Felder Austrittsdatum und Austrittsgrund bleiben im
 Formular: dort wird ein bestehender Austritt korrigiert.
+
+Aufbau des Formulars (Handy und PC, beide Modi gleich; der
+Barrierefrei-Modus hat nur die größere Schrift): jede Gruppe ist ein Kasten
+mit Überschrift – **Person, Anschrift, Kontakt, Mitgliedschaft, Beitrag und
+Bank, Funktionen, Bemerkung** –, Zusammengehöriges steht nebeneinander, jedes
+Feld so breit wie sein Inhalt (Muster „Formular in Gruppen", 06 §3):
+Vorname | Nachname; Titel | Namenszusatz; Geschlecht | Geburtsdatum –
+Straße und Hausnummer; PLZ | Ort | Land, darunter „Wohnort auf der Karte" –
+Telefon | Handy | E-Mail – Status; Abteilungen als Häkchen in Spalten;
+Eintritt | Austritt | Austrittsgrund – Beitragsart | Zahlart; IBAN | BIC;
+Kontoinhaber; Mandatsreferenz | Mandatsdatum – Funktionen als Häkchen in
+Spalten, daneben die Lizenznummer – Bemerkung. Reicht die Breite nicht (das
+Mitglied neben der Liste), bricht eine Reihe um; am Handy steht alles
+untereinander.
 
 Austritt (#127): Unter dem Formular steht „Mitglied ausgetreten" bzw.
 „Austritt zurücknehmen", für Ehemalige beim Admin daneben „Mitglied
@@ -183,7 +198,7 @@ Mitglieder, sonst deaktivieren.
 
 ## 3. Familien
 
-- Familie = Name (z. B. „Familie Muster") + Mitglieder mit Rolle.
+- Familie = Name (der Nachname, z. B. „Muster") + Mitglieder mit Rolle.
 - Gepflegt im Mitglied: „Familie wählen" (Suche) oder „neue Familie",
   Rolle wählen. Die Familie zeigt im Mitglied ihre übrigen Personen.
 - Eine Familie, aus der die letzte Person geht, wird automatisch gelöscht.
@@ -194,7 +209,7 @@ Mitglieder, sonst deaktivieren.
   Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
   anlegen" führt zu `GET /app/mitglieder/{id}/familie`; gesucht wird per
   `POST` auf dieselbe Adresse, der Name steht nie in der URL (#37) (Suche nach Name,
-  Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
+  Beitreten mit Rolle, „Neue Familie" mit Vorschlag „<Nachname>", wie beim Import, 10 §1);
   dazu `POST …/familie/{beitreten,neu,rolle,umbenennen,verlassen}`
   (`App\App\FamilieController`, `app/routes/familie.php`, Recht
   `mitglieder.bearbeiten`, also Admin und Vorstand). Jede Änderung ist ein
@@ -387,13 +402,17 @@ SQL.
     `01.02.1980`, `1980-02-01`, `1.2.80`), vergleicht exakt; zwei Ziffern
     für das Jahr zählen zum laufenden Jahrhundert, außer das läge in der
     Zukunft. Eine vierstellige Zahl passt zusätzlich auf das Geburtsjahr.
-  Die Suche ist mit allen Filtern kombinierbar.
+  Die Suche ist mit allen Filtern kombinierbar. Ohne `bankdaten.sehen`
+  (Nur lesen, 02 §6) vergleicht sie weder mit Kontoinhaber noch mit der
+  IBAN, und die Beschreibung unter dem Suchfeld nennt beide nicht – ein
+  Treffer verriete ein Stück davon.
 - **Erweiterte Suche** (#127): aufklappbar unter den Filtern (`<details>`,
   offen, sobald ein Feld gefüllt ist), ein Feld je Spalte, **alle
   Bedingungen UND**, zusätzlich zum Suchfeld. Textfelder „enthält", ohne
   Groß-/Kleinschreibung (`LIKE`, `%`/`_` maskiert): Nachname, Vorname,
   Straße, PLZ, Ort, E-Mail, Telefon (Telefon **oder** Handy), IBAN (ohne
-  Leerzeichen verglichen), Bemerkung; Mitgliedsnummer **exakt**. Auswahl:
+  Leerzeichen verglichen; nur mit `bankdaten.sehen`, sonst weder Feld
+  noch Bedingung), Bemerkung; Mitgliedsnummer **exakt**. Auswahl:
   Geschlecht (m/w/d/ohne Angabe), Funktion, Zahlart, Familie (in einer
   Familie / ohne Familie / Rolle Zahler, Elternteil, Kind); dazu die
   vorhandenen Filter Abteilung, Beitragsart, aktiv/passiv. Bereiche (von
@@ -453,20 +472,27 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
 
 ## 9. Rechte
 
-| Aktion | Admin | Vorstand | Nur lesen |
-|---|:-:|:-:|:-:|
-| Mitglieder suchen, ansehen, Verlauf, Familie und Nachweise ansehen/herunterladen | ✓ | ✓ | ✓ |
-| Mitglieder anlegen, bearbeiten, Version zurückholen | ✓ | ✓ | – |
-| Nachweis vermerken/bearbeiten | ✓ | ✓ | – |
-| Nachweis löschen, Mitglied löschen | ✓ | – | – |
-| Familien pflegen | ✓ | ✓ | – |
-| Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106), Punkt von Hand setzen/verschieben/entfernen (#108) | ✓ | ✓ | – |
-| Reiter „Beiträge" (lesen) | ✓ | – | ✓ |
+| Aktion | Admin | Verwaltung | Vorstand | Nur lesen |
+|---|:-:|:-:|:-:|:-:|
+| Mitglieder suchen, ansehen, Verlauf, Familie und Nachweise ansehen/herunterladen | ✓ | ✓ | ✓ | ✓ |
+| Bankdaten ansehen: IBAN, BIC, Bank, Kontoinhaber, Mandatsreferenz, Mandatsdatum (Reiter „Daten", Verlauf, Suche, Hinweistexte) | ✓ | ✓ | ✓ | – |
+| Mitglieder anlegen, bearbeiten (auch aktiv/passiv, Austritt), Version zurückholen | ✓ | ✓ | ✓ | – |
+| Nachweis vermerken/bearbeiten | ✓ | ✓ | ✓ | – |
+| Nachweis löschen, Mitglied löschen | ✓ | – | – | – |
+| Familien pflegen | ✓ | ✓ | ✓ | – |
+| Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106), Punkt von Hand setzen/verschieben/entfernen (#108) | ✓ | ✓ | ✓ | – |
+| Reiter „Beiträge" (lesen) | ✓ | ✓ | ✓ | ✓ |
 
 „Nur lesen“ (#87) sieht den Reiter „Daten“ als reine Ansicht
 (`mitglied/daten-lesen.php`: die Gruppen des Formulars als Angaben, leere
 Felder weggelassen) statt als Formular; die übrigen Reiter blenden ihre
-Formulare über dieselben Rechte aus wie beim Vorstand das Löschen.
+Formulare über dieselben Rechte aus wie beim Vorstand das Löschen. Ohne
+`bankdaten.sehen` fehlen in der Gruppe „Beitrag" IBAN, BIC, Bank,
+Kontoinhaber, Mandatsreferenz und Mandatsdatum (Beitragsart und Zahlart
+bleiben), der Verlauf führt geänderte Bankfelder nicht auf
+(`VerlaufAenderungen::BANKDATEN`), und die beiden Hinweise zur
+Bankverbindung (§6) zeigen nur ihre Kurzbezeichnung, weil der Text die
+zur Bankleitzahl passende BIC nennt (`Hinweis::ohneBankdaten()`).
 
 ## Pflicht-Tests
 

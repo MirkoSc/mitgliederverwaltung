@@ -37,9 +37,12 @@
     overflow-wrap: anywhere;
 }
 
+/* Columns sized in em: they grow with the type (Barrierefrei-Modus) and
+   hold the widest code (eleven capitals like "WMWMW-MWMWM") without
+   running into the next column. */
 .backup-codes {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5em), 1fr));
     gap: var(--abstand-2) var(--abstand-4);
     margin: 0 0 var(--abstand-5);
     padding: var(--abstand-4);

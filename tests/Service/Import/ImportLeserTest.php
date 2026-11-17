@@ -90,7 +90,8 @@ final class ImportLeserTest extends TestCase
         );
 
         self::assertTrue($datei->istFehlerfrei());
-        self::assertSame(['F7' => 'Familie Muster'], $datei->familien);
+        self::assertSame([], $datei->unbekannteSpalten, 'familie_name is ignored without a hint');
+        self::assertSame(['F7' => 'Muster'], $datei->familien);
         self::assertSame('F7', $datei->eintraege[1]->familie);
         self::assertSame(FamilienRolle::Zahler, $datei->eintraege[0]->mitglied->familieRolle);
         self::assertSame(FamilienRolle::Kind, $datei->eintraege[1]->mitglied->familieRolle);
@@ -106,15 +107,21 @@ final class ImportLeserTest extends TestCase
         );
 
         self::assertCount(2, $datei->familien);
-        self::assertSame('Familie Muster', $datei->familien['501']);
-        self::assertSame('Familie Alt', $datei->familien['502']);
+        self::assertSame('Muster', $datei->familien['501']);
+        self::assertSame('Alt', $datei->familien['502']);
     }
 
-    public function testAFamilyWithoutANameIsCalledAfterItsFirstMember(): void
+    /** Only the surname - never the payer's first name the old software puts into familie_name. */
+    public function testAFamilyIsCalledByThePayersSurnameOnly(): void
     {
-        $datei = $this->lesen('1;Muster;Max;m;;;1;;;;;F7;;zahler;;');
+        $datei = $this->lesen(
+            '1;Erstmann;Erik;m;;;1;09;;lastschrift;;F7;Zora Zahlmann;kind;;',
+            '2;Zahlmann;Zora;w;;;1;09;Familie;lastschrift;;F7;Zora Zahlmann;zahler;;',
+            '3;Ohnezahler;Olga;w;;;1;09;;lastschrift;;F8;Olga Ohnezahler;elternteil;;',
+        );
 
-        self::assertSame(['F7' => 'Familie Muster'], $datei->familien);
+        self::assertTrue($datei->istFehlerfrei(), implode(' | ', self::texte($datei)));
+        self::assertSame(['F7' => 'Zahlmann', 'F8' => 'Ohnezahler'], $datei->familien, 'without a payer: the first member');
     }
 
     public function testDepartmentNumbersMatchWithoutTheLeadingZero(): void

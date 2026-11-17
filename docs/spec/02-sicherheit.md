@@ -194,53 +194,105 @@ fremden Host an. Vorlage: `docs/betrieb.md` §11.
 
 ## 6. Rollen und Rechte
 
-- Rechte sind ein PHP-Enum `App\Domain\Permission`. **Drei feste Rollen**
-  (kein Rollen-Editor):
+- Rechte sind ein PHP-Enum `App\Domain\Permission`. **Vier feste Rollen**
+  (kein Rollen-Editor), überall in dieser Reihenfolge (Auswahl beim
+  Einladen und Rolle ändern, Beschriftungen):
   - **Admin**: alle Rechte.
+  - **Verwaltung** (`verwaltung`, seit 17.11.2026): alles wie der Vorstand,
+    dazu die Seite „Beiträge“ mit Einzug und Lastschriftdatei
+    (`beitraege.verwalten`) und die **fachlichen Einstellungen**
+    (`admin.verein`): Vereinsdaten mit Bankverbindung, Gläubiger-ID,
+    Verbandsnummern und Logo, Abteilungen, Beitragsarten, Funktionen, runde
+    Geburtstage, Ehrungsstufen. Mitglieder inaktiv/passiv setzen und den
+    Austritt eintragen gehört zu `mitglieder.bearbeiten`, alle Exporte zu
+    `listen.sehen`. **Nicht**: Mitglieder endgültig löschen, Import und
+    Abgleich, Benutzer, Mail, Rechtstexte (Impressum/Datenschutz), Update,
+    Backup/Restore, Systemcheck, Wartung, Audit-Log, Designsystem.
   - **Vorstand**: Mitglieder suchen, ansehen, anlegen, bearbeiten (auch
-    IBAN, Abteilung, Beitragsart), Listen und Exporte, und lesend **ob ein
+    IBAN, Abteilung, Beitragsart), Listen und Exporte, lesend **ob ein
     Mitglied bezahlt hat** (`beitraege.sehen`, wie Nur lesen; seit
-    30.10.2026). **Nicht**: Seite „Beiträge“ (Jahresbeiträge, bezahlt
+    30.10.2026) und die **Statistik der Beiträge** (`beitraege.auswerten`,
+    seit 17.11.2026). **Nicht**: Seite „Beiträge“ (Jahresbeiträge, bezahlt
     setzen), Einzug, Lastschriftdatei, Einstellungen, Benutzer, System.
-  - **Nur lesen** (`lesend`, #87): Mitglieder suchen und öffnen (Daten,
-    Familie, Nachweise ansehen und herunterladen, Verlauf), Listen **mit
-    Exporten** und **ob ein Mitglied bezahlt hat** (Reiter „Beiträge“ und
-    Beitragsspalten der Listen, nur lesend). Ändert nichts – die
-    Oberfläche zeigt keine Formulare, Bearbeiten- oder Löschen-Knöpfe, der
-    Reiter „Daten“ ist eine reine Ansicht; serverseitig ohnehin gesperrt.
-    **Nicht**: Seite „Beiträge“ (erzeugen, festsetzen, bezahlt setzen),
-    Einzug, Lastschriftdatei, Adminbereich.
+  - **Nur lesen** (`lesend`, #87) – für wen Mitgliedern gratuliert oder
+    sie besucht: Mitglieder suchen und öffnen (Daten, Familie, Nachweise
+    ansehen und herunterladen, Verlauf), Listen **mit Exporten** und **ob
+    ein Mitglied bezahlt hat** (Reiter „Beiträge“ und Beitragsspalten der
+    Listen, nur lesend). Ändert nichts – die Oberfläche zeigt keine
+    Formulare, Bearbeiten- oder Löschen-Knöpfe, der Reiter „Daten“ ist eine
+    reine Ansicht; serverseitig ohnehin gesperrt. **Keine Bankdaten der
+    Mitglieder** (seit 17.11.2026, ohne `bankdaten.sehen`): IBAN, BIC (und
+    die daraus abgeleitete Bank), Kontoinhaber, Mandatsreferenz und
+    Mandatsdatum fehlen im Reiter „Daten“, im Verlauf (geänderte Bankfelder
+    werden nicht aufgeführt), in der Suche (Suchfeld und erweiterte Suche
+    vergleichen nicht mit IBAN oder Kontoinhaber – ein Treffer verriete
+    ein Stück davon), in der Liste und im Export „Alle Mitglieder“ (csv
+    und xlsx ohne die Bankspalten) und in den Hinweisen zur
+    Bankverbindung (nur ihre Kurzbezeichnung, weil der Text die passende
+    BIC nennen kann). Beitragsart, Beträge, Zahlart und Bezahlt-Status
+    bleiben sichtbar. **Nicht**: Seite „Beiträge“ (erzeugen, festsetzen,
+    bezahlt setzen), Einzug, Lastschriftdatei, Statistik der Beiträge,
+    Adminbereich.
 - **Vorstand und Nur lesen haben keinen Adminbereich**: kein Eintrag
   „Einstellungen“ in der Navigation, jede Route unter `/admin` antwortet
   403 (`RoutenZugriffTest::testNeitherBoardNorReadOnlyReachesAnyAdminRoute`).
+- **Die Verwaltung erreicht unter `/admin` nur die fachlichen
+  Einstellungen** (einfachster Weg, kein zweiter Bereich): Sie sieht den
+  Eintrag „Einstellungen“ und dieselbe Seite `/admin` (`admin.verein`),
+  aber nur die Abschnitte, deren Recht sie hat – jeder Abschnitt
+  deklariert sein Recht (`Abschnitt::recht()`), jede Route, an die er
+  postet, ihres. Mail und Rechtstexte bleiben `admin.einstellungen`,
+  Benutzer, Import, System, Update, Backup, Audit-Log ihre `admin.*`-Rechte;
+  für die Verwaltung antwortet jede davon 403
+  (`RoutenZugriffTest::testVerwaltungReachesOnlyTheBusinessSettingsUnderAdmin`).
 - Rolle → Rechte steht im Code (ein `match` in `App\Domain\Rolle`).
   Keine Scopes – alle sehen alle Mitglieder. Geprüft serverseitig je Route
-  (`App\Http\Zugriff`).
+  (`App\Http\Zugriff`) und, wo eine Seite für mehrere Rollen Teile
+  auslässt (Bankdaten, Abschnitte, Reiter), serverseitig beim Erzeugen der
+  Seite bzw. Datei – nie nur durch Ausblenden im Browser. Wer
+  `mitglieder.bearbeiten` hat, hat auch `bankdaten.sehen` (das Formular
+  zeigt die IBAN; `RolleTest`).
+- Die Rolle wird als Text in `user.rolle` (`VARCHAR(16)`) gespeichert;
+  `verwaltung` passt hinein, **keine Migration**. Ein Wert, den ein älteres
+  Release nicht kennt (nach einem Rückschritt), liest sich als „Nur
+  lesen“ (fail-closed, `BenutzerRepository`).
 - Das Enum war seit #1 vollständig (05 §6); #87 hat bewusst
   `beitraege.sehen` ergänzt, weil „Nur lesen“ den Bezahlt-Status sehen,
   aber nichts an Beiträgen ändern darf – mit `beitraege.verwalten` hätte
-  die Rolle auch die Seite „Beiträge“ und den Einzug bekommen. Spätere
-  Issues nutzen diese Rechte und erweitern es nicht:
+  die Rolle auch die Seite „Beiträge“ und den Einzug bekommen. Die Rolle
+  **Verwaltung** (17.11.2026, mit dem Product Owner geklärt) hat die Regel
+  „nicht erweitern“ bewusst ein zweites Mal aufgehoben und drei Rechte
+  ergänzt, weil sich keins aus den vorhandenen bilden ließ:
+  `admin.verein` (`admin.einstellungen` deckte Vereinsdaten **und** Mail
+  und Rechtstexte ab – die Verwaltung darf nur das Erste),
+  `bankdaten.sehen` (Nur lesen sieht Beitragsangaben, aber keine
+  Bankdaten – `beitraege.sehen` trennt das nicht) und
+  `beitraege.auswerten` (die Statistik der Beiträge für den Vorstand –
+  mit `beitraege.verwalten` bekäme er die Seite „Beiträge“ und den
+  Einzug). Spätere Issues nutzen diese Rechte und erweitern es nicht:
 
-  | Recht | Wofür | Admin | Vorstand | Nur lesen |
-  |---|---|:-:|:-:|:-:|
-  | `mitglieder.sehen` | Mitglieder suchen, ansehen, Verlauf ansehen, Nachweise herunterladen | ✓ | ✓ | ✓ |
-  | `mitglieder.bearbeiten` | anlegen, bearbeiten (auch IBAN, Abteilung, Beitragsart), Version zurückholen, Familien, Nachweis/Ehrung vermerken | ✓ | ✓ | – |
-  | `mitglieder.loeschen` | Mitglied löschen, Nachweis löschen | ✓ | – | – |
-  | `listen.sehen` | Listen ansehen und exportieren | ✓ | ✓ | ✓ |
-  | `beitraege.sehen` | Bezahlt-Status und Beitragsangaben lesen: Reiter „Beiträge" (ohne Links auf die Beitragsseiten), Liste „Selbst kassieren", Beitragsspalten im Gesamtexport | ✓ | ✓ | ✓ |
-  | `beitraege.verwalten` | Seite „Beiträge": Jahresbeiträge erzeugen, Betrag, Bezahlt-Status, Vermerke; Einzug, Lastschriftdatei | ✓ | – | – |
-  | `admin.einstellungen` | Einstellungen-Seite: Vereinsdaten, Abteilungen, Beitragsarten, Funktionen, Geburtstage, Ehrungsstufen, Mail, Rechtstexte | ✓ | – | – |
-  | `admin.benutzer` | Benutzer einladen, sperren, löschen, Rolle ändern, Barrierefrei-Modus setzen | ✓ | – | – |
-  | `admin.import` | Erst- und Abgleich-Import (10) | ✓ | – | – |
-  | `admin.system` | Update, Backup/Restore, Systemcheck, Integritätscheck, Wartung | ✓ | – | – |
-  | `admin.audit` | Audit-Log ansehen | ✓ | – | – |
+  | Recht | Wofür | Admin | Verwaltung | Vorstand | Nur lesen |
+  |---|---|:-:|:-:|:-:|:-:|
+  | `mitglieder.sehen` | Mitglieder suchen, ansehen, Verlauf ansehen, Nachweise herunterladen | ✓ | ✓ | ✓ | ✓ |
+  | `mitglieder.bearbeiten` | anlegen, bearbeiten (auch IBAN, Abteilung, Beitragsart, aktiv/passiv, Austritt), Version zurückholen, Familien, Nachweis/Ehrung vermerken | ✓ | ✓ | ✓ | – |
+  | `bankdaten.sehen` | IBAN, BIC, Bank, Kontoinhaber, Mandatsreferenz, Mandatsdatum der Mitglieder: Reiter „Daten“, Verlauf, Suche, Liste und Export „Alle Mitglieder“, volle Hinweistexte zur Bankverbindung | ✓ | ✓ | ✓ | – |
+  | `mitglieder.loeschen` | Mitglied löschen, Nachweis löschen | ✓ | – | – | – |
+  | `listen.sehen` | Listen ansehen und exportieren, Statistik „Mitglieder“ | ✓ | ✓ | ✓ | ✓ |
+  | `beitraege.sehen` | Bezahlt-Status und Beitragsangaben lesen: Reiter „Beiträge" (ohne Links auf die Beitragsseiten), Liste „Selbst kassieren", Beitragsspalten im Gesamtexport | ✓ | ✓ | ✓ | ✓ |
+  | `beitraege.verwalten` | Seite „Beiträge": Jahresbeiträge erzeugen, Betrag, Bezahlt-Status, Vermerke; Einzug, Lastschriftdatei | ✓ | ✓ | – | – |
+  | `beitraege.auswerten` | Statistik, Reiter „Beiträge“ (09 §7) | ✓ | ✓ | ✓ | – |
+  | `admin.verein` | Einstellungen-Seite `/admin` mit den fachlichen Abschnitten: Vereinsdaten (Bankverbindung, Gläubiger-ID, Verbandsnummern, Logo), Abteilungen, Beitragsarten, Funktionen, Geburtstage, Ehrungsstufen | ✓ | ✓ | – | – |
+  | `admin.einstellungen` | technische Einstellungen: Mail, Rechtstexte; Designsystem-Seite | ✓ | – | – | – |
+  | `admin.benutzer` | Benutzer einladen, sperren, löschen, Rolle ändern, Barrierefrei-Modus setzen | ✓ | – | – | – |
+  | `admin.import` | Erst- und Abgleich-Import (10) | ✓ | – | – | – |
+  | `admin.system` | Update, Backup/Restore, Systemcheck, Integritätscheck, Wartung | ✓ | – | – | – |
+  | `admin.audit` | Audit-Log ansehen | ✓ | – | – | – |
 
   Jede Route unter `/admin` verlangt ein `admin.*`-Recht, jede unter
   `/app` eine Anmeldung; öffentlich sind nur `/`, `/anmelden…`,
   `/abmelden`, `/impressum`, `/datenschutz`, das Vereinslogo
-  `/logo/{groesse}` und `/manifest.webmanifest` (PWA, #127: nur Vereinsname
-  und Logo-Adressen) (E-F3,
+  `/logo/{groesse}` und `/manifest.webmanifest` (PWA, #127: nur fester
+  App-Name und Logo-Adressen) (E-F3,
   `tests/Http/RoutenZugriffTest.php`).
 
 ## 7. Web-Sicherheit
@@ -272,8 +324,9 @@ fremden Host an. Vorlage: `docs/betrieb.md` §11.
   **keinen** Cache, keinen `fetch`-Handler und keinen Speicher – jede
   Anfrage geht wie ohne ihn ans Netz (`tests/js/pwa.test.js`). Er wird
   mit `Cache-Control: no-cache` ausgeliefert. Das Manifest
-  `/manifest.webmanifest` ist öffentlich und enthält nur Vereinsname und
-  Logo-URLs (stehen ohnehin auf der Anmeldeseite).
+  `/manifest.webmanifest` ist öffentlich und enthält nur den festen
+  App-Namen („Mitgliederverwaltung"/„Mitglieder") und die Logo-URLs (das
+  Logo steht ohnehin auf der Anmeldeseite).
 - Ausgaben escapen (`e()`), SQL nur mit Prepared Statements.
 - **Logs**: keine Mitgliederdaten in Logs, Fehlermeldungen, Dateinamen
   oder URLs (Mitgliedsnummer bzw. ID genügt). Passwörter nie loggen.
@@ -313,9 +366,12 @@ lesbar; Login (alle Fehlerfälle wortgleich, Rate-Limit atomar), 2FA
 (TOTP-Einmalverwendung, E-Mail-Code-Limit, Backup-Codes, Gerät merken),
 Reset (Token einmalig, Sessions beendet), Session-Timeouts inkl.
 Barrierefrei-Modus, `session_epoch`; CSRF auf jeder POST-Route,
-CSP-Compliance, Routen-Zugriffsmatrix inkl. Vorstand und Nur lesen (jede
-`/admin`-Route 403 für beide), keine Bearbeiten-Elemente für Nur lesen
-(`NurLesenTest`), Einladung mit Barrierefrei-Häkchen, Audit-Kette;
+CSP-Compliance, Routen-Zugriffsmatrix für alle vier Rollen (jede
+`/admin`-Route 403 für Vorstand und Nur lesen, für die Verwaltung genau
+die `admin.verein`-Routen erreichbar), keine Bearbeiten-Elemente und keine
+Bankdaten für Nur lesen – Reiter, Verlauf, Suche, Liste, csv/xlsx-Export,
+Hinweise (`NurLesenTest`, `GesamtexportBlsvTest`,
+`MitgliederListeRepositoryTest`), Einladung mit Barrierefrei-Häkchen, Audit-Kette;
 Schlüsselwechsel (`SchluesselwechselTest`: danach alles mit dem neuen und
 nichts mit dem alten Schlüssel lesbar, Abbruch nach jedem Schritt und
 Verlust der Statusdatei, Absturz zwischen `config.php` und Statusdatei,

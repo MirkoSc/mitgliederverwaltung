@@ -137,7 +137,7 @@ Bis zu neun Issues werden gleichzeitig von getrennten Agenten bearbeitet
   |---|---|
   | Routen | eigene Datei `app/routes/<bereich>.php`, gibt `static function (App\Http\Routen $routen): void` zurück (alle Dateien werden geladen, in Namensreihenfolge); Controller entstehen erst im Handler aus `$routen->dienste()` |
   | Zugriffsmatrix-Test | eigene Datei `tests/Http/routen-zugriff/<bereich>.txt` (gleicher Name wie die Routen-Datei), eine Zeile je Route: `GET /pfad -> recht` |
-  | Rechte | `Permission`-Enum ist in #1 **vollständig** angelegt (Tabelle in 02 §6) – nicht erweitern, nur nutzen; fehlt wirklich eins, im PR begründen |
+  | Rechte | `Permission`-Enum ist in #1 **vollständig** angelegt (Tabelle in 02 §6) – nicht erweitern, nur nutzen; fehlt wirklich eins, im PR und in 02 §6 begründen (bisher zweimal bewusst aufgehoben: #87 `beitraege.sehen`; Rolle „Verwaltung“ `admin.verein`, `bankdaten.sehen`, `beitraege.auswerten`) |
   | Navigation | in #1 vollständig (`App\View\Navigation`: Mitglieder `/app/mitglieder`, Familien `/app/familien` (#92), Listen `/app/listen`, Karte `/app/karte` (#91), Beiträge `/app/beitraege`, Einstellungen `/admin`, Benutzermenü). Ein Eintrag erscheint inaktiv, bis seine Route existiert – wer die Route anlegt, schaltet ihn frei |
   | Einstellungs-Abschnitte | eigene Klasse `app/src/Admin/Einstellungen/<Name>Abschnitt.php` (implementiert `Abschnitt`) + Template, automatisch gefunden; Formulare posten an Routen der eigenen Routen-Datei |
   | Listen | eigene Klasse `app/src/Listen/<Name>Liste.php` (implementiert `Liste`: Filter, Spalten, Zeilen – Seite, Sortierung und csv/xlsx-Export liefert #24, siehe 09 §1), automatisch gefunden, erreichbar unter `/app/listen/<schluessel>` |

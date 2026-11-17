@@ -11,6 +11,8 @@
  * @var \App\App\Mitglied\Auswahllisten $listen
  * @var \App\Service\Karte\Wohnort|null $wohnort the block "Wohnort auf der Karte" (issue #106), without buttons
  * @var list<int> $ruecklastschriftJahre years with a returned direct debit (#133); [] without beitraege.sehen
+ * @var bool $darfBankdaten bankdaten.sehen - without it ("Nur lesen") IBAN, BIC, bank, Kontoinhaber
+ *           and mandate are left out (02 section 6); fee type and Zahlart stay
  */
 
 use App\Support\Banken;
@@ -60,12 +62,14 @@ $gruppen = [
     'Beitrag' => [
         'Beitragsart' => $beitragsart,
         'Zahlart' => $mitglied->zahlart->bezeichnung(),
-        'IBAN' => Iban::anzeigen($mitglied->iban),
-        'BIC' => $mitglied->bic,
-        'Bank' => Banken::fuerIban($mitglied->iban)?->name ?? '',
-        'Kontoinhaber' => $mitglied->kontoinhaber,
-        'Mandatsreferenz' => $mitglied->effektiveMandatsreferenz(),
-        'Mandatsdatum' => datum($mitglied->effektivesMandatsdatum($listen->vereinsMandatsdatum)),
+        ...(($darfBankdaten ?? false) ? [
+            'IBAN' => Iban::anzeigen($mitglied->iban),
+            'BIC' => $mitglied->bic,
+            'Bank' => Banken::fuerIban($mitglied->iban)?->name ?? '',
+            'Kontoinhaber' => $mitglied->kontoinhaber,
+            'Mandatsreferenz' => $mitglied->effektiveMandatsreferenz(),
+            'Mandatsdatum' => datum($mitglied->effektivesMandatsdatum($listen->vereinsMandatsdatum)),
+        ] : []),
     ],
     'Funktionen' => [
         'Funktionen im Verein' => $namen($mitglied->funktionIds, $listen->funktionen),

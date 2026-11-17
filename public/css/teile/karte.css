@@ -186,16 +186,15 @@
 
 .wohnort-korrektur > summary {
     display: inline-flex;
-    align-items: center;
-    min-height: var(--tippflaeche);
     color: var(--farbe-link);
     font-weight: 650;
-    cursor: pointer;
 }
 
-.wohnort-korrektur[open] {
-    display: grid;
-    gap: var(--abstand-3);
+/* Hint, fields and buttons of the open part with a gap between them. A
+   grid on the <details> does not reach them: the browser wraps them in one
+   content box, so only the summary would be spaced. */
+.wohnort .wohnort-korrektur > :not(summary) {
+    margin-top: var(--abstand-3);
 }
 
 .wohnort-felder {
@@ -258,11 +257,8 @@
 
 .karte-neu > summary {
     display: inline-flex;
-    align-items: center;
-    min-height: var(--tippflaeche);
     color: var(--farbe-link);
     font-weight: 650;
-    cursor: pointer;
 }
 
 .karte-neu[open] > form {

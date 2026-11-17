@@ -4,9 +4,12 @@
  * The member form (docs/spec/07-mitglieder.md section 1): every field in
  * the groups of the spec, one form, saved with one button. Shown in the tab
  * "Daten" and on the page "Neues Mitglied"; markup from the design system
- * (formular-zweispaltig, feld, feldgruppe, formular-aktionen).
+ * (formular-gruppe, feldreihe, haken-spalten, feld, feldgruppe,
+ * formular-aktionen): every group a panel, fields that belong together side
+ * by side, each as wide as its content.
  *
- * Only Nachname is required (the Mitgliedsnummer is given out by the server).
+ * Only Nachname is required (the Mitgliedsnummer is given out by the server;
+ * the heading shows it, "Neues Mitglied" says which one it will be).
  * Hints below a field say what an empty field means instead of forcing a value.
  *
  * @var \App\App\Mitglied\MitgliedFormular $formular
@@ -95,7 +98,7 @@ $mandatsdatumHilfe = match (true) {
 };
 $lizenzFunktionen = $listen->funktionenMitLizenz();
 ?>
-<form class="formular formular-zweispaltig mitglied-formular" id="mitglied-formular" method="post" action="<?= e($aktion) ?>">
+<form class="formular mitglied-formular" id="mitglied-formular" method="post" action="<?= e($aktion) ?>">
     <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
     <?= $einbettung->feld() ?>
     <?php if (!$neu): ?>
@@ -113,126 +116,157 @@ $lizenzFunktionen = $listen->funktionenMitLizenz();
         </div>
     <?php endif; ?>
 
-    <h3>Person</h3>
-    <div class="feld feld-kurz">
-        <span id="m-mitgliedsnummer-label">Mitgliedsnummer</span>
-        <p id="m-mitgliedsnummer" aria-labelledby="m-mitgliedsnummer-label"><strong><?= e($nummer === '' ? 'wird beim Speichern vergeben' : $nummer) ?></strong></p>
+    <section class="abschnitt formular-gruppe">
+        <h3>Person</h3>
         <?php if ($neu): ?>
-            <p class="feld-hinweis">Wird beim Speichern vergeben<?= $nummer === '' ? '' : ' (voraussichtlich ' . e($nummer) . ')' ?> und lässt sich danach nicht mehr ändern.</p>
+            <p class="feld-hinweis">Die Mitgliedsnummer wird beim Speichern vergeben<?= $nummer === '' ? '' : ' (voraussichtlich ' . e($nummer) . ')' ?> und lässt sich danach nicht mehr ändern.</p>
         <?php endif; ?>
-    </div>
-    <div class="feld feld-kurz">
-        <label for="m-geschlecht">Geschlecht</label>
-        <select <?= $attribute('geschlecht') ?>>
-            <option value="">nicht angegeben</option>
-            <?php foreach (Geschlecht::cases() as $geschlecht): ?>
-                <option value="<?= e($geschlecht->value) ?>"<?= $formular->wert('geschlecht') === $geschlecht->value ? ' selected' : '' ?>><?= e($geschlecht->bezeichnung()) ?></option>
+        <div class="feldreihe">
+            <?= $text('vorname', 'Vorname') ?>
+            <?= $text('nachname', 'Nachname', '', null, 'required') ?>
+        </div>
+        <div class="feldreihe">
+            <?= $text('titel', 'Titel', 'feld-kurz') ?>
+            <?= $text('namenszusatz', 'Namenszusatz', 'feld-kurz') ?>
+        </div>
+        <div class="feldreihe">
+            <div class="feld feld-kurz">
+                <label for="m-geschlecht">Geschlecht</label>
+                <select <?= $attribute('geschlecht') ?>>
+                    <option value="">nicht angegeben</option>
+                    <?php foreach (Geschlecht::cases() as $geschlecht): ?>
+                        <option value="<?= e($geschlecht->value) ?>"<?= $formular->wert('geschlecht') === $geschlecht->value ? ' selected' : '' ?>><?= e($geschlecht->bezeichnung()) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?= $datum('geburtsdatum', 'Geburtsdatum') ?>
+        </div>
+    </section>
+
+    <section class="abschnitt formular-gruppe">
+        <h3>Anschrift</h3>
+        <?php /* Address suggestions while typing (issue #127): public/js/anschrift-vorschlaege.js. */ ?>
+        <?= $text('strasse', 'Straße und Hausnummer', '', null, 'data-anschrift-vorschlaege="' . e(\App\App\AnschriftController::PFAD) . '"') ?>
+        <div class="feldreihe">
+            <?= $text('plz', 'PLZ', 'feld-kurz', null, 'inputmode="numeric"') ?>
+            <?= $text('ort', 'Ort') ?>
+            <?= $text('land', 'Land', '', 'Tippen filtert die Liste. Leer lassen für Deutschland.', 'list="m-laender"') ?>
+        </div>
+        <datalist id="m-laender">
+            <?php foreach (Laender::auswahl() as $landCode => $landName): ?>
+                <option value="<?= e($landName) ?>" data-iso="<?= e($landCode) ?>"></option>
             <?php endforeach; ?>
-        </select>
-    </div>
-    <?= $text('titel', 'Titel') ?>
-    <?= $text('vorname', 'Vorname') ?>
-    <?= $text('nachname', 'Nachname', '', null, 'required') ?>
-    <?= $text('namenszusatz', 'Namenszusatz') ?>
-    <?= $datum('geburtsdatum', 'Geburtsdatum') ?>
-
-    <h3>Anschrift</h3>
-    <?php /* Address suggestions while typing (issue #127): public/js/anschrift-vorschlaege.js. */ ?>
-    <?= $text('strasse', 'Straße und Hausnummer', 'feld-breit', null, 'data-anschrift-vorschlaege="' . e(\App\App\AnschriftController::PFAD) . '"') ?>
-    <?= $text('plz', 'PLZ', 'feld-kurz', null, 'inputmode="numeric"') ?>
-    <?= $text('ort', 'Ort') ?>
-    <?= $text('land', 'Land', '', 'Tippen filtert die Liste. Leer lassen für Deutschland.', 'list="m-laender"') ?>
-    <datalist id="m-laender">
-        <?php foreach (Laender::auswahl() as $landCode => $landName): ?>
-            <option value="<?= e($landName) ?>" data-iso="<?= e($landCode) ?>"></option>
-        <?php endforeach; ?>
-    </datalist>
-    <?php if (isset($wohnort) && !$neu): ?>
-        <?php $wohnortFormular = 'wohnort-formular'; require __DIR__ . '/wohnort.php'; ?>
-    <?php endif; ?>
-
-    <h3>Kontakt</h3>
-    <?= $text('telefon', 'Telefon', '', null, 'inputmode="tel"') ?>
-    <?= $text('handy', 'Handy', '', null, 'inputmode="tel"') ?>
-    <?= $text('email', 'E-Mail', 'feld-breit', null, 'inputmode="email"') ?>
-
-    <h3>Mitgliedschaft</h3>
-    <fieldset class="feldgruppe">
-        <legend>Status</legend>
-        <label class="feld-haken"><input type="radio" name="aktiv" value="1"<?= $formular->wert('aktiv') !== '0' ? ' checked' : '' ?>> aktiv</label>
-        <label class="feld-haken"><input type="radio" name="aktiv" value="0"<?= $formular->wert('aktiv') === '0' ? ' checked' : '' ?>> passiv</label>
-    </fieldset>
-    <fieldset class="feldgruppe">
-        <legend>Abteilungen</legend>
-        <?php if ($abteilungen === []): ?>
-            <p class="feld-hinweis">Noch keine Abteilungen angelegt (Einstellungen, Abschnitt Abteilungen).</p>
+        </datalist>
+        <?php if (isset($wohnort) && !$neu): ?>
+            <?php $wohnortFormular = 'wohnort-formular'; require __DIR__ . '/wohnort.php'; ?>
         <?php endif; ?>
-        <?php foreach ($abteilungen as $abteilung): ?>
-            <label class="feld-haken"><input type="checkbox" name="abteilungen[]" value="<?= e($abteilung->id) ?>"<?= in_array($abteilung->id, $formular->abteilungIds, true) ? ' checked' : '' ?>> <?= e($abteilung->name) ?><?= $abteilung->aktiv ? '' : ' (nicht mehr aktiv)' ?></label>
-        <?php endforeach; ?>
-    </fieldset>
-    <?= $datum('eintrittsdatum', 'Eintrittsdatum', 'Leer lassen, wenn es unbekannt ist.') ?>
-    <?= $datum('austrittsdatum', 'Austrittsdatum', 'Ab diesem Tag zählt das Mitglied als ehemalig.') ?>
-    <?= $text('austrittsgrund', 'Austrittsgrund', 'feld-breit', null, 'list="m-austrittsgruende"') ?>
-    <datalist id="m-austrittsgruende">
-        <?php foreach (MitgliedFormular::AUSTRITTSGRUENDE as $grund): ?>
-            <option value="<?= e($grund) ?>"></option>
-        <?php endforeach; ?>
-    </datalist>
+    </section>
 
-    <h3>Beitrag</h3>
-    <div class="feld">
-        <label for="m-beitragsart_id">Beitragsart</label>
-        <select <?= $attribute('beitragsart_id', 'm-beitragsart_id-hilfe') ?>>
-            <option value="">keine</option>
-            <?php foreach ($beitragsarten as $beitragsart): ?>
-                <option value="<?= e($beitragsart->id) ?>"<?= $formular->wert('beitragsart_id') === (string) $beitragsart->id ? ' selected' : '' ?>><?= e($beitragsart->name . ' – ' . geld($beitragsart->betragCent)) ?><?= $beitragsart->aktiv ? '' : ' (nicht mehr aktiv)' ?></option>
+    <section class="abschnitt formular-gruppe">
+        <h3>Kontakt</h3>
+        <div class="feldreihe">
+            <?= $text('telefon', 'Telefon', 'feld-kurz', null, 'inputmode="tel"') ?>
+            <?= $text('handy', 'Handy', 'feld-kurz', null, 'inputmode="tel"') ?>
+            <?= $text('email', 'E-Mail', '', null, 'inputmode="email"') ?>
+        </div>
+    </section>
+
+    <section class="abschnitt formular-gruppe">
+        <h3>Mitgliedschaft</h3>
+        <fieldset class="feldgruppe haken-spalten">
+            <legend>Status</legend>
+            <label class="feld-haken"><input type="radio" name="aktiv" value="1"<?= $formular->wert('aktiv') !== '0' ? ' checked' : '' ?>> aktiv</label>
+            <label class="feld-haken"><input type="radio" name="aktiv" value="0"<?= $formular->wert('aktiv') === '0' ? ' checked' : '' ?>> passiv</label>
+        </fieldset>
+        <fieldset class="feldgruppe haken-spalten">
+            <legend>Abteilungen</legend>
+            <?php if ($abteilungen === []): ?>
+                <p class="feld-hinweis">Noch keine Abteilungen angelegt (Einstellungen, Abschnitt Abteilungen).</p>
+            <?php endif; ?>
+            <?php foreach ($abteilungen as $abteilung): ?>
+                <label class="feld-haken"><input type="checkbox" name="abteilungen[]" value="<?= e($abteilung->id) ?>"<?= in_array($abteilung->id, $formular->abteilungIds, true) ? ' checked' : '' ?>> <?= e($abteilung->name) ?><?= $abteilung->aktiv ? '' : ' (nicht mehr aktiv)' ?></label>
             <?php endforeach; ?>
-        </select>
-        <p class="feld-hinweis" id="m-beitragsart_id-hilfe">Eltern und Kinder einer Familie haben meist keine eigene; es zahlt der Zahler.</p>
-    </div>
-    <fieldset class="feldgruppe">
-        <legend>Zahlart</legend>
-        <?php foreach (Zahlart::cases() as $zahlart): ?>
-            <label class="feld-haken"><input type="radio" name="zahlart" value="<?= e($zahlart->value) ?>"<?= ($formular->wert('zahlart') === '' ? Zahlart::Lastschrift->value : $formular->wert('zahlart')) === $zahlart->value ? ' checked' : '' ?>> <?= e($zahlart->bezeichnung()) ?></label>
-        <?php endforeach; ?>
-    </fieldset>
-    <div class="feld">
-        <label for="m-iban">IBAN</label>
-        <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-iban-hinweis" data-bank-adresse="<?= e(Banken::PFAD) ?>"<?= $ibanUngueltig ? ' aria-invalid="true"' : '' ?>>
-        <p class="feld-fehler" id="m-iban-hinweis" aria-live="polite"<?= $ibanUngueltig ? '' : ' hidden' ?>><?= $ibanUngueltig ? Iban::FEHLER_PRUEFZIFFER : '' ?></p>
-    </div>
-    <div class="feld feld-kurz">
-        <label for="m-bic">BIC</label>
-        <input type="text" id="m-bic" name="bic" value="<?= e($formular->wert('bic')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['bic'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-bic-hinweis m-bic-bank m-bic-hilfe"<?= $bicFehler !== null ? ' aria-invalid="true"' : '' ?>>
-        <p class="feld-fehler" id="m-bic-hinweis" aria-live="polite"<?= $bicFehler === null ? ' hidden' : '' ?>><?= e($bicFehler ?? '') ?></p>
-        <p class="feld-hinweis" id="m-bic-bank" aria-live="polite"<?= $bank === null ? ' hidden' : '' ?>><?= e($bank === null ? '' : 'Bank: ' . $bank->name) ?></p>
-        <p class="feld-hinweis" id="m-bic-hilfe">Bei einer deutschen IBAN wird die BIC ergänzt, wenn das Feld leer ist.</p>
-    </div>
-    <?= $text('kontoinhaber', 'Kontoinhaber', 'feld-breit', 'Nur eintragen, wenn das Konto nicht dem Mitglied gehört.') ?>
-    <?= $text('mandatsreferenz', 'Mandatsreferenz', '', 'Leer lassen: es gilt die Mitgliedsnummer' . ($nummer !== '' && ctype_digit($nummer) ? ' (' . (int) $nummer . ')' : '') . '.') ?>
-    <?= $datum('mandatsdatum', 'Mandatsdatum', $mandatsdatumHilfe) ?>
+        </fieldset>
+        <div class="feldreihe">
+            <?= $datum('eintrittsdatum', 'Eintrittsdatum', 'Leer lassen, wenn es unbekannt ist.') ?>
+            <?= $datum('austrittsdatum', 'Austrittsdatum', 'Ab diesem Tag zählt das Mitglied als ehemalig.') ?>
+            <?= $text('austrittsgrund', 'Austrittsgrund', '', null, 'list="m-austrittsgruende"') ?>
+        </div>
+        <datalist id="m-austrittsgruende">
+            <?php foreach (MitgliedFormular::AUSTRITTSGRUENDE as $grund): ?>
+                <option value="<?= e($grund) ?>"></option>
+            <?php endforeach; ?>
+        </datalist>
+    </section>
 
-    <h3>Funktionen</h3>
-    <fieldset class="feldgruppe">
-        <legend>Funktionen im Verein</legend>
-        <?php if ($funktionen === []): ?>
-            <p class="feld-hinweis">Noch keine Funktionen angelegt (Einstellungen, Abschnitt Funktionen).</p>
-        <?php endif; ?>
-        <?php foreach ($funktionen as $funktion): ?>
-            <label class="feld-haken"><input type="checkbox" name="funktionen[]" value="<?= e($funktion->id) ?>"<?= in_array($funktion->id, $formular->funktionIds, true) ? ' checked' : '' ?>> <?= e($funktion->name) ?><?= $funktion->aktiv ? '' : ' (nicht mehr aktiv)' ?></label>
-        <?php endforeach; ?>
-    </fieldset>
-    <?= $text('lizenznummer', 'Lizenznummer', '', $lizenzFunktionen === [] ? null : 'Für ' . implode(', ', $lizenzFunktionen) . '.') ?>
+    <section class="abschnitt formular-gruppe">
+        <h3>Beitrag und Bank</h3>
+        <div class="feldreihe">
+            <div class="feld">
+                <label for="m-beitragsart_id">Beitragsart</label>
+                <select <?= $attribute('beitragsart_id', 'm-beitragsart_id-hilfe') ?>>
+                    <option value="">keine</option>
+                    <?php foreach ($beitragsarten as $beitragsart): ?>
+                        <option value="<?= e($beitragsart->id) ?>"<?= $formular->wert('beitragsart_id') === (string) $beitragsart->id ? ' selected' : '' ?>><?= e($beitragsart->name . ' – ' . geld($beitragsart->betragCent)) ?><?= $beitragsart->aktiv ? '' : ' (nicht mehr aktiv)' ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="feld-hinweis" id="m-beitragsart_id-hilfe">Eltern und Kinder einer Familie haben meist keine eigene; es zahlt der Zahler.</p>
+            </div>
+            <fieldset class="feldgruppe haken-spalten">
+                <legend>Zahlart</legend>
+                <?php foreach (Zahlart::cases() as $zahlart): ?>
+                    <label class="feld-haken"><input type="radio" name="zahlart" value="<?= e($zahlart->value) ?>"<?= ($formular->wert('zahlart') === '' ? Zahlart::Lastschrift->value : $formular->wert('zahlart')) === $zahlart->value ? ' checked' : '' ?>> <?= e($zahlart->bezeichnung()) ?></label>
+                <?php endforeach; ?>
+            </fieldset>
+        </div>
+        <div class="feldreihe">
+            <div class="feld feld-breit">
+                <label for="m-iban">IBAN</label>
+                <input type="text" id="m-iban" name="iban" value="<?= e($formular->wert('iban')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['iban'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-iban-hinweis" data-bank-adresse="<?= e(Banken::PFAD) ?>"<?= $ibanUngueltig ? ' aria-invalid="true"' : '' ?>>
+                <p class="feld-fehler" id="m-iban-hinweis" aria-live="polite"<?= $ibanUngueltig ? '' : ' hidden' ?>><?= $ibanUngueltig ? Iban::FEHLER_PRUEFZIFFER : '' ?></p>
+            </div>
+            <div class="feld">
+                <label for="m-bic">BIC</label>
+                <input type="text" id="m-bic" name="bic" value="<?= e($formular->wert('bic')) ?>" maxlength="<?= MitgliedFormular::LAENGEN['bic'] ?>" autocomplete="off" spellcheck="false" aria-describedby="m-bic-hinweis m-bic-bank m-bic-hilfe"<?= $bicFehler !== null ? ' aria-invalid="true"' : '' ?>>
+                <p class="feld-fehler" id="m-bic-hinweis" aria-live="polite"<?= $bicFehler === null ? ' hidden' : '' ?>><?= e($bicFehler ?? '') ?></p>
+                <p class="feld-hinweis" id="m-bic-bank" aria-live="polite"<?= $bank === null ? ' hidden' : '' ?>><?= e($bank === null ? '' : 'Bank: ' . $bank->name) ?></p>
+                <p class="feld-hinweis" id="m-bic-hilfe">Bei einer deutschen IBAN wird die BIC ergänzt, wenn das Feld leer ist.</p>
+            </div>
+        </div>
+        <?= $text('kontoinhaber', 'Kontoinhaber', '', 'Nur eintragen, wenn das Konto nicht dem Mitglied gehört.') ?>
+        <div class="feldreihe">
+            <?= $text('mandatsreferenz', 'Mandatsreferenz', '', 'Leer lassen: es gilt die Mitgliedsnummer' . ($nummer !== '' && ctype_digit($nummer) ? ' (' . (int) $nummer . ')' : '') . '.') ?>
+            <?= $datum('mandatsdatum', 'Mandatsdatum', $mandatsdatumHilfe) ?>
+        </div>
+    </section>
 
-    <h3>Sonstiges</h3>
-    <div class="feld feld-breit">
-        <label for="m-bemerkung">Bemerkung</label>
-        <textarea id="m-bemerkung" name="bemerkung" rows="4" maxlength="<?= MitgliedFormular::LAENGEN['bemerkung'] ?>"<?= ($ruecklastschriftJahre ?? []) !== [] ? ' aria-describedby="m-ruecklastschrift"' : '' ?>><?= e($formular->wert('bemerkung')) ?></textarea>
-        <?php if (($ruecklastschriftJahre ?? []) !== []): ?>
-            <p class="feld-hinweis" id="m-ruecklastschrift">Rücklastschrift in: <?= e(implode(', ', $ruecklastschriftJahre)) ?></p>
-        <?php endif; ?>
-    </div>
+    <section class="abschnitt formular-gruppe">
+        <h3>Funktionen</h3>
+        <div class="feldreihe">
+            <fieldset class="feldgruppe haken-spalten feld-breit">
+                <legend>Funktionen im Verein</legend>
+                <?php if ($funktionen === []): ?>
+                    <p class="feld-hinweis">Noch keine Funktionen angelegt (Einstellungen, Abschnitt Funktionen).</p>
+                <?php endif; ?>
+                <?php foreach ($funktionen as $funktion): ?>
+                    <label class="feld-haken"><input type="checkbox" name="funktionen[]" value="<?= e($funktion->id) ?>"<?= in_array($funktion->id, $formular->funktionIds, true) ? ' checked' : '' ?>> <?= e($funktion->name) ?><?= $funktion->aktiv ? '' : ' (nicht mehr aktiv)' ?></label>
+                <?php endforeach; ?>
+            </fieldset>
+            <?= $text('lizenznummer', 'Lizenznummer', 'feld-kurz', $lizenzFunktionen === [] ? null : 'Für ' . implode(', ', $lizenzFunktionen) . '.') ?>
+        </div>
+    </section>
+
+    <section class="abschnitt formular-gruppe">
+        <h3>Bemerkung</h3>
+        <div class="feld">
+            <?php /* The heading above names the field; the label stays for screen readers. */ ?>
+            <label class="nur-lesehilfe" for="m-bemerkung">Bemerkung</label>
+            <textarea id="m-bemerkung" name="bemerkung" rows="4" maxlength="<?= MitgliedFormular::LAENGEN['bemerkung'] ?>"<?= ($ruecklastschriftJahre ?? []) !== [] ? ' aria-describedby="m-ruecklastschrift"' : '' ?>><?= e($formular->wert('bemerkung')) ?></textarea>
+            <?php if (($ruecklastschriftJahre ?? []) !== []): ?>
+                <p class="feld-hinweis" id="m-ruecklastschrift">Rücklastschrift in: <?= e(implode(', ', $ruecklastschriftJahre)) ?></p>
+            <?php endif; ?>
+        </div>
+    </section>
 
     <div class="formular-aktionen">
         <button type="submit" class="knopf knopf-haupt"><?= $neu ? 'Mitglied anlegen' : 'Mitglied speichern' ?></button>

@@ -138,7 +138,7 @@ final class WohnortTest extends AppTestCase
         self::assertStringNotContainsString('data-lat=', $html);
         self::assertStringContainsString('data-mitte-lat="51.163400" data-mitte-lon="10.447700" data-mitte-zoom="6"', $html);
         self::assertStringContainsString('data-setzen="#wohnort-punkt"', $html);
-        self::assertStringContainsString('<details class="wohnort-korrektur" open>', $html);
+        self::assertStringContainsString('<details class="aufklapper wohnort-korrektur" open>', $html);
         self::assertStringContainsString('name="such_strasse" value="Gibtsnichtweg 9"', $html);
         self::assertStringContainsString('name="such_plz" value="12345"', $html);
         self::assertStringContainsString('name="such_ort" value="Musterstadt"', $html, 'town up to the first minus');

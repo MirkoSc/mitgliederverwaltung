@@ -36,10 +36,14 @@
     margin: 0 0 var(--abstand-3);
 }
 
-/* The figures: number large, its meaning below it - a quiet strip, no cards. */
+/* The figures: number large, its meaning below it - a quiet strip, no cards.
+   A tile is as wide as its figure, at least 9.5rem, and the tiles wrap: a
+   large sum ("1.234.567,89 €") widens its own tile instead of running into
+   the next one, in every mode and on every width. The label does not widen
+   a tile (contain: inline-size), it wraps inside. */
 .kennzahlen {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--abstand-4) var(--abstand-5);
     margin: 0 0 var(--abstand-5);
     padding: var(--abstand-4) 0;
@@ -48,7 +52,9 @@
 }
 
 .kennzahl {
-    min-width: 0;
+    width: max-content;
+    min-width: 9.5rem;
+    max-width: 100%;
     display: flex;
     flex-direction: column-reverse;
     justify-content: flex-end;
@@ -62,9 +68,11 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
+    white-space: nowrap;
 }
 
 .kennzahl dt {
+    contain: inline-size;
     /* Long words ("Durchschnittsalter") must not leave a narrow tile. */
     overflow-wrap: anywhere;
     hyphens: auto;

@@ -66,6 +66,7 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
         <li><a href="#muster-knoepfe">Knöpfe</a></li>
         <li><a href="#muster-meldungen">Meldungen</a></li>
         <li><a href="#muster-formular">Formular</a></li>
+        <li><a href="#muster-gruppen">Formular in Gruppen</a></li>
         <li><a href="#muster-liste">Liste</a></li>
         <li><a href="#muster-geteilt">Liste neben Mitglied</a></li>
         <li><a href="#muster-anleitung">Anleitung</a></li>
@@ -201,6 +202,64 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
             <button type="submit" class="knopf knopf-haupt">Mitglied speichern</button>
             <a class="knopf knopf-still" href="<?= e($link([], 'muster-formular')) ?>">Änderungen verwerfen</a>
         </div>
+    </form>
+</section>
+
+<section class="muster" id="muster-gruppen" aria-labelledby="titel-gruppen">
+    <h2 id="titel-gruppen">Formular in Gruppen</h2>
+    <p>Für sehr lange Formulare (das Mitglied): jede Gruppe ein Kasten mit Überschrift
+        (<code>abschnitt formular-gruppe</code>). Was zusammengehört, steht in einer <code>feldreihe</code>
+        nebeneinander, jedes Feld so breit wie sein Inhalt: <code>feld-kurz</code> schmal (PLZ, Datum), ein
+        einfaches <code>feld</code> normal, <code>feld-breit</code> breiter (IBAN). Reicht der Platz nicht,
+        bricht die Reihe um. Häkchen stehen mit <code>haken-spalten</code> in Spalten. Am Handy alles
+        untereinander; im Barrierefrei-Modus wachsen die Felder mit der Schrift.</p>
+    <?php /* Fields without name: the example sends nothing anywhere. */ ?>
+    <form class="formular" method="get" action="<?= e($basis) ?>#muster-gruppen">
+        <section class="abschnitt formular-gruppe">
+            <h3>Anschrift</h3>
+            <div class="feld">
+                <label for="dsg-strasse">Straße und Hausnummer</label>
+                <input id="dsg-strasse" type="text" value="Wiesenweg 3" autocomplete="off">
+            </div>
+            <div class="feldreihe">
+                <div class="feld feld-kurz">
+                    <label for="dsg-plz">PLZ</label>
+                    <input id="dsg-plz" type="text" value="12345" inputmode="numeric" autocomplete="off">
+                </div>
+                <div class="feld">
+                    <label for="dsg-ort">Ort</label>
+                    <input id="dsg-ort" type="text" value="Musterstadt" autocomplete="off">
+                </div>
+                <div class="feld">
+                    <label for="dsg-land">Land</label>
+                    <input id="dsg-land" type="text" value="Deutschland" autocomplete="off">
+                </div>
+            </div>
+        </section>
+        <section class="abschnitt formular-gruppe">
+            <h3>Mitgliedschaft</h3>
+            <fieldset class="feldgruppe haken-spalten">
+                <legend>Abteilungen</legend>
+                <label class="feld-haken"><input type="checkbox" checked> Fußball</label>
+                <label class="feld-haken"><input type="checkbox"> Gymnastik</label>
+                <label class="feld-haken"><input type="checkbox"> Kegeln</label>
+                <label class="feld-haken"><input type="checkbox"> Tischtennis</label>
+            </fieldset>
+            <div class="feldreihe">
+                <div class="feld feld-kurz">
+                    <label for="dsg-eintritt">Eintrittsdatum</label>
+                    <input id="dsg-eintritt" type="date" value="2015-03-01">
+                </div>
+                <div class="feld feld-kurz">
+                    <label for="dsg-austritt">Austrittsdatum</label>
+                    <input id="dsg-austritt" type="date">
+                </div>
+                <div class="feld">
+                    <label for="dsg-grund">Austrittsgrund</label>
+                    <input id="dsg-grund" type="text" autocomplete="off">
+                </div>
+            </div>
+        </section>
     </form>
 </section>
 
@@ -447,6 +506,15 @@ $detail = $gewaehlt !== null ? $mitglieder[$gewaehlt] : null;
         <p>Ein Abschnitt fasst zusammengehörige Einstellungen zusammen – auf der Seite „Einstellungen“ einer je
             Thema.</p>
     </div>
+
+    <h3>Aufklappen</h3>
+    <p>Was erst auf Wunsch erscheint, steht in einem <code>&lt;details class="aufklapper"&gt;</code>: Der Pfeil zeigt
+        nach rechts, solange es zu ist, und nach unten, wenn es offen ist. Die Seite gibt dem
+        <code>summary</code> ihr eigenes Aussehen (Kasten, Zeile, Link, Knopf) – den Pfeil bringt die Klasse mit.</p>
+    <details class="aufklapper">
+        <summary>Weitere Angaben</summary>
+        <p>Geht ohne Skript und mit der Tastatur: Tab bis zur Zeile, dann Leertaste oder Eingabe.</p>
+    </details>
 
     <h3>Auswahl</h3>
     <ul class="auswahl">

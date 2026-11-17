@@ -9,9 +9,11 @@ use App\Domain\Mitglied;
 use App\Domain\Rolle;
 use App\Domain\VersionsAnlass;
 use App\Listen\EhrungenListe;
+use App\Listen\Spalte;
 use App\Repository\EhrungRepository;
 use App\Repository\MitgliedRepository;
 use App\Repository\SettingRepository;
+use App\Service\Export\CsvWriter;
 use App\Service\Migration\Migrator;
 use App\Tests\Support\DatabaseTestCase;
 
@@ -126,6 +128,33 @@ final class EhrungenListeTest extends DatabaseTestCase
 
         (new EhrungRepository($this->pdo()))->vermerken($a, 25, new \DateTimeImmutable('2027-05-04'), 1);
         self::assertSame('zurueck', $this->ergebnis(2027)->zeilen[0]->aktion?->felder['aktion']);
+    }
+
+    /** For a letter or a call: address and contact in the file, not on the screen. */
+    public function testTheExportCarriesAddressAndContactTheViewDoesNot(): void
+    {
+        new MitgliedRepository($this->pdo())->speichern(new Mitglied(
+            1,
+            'Beispiel',
+            vorname: 'Erika',
+            eintrittsdatum: new \DateTimeImmutable('2002-06-01'),
+            strasse: 'Musterweg 1',
+            plz: '12345',
+            ort: 'Beispielstadt',
+            telefon: '0123 456',
+            handy: '0170 789',
+            email: 'erika@example.org',
+        ), VersionsAnlass::angelegt(), 1);
+        $ergebnis = $this->ergebnis(2027);
+
+        $csv = implode('', iterator_to_array(CsvWriter::stuecke($ergebnis->spalten, $ergebnis->zeilen), false));
+
+        self::assertSame(
+            "\xEF\xBB\xBFName;Eintritt;Jahre;Stufe;Abteilungen;Geehrt am;Straße;PLZ;Ort;Telefon;Handy;E-Mail\r\n"
+            . "Beispiel, Erika;01.06.2002;25;25 Jahre;;;Musterweg 1;12345;Beispielstadt;0123 456;0170 789;erika@example.org\r\n",
+            $csv,
+        );
+        self::assertSame(['Name', 'Eintritt', 'Jahre', 'Stufe', 'Abteilungen', 'Geehrt am'], array_map(static fn(Spalte $s): string => $s->titel, $ergebnis->ansichtSpalten()));
     }
 
     public function testNoLevelsMeansEmptyList(): void

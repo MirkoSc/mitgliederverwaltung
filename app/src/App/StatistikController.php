@@ -18,9 +18,10 @@ use App\View\Navigation;
 /**
  * The page "Statistik" (docs/spec/09-listen-und-exporte.md section 7,
  * 06 section 2) with two tabs: "Mitglieder" (counts, every role,
- * listen.sehen) and "Beiträge" (money, admin only, beitraege.verwalten -
- * the former "Verteilung der Beiträge" of 08 section 2b). Figures only, no
- * names. Routes: app/routes/statistik.php.
+ * listen.sehen) and "Beiträge" (money, beitraege.auswerten: Admin,
+ * Verwaltung and Vorstand, not "Nur lesen" - the former "Verteilung der
+ * Beiträge" of 08 section 2b). Figures only, no names. Routes:
+ * app/routes/statistik.php.
  */
 final readonly class StatistikController
 {
@@ -58,13 +59,15 @@ final readonly class StatistikController
     {
         $heute = Datum::heute();
         $jahr = self::jahr($r->feld('jahr'), $heute);
+        $darfBeitraege = $this->dienste->view->konto()?->darf(Permission::BeitraegeVerwalten) === true;
 
         return Response::html($this->dienste->view->render('statistik/beitraege', [
             'title' => 'Statistik der Beiträge ' . $jahr,
             'zahlen' => Beitragsstatistik::mit($this->dienste->pdo())->fuerJahr($jahr),
             'vorjahr' => $jahr > Jahresbeitraege::ERSTES_JAHR ? $jahr - 1 : null,
             'folgejahr' => $jahr < Jahresbeitraege::letztesJahr($heute) ? $jahr + 1 : null,
-            'beitraegeAdresse' => BeitraegeController::seitenAdresse($jahr),
+            // The link to the page "Beiträge" only for whoever may open it (not the Vorstand).
+            'beitraegeAdresse' => $darfBeitraege ? BeitraegeController::seitenAdresse($jahr) : null,
             ...$this->reiter('beitraege', $heute, $jahr),
         ], Area::App));
     }
@@ -83,7 +86,7 @@ final readonly class StatistikController
     private function reiter(string $aktiv, \DateTimeImmutable $heute, ?int $jahr = null): array
     {
         $reiter = ['mitglieder' => ['Mitglieder', Navigation::STATISTIK]];
-        if ($this->dienste->view->konto()?->rolle->darf(Permission::BeitraegeVerwalten) === true) {
+        if ($this->dienste->view->konto()?->darf(Permission::BeitraegeAuswerten) === true) {
             $reiter['beitraege'] = ['Beiträge', self::beitragsAdresse($jahr ?? (int) $heute->format('Y'))];
         }
 

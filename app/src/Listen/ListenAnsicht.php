@@ -43,7 +43,7 @@ final readonly class ListenAnsicht
 
         $sortierung = is_string($eingabe['sortierung'] ?? null) ? $eingabe['sortierung'] : null;
         $spalte = null;
-        foreach ($ergebnis->spalten as $s) {
+        foreach ($ergebnis->ansichtSpalten() as $s) {
             if ($s->schluessel === $sortierung) {
                 $spalte = $s;
             }

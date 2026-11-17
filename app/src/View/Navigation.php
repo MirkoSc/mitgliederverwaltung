@@ -38,8 +38,9 @@ final class Navigation
 
     /**
      * The main navigation, in display order. Beiträge and Einstellungen
-     * are for the admin only (06 section 2) - their rights say so.
-     * Statistik is for every role; its tab "Beiträge" is the admin's.
+     * are for Admin and Verwaltung (06 section 2, 02 section 6) - their
+     * rights say so. Statistik is for every role; its tab "Beiträge" is not
+     * for "Nur lesen".
      *
      * @return list<NavItem>
      */
@@ -52,7 +53,7 @@ final class Navigation
             new NavItem('Karte', self::KARTE, Permission::MitgliederSehen),
             new NavItem('Statistik', self::STATISTIK, Permission::ListenSehen),
             new NavItem('Beiträge', self::BEITRAEGE, Permission::BeitraegeVerwalten),
-            new NavItem('Einstellungen', self::EINSTELLUNGEN, Permission::AdminEinstellungen),
+            new NavItem('Einstellungen', self::EINSTELLUNGEN, Permission::AdminVerein),
         ];
     }
 

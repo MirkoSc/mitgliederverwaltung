@@ -73,7 +73,7 @@ final class FamilieTest extends AppTestCase
         $this->neu((int) $m->id, '  ');
 
         $familie = $this->repo()->finde((int) $m->id)?->familieId;
-        self::assertSame('Familie Beispiel', new FamilieRepository($this->dienste->pdo())->finde((int) $familie)?->name);
+        self::assertSame('Beispiel', new FamilieRepository($this->dienste->pdo())->finde((int) $familie)?->name);
     }
 
     public function testJoiningAFamilyShowsTheOtherPersons(): void
@@ -138,7 +138,7 @@ final class FamilieTest extends AppTestCase
         self::assertSame(200, $seite->status);
         self::assertStringContainsString('Familie Muster', $seite->body);
         self::assertStringContainsString('Dieser Familie beitreten', $seite->body);
-        self::assertStringContainsString('value="Familie Beispiel"', $seite->body);
+        self::assertStringContainsString('value="Beispiel"', $seite->body);
         self::assertStringNotContainsString('Dieser Familie beitreten', $this->post('/app/mitglieder/' . $b->id . '/familie', ['q' => 'zzz'])->body);
 
         // The name never travels in a URL: the form posts, a query is ignored.

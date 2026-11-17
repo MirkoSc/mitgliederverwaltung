@@ -11,7 +11,7 @@ use App\Domain\BeitragsRegel;
 use App\Repository\BeitragsartRepository;
 
 /**
- * Settings section Beitragsarten (docs/spec/08-beitraege.md section 1): amount, rule, active kind. The forms post to app/routes/stammdaten.php. Admin only.
+ * Settings section Beitragsarten (docs/spec/08-beitraege.md section 1): amount, rule, active kind. The forms post to app/routes/stammdaten.php. Admin and Verwaltung (admin.verein).
  */
 final readonly class BeitragsartenAbschnitt implements Abschnitt
 {
@@ -41,7 +41,7 @@ final readonly class BeitragsartenAbschnitt implements Abschnitt
 
     public function recht(): Permission
     {
-        return Permission::AdminEinstellungen;
+        return Permission::AdminVerein;
     }
 
     public function template(): string

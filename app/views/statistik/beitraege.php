@@ -5,12 +5,13 @@
  * 08 section 2b, formerly "Verteilung der Beiträge"): what a year's fees
  * bring in - in total and by fee type, department, gender, age group,
  * place, aktiv/passiv, family and Zahlart - from the created fees, or
- * projected while there are none. Admin only; figures only, no names.
+ * projected while there are none. Not for "Nur lesen" (beitraege.auswerten);
+ * figures only, no names.
  *
  * @var \App\Service\Statistik\Beitragszahlen $zahlen
  * @var int|null $vorjahr
  * @var int|null $folgejahr
- * @var string $beitraegeAdresse
+ * @var string|null $beitraegeAdresse the page "Beiträge"; null without beitraege.verwalten
  * @var array<string, array{string, string}> $reiter
  * @var string $aktiverReiter
  */
@@ -47,7 +48,9 @@ $jahr = $verteilung->jahr;
 <?php if ($verteilung->anzahl === 0): ?>
     <div class="leer">
         <p>Für <?= e($jahr) ?> kommt nichts zusammen: Kein Mitglied hat eine Beitragsart mit einem Betrag über 0 €.</p>
-        <p class="knopfreihe"><a class="knopf" href="<?= e($beitraegeAdresse) ?>">Zu den Beiträgen <?= e($jahr) ?></a></p>
+        <?php if ($beitraegeAdresse !== null): ?>
+            <p class="knopfreihe"><a class="knopf" href="<?= e($beitraegeAdresse) ?>">Zu den Beiträgen <?= e($jahr) ?></a></p>
+        <?php endif; ?>
     </div>
 <?php else: ?>
     <dl class="kennzahlen">
@@ -79,5 +82,7 @@ $jahr = $verteilung->jahr;
         <?php require __DIR__ . '/auswertung.php'; ?>
     <?php endforeach; ?>
 
-    <p class="knopfreihe"><a class="knopf" href="<?= e($beitraegeAdresse) ?>">Zu den Beiträgen <?= e($jahr) ?></a></p>
+    <?php if ($beitraegeAdresse !== null): ?>
+        <p class="knopfreihe"><a class="knopf" href="<?= e($beitraegeAdresse) ?>">Zu den Beiträgen <?= e($jahr) ?></a></p>
+    <?php endif; ?>
 <?php endif; ?>

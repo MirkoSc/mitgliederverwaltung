@@ -72,14 +72,17 @@ final class BankverbindungTest extends AppTestCase
         self::assertDoesNotMatchRegularExpression('/id="m-iban"[^>]*aria-invalid/', $seite);
     }
 
-    public function testReadOnlySeesTheBankName(): void
+    /** "Nur lesen" sees no bank details (02 section 6) - neither the bank derived from the IBAN. */
+    public function testReadOnlySeesNeitherIbanNorBankName(): void
     {
         $m = $this->vorhanden(['iban' => 'DE89370400440532013000']);
         $this->als(Rolle::Lesend);
 
         $seite = $this->get('/app/mitglieder', ['mitglied' => (string) $m->id, 'reiter' => 'daten'])->body;
 
-        self::assertStringContainsString('Commerzbank', $seite);
+        self::assertStringContainsString('mitglied-daten-lesen', $seite);
+        self::assertStringNotContainsString('Commerzbank', $seite);
+        self::assertStringNotContainsString('DE89 3704', $seite);
     }
 
     public function testTheNewMemberPageLoadsTheScript(): void
