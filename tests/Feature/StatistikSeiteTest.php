@@ -15,8 +15,8 @@ use App\Tests\Support\AppTestCase;
 
 /**
  * The page "Statistik" (docs/spec/09-listen-und-exporte.md section 7)
- * through the whole application: every role sees the member figures, only
- * the admin the fee figures; the former "Verteilung der Beiträge" redirects
+ * through the whole application: every role sees the member figures,
+ * every role but "Nur lesen" the fee figures; the former "Verteilung der Beiträge" redirects
  * there. Every name is made up.
  */
 final class StatistikSeiteTest extends AppTestCase
@@ -57,7 +57,7 @@ final class StatistikSeiteTest extends AppTestCase
         $this->mitglied(1, 'Musterfrau', geschlecht: Geschlecht::W);
         $this->mitglied(2, 'Beispiel', geschlecht: Geschlecht::M, austritt: '2020-06-30');
 
-        foreach ([Rolle::Admin, Rolle::Vorstand, Rolle::Lesend] as $rolle) {
+        foreach (Rolle::cases() as $rolle) {
             $this->als($rolle);
             $seite = $this->get('/app/statistik');
 
@@ -71,19 +71,39 @@ final class StatistikSeiteTest extends AppTestCase
             self::assertStringNotContainsString('Musterfrau', $seite->body, 'figures only, no names');
             self::assertStringNotContainsString('Beispiel,', $seite->body);
             self::assertMatchesRegularExpression('#<dd>1</dd>\s*</div>#', $seite->body);
-            self::assertSame($rolle === Rolle::Admin, str_contains($seite->body, '/app/statistik/beitraege?jahr='), 'the tab "Beiträge" is the admin\'s');
+            self::assertSame($rolle !== Rolle::Lesend, str_contains($seite->body, '/app/statistik/beitraege?jahr='), 'the tab "Beiträge" is not for "Nur lesen"');
             self::assertStringContainsString('href="/app/statistik" aria-current="page"', $seite->body, 'main entry marked');
         }
     }
 
-    public function testOnlyTheAdminSeesTheFeeFigures(): void
+    /** "Nur lesen" does not see the fee figures (beitraege.auswerten), on no address. */
+    public function testReadOnlyDoesNotSeeTheFeeFigures(): void
     {
         $this->mitglied(1, 'Musterfrau');
-        foreach ([Rolle::Vorstand, Rolle::Lesend] as $rolle) {
+        $this->als(Rolle::Lesend);
+
+        self::assertSame(403, $this->get('/app/statistik/beitraege', ['jahr' => '2026'])->status);
+        self::assertSame(403, $this->get('/app/beitraege/verteilung', ['jahr' => '2026'])->status);
+    }
+
+    /**
+     * Admin, Verwaltung and Vorstand see and evaluate the fee figures; the
+     * link to the page "Beiträge" only shows for whoever may open it - not
+     * for the Vorstand, who keeps the old address closed too.
+     */
+    public function testAdminVerwaltungAndBoardSeeTheFeeFigures(): void
+    {
+        $this->mitglied(1, 'Musterfrau');
+        foreach ([Rolle::Admin, Rolle::Verwaltung, Rolle::Vorstand] as $rolle) {
             $this->als($rolle);
-            self::assertSame(403, $this->get('/app/statistik/beitraege', ['jahr' => '2026'])->status, $rolle->name);
-            self::assertSame(403, $this->get('/app/beitraege/verteilung', ['jahr' => '2026'])->status, $rolle->name);
+            $seite = $this->get('/app/statistik/beitraege', ['jahr' => '2026']);
+
+            self::assertSame(200, $seite->status, $rolle->name);
+            self::assertStringContainsString('Statistik der Beiträge 2026', $seite->body, $rolle->name);
+            self::assertStringContainsString('85,00', $seite->body, $rolle->name);
+            self::assertSame($rolle !== Rolle::Vorstand, str_contains($seite->body, 'href="/app/beitraege'), $rolle->name . ': link to the page "Beiträge"');
         }
+        self::assertSame(403, $this->get('/app/beitraege/verteilung', ['jahr' => '2026'])->status, 'Vorstand: the old address belongs to the page "Beiträge"');
     }
 
     public function testTheFeeFiguresAreProjectedThenTakenFromTheCreatedFees(): void

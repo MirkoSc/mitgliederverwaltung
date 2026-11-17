@@ -1,6 +1,7 @@
 # 11 – Vereinsdaten
 
-Abschnitt „Verein" auf der Seite Einstellungen (06 §2), nur Admin.
+Abschnitt „Verein" auf der Seite Einstellungen (06 §2), Admin und Verwaltung
+(`admin.verein`, 02 §6).
 Vereinsdaten sind öffentlich bekannte Angaben und liegen **unverschlüsselt**
 in der Datenbank.
 

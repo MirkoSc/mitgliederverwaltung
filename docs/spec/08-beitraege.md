@@ -127,7 +127,8 @@ Ein **Jahresbeitrag** je Mitglied und Jahr: Betrag, Status, Vermerke.
 ## 2b. Verteilung der Beiträge
 
 Seit #127 der Reiter „Beiträge" der Seite **Statistik**
-(`/app/statistik/beitraege?jahr=`, `beitraege.verwalten`, 09 §7), verlinkt
+(`/app/statistik/beitraege?jahr=`, `beitraege.auswerten`: Admin,
+Verwaltung, Vorstand, 09 §7), verlinkt
 im Abschnitt „Jahresbeiträge" („Verteilung <Jahr> ansehen"); die alte
 Adresse `/app/beitraege/verteilung?jahr=` leitet dorthin weiter (302). Was
 das Jahr an Beiträgen bringt – Summe, **nach Beitragsart** (Anzahl, Summe,
@@ -192,7 +193,7 @@ Umsetzung (#30): Abschnitt **„Einzug per Lastschrift"** auf
 `/app/beitraege` zwischen „Jahresbeiträge" und der Liste des Jahres, das
 Archiv ganz unten (`App\App\EinzugController::seitenDaten()`, Templates
 `beitraege/einzug*.php`, Routen `app/routes/einzug.php`, alle mit
-`beitraege.verwalten`).
+`beitraege.verwalten` – Admin und Verwaltung, 02 §6).
 
 - **Zusammenstellen** (`App\Service\Beitraege\Einzuege::zusammenstellen()`):
   alle offenen Beiträge aller Jahre, nach Namen. **Nie einziehbar** ist
@@ -358,7 +359,8 @@ verworfene Einzüge; ein Mitglied mit erreichtem Austrittsdatum (gestern,
 heute) ist beim Zusammenstellen und beim Erzeugen nie einziehbar – auch
 wenn es zwischen Auswahl und Erzeugen austritt und nach Rücklastschrift
 oder Verwerfen –, mit Austritt morgen noch einziehbar (`EinzuegeTest`); Vorstand und Nur lesen bekommen auf jeder Route der
-Seite „Beiträge“ 403, sehen aber den Reiter „Beiträge“ ohne Links.
+Seite „Beiträge“ 403, sehen aber den Reiter „Beiträge“ ohne Links; die Verwaltung erreicht sie
+wie der Admin (`RoutenZugriffTest`).
 Zu §2a: Löschen mit falschem Bestätigungswort scheitert; Löschen eines
 bezahlten Jahres mit Einzug entfernt alles des Jahres (Beiträge, Einzüge,
 Dateien) und nichts anderer Jahre, ein Einzug mit mehreren Jahren bleibt;
@@ -376,5 +378,6 @@ Zu §2b: Hochrechnung wie Erzeugen (ehemalig, späterer Eintritt, anteilig,
 beitragsfrei); erzeugte Beiträge zählen mit ihrem Betrag; Teilung über
 mehrere Abteilungen und über die Familie (ohne Mitglieder mit eigenem
 Beitrag); Abteilungen und Beitragsarten ergeben je die Gesamtsumme;
-Vorstand und Nur lesen bekommen 403 (auch auf der alten Adresse); weitere
+Nur lesen bekommt 403, Admin, Verwaltung und Vorstand sehen sie (die alte
+Adresse gehört zur Seite „Beiträge“: Vorstand 403); weitere
 Pflicht-Tests der Statistik in 09.

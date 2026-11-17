@@ -27,7 +27,7 @@ aktuelle Issue verlinkt**, nicht alle.
 | Spec | Inhalt |
 |---|---|
 | `docs/spec/01-plattform.md` | Hosting-Constraints, Verzeichnislayout, Request-Modell, Schrittketten, Cron, Mail, Logging |
-| `docs/spec/02-sicherheit.md` | Bedrohungsmodell, Anmeldung + 2FA, drei feste Rollen, Datei-/Backup-Verschlüsselung, CSRF/CSP, Audit-Log |
+| `docs/spec/02-sicherheit.md` | Bedrohungsmodell, Anmeldung + 2FA, vier feste Rollen, Datei-/Backup-Verschlüsselung, CSRF/CSP, Audit-Log |
 | `docs/spec/03-datenhaltung.md` | DB-Konventionen, technische Tabellen, Blobs, Migrationen |
 | `docs/spec/04-installation-und-update.md` | setup.php, Installer, Self-Updater (Kanäle stable/beta), Release, Wartungsmodus, Backup/Restore, Systemcheck |
 | `docs/spec/05-entwicklung.md` | Docker, Tests, CI, Übernahme aus den Schwesterprojekten, Fremdbibliotheken |
@@ -101,9 +101,12 @@ Teil eines Releases sind.
   `/datenschutz`, dazu für die installierbare App `/manifest.webmanifest`
   (nur fester App-Name und Logo-Adressen) – sonst nichts (E-F3).
 - **Anwenderseite** (`/app/...`): alles Fachliche, je nach Recht.
-- **Adminseite** (`/admin/...`): Benutzer (drei feste Rollen Admin/
-  Vorstand/Nur lesen), Mail, Rechtstexte, Einstellungen, Backup,
-  Update, Systemcheck, Audit-Log. Nur der Admin hat einen Adminbereich.
+- **Adminseite** (`/admin/...`): Benutzer (vier feste Rollen Admin/
+  Verwaltung/Vorstand/Nur lesen), Mail, Rechtstexte, Einstellungen, Backup,
+  Update, Systemcheck, Audit-Log. Der Admin hat den ganzen Adminbereich;
+  die Verwaltung erreicht dort nur die Einstellungen-Seite mit den
+  fachlichen Abschnitten (Vereinsdaten, Abteilungen, Beitragsarten,
+  Funktionen, Geburtstage, Ehrungen, `admin.verein`), nichts Technisches.
 
 **Oberfläche (06-oberflaeche.md):** so wenige Seiten wie möglich –
 Mitglieder, Familien, Listen, Karte, Statistik, Beiträge, Einstellungen, Benutzermenü. Läuft auf Handy
@@ -142,8 +145,10 @@ Apache-2.0) und hält sich daran – Einfachheit geht dabei vor.
   Service Worker nur ohne Cache (PWA, `public/sw.js`).
 - Rechte **serverseitig pro Aktion** (`Permission`-Enum). Jede Route
   deklariert ihren Zugriff (`App\Http\Zugriff`, Pflichtargument von
-  `Router::get/post`). Drei feste Rollen Admin/Vorstand/Nur lesen (02 §6);
-  Vorstand und Nur lesen haben keinen Adminbereich, Nur lesen ändert nichts.
+  `Router::get/post`). Vier feste Rollen Admin/Verwaltung/Vorstand/Nur
+  lesen (02 §6); Vorstand und Nur lesen haben keinen Adminbereich, Nur
+  lesen ändert nichts und sieht keine Bankdaten der Mitglieder
+  (`bankdaten.sehen`, auch nicht in Suche, Verlauf und Exporten).
 
 ## 5. Datenhaltung (Details: 03-datenhaltung.md)
 

@@ -373,6 +373,29 @@ final class MitgliederListeRepositoryTest extends DatabaseTestCase
         self::assertSame(['3002'], $this->nummern('0171'), 'Handy');
     }
 
+    /**
+     * Without bank details ("Nur lesen", 02 section 6) neither the search
+     * field nor the extended search looks at IBAN or Kontoinhaber - a hit
+     * would tell a piece of them. Everything else is still found.
+     */
+    public function testWithoutBankDetailsIbanAndAccountHolderAreNotSearched(): void
+    {
+        $this->suchBeispiele();
+        $ohneBank = new MitgliederListeRepository($this->pdo(), mitBankdaten: false);
+        $heute = $this->heute;
+        $nummern = static fn(array $daten): array => array_map(
+            static fn($z): string => (string) $z->mitgliedsnummer,
+            $ohneBank->seite(MitgliederFilter::aus([...$daten, 'sortierung' => 'nummer']), $heute)->zeilen,
+        );
+
+        self::assertSame([], $nummern(['text' => 'DE89370400440532013000']), 'whole IBAN');
+        self::assertSame([], $nummern(['text' => '013000']), 'a piece of the IBAN');
+        self::assertSame([], $nummern(['text' => 'Zahler']), 'Kontoinhaber');
+        self::assertSame(['3001', '3002', '3003'], $nummern(['iban' => '0532013000']), 'the extended IBAN field is ignored');
+        self::assertSame(['3001'], $nummern(['text' => 'Umzug']), 'other fields are still searched');
+        self::assertSame(['3001'], $nummern(['text' => 'Müller 1980']));
+    }
+
     public function testAWordWithoutAHitFindsNothing(): void
     {
         $this->suchBeispiele();

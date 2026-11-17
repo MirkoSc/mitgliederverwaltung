@@ -12,7 +12,7 @@ use App\Service\Verein\Vereinsdaten;
 
 /**
  * Settings section Verein (docs/spec/11-vereinsdaten.md): club data,
- * associations, logo. The forms post to app/routes/verein.php. Admin only.
+ * associations, logo. The forms post to app/routes/verein.php. Admin and Verwaltung (admin.verein).
  */
 final readonly class VereinAbschnitt implements Abschnitt
 {
@@ -42,7 +42,7 @@ final readonly class VereinAbschnitt implements Abschnitt
 
     public function recht(): Permission
     {
-        return Permission::AdminEinstellungen;
+        return Permission::AdminVerein;
     }
 
     public function template(): string

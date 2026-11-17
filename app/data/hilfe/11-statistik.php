@@ -16,7 +16,7 @@ return [
         [
             'text' => 'Oben stehen die wichtigsten Zahlen, zum Beispiel **Mitglieder**, **aktiv**, **passiv** und **Durchschnittsalter in Jahren**.',
             'bild' => 'Die Seite Statistik. Markiert sind die Zahlen oben auf der Seite.',
-            'tipp' => 'Der Admin sieht oben zusätzlich die Reiter **Mitglieder** und **Beiträge**. Unter **Beiträge** stehen die Summen der Jahresbeiträge.',
+            'tipp' => 'Admin, Verwaltung und Vorstand sehen oben zusätzlich die Reiter **Mitglieder** und **Beiträge**. Unter **Beiträge** stehen die Summen der Jahresbeiträge.',
         ],
         [
             'text' => 'Darunter folgen die Abschnitte, zum Beispiel **Altersgruppen**, **Abteilungen**, **Wohnorte** und **Eintritte und Austritte**. Wählen Sie in der Liste über den Abschnitten einen Namen, um dorthin zu springen.',

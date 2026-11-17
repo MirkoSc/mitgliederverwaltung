@@ -34,11 +34,12 @@ umgeschaltet statt verlinkt.
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Mitglieder Familien Listen Karte Statistik Beiträge* Einstellungen*  │
 └──────────────────────────────────────────────────────────────────────┘
-* nur Admin
+* nur Admin und Verwaltung (02 §6)
 ```
 
 1. **Mitglieder** (Startseite)
-   - Suchfeld (Name, Anschrift, Kontakt, IBAN, Geburtsdatum …, 07 §8)
+   - Suchfeld (Name, Anschrift, Kontakt, IBAN, Geburtsdatum …, 07 §8;
+     IBAN und Kontoinhaber nicht für Nur lesen)
      mit Live-Ergebnis und einer Beschreibung, wonach gesucht wird
      (`aria-describedby`), darunter die Liste; einfache Filter
      (Abteilung, aktiv/passiv, Beitragsart, Ehemalige anzeigen) und der
@@ -133,19 +134,22 @@ umgeschaltet statt verlinkt.
    die Seite mit Meldung, der Cron sucht weiter).
 5. **Statistik** (#127, alle Rollen, `listen.sehen`) – Reiter
    „Mitglieder" (Anzahlen: Kennzahlen, Altersgruppen, Wohnorte, Abteilungen,
-   Familien, Mitgliedsdauer, Ein- und Austritte) und, nur für den Admin
-   (`beitraege.verwalten`), „Beiträge" (Geld je Jahr; die frühere
+   Familien, Mitgliedsdauer, Ein- und Austritte) und, für Admin, Verwaltung
+   und Vorstand (`beitraege.auswerten`, nicht Nur lesen), „Beiträge" (Geld je Jahr; die frühere
    „Verteilung der Beiträge"). Je Auswertung ein Diagramm (Chart.js,
    vendored) über der aufklappbaren Tabelle mit denselben Zahlen; ohne JS
    und im Barrierefrei-Modus nur die Tabellen. Details 09 §7.
-6. **Beiträge** (Admin) – eine Seite mit dem Ablauf des Jahres:
+6. **Beiträge** (Admin, Verwaltung) – eine Seite mit dem Ablauf des Jahres:
    Jahresbeiträge erzeugen → Einzug zusammenstellen → Lastschriftdatei
    herunterladen → Einzug bestätigen. Darunter die offenen Beiträge mit
    „bezahlt setzen".
-7. **Einstellungen** (Admin) – eine Seite mit Abschnitten: Verein
+7. **Einstellungen** (Admin; Verwaltung nur die fachlichen Abschnitte,
+   02 §6) – eine Seite mit Abschnitten: Verein
    (Vereinsdaten, Bank, Gläubiger-ID, Verbände, Logo – 11), Abteilungen, Beitragsarten, Funktionen, runde
    Geburtstage, Ehrungsstufen, Benutzer, Import, System (Update, Backup,
-   Systemcheck – übernommen). Links (PC) bzw. oben (Handy, waagerecht
+   Systemcheck – übernommen). Jeder Abschnitt erscheint nur mit seinem
+   Recht; die Verwaltung sieht Verein bis Ehrungsstufen, nicht Mail,
+   Rechtstexte, Benutzer, Import, System, Update, Backups, Audit-Log. Links (PC) bzw. oben (Handy, waagerecht
    wischbar) klebt ein **Inhaltsverzeichnis** (`verzeichnis`, aus den
    sichtbaren Abschnitten erzeugt, normale Anker-Links; Abschnittsüberschriften
    haben `tabindex="-1"` und bekommen nach dem Klick den Fokus).
@@ -349,7 +353,8 @@ Startbildschirm hinzufügen"), sonst ändert sich nichts:
 ## Pflicht-Tests
 
 `CspComplianceTest` (kein Inline-JS, kein `hx-on`), Routen-Zugriffsmatrix
-inkl. „Vorstand und Nur lesen sehen die Seite Beiträge nicht", Barrierefrei-Modus wird aus der
+inkl. „Vorstand und Nur lesen sehen die Seite Beiträge nicht" und „die Verwaltung erreicht
+unter `/admin` nur die fachlichen Einstellungen", Barrierefrei-Modus wird aus der
 Benutzereinstellung gesetzt und überlebt das Neuladen; Mitglied als
 Baustein mit einer zweiten einbettenden Seite (Reiter, Speichern-
 Weiterleitung, Schließen, Löschen zeigen auf diese Seite; die Listenseite

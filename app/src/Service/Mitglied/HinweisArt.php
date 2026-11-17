@@ -47,6 +47,16 @@ enum HinweisArt: string
         };
     }
 
+    /**
+     * Whether the hint is about the bank details: its text may name a BIC,
+     * so an account without bankdaten.sehen gets the short name instead
+     * (Hinweis::ohneBankdaten(), 02 section 6).
+     */
+    public function betrifftBankdaten(): bool
+    {
+        return $this === self::LastschriftOhneIban || $this === self::LastschriftMitFalscherBic;
+    }
+
     /** Short name for filters and the list "Auffälligkeiten". */
     public function bezeichnung(): string
     {

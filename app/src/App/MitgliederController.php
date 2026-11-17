@@ -57,7 +57,9 @@ final readonly class MitgliederController
         $filter = MitgliederFilter::aus($daten);
 
         $pdo = $this->dienste->pdo();
-        $ergebnis = new MitgliederListeRepository($pdo)->seite($filter, new \DateTimeImmutable('today'));
+        // Without bankdaten.sehen ("Nur lesen") the search skips IBAN and Kontoinhaber (02 section 6).
+        $mitBankdaten = $view->konto()?->darf(Permission::BankdatenSehen) === true;
+        $ergebnis = new MitgliederListeRepository($pdo, $mitBankdaten)->seite($filter, new \DateTimeImmutable('today'));
         $filter = $filter->mit(['seite' => $ergebnis->seite]);
 
         // The opened member is the building block every list page embeds
@@ -80,6 +82,7 @@ final readonly class MitgliederController
             'formUrl' => self::formUrl($filter, $ansicht->id(), $ansicht->reiter),
             'nurErgebnis' => false,
             'darfAnlegen' => $view->konto()?->darf(Permission::MitgliederBearbeiten) === true,
+            'mitBankdaten' => $mitBankdaten,
             'scripts' => MitgliedAnsicht::SKRIPTE,
             'styles' => MitgliedAnsicht::STILE,
         ];

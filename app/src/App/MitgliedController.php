@@ -416,6 +416,8 @@ final readonly class MitgliedController
             'familie' => $familie,
             'aktion' => $mitglied?->id === null ? self::PFAD_NEU : self::speicherAdresse($mitglied->id),
             'darfBearbeiten' => $konto !== null && $konto->darf(Permission::MitgliederBearbeiten),
+            // IBAN, BIC, Kontoinhaber and mandate: not for "Nur lesen" (02 section 6).
+            'darfBankdaten' => $konto !== null && $konto->darf(Permission::BankdatenSehen),
             // Only a former member can be deleted (07 section 1); everyone else leaves first.
             'darfLoeschen' => $mitglied?->id !== null && $konto !== null && $konto->darf(Permission::MitgliederLoeschen) && $mitglied->istEhemalig(Datum::heute()),
             'einbettung' => $einbettung ?? Einbettung::mitgliederSeite(),

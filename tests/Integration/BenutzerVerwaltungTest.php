@@ -50,6 +50,17 @@ final class BenutzerVerwaltungTest extends DatabaseTestCase
         self::assertSame('lesend', $this->pdo()->query('SELECT rolle FROM `user` WHERE id = ' . $id)->fetchColumn());
     }
 
+    /** "Verwaltung" is stored as `verwaltung` - it fits the existing column, no migration. */
+    public function testTheRoleCanBecomeVerwaltung(): void
+    {
+        $id = Benutzerdaten::anlegen($this->pdo());
+
+        $this->verwaltung->rolleAendern($this->admin, $id, Rolle::Verwaltung);
+
+        self::assertSame(Rolle::Verwaltung, $this->repo->findById($id)?->rolle);
+        self::assertSame('verwaltung', $this->pdo()->query('SELECT rolle FROM `user` WHERE id = ' . $id)->fetchColumn());
+    }
+
     /** An unknown role in the database gets the fewest rights (fail closed). */
     public function testAnUnknownRoleReadsAsReadOnly(): void
     {

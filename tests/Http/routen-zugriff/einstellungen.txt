@@ -1,2 +1,3 @@
-# app/routes/einstellungen.php - the settings page: admin only (06 section 2).
-GET /admin -> admin.einstellungen
+# app/routes/einstellungen.php - the settings page: Admin and Verwaltung (02 section 6);
+# every section shows only with its own right.
+GET /admin -> admin.verein

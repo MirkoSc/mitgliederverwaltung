@@ -63,8 +63,8 @@ final readonly class HinweiseAbschnitt implements Abschnitt
         $pdo = $this->dienste->pdo();
         $repository = new MitgliedRepository($pdo);
         $mitglied = $repository->finde($mitgliedId);
-        $hinweise = $mitglied === null ? [] : HinweisLader::aus($pdo)->fuer($mitglied);
         $konto = $this->dienste->view->konto();
+        $hinweise = $mitglied === null ? [] : Hinweis::fuer(HinweisLader::aus($pdo)->fuer($mitglied), $konto);
 
         return [
             'hinweise' => $hinweise,
