@@ -127,10 +127,15 @@ Kein JavaScript.
 Docker-Umgebung für die Bilder ein. Es verweigert sich, wenn die
 Konfiguration nicht `debug => true` hat, und nutzt kein `exec`.
 
-- Löscht alle Mitglieder und Familien und legt neu an: etwa 30 erfundene
+- Löscht alle Mitglieder, Familien, Jahresbeiträge und Einzüge (Zähler der
+  Einzüge wieder ab 1) und legt neu an: etwa 30 erfundene
   Mitglieder (Nummern ab 1001, E-Mail `@example.org`, Test-IBANs mit
   gültiger Prüfziffer), 4–5 Familien, Abteilungen, Funktionen und
-  Beitragsarten aus Migration 040, Vereinsdaten „SV Musterstadt e. V.".
+  Beitragsarten aus Migration 040, Vereinsdaten „SV Musterstadt e. V." mit
+  Vereins-IBAN und Gläubiger-ID. Jahresbeiträge legt erst die Aufnahme von
+  `beitraege-einziehen` über die Oberfläche an; Selbstzahler und ein
+  Ehemaliger aus dem laufenden Jahr ergeben Beiträge, die sich nicht
+  einziehen lassen.
   Geburtstage **relativ zum heutigen Tag**, damit die Geburtstagsliste in
   Woche und Monat Einträge hat (darunter ein runder).
 - Zwei Zugänge der Rolle **Vorstand**: `hilfe-normal@example.org` (Modus
@@ -139,7 +144,10 @@ Konfiguration nicht `debug => true` hat, und nutzt kein `exec`.
   stehen in `tools/hilfe-screenshots/konten.json` (erfundene Werte nur für
   die lokale Umgebung). Für Bilder, die ein anderes Recht brauchen, darf das
   Skript weitere Zugänge anlegen: `admin-normal` und `admin-barrierefrei`
-  (Rolle **Admin**) für `mitglied-loeschen`.
+  (Rolle **Admin**) für `mitglied-loeschen`, `verwaltung-normal` und
+  `verwaltung-barrierefrei` (Rolle **Verwaltung**,
+  `hilfe-verwaltung-…@example.org`) für `beitraege-einziehen` und
+  `einzug-bestaetigen`.
 - Zwei Ehemalige: Nr. 1031 für „Ehemalige anzeigen", Nr. 1032 nur für
   `mitglied-loeschen`, dessen Aufnahme ihn löscht.
 - Am App-Code ändert sich für die Anmeldung **nichts** (keine Hintertür):
@@ -175,12 +183,17 @@ im Barrierefrei-Modus auf und räumt das Projekt ab.
   ab. Dazu gehört: jede Anleitung mit Bildern braucht eine Aufnahme-Datei,
   jede Aufnahme-Datei eine Anleitung.
 - **Zugang und Probe:** Eine Aufnahme darf `export const zugang = 'admin'`
-  setzen (Konto `admin-normal` / `admin-barrierefrei` in `konten.json`) und
+  bzw. `'verwaltung'` setzen (Konto `<zugang>-normal` /
+  `<zugang>-barrierefrei` in `konten.json`) und
   mit `export const probe = true` als Probe ohne Anleitung laufen (Bilder
   nach `tools/hilfe-screenshots/probe-ausgabe/`, nicht in git).
   `anleitungen/beispiel.mjs` ist so eine Probe. Das Skript legt die Daten nur
   zwischen den Modi neu an; Aufnahmen, die etwas ändern, stellen den
-  Ausgangszustand selbst wieder her.
+  Ausgangszustand selbst wieder her. Die Aufnahmen laufen in der
+  Reihenfolge ihrer Dateinamen: `beitraege-einziehen` lässt Jahresbeiträge
+  und Einzug Nr. 1 für `einzug-bestaetigen` stehen; diese bestätigt ihn
+  (oder legt beides selbst an, wenn sie allein läuft) und löscht am Ende
+  die Beiträge des Jahres samt Einzug über „Beiträge <Jahr> löschen".
 - **Markieren:** ein kräftiger Rahmen um das gemeinte Element (nur im
   Browser des Skripts eingefügt; dafür `bypassCSP` nur dort). Ist das
   Element verdeckt (feste Speichern-Leiste, Karte), scheitert die Aufnahme.
@@ -227,8 +240,9 @@ sich ohne `debug`.
 Abschluss (#119):
 - Jeder Schritt mit `bild` hat beide Bilder; keine verwaisten Bilder unter
   `public/img/hilfe/`; echte PNG-Dateien; Größengrenzen aus §6.
-- Rollen mit den echten Anleitungen: Admin sieht alle, Verwaltung und
-  Vorstand alle außer `mitglied-loeschen`, Nur lesen genau `anmelden`, `mitglied-suchen`,
+- Rollen mit den echten Anleitungen: Admin sieht alle, Verwaltung alle
+  außer `mitglied-loeschen`, Vorstand dazu nicht `beitraege-einziehen` und
+  `einzug-bestaetigen`, Nur lesen genau `anmelden`, `mitglied-suchen`,
   `barrierefrei-modus`, `geburtstagsliste`, `statistik`, `app-installieren`.
 
 ## 8. Die Anleitungen
@@ -247,12 +261,20 @@ Abschluss (#119):
 | `10-mitglied-loeschen` | Ehemaliges Mitglied löschen | `MitgliederLoeschen` (nur Admin) | #129 |
 | `11-statistik` | Statistik ansehen | `ListenSehen` | #129 |
 | `12-app-installieren` | Als App auf Handy oder PC installieren | – (`null`) | #129 |
+| `13-beitraege-einziehen` | Beiträge per Lastschrift einziehen | `BeitraegeVerwalten` (Admin, Verwaltung) | – |
+| `14-einzug-bestaetigen` | Einzug bestätigen und Rücklastschrift vermerken | `BeitraegeVerwalten` (Admin, Verwaltung) | – |
 
 `12-app-installieren` beschreibt den Browser, nicht unsere Oberfläche, und
 hat deshalb keine Bilder und keine Aufnahme-Datei; die Browser-Menünamen
 bleiben allgemein (Schreibregel 2 gilt für die eigene Oberfläche).
-`11-statistik`: der Reiter „Beiträge" bleibt dem Admin vorbehalten und
-steht nur als Tipp im Text.
+`11-statistik`: der Reiter „Beiträge" (Admin, Verwaltung, Vorstand) steht
+nur als Tipp im Text.
+
+Der Einzug ist auf zwei Anleitungen verteilt, weil er zehn Schritte
+übersteigt (§4 Regel 1): `13-beitraege-einziehen` vom Erzeugen der
+Jahresbeiträge bis zum Einreichen der Datei im Online-Banking (allgemein,
+keine bestimmte Bank), `14-einzug-bestaetigen` für das, was danach kommt –
+bestätigen oder verwerfen und Rücklastschriften.
 
 Für `01-anmelden` dürfen die Bilder die Anmeldung mit Authenticator-App
 zeigen (Demo-Zugang); der Text erklärt den Code per E-Mail als Standard und

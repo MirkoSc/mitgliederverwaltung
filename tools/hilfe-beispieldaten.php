@@ -3,13 +3,14 @@
 /**
  * Development helper, not part of a release (docs/spec/12-hilfe.md section 5):
  * sets up the LOCAL docker environment for the help screenshots - made-up
- * members, families and club data, and two demo accounts (role Vorstand) with
- * the authenticator app as second factor.
+ * members, families and club data, and the demo accounts of konten.json
+ * (roles Vorstand, Admin and Verwaltung) with the authenticator app as second
+ * factor.
  *
  *   docker compose exec -T app php tools/hilfe-beispieldaten.php
  *
- * It deletes ALL members and families first and creates them anew, so a
- * second run gives the same result. It refuses to run unless the
+ * It deletes ALL members, families, annual fees and direct debits first and
+ * creates the members anew, so a second run gives the same result. It refuses to run unless the
  * configuration has `debug => true` (only docker/shared/config.php has) - a
  * real installation can never be wiped by accident.
  *
@@ -38,6 +39,8 @@ use App\Domain\Zahlart;
 use App\Repository\AbteilungRepository;
 use App\Repository\BeitragsartRepository;
 use App\Repository\BenutzerRepository;
+use App\Repository\BlobRepository;
+use App\Repository\EinzugRepository;
 use App\Repository\FamilieRepository;
 use App\Repository\FunktionRepository;
 use App\Repository\MitgliedRepository;
@@ -143,7 +146,9 @@ final class HilfeBeispieldaten
     {
         $heute = ($heute ?? new \DateTimeImmutable('today', new \DateTimeZone('Europe/Berlin')))->setTime(0, 0);
 
+        // Members first: their annual fees go with them and point to the runs.
         $this->mitglieder->alleLoeschen();
+        $this->einzuegeLoeschen();
         $this->vereinsdaten();
         $anzahl = $this->mitgliederAnlegen($heute);
         $konten = $this->kontenAnlegen();
@@ -175,6 +180,27 @@ final class HilfeBeispieldaten
         }
 
         return $tag->modify(sprintf('-%d years', $wird));
+    }
+
+    /**
+     * The guides about direct debits create fees and runs; a run outlives
+     * its fees (08 section 3), so it is removed here, with the row of its
+     * file (the encrypted file in docker/shared/var/blobs stays as a
+     * harmless orphan). The counter starts at 1 again, so every mode shows
+     * "Einzug Nr. 1". Development helper only - the application itself
+     * never deletes a run on its own (08 section 2a).
+     */
+    private function einzuegeLoeschen(): void
+    {
+        $einzuege = new EinzugRepository($this->pdo);
+        $dateien = new BlobRepository($this->pdo);
+        foreach ($einzuege->alle(mitDaten: false) as $einzug) {
+            $einzuege->loeschen((int) $einzug->id);
+            if ($einzug->dateiBlobId !== null) {
+                $dateien->delete($einzug->dateiBlobId);
+            }
+        }
+        $this->pdo->exec('ALTER TABLE einzug AUTO_INCREMENT = 1');
     }
 
     private function vereinsdaten(): void

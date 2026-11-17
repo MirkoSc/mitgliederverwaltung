@@ -29,6 +29,20 @@
             "rolle": "admin",
             "barrierefrei": true,
             "totp_geheimnis": "MFRGGZDFMZTWQ2LKNNWG23TPOBYXE43U"
+        },
+        "verwaltung-normal": {
+            "email": "hilfe-verwaltung-normal@example.org",
+            "name": "Vera Verwaltung",
+            "rolle": "verwaltung",
+            "barrierefrei": false,
+            "totp_geheimnis": "ONSWG4TFORZWK3DFMNZGK5DTMVRXEZLU"
+        },
+        "verwaltung-barrierefrei": {
+            "email": "hilfe-verwaltung-barrierefrei@example.org",
+            "name": "Walter Verwaltung",
+            "rolle": "verwaltung",
+            "barrierefrei": true,
+            "totp_geheimnis": "MNXW2ZDPNVSXIZLSMFWGK3TEMVZHGZLU"
         }
     }
 }

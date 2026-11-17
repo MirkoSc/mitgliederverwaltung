@@ -11,7 +11,7 @@ export default async function ablauf({ seite, markiere, foto }) {
     await oeffne(seite);
     const art = seite.locator('#mitglied-formular').getByLabel('Beitragsart', { exact: true });
     const alt = await art.inputValue();
-    await markiere(seite.getByRole('heading', { name: 'Beitrag', level: 3 }));
+    await markiere(seite.getByRole('heading', { name: 'Beitrag und Bank', level: 3, exact: true }));
     await foto(2);
 
     await art.selectOption(await art.locator('option', { hasText: /^Mindestbeitrag/ }).getAttribute('value'));

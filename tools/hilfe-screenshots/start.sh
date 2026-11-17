@@ -51,5 +51,8 @@ trap aufraeumen EXIT
 
 "${compose[@]}" up -d --build --wait
 "${compose[@]}" exec -T app php bin/migrate.php
+# The recordings of the direct debit store its file in shared/var/blobs; in a
+# fresh checkout the web server may not create that directory itself.
+"${compose[@]}" exec -T app sh -c 'mkdir -p /var/www/html/shared/var/blobs && chown www-data: /var/www/html/shared/var/blobs'
 
 node tools/hilfe-screenshots/aufnehmen.js --projekt "$projekt" "${weiter[@]}"

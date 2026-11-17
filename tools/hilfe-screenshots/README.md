@@ -77,7 +77,12 @@ export default async function ablauf({ seite, markiere, foto }) {
   am Ende wieder her, wenn spätere Anleitungen ihn brauchen.
 - Anderer Zugang: `export const zugang = 'admin';` sucht in `konten.json` die
   Einträge `admin-normal` und `admin-barrierefrei` (dort ergänzen; das
-  Beispieldaten-Skript legt jeden Eintrag an).
+  Beispieldaten-Skript legt jeden Eintrag an). Vorhanden sind `admin`
+  (Rolle Admin) und `verwaltung` (Rolle Verwaltung, für die Seite Beiträge).
+- Die Aufnahmen laufen in der Reihenfolge ihrer Dateinamen.
+  `beitraege-einziehen` lässt Jahresbeiträge und Einzug Nr. 1 für
+  `einzug-bestaetigen` stehen; diese räumt am Ende über „Beiträge <Jahr>
+  löschen" auf (oder legt beides selbst an, wenn sie mit `--nur` allein läuft).
 - Nur eine Probe (kein Bezug zu einer Anleitung): `export const probe = true;`.
   Ihre Bilder gehen nach `probe-ausgabe/` (nicht in git), `beispiel.mjs` ist so eine.
 
@@ -98,9 +103,10 @@ des Skripts antwortet dann selbst mit erfundenen Anschriften aus Musterstadt.
 ## Beispieldaten und Demo-Zugänge
 
 `tools/hilfe-beispieldaten.php` (läuft im App-Container, nur mit `debug => true`)
-löscht **alle** Mitglieder und Familien und legt etwa 30 erfundene Mitglieder,
+löscht **alle** Mitglieder, Familien, Jahresbeiträge und Einzüge und legt etwa 30 erfundene Mitglieder,
 fünf Familien und die Vereinsdaten „SV Musterstadt e. V." neu an, dazu die Zugänge
-aus `konten.json` (`hilfe-normal@example.org`, `hilfe-barrierefrei@example.org`).
+aus `konten.json` (`hilfe-normal@example.org`, `hilfe-barrierefrei@example.org`,
+dazu Admin- und Verwaltungs-Zugänge).
 Das Passwort und die Geheimnisse der Authenticator-App stehen in `konten.json`
 (erfundene Werte, nur für die lokale Umgebung). Am Login der Anwendung ändert sich
 nichts: `lib/totp.js` rechnet den App-Code selbst aus.

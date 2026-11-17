@@ -13,8 +13,8 @@ return [
             'text' => 'Öffnen Sie das Mitglied. Wie das geht, steht in der Anleitung „Mitglied suchen und öffnen“.',
         ],
         [
-            'text' => 'Wählen Sie den Reiter **Daten**. Suchen Sie die Gruppe **Beitrag**.',
-            'bild' => 'Das geöffnete Mitglied auf dem Reiter Daten. Die Überschrift der Gruppe Beitrag ist markiert.',
+            'text' => 'Wählen Sie den Reiter **Daten**. Suchen Sie die Gruppe **Beitrag und Bank**.',
+            'bild' => 'Das geöffnete Mitglied auf dem Reiter Daten. Die Überschrift der Gruppe Beitrag und Bank ist markiert.',
         ],
         [
             'text' => 'Wählen Sie im Feld **Beitragsart** die neue Beitragsart aus der Liste.',
@@ -36,7 +36,7 @@ return [
         ],
         [
             'text' => 'Oben erscheint die Meldung **Mitglied gespeichert.** Die Änderung ist damit übernommen.',
-            'tipp' => 'Erscheint danach ein gelber Hinweis, zum Beispiel ein fehlender Nachweis, ist trotzdem gespeichert. Der Hinweis sagt nur, was noch zu tun ist. Ein schon erzeugter Jahresbeitrag ändert sich durch die Änderung nicht. Das erledigt der Admin.',
+            'tipp' => 'Erscheint danach ein gelber Hinweis, zum Beispiel ein fehlender Nachweis, ist trotzdem gespeichert. Der Hinweis sagt nur, was noch zu tun ist. Ein schon erzeugter Jahresbeitrag ändert sich dadurch nicht. Seinen Betrag ändern Admin oder Verwaltung auf der Seite **Beiträge**.',
             'bild' => 'Das Mitglied nach dem Speichern. Die Meldung Mitglied gespeichert ist markiert.',
         ],
     ],

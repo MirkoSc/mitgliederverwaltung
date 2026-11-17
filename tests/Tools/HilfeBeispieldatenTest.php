@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Tests\Tools;
 
 use App\Config\Config;
+use App\Domain\Einzug;
+use App\Domain\EinzugStatus;
 use App\Domain\MfaMethode;
 use App\Domain\Mitglied;
 use App\Domain\Rolle;
 use App\Domain\VersionsAnlass;
 use App\Repository\BenutzerRepository;
+use App\Repository\EinzugRepository;
 use App\Repository\FamilieRepository;
 use App\Repository\MitgliedRepository;
 use App\Repository\RateLimitRepository;
@@ -17,6 +20,7 @@ use App\Repository\SettingRepository;
 use App\Repository\ZweiterFaktorRepository;
 use App\Service\Account\Totp;
 use App\Service\Account\ZweiterFaktor;
+use App\Service\Beitraege\Jahresbeitraege;
 use App\Service\Crypto\ServerCrypto;
 use App\Service\Migration\Migrator;
 use App\Service\RateLimiter;
@@ -65,7 +69,7 @@ final class HilfeBeispieldatenTest extends DatabaseTestCase
         $ergebnis = $this->helfer()->anlegen($this->heute);
 
         $mitglieder = new MitgliedRepository($this->pdo());
-        self::assertSame(['mitglieder' => 32, 'familien' => 5, 'konten' => 4], $ergebnis);
+        self::assertSame(['mitglieder' => 32, 'familien' => 5, 'konten' => 6], $ergebnis);
         self::assertSame(32, $mitglieder->anzahl());
         self::assertCount(30, $mitglieder->alle(false, $this->heute), 'two former members besides the 30');
         self::assertNotNull($mitglieder->findeNachNummer(HilfeBeispieldaten::ERSTE_NUMMER));
@@ -168,6 +172,8 @@ final class HilfeBeispieldatenTest extends DatabaseTestCase
             'barrierefrei' => [Rolle::Vorstand, true],
             'admin-normal' => [Rolle::Admin, false],
             'admin-barrierefrei' => [Rolle::Admin, true],
+            'verwaltung-normal' => [Rolle::Verwaltung, false],
+            'verwaltung-barrierefrei' => [Rolle::Verwaltung, true],
         ];
         foreach ($erwartet as $schluessel => [$rolle, $barrierefrei]) {
             $konto = $konten['konten'][$schluessel];
@@ -200,12 +206,30 @@ final class HilfeBeispieldatenTest extends DatabaseTestCase
         self::assertSame($erstes, $helfer->anlegen($this->heute));
         self::assertSame($nummern, $this->nummern());
         self::assertSame(5, (int) $this->pdo()->query('SELECT COUNT(*) FROM familie')->fetchColumn());
-        self::assertSame(4, (int) $this->pdo()->query('SELECT COUNT(*) FROM `user`')->fetchColumn(), 'accounts are not duplicated');
+        self::assertSame(6, (int) $this->pdo()->query('SELECT COUNT(*) FROM `user`')->fetchColumn(), 'accounts are not duplicated');
         $neu = $benutzer->findByExactEmail($konto['email']);
         self::assertNotNull($neu);
         self::assertNotSame($alteId, $neu->id);
         self::assertFalse($neu->barrierefrei, 'the mode is back as defined in konten.json');
         self::assertTrue($this->zweiterFaktor()->pruefeApp($neu->id, Totp::code(Totp::base32Decode($konto['totp_geheimnis']), new \DateTimeImmutable())));
+    }
+
+    /** The guides about direct debits leave fees and runs behind; the next mode starts without them, with "Einzug Nr. 1". */
+    public function testRunningAgainRemovesFeesAndRunsAndRestartsTheirNumbers(): void
+    {
+        $helfer = $this->helfer();
+        $helfer->anlegen($this->heute);
+        $beitraege = Jahresbeitraege::mit($this->pdo())->erzeugen(2026, null, $this->heute);
+        self::assertGreaterThan(0, $beitraege->neu);
+        $einzuege = new EinzugRepository($this->pdo());
+        $einzuege->anlegen(new Einzug(EinzugStatus::Verworfen, $this->heute, null, $this->heute, 1, 8500));
+        $einzuege->anlegen(new Einzug(EinzugStatus::Erzeugt, $this->heute, null, $this->heute, 1, 8500));
+
+        $helfer->anlegen($this->heute);
+
+        self::assertSame(0, (int) $this->pdo()->query('SELECT COUNT(*) FROM jahresbeitrag')->fetchColumn());
+        self::assertSame([], $einzuege->alle());
+        self::assertSame(1, $einzuege->anlegen(new Einzug(EinzugStatus::Erzeugt, $this->heute, null, $this->heute, 1, 8500))->id);
     }
 
     public function testOtherAccountsStayUntouched(): void
