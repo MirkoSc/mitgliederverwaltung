@@ -33,7 +33,7 @@ aktuelle Issue verlinkt**, nicht alle.
 | `docs/spec/05-entwicklung.md` | Docker, Tests, CI, Übernahme aus den Schwesterprojekten, Fremdbibliotheken |
 | `docs/spec/06-oberflaeche.md` | UI-Technik, Seitenaufbau (wenige Seiten), Muster, Barrierefrei-Modus |
 | `docs/spec/07-mitglieder.md` | Mitglied, Abteilungen, Familien, Funktionen, Nachweise, Hinweise, Versionen, Datenmodell |
-| `docs/spec/08-beitraege.md` | Beitragsarten, Jahresbeiträge, Einzug, Lastschriftdatei pain.008 (nur Admin) |
+| `docs/spec/08-beitraege.md` | Beitragsarten, Jahresbeiträge, Einzug, Lastschriftdatei pain.008 (Admin und Verwaltung) |
 | `docs/spec/09-listen-und-exporte.md` | Geburtstage, Ehrungen, Funktionen, Selbst kassieren, Auffälligkeiten, BLSV, Gesamtexport, xlsx/csv |
 | `docs/spec/10-import.md` | Erstimport und späterer Abgleich (Merge-Ansicht), Importformat |
 | `docs/spec/11-vereinsdaten.md` | Vereinsdaten, Bankverbindung, Gläubiger-ID, Verbandsnummern, Logo |

@@ -54,11 +54,16 @@ final readonly class MitgliederController
     {
         $view = $this->dienste->view;
         $daten = [...$r->query, ...$r->post]; // the body is the more recent state
+        // Without bankdaten.sehen ("Nur lesen") the search skips IBAN and
+        // Kontoinhaber (02 section 6); an IBAN sent anyway is dropped, so
+        // the hidden field never counts as an active extended search.
+        $mitBankdaten = $view->konto()?->darf(Permission::BankdatenSehen) === true;
+        if (!$mitBankdaten) {
+            unset($daten['iban']);
+        }
         $filter = MitgliederFilter::aus($daten);
 
         $pdo = $this->dienste->pdo();
-        // Without bankdaten.sehen ("Nur lesen") the search skips IBAN and Kontoinhaber (02 section 6).
-        $mitBankdaten = $view->konto()?->darf(Permission::BankdatenSehen) === true;
         $ergebnis = new MitgliederListeRepository($pdo, $mitBankdaten)->seite($filter, new \DateTimeImmutable('today'));
         $filter = $filter->mit(['seite' => $ergebnis->seite]);
 

@@ -71,7 +71,7 @@ final class VerlaufAenderungen
      *
      * @return list<array{feld: string, alt: string, neu: string}>
      */
-    public static function zwischen(?MitgliedVersion $alt, MitgliedVersion $neu, bool $mitBankdaten = true): array
+    public static function zwischen(?MitgliedVersion $alt, MitgliedVersion $neu, bool $mitBankdaten): array
     {
         if ($alt === null) {
             return [];

@@ -47,9 +47,9 @@ final class LoginGuardTest extends TestCase
         new Session()->login($konto->id, $am, $epoch);
     }
 
-    private function aufrufen(Zugriff $zugriff, string $pfad = '/app/mitglieder', array $headers = []): Response
+    private function aufrufen(Zugriff $zugriff, string $pfad = '/app/mitglieder', array $headers = [], bool $wartung = false): Response
     {
-        $guard = new LoginGuard(new Session(), $this->view, $this->konten);
+        $guard = new LoginGuard(new Session(), $this->view, $this->konten, static fn(): bool => $wartung);
         $antwort = $guard->pruefe($zugriff, static fn(): Response => Response::html('ERREICHT'))(
             new Request(HttpMethod::Get, $pfad, headers: $headers),
             [],
@@ -105,6 +105,21 @@ final class LoginGuardTest extends TestCase
 
         self::assertSame(403, $antwort->status);
         self::assertStringContainsString('Keine Berechtigung', $antwort->body);
+    }
+
+    /** 04 section 4: during an update only the admin gets past the shim into /admin. */
+    public function testDuringMaintenanceOnlyTheAdminReachesAdmin(): void
+    {
+        $this->anmelden(new Konto(5, 'Test', Rolle::Verwaltung));
+        $recht = Zugriff::recht(Permission::AdminVerein);
+
+        self::assertSame('ERREICHT', $this->aufrufen($recht, '/admin')->body, 'no maintenance: Verwaltung may');
+        $antwort = $this->aufrufen($recht, '/admin', wartung: true);
+        self::assertSame(503, $antwort->status);
+        self::assertStringContainsString('Wartungspause', $antwort->body);
+
+        $this->anmelden(new Konto(6, 'Test', Rolle::Admin));
+        self::assertSame('ERREICHT', $this->aufrufen($recht, '/admin', wartung: true)->body);
     }
 
     /** 02 section 3: without a second factor only its setup is reachable. */

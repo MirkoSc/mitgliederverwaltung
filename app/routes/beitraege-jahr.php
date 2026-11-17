@@ -12,7 +12,7 @@ use App\Http\Zugriff;
 /**
  * Actions on the page "Beiträge" over more than one fee
  * (docs/spec/08-beitraege.md section 2a, issue #90): delete the fees of a
- * year, several fees paid at once. Admin only: every route declares
+ * year, several fees paid at once. Admin and Verwaltung only: every route declares
  * BeitraegeVerwalten, so the Vorstand gets 403 on each.
  */
 return static function (Routen $routen): void {

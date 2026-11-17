@@ -103,7 +103,8 @@ final class StatistikSeiteTest extends AppTestCase
             self::assertStringContainsString('85,00', $seite->body, $rolle->name);
             self::assertSame($rolle !== Rolle::Vorstand, str_contains($seite->body, 'href="/app/beitraege'), $rolle->name . ': link to the page "Beiträge"');
         }
-        self::assertSame(403, $this->get('/app/beitraege/verteilung', ['jahr' => '2026'])->status, 'Vorstand: the old address belongs to the page "Beiträge"');
+        // The old address redirects to the statistics the board may open now.
+        self::assertSame(302, $this->get('/app/beitraege/verteilung', ['jahr' => '2026'])->status, 'Vorstand: old address redirects');
     }
 
     public function testTheFeeFiguresAreProjectedThenTakenFromTheCreatedFees(): void

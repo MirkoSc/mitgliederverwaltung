@@ -35,7 +35,7 @@ final class MitgliederListeRepositoryTest extends DatabaseTestCase
         parent::setUp();
         new Migrator($this->pdo(), $this->migrationsDir())->migrate();
         $this->mitglieder = new MitgliedRepository($this->pdo());
-        $this->liste = new MitgliederListeRepository($this->pdo());
+        $this->liste = new MitgliederListeRepository($this->pdo(), mitBankdaten: true);
         $this->heute = new \DateTimeImmutable('2026-06-15');
     }
 

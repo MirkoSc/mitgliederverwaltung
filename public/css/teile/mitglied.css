@@ -25,6 +25,13 @@
     font-weight: 650;
 }
 
+/* Short fields (date, gender) keep room for the large font of the
+   Barrierefrei-Modus on a phone too, where the rows of formular-gruppen.css
+   do not apply - the date picker and "nicht angegeben" must not be cut. */
+.modus-barrierefrei .mitglied-formular .feld-kurz :is(input, select) {
+    max-width: 20rem;
+}
+
 /* The payer's address under the hint "Andere Anschrift als die Familie"
    (app/views/mitglied/hinweise.php), with the button that copies it into
    the form. */
