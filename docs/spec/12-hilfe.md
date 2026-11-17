@@ -209,10 +209,10 @@ Gerüst (#114):
   Reihenfolge, Slug aus dem Dateinamen, jede Regel aus §2 einzeln als Fehler
   (unbekannter Schlüssel, fehlender Titel, falsches Recht, keine oder zu
   viele Schritte, leerer Text, leeres `bild`, falscher Dateiname),
-  Rollenfilter für Admin, Vorstand, Nur lesen.
+  Rollenfilter für Admin, Verwaltung, Vorstand, Nur lesen.
 - Alle echten Dateien unter `app/data/hilfe/` sind gültig (läuft auch, wenn
   es noch keine gibt).
-- Seiten: abgemeldet → Anmeldung; Übersicht für alle drei Rollen 200; nicht
+- Seiten: abgemeldet → Anmeldung; Übersicht für alle Rollen 200; nicht
   erlaubte und unbekannte Anleitung 404; Barrierefrei-Konto bekommt
   `-barrierefrei.png`, sonst `-normal.png`; fehlende Bilddatei → kein
   `<img>`; Schritte als `<ol>`; Text wird escaped; kein `style=`.
@@ -227,8 +227,8 @@ sich ohne `debug`.
 Abschluss (#119):
 - Jeder Schritt mit `bild` hat beide Bilder; keine verwaisten Bilder unter
   `public/img/hilfe/`; echte PNG-Dateien; Größengrenzen aus §6.
-- Rollen mit den echten Anleitungen: Admin sieht alle, Vorstand alle außer
-  `mitglied-loeschen`, Nur lesen genau `anmelden`, `mitglied-suchen`,
+- Rollen mit den echten Anleitungen: Admin sieht alle, Verwaltung und
+  Vorstand alle außer `mitglied-loeschen`, Nur lesen genau `anmelden`, `mitglied-suchen`,
   `barrierefrei-modus`, `geburtstagsliste`, `statistik`, `app-installieren`.
 
 ## 8. Die Anleitungen

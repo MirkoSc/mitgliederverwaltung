@@ -170,6 +170,46 @@ final class GesamtexportBlsvTest extends AppTestCase
         self::assertContains('Mitgliedsnummer', $kopf);
     }
 
+    /**
+     * "Nur lesen" exports too, but without bank details (bankdaten.sehen,
+     * 02 section 6): fee type, Zahlart and fee status stay, IBAN, BIC,
+     * Kontoinhaber and mandate are left out - in csv and in xlsx.
+     */
+    public function testGesamtexportReadOnlyGetsNoBankColumns(): void
+    {
+        $this->als(Rolle::Lesend);
+
+        $csv = $this->exportieren('alle-mitglieder', ['format' => 'csv']);
+        $kopf = self::csv($csv)[0];
+
+        foreach (['Beitragsart', 'Zahlart', 'Status Jahresbeitrag ' . date('Y')] as $spalte) {
+            self::assertContains($spalte, $kopf);
+        }
+        foreach (['IBAN', 'BIC', 'Kontoinhaber', 'Mandatsreferenz', 'Mandatsdatum'] as $spalte) {
+            self::assertNotContains($spalte, $kopf);
+        }
+        self::assertStringNotContainsString('DE02120300000000202051', $csv);
+        self::assertStringNotContainsString('202051', $csv);
+
+        $datei = tempnam(sys_get_temp_dir(), 'mv-alle-');
+        self::assertIsString($datei);
+        try {
+            file_put_contents($datei, $this->exportieren('alle-mitglieder', ['format' => 'xlsx', 'ehemalige' => '1']));
+            $zip = new \ZipArchive();
+            self::assertTrue($zip->open($datei, \ZipArchive::CHECKCONS));
+            $inhalt = '';
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $inhalt .= (string) $zip->getFromIndex($i);
+            }
+            self::assertStringContainsString('Zahlart', $inhalt);
+            self::assertStringNotContainsString('IBAN', $inhalt);
+            self::assertStringNotContainsString('Kontoinhaber', $inhalt);
+            self::assertStringNotContainsString('DE02120300000000202051', $inhalt);
+        } finally {
+            @unlink($datei);
+        }
+    }
+
     public function testGesamtexportCanIncludeFormerMembers(): void
     {
         $this->als(Rolle::Admin);

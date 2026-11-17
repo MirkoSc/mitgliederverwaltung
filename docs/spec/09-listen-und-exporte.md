@@ -58,8 +58,9 @@ optional eine Marke wie „rund"), Hinweisen über der Tabelle und optional eine
 `ListenNavigation` (Zurück/Vor durch Zeiträume), sowie `dateiname()` (ohne
 Personendaten). Seite, Sortierung, Blättern und Export sind für alle gleich
 (`ListenController`, `ListenAnsicht`, `ListenExport`). Was eine Rolle nicht
-sehen darf (Beitragsspalten), lässt `ergebnis()` anhand des Kontos weg –
-Ansicht und Export zeigen genau das, was es liefert.
+sehen darf (Beitragsspalten, Bankspalten, Hinweistexte zur
+Bankverbindung), lässt `ergebnis()` anhand des Kontos weg – Ansicht und
+Export (csv und xlsx) zeigen genau das, was es liefert.
 
 ## 2. Die Listen
 
@@ -68,10 +69,10 @@ Ansicht und Export zeigen genau das, was es liefert.
 | **Geburtstage** | Name, Geburtstag, neues Alter, Abteilungen; runde Geburtstage markiert | Zeitraum: Woche / Monat / Jahr (mit Vor/Zurück), „nur runde" | alle |
 | **Ehrungen** | Name, Eintrittsdatum, Jahre, Stufe, Abteilungen, geehrt am | Jahr, „nur offene" | alle |
 | **Funktionen** | Name, Funktion, Lizenznummer, Abteilungen, Kontakt | Funktion | alle |
-| **Selbst kassieren** | offene Jahresbeiträge mit Zahlart `selbst` oder ohne gültige IBAN: Name, Jahr, Betrag, Kontakt | Jahr | Admin, Nur lesen |
-| **Auffälligkeiten** | alle Hinweise aller Mitglieder (07 §6): Name, Hinweis | Art des Hinweises | alle |
+| **Selbst kassieren** | offene Jahresbeiträge mit Zahlart `selbst` oder ohne gültige IBAN: Name, Jahr, Betrag, Kontakt | Jahr | alle (`beitraege.sehen`) |
+| **Auffälligkeiten** | alle Hinweise aller Mitglieder (07 §6): Name, Hinweis | Art des Hinweises | alle (Hinweise zur Bankverbindung für Nur lesen nur als Kurzbezeichnung) |
 | **BLSV-Meldung** | §4 | Stichtag | alle |
-| **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | alle (Beitragsspalten nur Admin und Nur lesen) |
+| **Alle Mitglieder** | Gesamtexport §5 | Ehemalige einschließen | alle (Beitragsspalten mit `beitraege.sehen`, Bankspalten nur mit `bankdaten.sehen` – nicht Nur lesen) |
 
 ### Auffälligkeiten
 
@@ -150,9 +151,11 @@ Jahresbeitrags. Nachweis-Dateien und Versionen sind nicht enthalten (dafür
 gibt es das Backup).
 
 Umsetzung `AlleMitgliederListe`. Als **Beitragsspalten** (nur mit dem Recht
-`beitraege.sehen`, also alle drei Rollen) gelten Beitragsart, Zahlart, IBAN, BIC,
-Kontoinhaber, Mandatsreferenz, Mandatsdatum sowie Betrag und Status des
-Jahresbeitrags des laufenden Jahres.
+`beitraege.sehen`, also alle vier Rollen) gelten Beitragsart, Zahlart sowie
+Betrag und Status des Jahresbeitrags des laufenden Jahres. Die
+**Bankspalten** IBAN, BIC, Kontoinhaber, Mandatsreferenz, Mandatsdatum
+stehen dazwischen und brauchen zusätzlich `bankdaten.sehen` (Admin,
+Verwaltung, Vorstand): Nur lesen exportiert ohne sie (02 §6).
 
 ## 6. Datenmodell
 
@@ -176,7 +179,7 @@ offenen Tabellen. Farben: vier Tokens `--diagramm-1…4` in
 „Sonstige"), beim Wechsel hell/dunkel neu gezeichnet. Chart.js und das Skript
 lädt nur diese Seite.
 
-**Reiter „Mitglieder"** (`listen.sehen`, alle drei Rollen;
+**Reiter „Mitglieder"** (`listen.sehen`, alle vier Rollen;
 `App\Service\Statistik\Mitgliederstatistik`). Stichtag ist heute; gezählt
 werden die aktuellen Mitglieder – Ehemalige (`istEhemalig(heute)`) nirgends,
 außer bei den Austritten.
@@ -206,9 +209,11 @@ außer bei den Austritten.
   inzwischen ehemaliger Mitglieder; Austritte nur erreichte (ein vermerkter
   Austritt in der Zukunft zählt erst ab seinem Tag).
 
-**Reiter „Beiträge"** (`beitraege.verwalten`, nur Admin;
+**Reiter „Beiträge"** (`beitraege.auswerten`: Admin, Verwaltung und
+Vorstand, nicht Nur lesen – seit 17.11.2026, vorher nur Admin;
 `App\Service\Statistik\Beitragsstatistik`), Jahr wählbar wie auf der Seite
-„Beiträge". Grundlage wie 08 §2b: die erzeugten Jahresbeiträge des Jahres,
+„Beiträge". Der Knopf „Zu den Beiträgen <Jahr>" erscheint nur mit
+`beitraege.verwalten` (nicht für den Vorstand). Grundlage wie 08 §2b: die erzeugten Jahresbeiträge des Jahres,
 sonst die Hochrechnung. **Maßgeblich ist, ob für das Jahr ein Beitrag
 besteht bzw. entstünde** – wer zum 1. Januar schon ausgetreten war, taucht
 nicht auf; ein im Jahr ausgetretenes Mitglied mit erzeugtem Beitrag zählt
@@ -232,7 +237,9 @@ csv mit BOM, `;` und Feldern mit Semikolon/Anführungszeichen/Zeilenumbruch;
 xlsx öffnet sich (gültiges ZIP, Inhalt per Rücklesen geprüft), Datum als
 Datumszelle; BLSV-Export hat exakt die Spalten der Vorlage in der
 Reihenfolge; Vorstand und Nur lesen sehen „Selbst kassieren" und die
-Beitragsspalten, aber keine Knöpfe; jeder Export erzeugt einen Audit-Eintrag.
+Beitragsspalten, aber keine Knöpfe; Nur lesen bekommt in Ansicht, csv und
+xlsx keine Bankspalten und keine Bankdaten (`GesamtexportBlsvTest`,
+`NurLesenTest`); jeder Export erzeugt einen Audit-Eintrag.
 `/app/listen` liefert die Geburtstagsliste; Personen-Links zeigen auf die
 Listenseite mit `mitglied=<id>`, Sortieren und Filter behalten die Person,
 Speichern in der geöffneten Person bleibt auf der Liste, htmx tauscht nur
@@ -245,5 +252,6 @@ einschließlich (18 gehört zu 15–18, 17 ist unter 18), Alter am Stichtag;
 Ehemalige zählen nicht, Austritte je Jahr nur erreichte, Eintritte auch
 Ehemaliger; Top 10 + Sonstige; jede Beitragsauswertung ergibt die
 Gesamtsumme auf den Cent, Familienbeitrag geteilt, Zahlart nicht geteilt;
-alle Rollen sehen „Mitglieder", Vorstand und Nur lesen bekommen auf
-„Beiträge" 403; die alte Adresse leitet weiter; keine Namen auf den Seiten.
+alle Rollen sehen „Mitglieder", Admin, Verwaltung und Vorstand „Beiträge"
+(der Vorstand ohne Link auf die Seite „Beiträge"), Nur lesen bekommt dort
+403; die alte Adresse leitet weiter; keine Namen auf den Seiten.

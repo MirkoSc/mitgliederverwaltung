@@ -9,7 +9,7 @@ use App\Domain\Permission;
 use App\Repository\FunktionRepository;
 
 /**
- * Settings section Funktionen (docs/spec/07-mitglieder.md section 4): name, licence flag, order, active. The forms post to app/routes/stammdaten.php. Admin only.
+ * Settings section Funktionen (docs/spec/07-mitglieder.md section 4): name, licence flag, order, active. The forms post to app/routes/stammdaten.php. Admin and Verwaltung (admin.verein).
  */
 final readonly class FunktionenAbschnitt implements Abschnitt
 {
@@ -39,7 +39,7 @@ final readonly class FunktionenAbschnitt implements Abschnitt
 
     public function recht(): Permission
     {
-        return Permission::AdminEinstellungen;
+        return Permission::AdminVerein;
     }
 
     public function template(): string

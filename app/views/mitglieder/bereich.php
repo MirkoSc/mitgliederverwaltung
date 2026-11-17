@@ -20,6 +20,7 @@
  * @var \Closure $url
  * @var string $formUrl
  * @var string|null $csrf
+ * @var bool $mitBankdaten bankdaten.sehen: the search covers IBAN and Kontoinhaber (not "Nur lesen")
  */
 ?>
 <div class="geteilt<?= $ansicht->klasse() ?>" id="mitglieder-bereich">
@@ -42,7 +43,7 @@
                 <label for="suche-text">Mitglied suchen</label>
                 <input id="suche-text" name="text" type="search" value="<?= e($filter->text) ?>"
                        placeholder="z. B. Müller 1980" autocomplete="off" aria-describedby="suche-hilfe">
-                <p class="feld-hinweis" id="suche-hilfe">Sucht in Name, Mitgliedsnummer, Anschrift, E-Mail, Telefon, Kontoinhaber, IBAN, Geburtsdatum und Bemerkung. Jedes Wort muss passen, die Reihenfolge ist egal, zum Beispiel „Hauptstr 12 Musterort“ oder „Anna 01.02.1980“.</p>
+                <p class="feld-hinweis" id="suche-hilfe">Sucht in Name, Mitgliedsnummer, Anschrift, E-Mail, Telefon, <?= ($mitBankdaten ?? false) ? 'Kontoinhaber, IBAN, ' : '' ?>Geburtsdatum und Bemerkung. Jedes Wort muss passen, die Reihenfolge ist egal, zum Beispiel „Hauptstr 12 Musterort“ oder „Anna 01.02.1980“.</p>
             </div>
             <div class="filter">
                 <div class="feld">
@@ -118,7 +119,9 @@
                     <?= $textfeld('ort', 'Ort', $e->ort) ?>
                     <?= $textfeld('email', 'E-Mail', $e->email) ?>
                     <?= $textfeld('telefon', 'Telefon oder Handy', $e->telefon) ?>
-                    <?= $textfeld('iban', 'IBAN', $e->iban) ?>
+                    <?php if ($mitBankdaten ?? false): ?>
+                        <?= $textfeld('iban', 'IBAN', $e->iban) ?>
+                    <?php endif; ?>
                     <?= $textfeld('bemerkung', 'Bemerkung', $e->bemerkung) ?>
                     <?= $textfeld('mitgliedsnummer', 'Mitgliedsnummer (genau)', (string) ($e->mitgliedsnummer ?? ''), 'number') ?>
                     <?= $auswahl('geschlecht', 'Geschlecht', $e->geschlecht, [

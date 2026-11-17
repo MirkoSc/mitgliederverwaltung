@@ -19,9 +19,12 @@ use App\Support\Laender;
 /**
  * "Alle Mitglieder" (docs/spec/09-listen-und-exporte.md section 5): one row
  * per member with every field of 07 section 1 in readable form, for a later
- * move to other software. The fee columns (fee type, payment, bank data,
- * mandate, annual fee of the current year) are only for accounts that may
- * read fee data (beitraege.sehen, today every role).
+ * move to other software. The fee columns (fee type, payment, annual fee
+ * of the current year) are only for accounts that may read fee data
+ * (beitraege.sehen, today every role); the bank columns (IBAN, BIC,
+ * Kontoinhaber, mandate) only for accounts that may also see bank details
+ * (bankdaten.sehen - not "Nur lesen", 02 section 6). The export is built
+ * from these columns, so it leaves out the same.
  */
 final class AlleMitgliederListe implements Liste
 {
@@ -69,6 +72,7 @@ final class AlleMitgliederListe implements Liste
     {
         $pdo = $this->dienste->pdo();
         $mitBeitrag = $konto->darf(Permission::BeitraegeSehen);
+        $mitBank = $mitBeitrag && $konto->darf(Permission::BankdatenSehen);
         $jahr = (int) new \DateTimeImmutable('today')->format('Y');
 
         $spalten = [
@@ -97,15 +101,19 @@ final class AlleMitgliederListe implements Liste
             Spalte::text('bemerkung', 'Bemerkung'),
         ];
         if ($mitBeitrag) {
+            array_push($spalten, Spalte::text('beitragsart', 'Beitragsart'), Spalte::text('zahlart', 'Zahlart'));
+            if ($mitBank) {
+                array_push(
+                    $spalten,
+                    Spalte::text('iban', 'IBAN'),
+                    Spalte::text('bic', 'BIC'),
+                    Spalte::text('kontoinhaber', 'Kontoinhaber'),
+                    Spalte::text('mandatsreferenz', 'Mandatsreferenz'),
+                    Spalte::datum('mandatsdatum', 'Mandatsdatum'),
+                );
+            }
             array_push(
                 $spalten,
-                Spalte::text('beitragsart', 'Beitragsart'),
-                Spalte::text('zahlart', 'Zahlart'),
-                Spalte::text('iban', 'IBAN'),
-                Spalte::text('bic', 'BIC'),
-                Spalte::text('kontoinhaber', 'Kontoinhaber'),
-                Spalte::text('mandatsreferenz', 'Mandatsreferenz'),
-                Spalte::datum('mandatsdatum', 'Mandatsdatum'),
                 Spalte::geld('beitrag_betrag', 'Jahresbeitrag ' . $jahr),
                 Spalte::text('beitrag_status', 'Status Jahresbeitrag ' . $jahr),
             );
@@ -163,11 +171,17 @@ final class AlleMitgliederListe implements Liste
                 $werte += [
                     'beitragsart' => $m->beitragsartId !== null ? ($arten[$m->beitragsartId] ?? '') : '',
                     'zahlart' => $m->zahlart->bezeichnung(),
-                    'iban' => $m->iban,
-                    'bic' => $m->bic,
-                    'kontoinhaber' => $m->kontoinhaber,
-                    'mandatsreferenz' => $m->mandatsreferenz,
-                    'mandatsdatum' => $m->mandatsdatum,
+                ];
+                if ($mitBank) {
+                    $werte += [
+                        'iban' => $m->iban,
+                        'bic' => $m->bic,
+                        'kontoinhaber' => $m->kontoinhaber,
+                        'mandatsreferenz' => $m->mandatsreferenz,
+                        'mandatsdatum' => $m->mandatsdatum,
+                    ];
+                }
+                $werte += [
                     'beitrag_betrag' => $beitrag?->betragCent,
                     'beitrag_status' => $beitrag?->status->bezeichnung() ?? '',
                 ];

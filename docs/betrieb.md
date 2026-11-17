@@ -214,15 +214,24 @@ Hinweise:
 
 ## 6. Benutzer und Anmeldung
 
-**Drei feste Rollen** (kein Rollen-Editor):
+**Vier feste Rollen** (kein Rollen-Editor):
 
 - **Admin**: alles, inkl. Einstellungen, Benutzer, Backup, Update,
   Audit-Log.
+- **Verwaltung**: alles wie der Vorstand, dazu Beiträge und Einzug samt
+  Lastschriftdatei und die Vereinseinstellungen (Vereinsdaten mit
+  Bankverbindung, Gläubiger-ID und Logo, Abteilungen, Beitragsarten,
+  Funktionen, runde Geburtstage, Ehrungsstufen). Kein endgültiges Löschen
+  von Mitgliedern, kein Import, keine Benutzer, keine Mail-Einstellungen,
+  keine Rechtstexte, kein System (Update, Backup, Systemcheck, Audit-Log).
 - **Vorstand**: Mitglieder suchen, ansehen, anlegen und bearbeiten;
-  Listen und Exporte. Keine Beiträge, kein Einzug, kein Adminbereich.
+  Listen und Exporte; Statistik der Beiträge. Keine Seite „Beiträge", kein
+  Einzug, kein Adminbereich.
 - **Nur lesen**: Mitglieder, Familien, Nachweise und Listen ansehen und
-  exportieren, dazu sehen, ob ein Mitglied bezahlt hat. Ändert nichts,
-  keine Seite „Beiträge", kein Einzug, kein Adminbereich.
+  exportieren, dazu sehen, ob ein Mitglied bezahlt hat. Keine
+  Bankverbindungen der Mitglieder (auch nicht in Suche und Exporten),
+  keine Statistik der Beiträge. Ändert nichts, keine Seite „Beiträge", kein
+  Einzug, kein Adminbereich.
 
 **Benutzer einladen** (Einstellungen → Benutzer):
 

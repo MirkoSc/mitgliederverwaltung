@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
  * Built from the real route files under app/routes/ with the real login
  * guard and CSRF check (App\Anwendung) - only the handlers are replaced by
  * a stand-in that says "reached". Every route is called as anonymous
- * visitor and as each of the three roles.
+ * visitor and as each of the four roles.
  *
  * Every declaration is listed in tests/Http/routen-zugriff/, one file per
  * route file: a new route, a removed one or a changed declaration fails
@@ -242,6 +242,44 @@ final class RoutenZugriffTest extends TestCase
         self::assertGreaterThan(10, $gesehen, 'the admin routes were found');
     }
 
+    /**
+     * "Verwaltung" reaches the settings page and the forms of its business
+     * sections (admin.verein) under /admin - and nothing else there: no
+     * mail, legal texts, users, import, system, update, backup, audit log
+     * or design system (02 section 6).
+     */
+    public function testVerwaltungReachesOnlyTheBusinessSettingsUnderAdmin(): void
+    {
+        $router = $this->router();
+        $erreicht = [];
+        $this->anmelden(Rolle::Verwaltung);
+        foreach ($router->routes() as $route) {
+            if ($route->pattern !== '/admin' && !str_starts_with($route->pattern, '/admin/')) {
+                continue;
+            }
+            $antwort = $this->aufrufen($router, $route->method, self::beispielPfad($route->pattern));
+            $darf = $route->zugriff->recht === Permission::AdminVerein;
+            self::assertSame($darf ? 200 : 403, $antwort->status, $route->method->value . ' ' . $route->pattern);
+            if ($darf) {
+                $erreicht[] = $route->method->value . ' ' . $route->pattern;
+            }
+        }
+
+        sort($erreicht);
+        self::assertSame([
+            'GET /admin',
+            'POST /admin/abteilungen',
+            'POST /admin/beitragsarten',
+            'POST /admin/ehrungsstufen',
+            'POST /admin/funktionen',
+            'POST /admin/geburtstage',
+            'POST /admin/verein',
+            'POST /admin/verein/logo',
+            'POST /admin/verein/logo/entfernen',
+            'POST /admin/verein/verbaende',
+        ], $erreicht);
+    }
+
     public function testEveryAppRouteNeedsALogin(): void
     {
         foreach ($this->router()->routes() as $route) {
@@ -284,6 +322,27 @@ final class RoutenZugriffTest extends TestCase
             [Rolle::Lesend, HttpMethod::Post, '/app/beitraege/einzug', false],
             [Rolle::Lesend, HttpMethod::Get, '/app/beitraege/einzuege/7/datei', false],
             [Rolle::Lesend, HttpMethod::Get, '/admin', false],
+            [Rolle::Lesend, HttpMethod::Get, '/app/statistik/beitraege', false],
+            // Fee statistics: Admin, Verwaltung and Vorstand.
+            [Rolle::Vorstand, HttpMethod::Get, '/app/statistik/beitraege', true],
+            [Rolle::Admin, HttpMethod::Get, '/app/statistik/beitraege', true],
+            // "Verwaltung": fees and direct debit, business settings; no
+            // deleting, import, users, mail, legal texts or system.
+            [Rolle::Verwaltung, HttpMethod::Get, '/app/statistik/beitraege', true],
+            [Rolle::Verwaltung, HttpMethod::Get, '/app/beitraege', true],
+            [Rolle::Verwaltung, HttpMethod::Post, '/app/beitraege/einzug', true],
+            [Rolle::Verwaltung, HttpMethod::Get, '/app/beitraege/einzuege/7/datei', true],
+            [Rolle::Verwaltung, HttpMethod::Post, '/app/mitglieder/7', true],
+            [Rolle::Verwaltung, HttpMethod::Post, '/app/mitglieder/7/austritt', true],
+            [Rolle::Verwaltung, HttpMethod::Post, '/app/listen/alle-mitglieder/export', true],
+            [Rolle::Verwaltung, HttpMethod::Get, '/admin', true],
+            [Rolle::Verwaltung, HttpMethod::Post, '/admin/verein', true],
+            [Rolle::Verwaltung, HttpMethod::Post, '/admin/beitragsarten', true],
+            [Rolle::Verwaltung, HttpMethod::Post, '/app/mitglieder/7/loeschen', false],
+            [Rolle::Verwaltung, HttpMethod::Post, '/admin/mail', false],
+            [Rolle::Verwaltung, HttpMethod::Post, '/admin/rechtstexte/impressum', false],
+            [Rolle::Verwaltung, HttpMethod::Get, '/admin/audit', false],
+            [Rolle::Verwaltung, HttpMethod::Get, '/admin/designsystem', false],
         ];
 
         foreach ($faelle as [$rolle, $methode, $pfad, $erwartet]) {

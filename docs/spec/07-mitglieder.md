@@ -387,13 +387,17 @@ SQL.
     `01.02.1980`, `1980-02-01`, `1.2.80`), vergleicht exakt; zwei Ziffern
     für das Jahr zählen zum laufenden Jahrhundert, außer das läge in der
     Zukunft. Eine vierstellige Zahl passt zusätzlich auf das Geburtsjahr.
-  Die Suche ist mit allen Filtern kombinierbar.
+  Die Suche ist mit allen Filtern kombinierbar. Ohne `bankdaten.sehen`
+  (Nur lesen, 02 §6) vergleicht sie weder mit Kontoinhaber noch mit der
+  IBAN, und die Beschreibung unter dem Suchfeld nennt beide nicht – ein
+  Treffer verriete ein Stück davon.
 - **Erweiterte Suche** (#127): aufklappbar unter den Filtern (`<details>`,
   offen, sobald ein Feld gefüllt ist), ein Feld je Spalte, **alle
   Bedingungen UND**, zusätzlich zum Suchfeld. Textfelder „enthält", ohne
   Groß-/Kleinschreibung (`LIKE`, `%`/`_` maskiert): Nachname, Vorname,
   Straße, PLZ, Ort, E-Mail, Telefon (Telefon **oder** Handy), IBAN (ohne
-  Leerzeichen verglichen), Bemerkung; Mitgliedsnummer **exakt**. Auswahl:
+  Leerzeichen verglichen; nur mit `bankdaten.sehen`, sonst weder Feld
+  noch Bedingung), Bemerkung; Mitgliedsnummer **exakt**. Auswahl:
   Geschlecht (m/w/d/ohne Angabe), Funktion, Zahlart, Familie (in einer
   Familie / ohne Familie / Rolle Zahler, Elternteil, Kind); dazu die
   vorhandenen Filter Abteilung, Beitragsart, aktiv/passiv. Bereiche (von
@@ -453,20 +457,27 @@ Umsetzung (#15, gemeinsame API für alle späteren Issues):
 
 ## 9. Rechte
 
-| Aktion | Admin | Vorstand | Nur lesen |
-|---|:-:|:-:|:-:|
-| Mitglieder suchen, ansehen, Verlauf, Familie und Nachweise ansehen/herunterladen | ✓ | ✓ | ✓ |
-| Mitglieder anlegen, bearbeiten, Version zurückholen | ✓ | ✓ | – |
-| Nachweis vermerken/bearbeiten | ✓ | ✓ | – |
-| Nachweis löschen, Mitglied löschen | ✓ | – | – |
-| Familien pflegen | ✓ | ✓ | – |
-| Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106), Punkt von Hand setzen/verschieben/entfernen (#108) | ✓ | ✓ | – |
-| Reiter „Beiträge" (lesen) | ✓ | – | ✓ |
+| Aktion | Admin | Verwaltung | Vorstand | Nur lesen |
+|---|:-:|:-:|:-:|:-:|
+| Mitglieder suchen, ansehen, Verlauf, Familie und Nachweise ansehen/herunterladen | ✓ | ✓ | ✓ | ✓ |
+| Bankdaten ansehen: IBAN, BIC, Bank, Kontoinhaber, Mandatsreferenz, Mandatsdatum (Reiter „Daten", Verlauf, Suche, Hinweistexte) | ✓ | ✓ | ✓ | – |
+| Mitglieder anlegen, bearbeiten (auch aktiv/passiv, Austritt), Version zurückholen | ✓ | ✓ | ✓ | – |
+| Nachweis vermerken/bearbeiten | ✓ | ✓ | ✓ | – |
+| Nachweis löschen, Mitglied löschen | ✓ | – | – | – |
+| Familien pflegen | ✓ | ✓ | ✓ | – |
+| Wohnort auf der Karte: „Jetzt suchen", Such-Anschrift angeben/entfernen (#106), Punkt von Hand setzen/verschieben/entfernen (#108) | ✓ | ✓ | ✓ | – |
+| Reiter „Beiträge" (lesen) | ✓ | ✓ | ✓ | ✓ |
 
 „Nur lesen“ (#87) sieht den Reiter „Daten“ als reine Ansicht
 (`mitglied/daten-lesen.php`: die Gruppen des Formulars als Angaben, leere
 Felder weggelassen) statt als Formular; die übrigen Reiter blenden ihre
-Formulare über dieselben Rechte aus wie beim Vorstand das Löschen.
+Formulare über dieselben Rechte aus wie beim Vorstand das Löschen. Ohne
+`bankdaten.sehen` fehlen in der Gruppe „Beitrag" IBAN, BIC, Bank,
+Kontoinhaber, Mandatsreferenz und Mandatsdatum (Beitragsart und Zahlart
+bleiben), der Verlauf führt geänderte Bankfelder nicht auf
+(`VerlaufAenderungen::BANKDATEN`), und die beiden Hinweise zur
+Bankverbindung (§6) zeigen nur ihre Kurzbezeichnung, weil der Text die
+zur Bankleitzahl passende BIC nennt (`Hinweis::ohneBankdaten()`).
 
 ## Pflicht-Tests
 

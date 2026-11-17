@@ -11,7 +11,8 @@ use App\Http\Zugriff;
 
 /**
  * The forms of the settings section Mail (App\Admin\Einstellungen\
- * MailAbschnitt): save the settings, send a test mail. Admin only.
+ * MailAbschnitt): save the settings, send a test mail. Admin only
+ * (admin.einstellungen; not the role "Verwaltung").
  */
 return static function (Routen $routen): void {
     $routen->post('/admin/mail', Zugriff::recht(Permission::AdminEinstellungen), static fn(Request $r): Response => MailController::aus($routen->dienste())->speichern($r));
