@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Domain\Konto;
+use App\Domain\Rolle;
 use App\View\Area;
 use App\View\Navigation;
 use App\View\View;
@@ -52,6 +53,8 @@ final readonly class LoginGuard
         private Session $session,
         private View $view,
         private Kontoquelle $konten,
+        /** @var (\Closure(): bool)|null whether shared/maintenance.flag is set */
+        private ?\Closure $wartungAktiv = null,
     ) {
     }
 
@@ -119,7 +122,34 @@ final readonly class LoginGuard
             return $this->verweigern($zugriff->api);
         }
 
+        // The release shim lets every /admin request through while the
+        // maintenance flag is set - the update step chain runs there. Since
+        // the role Verwaltung holds a right below /admin, only the admin may
+        // pass during an update; nobody else writes to a half-migrated schema
+        // (docs/spec/04-installation-und-update.md section 4).
+        if (
+            $konto->rolle !== Rolle::Admin
+            && str_starts_with($request->path, '/admin')
+            && $this->wartungAktiv !== null
+            && ($this->wartungAktiv)()
+        ) {
+            return $this->wartung($zugriff->api);
+        }
+
         return null;
+    }
+
+    private function wartung(bool $api): ResponseInterface
+    {
+        $meldung = 'Die Mitgliederverwaltung wird gerade aktualisiert. Bitte in einer Minute erneut laden.';
+        if ($api) {
+            return Response::json(['fehler' => $meldung], 503);
+        }
+
+        return Response::html($this->view->render('fehler', [
+            'title' => 'Kurze Wartungspause',
+            'meldung' => $meldung,
+        ], Area::App), 503);
     }
 
     private function darf(Konto $konto, Zugriff $zugriff): bool

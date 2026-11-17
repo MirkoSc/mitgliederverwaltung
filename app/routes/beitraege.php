@@ -14,7 +14,7 @@ use App\View\Navigation;
 /**
  * The page "Beiträge" and the page of one annual fee
  * (docs/spec/08-beitraege.md section 2, issue #29), and the fee
- * distribution of a year (section 2b). Admin only: every
+ * distribution of a year (section 2b). Admin and Verwaltung only: every
  * route declares BeitraegeVerwalten, so the Vorstand gets 403 on each.
  */
 return static function (Routen $routen): void {
@@ -24,7 +24,7 @@ return static function (Routen $routen): void {
 
     $routen->get(Navigation::BEITRAEGE, $zugriff, static fn(Request $r): Response => $controller()->seite($r));
     // Moved to the page "Statistik" (09 section 7): old bookmarks redirect.
-    $routen->get(BeitraegeController::PFAD_VERTEILUNG, $zugriff, static fn(Request $r): Response => StatistikController::aus($routen->dienste())->alteVerteilung($r));
+    $routen->get(BeitraegeController::PFAD_VERTEILUNG, Zugriff::recht(Permission::BeitraegeAuswerten), static fn(Request $r): Response => StatistikController::aus($routen->dienste())->alteVerteilung($r));
     $routen->post(Navigation::BEITRAEGE . '/erzeugen', $zugriff, static fn(Request $r): Response => $controller()->erzeugen($r));
     $routen->get($beitrag, $zugriff, static fn(Request $r, array $p): Response => $controller()->beitrag($r, $p));
     $routen->post($beitrag . '/betrag', $zugriff, static fn(Request $r, array $p): Response => $controller()->betrag($r, $p));

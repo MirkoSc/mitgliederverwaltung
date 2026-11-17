@@ -56,7 +56,7 @@
                 <input type="hidden" name="_csrf" value="<?= e($csrf ?? '') ?>">
                 <div class="feld">
                     <label for="familie-neu-name">Neue Familie</label>
-                    <input type="text" id="familie-neu-name" name="name" maxlength="200" placeholder="z. B. Familie Muster" required>
+                    <input type="text" id="familie-neu-name" name="name" maxlength="200" placeholder="z. B. Muster" required>
                 </div>
                 <button type="submit" class="knopf">Familie anlegen</button>
             </form>

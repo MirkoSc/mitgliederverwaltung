@@ -42,7 +42,7 @@ final readonly class MitgliederListeRepository
     /** Shortest word compared with the IBAN: a piece of two characters would hit nearly every IBAN. */
     private const int IBAN_MINDESTLAENGE = 4;
 
-    public function __construct(private \PDO $pdo, private bool $mitBankdaten = true)
+    public function __construct(private \PDO $pdo, private bool $mitBankdaten)
     {
     }
 

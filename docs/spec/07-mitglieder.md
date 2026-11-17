@@ -198,7 +198,7 @@ Mitglieder, sonst deaktivieren.
 
 ## 3. Familien
 
-- Familie = Name (z. B. „Familie Muster") + Mitglieder mit Rolle.
+- Familie = Name (der Nachname, z. B. „Muster") + Mitglieder mit Rolle.
 - Gepflegt im Mitglied: „Familie wählen" (Suche) oder „neue Familie",
   Rolle wählen. Die Familie zeigt im Mitglied ihre übrigen Personen.
 - Eine Familie, aus der die letzte Person geht, wird automatisch gelöscht.
@@ -209,7 +209,7 @@ Mitglieder, sonst deaktivieren.
   Familie, Rolle und die übrigen Personen (mit Link). „Familie wählen oder
   anlegen" führt zu `GET /app/mitglieder/{id}/familie`; gesucht wird per
   `POST` auf dieselbe Adresse, der Name steht nie in der URL (#37) (Suche nach Name,
-  Beitreten mit Rolle, „Neue Familie" mit Vorschlag „Familie <Nachname>");
+  Beitreten mit Rolle, „Neue Familie" mit Vorschlag „<Nachname>", wie beim Import, 10 §1);
   dazu `POST …/familie/{beitreten,neu,rolle,umbenennen,verlassen}`
   (`App\App\FamilieController`, `app/routes/familie.php`, Recht
   `mitglieder.bearbeiten`, also Admin und Vorstand). Jede Änderung ist ein
