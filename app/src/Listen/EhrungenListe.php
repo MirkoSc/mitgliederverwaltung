@@ -17,7 +17,8 @@ use App\Support\Datum;
  * 2): a member is listed in year J when `J - year of joining` is one of the
  * honour levels (setting `ehrungsstufen`). Breaks do not count; a member
  * without a known joining date is not listed (a count is shown instead).
- * "geehrt" is noted per member and level and can be taken back.
+ * "geehrt" is noted per member and level and can be taken back. The export
+ * also carries address and contact (for a letter or a call).
  */
 final readonly class EhrungenListe implements Liste
 {
@@ -113,6 +114,7 @@ final readonly class EhrungenListe implements Liste
                     'stufe' => $jahre . ' Jahre',
                     'abteilungen' => implode(', ', $m['abteilungen']),
                     'geehrt_am' => $vermerk?->geehrtAm,
+                    ...$m['kontakt'],
                 ],
                 $m['id'],
                 null,
@@ -143,6 +145,7 @@ final readonly class EhrungenListe implements Liste
                 Spalte::text('stufe', 'Stufe'),
                 Spalte::text('abteilungen', 'Abteilungen', true),
                 Spalte::datum('geehrt_am', 'Geehrt am'),
+                ...KontaktSpalten::spalten(),
             ],
             $zeilen,
             $hinweise,
@@ -167,7 +170,7 @@ final readonly class EhrungenListe implements Liste
      * before it began (they may have left during it).
      *
      * @param list<int> $stufen
-     * @return list<array{id: int, nachname: string, vorname: string, eintritt: string, abteilungen: list<string>}>
+     * @return list<array{id: int, nachname: string, vorname: string, eintritt: string, abteilungen: list<string>, kontakt: array<string, string>}>
      */
     private function mitglieder(int $jahr, array $stufen): array
     {
@@ -177,7 +180,7 @@ final readonly class EhrungenListe implements Liste
         $eintrittsjahre = array_map(static fn(int $s): int => $jahr - $s, $stufen);
         [$nichtAusgetreten, $tag] = self::nichtVorJahresbeginnAusgetreten($jahr);
         $stmt = ($this->pdo)()->prepare(sprintf(
-            'SELECT m.id, m.nachname, m.vorname, m.eintrittsdatum FROM mitglied m
+            'SELECT m.id, m.nachname, m.vorname, m.eintrittsdatum, ' . KontaktSpalten::SQL . ' FROM mitglied m
              WHERE m.eintrittsdatum IS NOT NULL AND YEAR(m.eintrittsdatum) IN (%s)
                AND ' . $nichtAusgetreten . '
              ORDER BY m.nachname, m.vorname, m.mitgliedsnummer',
@@ -207,6 +210,7 @@ final readonly class EhrungenListe implements Liste
             'vorname' => (string) $z['vorname'],
             'eintritt' => (string) $z['eintrittsdatum'],
             'abteilungen' => $namen[(int) $z['id']] ?? [],
+            'kontakt' => KontaktSpalten::werte($z),
         ], $zeilen);
     }
 

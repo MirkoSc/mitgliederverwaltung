@@ -24,4 +24,15 @@ final readonly class ListenErgebnis
             throw new \InvalidArgumentException('A list needs at least one column, and column keys must be unique.');
         }
     }
+
+    /**
+     * The columns of the view: all but those for the export only. The export
+     * takes $spalten.
+     *
+     * @return list<Spalte>
+     */
+    public function ansichtSpalten(): array
+    {
+        return array_values(array_filter($this->spalten, static fn(Spalte $s): bool => !$s->nurExport));
+    }
 }
