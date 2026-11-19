@@ -87,7 +87,12 @@ enum Permission: string
     /** Initial import and later reconciliation (10). */
     case AdminImport = 'admin.import';
 
-    /** Update, backup and restore, system check, integrity check, maintenance (04). */
+    /**
+     * Update, backup and restore, system check, integrity check, maintenance
+     * (04) - and the export and import of the club data as one file for a
+     * new installation (11 section 5): the Verwaltung edits the club data
+     * but does not move it between installations.
+     */
     case AdminSystem = 'admin.system';
 
     /** The audit log (02 section 8). */

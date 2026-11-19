@@ -13,7 +13,8 @@ use App\Http\Zugriff;
 
 /**
  * The forms of the settings section Verein (App\Admin\Einstellungen\
- * VereinAbschnitt; admin.verein: Admin and Verwaltung) and the logo route, which is public: the
+ * VereinAbschnitt; admin.verein: Admin and Verwaltung), the export and import
+ * of the club data (admin.system: Admin only) and the logo route, which is public: the
  * login page and the favicon show the logo (docs/spec/11-vereinsdaten.md).
  */
 return static function (Routen $routen): void {
@@ -23,6 +24,11 @@ return static function (Routen $routen): void {
     $routen->post('/admin/verein/verbaende', $admin, static fn(Request $r): Response => VereinController::aus($routen->dienste())->verbaende($r));
     $routen->post('/admin/verein/logo', $admin, static fn(Request $r): Response => VereinController::aus($routen->dienste())->logoHochladen($r));
     $routen->post('/admin/verein/logo/entfernen', $admin, static fn(Request $r): Response => VereinController::aus($routen->dienste())->logoEntfernen($r));
+
+    // Moving the club data to another installation: admin only (admin.system), not the Verwaltung.
+    $system = Zugriff::recht(Permission::AdminSystem);
+    $routen->get('/admin/verein/export', $system, static fn(Request $r): Response => VereinController::aus($routen->dienste())->exportieren($r));
+    $routen->post('/admin/verein/import', $system, static fn(Request $r): Response => VereinController::aus($routen->dienste())->importieren($r));
 
     $routen->get('/logo/{groesse}', Zugriff::oeffentlich(), static fn(Request $r, array $params): ResponseInterface
         => new LogoController($routen->dienste())->anzeigen($params['groesse'] ?? '', $r->feld('v') !== ''));

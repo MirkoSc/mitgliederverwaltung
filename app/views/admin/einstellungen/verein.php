@@ -8,6 +8,7 @@
  * @var array<string, string> $felder key => label
  * @var list<\App\Domain\Verband> $verbaende
  * @var int|null $logoVersion upload time of the logo, null without one
+ * @var bool $austauschen export and import of the club data (admin only)
  * @var string $csrf
  */
 
@@ -108,3 +109,19 @@ $hinweise = [
         </form>
     <?php endif; ?>
 </div>
+
+<?php if ($austauschen): ?>
+    <h3>Vereinsdaten übertragen</h3>
+    <p class="feld-hinweis">Für eine neue Installation: Die Vereinsdaten mit Verbänden und Logo werden als eine Datei heruntergeladen und dort wieder eingespielt. Die Datei enthält weder Mitglieder noch Zugangsdaten, aber die Bankverbindung des Vereins – bitte nicht weitergeben.</p>
+    <p><a class="knopf" href="/admin/verein/export">Vereinsdaten exportieren</a></p>
+    <form method="post" action="/admin/verein/import" enctype="multipart/form-data" class="formular formular-import">
+        <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
+        <div class="feld">
+            <label for="verein-import-datei">Datei mit Vereinsdaten</label>
+            <input id="verein-import-datei" name="datei" type="file" accept=".json,application/json" required aria-describedby="verein-import-hinweis">
+            <p id="verein-import-hinweis" class="feld-hinweis">Eine .json-Datei, höchstens 10 MB. Passt sie nicht, bleibt alles unverändert.</p>
+        </div>
+        <label class="feld-haken"><input type="checkbox" name="ersetzen" value="1" required> Die vorhandenen Vereinsdaten werden vollständig ersetzt.</label>
+        <button type="submit" class="knopf knopf-haupt">Vereinsdaten importieren</button>
+    </form>
+<?php endif; ?>

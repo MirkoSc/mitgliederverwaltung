@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Admin;
 
 use App\Dienste;
+use App\Domain\AuditAktion;
 use App\Http\Request;
 use App\Http\Response;
 use App\Service\Verein\LogoException;
 use App\Service\Verein\LogoService;
 use App\Service\Verein\VereinRepository;
+use App\Service\Verein\VereinsdatenAustausch;
+use App\Service\Verein\VereinsdatenImportException;
 use App\Service\Verein\Vereinsdaten;
 use App\View\FlashArt;
 
@@ -27,12 +30,13 @@ final readonly class VereinController
         private Dienste $dienste,
         private VereinRepository $verein,
         private LogoService $logo,
+        private VereinsdatenAustausch $austausch,
     ) {
     }
 
     public static function aus(Dienste $dienste): self
     {
-        return new self($dienste, VereinRepository::aus($dienste), LogoService::aus($dienste));
+        return new self($dienste, VereinRepository::aus($dienste), LogoService::aus($dienste), VereinsdatenAustausch::aus($dienste));
     }
 
     public function speichern(Request $request): Response
@@ -112,6 +116,58 @@ final readonly class VereinController
     {
         $this->logo->entfernen();
         $this->dienste->session->flash('Das Logo ist entfernt.');
+
+        return Response::redirect(self::ZIEL);
+    }
+
+    /** Download of the club data as one JSON file (11 section 5); made now, never stored. */
+    public function exportieren(Request $request): Response
+    {
+        $jetzt = new \DateTimeImmutable();
+        $inhalt = $this->austausch->exportieren($jetzt);
+        $this->dienste->audit()->protokollieren(AuditAktion::VereinExportiert, $this->dienste->session->userId(), ip: $request->ip);
+
+        return new Response(200, [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $this->austausch->dateiname($jetzt) . '"',
+            'Cache-Control' => 'no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ], $inhalt);
+    }
+
+    /** Replaces the club data, associations and logo by the uploaded file (11 section 5). */
+    public function importieren(Request $request): Response
+    {
+        $datei = $request->files['datei'] ?? null;
+        $fehler = is_array($datei) && is_int($datei['error'] ?? null) ? $datei['error'] : UPLOAD_ERR_NO_FILE;
+        $pfad = is_array($datei) && is_string($datei['tmp_name'] ?? null) ? $datei['tmp_name'] : '';
+        $name = is_array($datei) && is_string($datei['name'] ?? null) ? $datei['name'] : '';
+
+        try {
+            match (true) {
+                $request->feld('ersetzen') !== '1' => throw new VereinsdatenImportException('Bitte bestätigen, dass die vorhandenen Vereinsdaten vollständig ersetzt werden. Es wurde nichts geändert.'),
+                $fehler === UPLOAD_ERR_NO_FILE => throw new VereinsdatenImportException('Bitte eine Datei auswählen.'),
+                $fehler === UPLOAD_ERR_INI_SIZE, $fehler === UPLOAD_ERR_FORM_SIZE => throw new VereinsdatenImportException('Die Datei ist zu groß (höchstens 10 MB).'),
+                $fehler !== UPLOAD_ERR_OK => throw new VereinsdatenImportException('Die Datei konnte nicht hochgeladen werden.'),
+                !str_ends_with(strtolower($name), '.json') => throw new VereinsdatenImportException('Bitte eine Datei mit der Endung .json wählen.'),
+                default => null,
+            };
+            $inhalt = is_file($pfad) && filesize($pfad) <= VereinsdatenAustausch::MAX_BYTES ? file_get_contents($pfad) : false;
+            if ($inhalt === false) {
+                throw new VereinsdatenImportException('Die Datei konnte nicht gelesen werden oder ist zu groß (höchstens 10 MB).');
+            }
+            $hinweise = $this->austausch->importieren($inhalt);
+        } catch (VereinsdatenImportException $e) {
+            $this->dienste->session->flash($e->getMessage(), FlashArt::Fehler);
+
+            return Response::redirect(self::ZIEL);
+        }
+        $this->dienste->audit()->protokollieren(AuditAktion::VereinImportiert, $this->dienste->session->userId(), ip: $request->ip);
+        if ($hinweise === []) {
+            $this->dienste->session->flash('Die Vereinsdaten sind importiert.');
+        } else {
+            $this->dienste->session->flash('Die Vereinsdaten sind importiert. Bitte prüfen: ' . implode(' ', $hinweise), FlashArt::Warnung);
+        }
 
         return Response::redirect(self::ZIEL);
     }

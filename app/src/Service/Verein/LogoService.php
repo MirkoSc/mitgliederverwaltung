@@ -154,22 +154,114 @@ final readonly class LogoService
             throw new LogoException('Das Bild ist beschädigt und konnte nicht gelesen werden.');
         }
 
+        $png = [];
+        foreach (self::GROESSEN as $name => [$breite, $hoehe, $quadrat, $hintergrund, $rand]) {
+            $png[$name] = $this->ableiten($quelle, $breite, $hoehe, $quadrat, $hintergrund, $rand);
+        }
+        $this->schreiben($png);
+    }
+
+    /**
+     * The derived images as they lie on disk, size name => PNG bytes; empty
+     * without a logo. For the export of the club data (11 section 5).
+     *
+     * @return array<string, string>
+     */
+    public function alsBytes(): array
+    {
+        $bytes = [];
+        foreach (array_keys(self::GROESSEN) as $name) {
+            $pfad = $this->datei($name);
+            $inhalt = $pfad === null ? false : file_get_contents($pfad);
+            if ($inhalt !== false) {
+                $bytes[$name] = $inhalt;
+            }
+        }
+
+        return $bytes;
+    }
+
+    /**
+     * Checks the logo of a club data file (size name => Base64 PNG) without
+     * changing anything: every size must be a readable PNG within the
+     * measures of its size. The sizes added later (icon192 ...) may be
+     * missing - they are derived on first request.
+     *
+     * @return array<string, string> size name => PNG bytes
+     * @throws LogoException
+     */
+    public function pruefen(mixed $logo): array
+    {
+        if (!extension_loaded('gd')) {
+            throw new LogoException('Auf diesem Server fehlt die Bildbibliothek (GD).');
+        }
+        if (!is_array($logo)) {
+            throw new LogoException('Die Logo-Angaben sind ungültig.');
+        }
+        $bytes = [];
+        foreach (self::GROESSEN as $name => [$breite, $hoehe]) {
+            if (!array_key_exists($name, $logo)) {
+                if (in_array($name, self::NACHTRAEGLICH, true)) {
+                    continue;
+                }
+                throw new LogoException('Die Größe „' . $name . '“ fehlt.');
+            }
+            $png = is_string($logo[$name]) ? base64_decode($logo[$name], true) : false;
+            if ($png === false || $png === '' || strlen($png) > self::MAX_BYTES) {
+                throw new LogoException('Die Größe „' . $name . '“ ist kein gültiges Bild.');
+            }
+            $info = @getimagesizefromstring($png);
+            if ($info === false || $info[2] !== IMAGETYPE_PNG) {
+                throw new LogoException('Die Größe „' . $name . '“ ist kein PNG.');
+            }
+            if ($info[0] < 1 || $info[1] < 1 || $info[0] > $breite || $info[1] > $hoehe) {
+                throw new LogoException('Die Größe „' . $name . '“ hat falsche Maße.');
+            }
+            if (@imagecreatefromstring($png) === false) {
+                throw new LogoException('Die Größe „' . $name . '“ ist beschädigt.');
+            }
+            $bytes[$name] = $png;
+        }
+
+        return $bytes;
+    }
+
+    /**
+     * Replaces the logo by images {@see pruefen()} has passed.
+     *
+     * @param array<string, string> $png size name => PNG bytes
+     * @throws LogoException
+     */
+    public function ausBytes(array $png): void
+    {
+        $this->schreiben($png);
+    }
+
+    /**
+     * All images first, under temporary names, then renamed: a failure
+     * half-way must not leave a logo of mixed old and new files. Sizes that
+     * are not given are removed (they are derived again on request).
+     *
+     * @param array<string, string> $png
+     * @throws LogoException
+     */
+    private function schreiben(array $png): void
+    {
         $ordner = $this->paths->logoDir();
         if (!is_dir($ordner) && !@mkdir($ordner, 0775, true) && !is_dir($ordner)) {
             throw new LogoException('Der Ordner für das Logo kann nicht angelegt werden.');
         }
-
-        // All derived images first, under temporary names, then renamed: a
-        // failure half-way must not leave a logo of mixed old and new files.
         $zwischen = [];
         try {
-            foreach (self::GROESSEN as $name => [$breite, $hoehe, $quadrat, $hintergrund, $rand]) {
-                $png = $this->ableiten($quelle, $breite, $hoehe, $quadrat, $hintergrund, $rand);
+            foreach ($png as $name => $inhalt) {
                 $temp = $ordner . '/' . $name . '.png.neu';
-                if (file_put_contents($temp, $png) === false) {
+                if (file_put_contents($temp, $inhalt) === false) {
                     throw new LogoException('Das Logo konnte nicht gespeichert werden.');
                 }
                 $zwischen[$name] = $temp;
+            }
+            foreach (array_diff(array_keys(self::GROESSEN), array_keys($png)) as $name) {
+                @unlink($ordner . '/' . $name . '.png');
             }
             foreach ($zwischen as $name => $temp) {
                 rename($temp, $ordner . '/' . $name . '.png');

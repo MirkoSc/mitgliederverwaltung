@@ -50,6 +50,8 @@ enum AuditAktion: string
     case KarteNeuErmittelt = 'karte.neu_ermittelt';
     case SchluesselwechselBegonnen = 'server_schluessel.wechsel_begonnen';
     case SchluesselGewechselt = 'server_schluessel.gewechselt';
+    case VereinExportiert = 'verein.exportiert';
+    case VereinImportiert = 'verein.importiert';
 
     public function bezeichnung(): string
     {
@@ -92,6 +94,8 @@ enum AuditAktion: string
             self::KarteNeuErmittelt => 'Karte: alle Koordinaten neu ermitteln',
             self::SchluesselwechselBegonnen => 'Server-Schlüssel: Wechsel begonnen',
             self::SchluesselGewechselt => 'Server-Schlüssel gewechselt',
+            self::VereinExportiert => 'Vereinsdaten exportiert',
+            self::VereinImportiert => 'Vereinsdaten importiert',
         };
     }
 }

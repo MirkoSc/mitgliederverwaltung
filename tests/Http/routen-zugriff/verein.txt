@@ -3,4 +3,6 @@ POST /admin/verein -> admin.verein
 POST /admin/verein/verbaende -> admin.verein
 POST /admin/verein/logo -> admin.verein
 POST /admin/verein/logo/entfernen -> admin.verein
+GET /admin/verein/export -> admin.system
+POST /admin/verein/import -> admin.system
 GET /logo/{groesse} -> öffentlich
