@@ -134,21 +134,22 @@ Spalten in dieser Reihenfolge:
 `Titel` · `Name` · `Vorname` · `Namenszusatz` · `Geschlecht` ·
 `Geburtsdatum` · `Spartenkennzeichen`
 
-- `Spartenkennzeichen` = BLSV-Nummer der Abteilung (07 §2).
-- Mitglieder ohne Geschlecht oder Geburtsdatum stehen trotzdem in der
-  Datei und zusätzlich in einer Hinweisliste über dem Export.
-- **Noch offen (L3, Mirko liefert)**: Werte für Geschlecht, Datumsformat,
-  eine Zeile je Mitglied oder je Mitglied und Sparte, Mitglieder ohne
-  Abteilung, Stichtag. Bis dahin: eine Zeile je Mitglied und Abteilung,
-  Mitglieder ohne Abteilung mit leerem Spartenkennzeichen, Geschlecht
-  `m`/`w`/`d`, Datum als echtes Excel-Datum, Stichtag 1.1. des Jahres.
-  Diese Punkte als Konstanten an **einer** Stelle
-  (`App\Service\Export\BlsvFormat`), damit die Anpassung klein bleibt.
+- **Eine Zeile je Mitglied.** `Spartenkennzeichen` = BLSV-Nummern aller
+  Abteilungen des Mitglieds in einer Zelle, aufsteigend, jede einmal,
+  getrennt durch Komma und Leerzeichen (`9, 34`), **ohne führende Null**
+  (an der Abteilung bleibt `09` gespeichert, 07 §2). Die Nummern sind die
+  BLSV-Spartennummern.
+- Geschlecht `m`/`w`/`d`; Geburtsdatum als **Text** `TT.MM.JJJJ` (xlsx und
+  csv gleich); Stichtag 1.1. des laufenden Jahres.
+- Mitglieder ohne Geschlecht, Geburtsdatum oder Abteilung stehen trotzdem in
+  der Datei (ohne Abteilung: leeres Spartenkennzeichen) und zusätzlich in
+  den Hinweisen über dem Export. Das Format steckt an **einer** Stelle
+  (`App\Service\Export\BlsvFormat`).
 - Umsetzung `BlsvListe`: Stichtag-Filter (leer = 1.1. des laufenden Jahres);
   aufgenommen sind Mitglieder, die am Stichtag eingetreten (oder ohne
   Eintrittsdatum) und noch nicht ausgetreten sind. Die Hinweise über der
   Tabelle nennen die BLSV-Vereinsnummer (11 §3) und die Mitgliedsnummern ohne
-  Geschlecht bzw. Geburtsdatum.
+  Geschlecht, Geburtsdatum bzw. Abteilung.
 
 ## 5. Gesamtexport „Alle Mitglieder"
 

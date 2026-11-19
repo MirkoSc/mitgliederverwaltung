@@ -16,7 +16,7 @@ use App\Support\Datum;
 /**
  * "BLSV-Meldung" (docs/spec/09-listen-und-exporte.md section 4): the member
  * import of the BLSV template, columns and order exactly as the template.
- * Open points of the format are constants in App\Service\Export\BlsvFormat.
+ * The format rules are in App\Service\Export\BlsvFormat.
  */
 final class BlsvListe implements Liste
 {
@@ -42,7 +42,7 @@ final class BlsvListe implements Liste
 
     public function beschreibung(): string
     {
-        return 'Mitglieder im Format der BLSV-Vorlage „Mitgliederimport", eine Zeile je Mitglied und Abteilung.';
+        return 'Mitglieder im Format der BLSV-Vorlage „Mitgliederimport", eine Zeile je Mitglied.';
     }
 
     public function reihenfolge(): int
@@ -68,10 +68,7 @@ final class BlsvListe implements Liste
 
         $spalten = [];
         foreach (BlsvFormat::SPALTEN as $schluessel => $titel) {
-            $spalten[] = match ($schluessel) {
-                'geburtsdatum' => Spalte::datum($schluessel, $titel),
-                default => Spalte::text($schluessel, $titel),
-            };
+            $spalten[] = Spalte::text($schluessel, $titel);
         }
 
         $sparten = [];
@@ -82,6 +79,7 @@ final class BlsvListe implements Liste
         $zeilen = [];
         $ohneGeschlecht = [];
         $ohneGeburtsdatum = [];
+        $ohneAbteilung = [];
         foreach (new MitgliedRepository($pdo)->alle(false, $stichtag) as $m) {
             if ($m->eintrittsdatum !== null && $m->eintrittsdatum->format('Y-m-d') > $tag) {
                 continue;
@@ -93,31 +91,26 @@ final class BlsvListe implements Liste
                 $ohneGeburtsdatum[] = $m->mitgliedsnummer;
             }
 
-            $kennzeichen = [];
+            $nummern = [];
             foreach ($m->abteilungIds as $abteilungId) {
-                $kennzeichen[] = $sparten[$abteilungId] ?? '';
+                $nummern[] = $sparten[$abteilungId] ?? '';
             }
-            if ($kennzeichen === []) {
+            if ($m->abteilungIds === []) {
+                $ohneAbteilung[] = $m->mitgliedsnummer;
                 if (!BlsvFormat::OHNE_ABTEILUNG_AUFNEHMEN) {
                     continue;
                 }
-                $kennzeichen = [''];
-            }
-            if (!BlsvFormat::ZEILE_JE_ABTEILUNG) {
-                $kennzeichen = [implode(',', array_filter($kennzeichen, static fn(string $k): bool => $k !== ''))];
             }
 
-            foreach ($kennzeichen as $sparte) {
-                $zeilen[] = new ListenZeile([
-                    'titel' => $m->titel,
-                    'name' => $m->nachname,
-                    'vorname' => $m->vorname,
-                    'namenszusatz' => $m->namenszusatz,
-                    'geschlecht' => BlsvFormat::geschlecht($m->geschlecht),
-                    'geburtsdatum' => $m->geburtsdatum,
-                    'spartenkennzeichen' => $sparte,
-                ], $m->id);
-            }
+            $zeilen[] = new ListenZeile([
+                'titel' => $m->titel,
+                'name' => $m->nachname,
+                'vorname' => $m->vorname,
+                'namenszusatz' => $m->namenszusatz,
+                'geschlecht' => BlsvFormat::geschlecht($m->geschlecht),
+                'geburtsdatum' => $m->geburtsdatum?->format(BlsvFormat::DATUMSFORMAT) ?? '',
+                'spartenkennzeichen' => BlsvFormat::spartenkennzeichen($nummern),
+            ], $m->id);
         }
 
         $hinweise = [];
@@ -130,6 +123,10 @@ final class BlsvListe implements Liste
         }
         if ($ohneGeburtsdatum !== []) {
             $hinweise[] = 'Ohne Geburtsdatum (Mitgliedsnummern): ' . implode(', ', $ohneGeburtsdatum);
+        }
+
+        if ($ohneAbteilung !== []) {
+            $hinweise[] = 'Ohne Abteilung (Mitgliedsnummern): ' . implode(', ', $ohneAbteilung);
         }
 
         return new ListenErgebnis($spalten, $zeilen, $hinweise);

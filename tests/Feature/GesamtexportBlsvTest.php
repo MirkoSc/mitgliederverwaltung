@@ -82,7 +82,7 @@ final class GesamtexportBlsvTest extends AppTestCase
         self::assertSame(['Titel', 'Name', 'Vorname', 'Namenszusatz', 'Geschlecht', 'Geburtsdatum', 'Spartenkennzeichen'], $zeilen[0]);
     }
 
-    public function testBlsvHasOneRowPerMemberAndDepartmentAndKeepsMembersWithoutOne(): void
+    public function testBlsvHasOneRowPerMemberWithAllNumbersInOneCellAndKeepsMembersWithoutOne(): void
     {
         $this->als(Rolle::Admin);
 
@@ -91,8 +91,7 @@ final class GesamtexportBlsvTest extends AppTestCase
         // former member Altmann is left out; Beispiel stays without a department
         self::assertSame([
             ['', 'Beispiel', 'Karl', '', '', '', ''],
-            ['Dr.', 'Mustermann', 'Erika', 'von', 'w', '17.05.1980', '01'],
-            ['Dr.', 'Mustermann', 'Erika', 'von', 'w', '17.05.1980', '09'],
+            ['Dr.', 'Mustermann', 'Erika', 'von', 'w', '17.05.1980', '1, 9'],
         ], array_slice($zeilen, 1));
     }
 
@@ -118,9 +117,10 @@ final class GesamtexportBlsvTest extends AppTestCase
         self::assertStringContainsString('123456', $seite);
         self::assertStringContainsString('Ohne Geschlecht (Mitgliedsnummern): 1002', $seite);
         self::assertStringContainsString('Ohne Geburtsdatum (Mitgliedsnummern): 1002', $seite);
+        self::assertStringContainsString('Ohne Abteilung (Mitgliedsnummern): 1002', $seite);
     }
 
-    public function testBlsvXlsxHoldsBirthdateAsDateCellAndSpartenkennzeichenAsText(): void
+    public function testBlsvXlsxHoldsBirthdateAndSpartenkennzeichenAsText(): void
     {
         $this->als(Rolle::Admin);
         $datei = tempnam(sys_get_temp_dir(), 'mv-blsv-');
@@ -134,8 +134,8 @@ final class GesamtexportBlsvTest extends AppTestCase
             $blatt->registerXPathNamespace('m', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
             $zellen = $blatt->xpath('//m:row[@r="3"]/m:c');
             self::assertIsArray($zellen);
-            self::assertSame('2', (string) $zellen[5]['s'], 'birthdate is a date cell');
-            self::assertSame('01', (string) $zellen[6]->is->t, 'the leading zero of the code stays');
+            self::assertSame('17.05.1980', (string) $zellen[5]->is->t, 'birthdate is text');
+            self::assertSame('1, 9', (string) $zellen[6]->is->t);
         } finally {
             @unlink($datei);
         }
