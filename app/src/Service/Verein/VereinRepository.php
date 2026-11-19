@@ -96,4 +96,20 @@ final readonly class VereinRepository
             throw $e;
         }
     }
+
+    /**
+     * Replaces all associations by the given rows, in this order (new ids).
+     * No transaction of its own: the caller's, so the club data import
+     * (VereinsdatenAustausch) stays all or nothing.
+     *
+     * @param list<array{name: string, vereinsnummer: string, bemerkung: string}> $zeilen
+     */
+    public function verbaendeNeu(array $zeilen): void
+    {
+        $this->pdo->exec('DELETE FROM verband');
+        $anlegen = $this->pdo->prepare('INSERT INTO verband (name, vereinsnummer, bemerkung, sortierung) VALUES (?, ?, ?, ?)');
+        foreach ($zeilen as $reihenfolge => $zeile) {
+            $anlegen->execute([$zeile['name'], $zeile['vereinsnummer'], $zeile['bemerkung'], $reihenfolge]);
+        }
+    }
 }

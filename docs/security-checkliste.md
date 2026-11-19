@@ -354,6 +354,24 @@ und J für die neuen Routen erneut durchgegangen.
 | S-02 | Nur Anzahlen und Summen, keine Namen, keine Mitgliedsnummern; Ortsnamen und PLZ nur als Gruppen (Top 10, Rest „Sonstige") | ✓ | `StatistikSeiteTest` (kein Name im HTML) |
 | S-03 | Chart.js vendored mit Prüfsumme, nur auf dieser Seite geladen; kein `eval`, Stile nur per CSSOM, Daten aus der serverseitig escapten Tabelle (`data-wert` Zahlen, Beschriftung als `textContent`) – CSP unverändert | ✓ | `public/js/vendor/README.md`, `VendorAssetsTest`, `CspComplianceTest`, `public/js/statistik.js` |
 
+## V – Vereinsdaten exportieren und importieren (#141)
+
+Neue Routen `GET /admin/verein/export` und `POST /admin/verein/import`;
+Abschnitte C, D, E, J erneut durchgegangen.
+
+| ID | Prüfung | Ergebnis | Fundstelle |
+|---|---|---|---|
+| V-01 | Beide Routen nur für den Admin (`admin.system`), nicht für die Verwaltung; Knopf und Formular nur mit dem Recht sichtbar | ✓ | `app/routes/verein.php`, `tests/Http/routen-zugriff/verein.txt`, `VereinAbschnitt::daten()` (`austauschen`); `VereinsdatenAustauschTest::testVerwaltungVorstandAndReadOnlyAreRefusedAndSeeNoButton`, `RoutenZugriffTest` |
+| V-02 | CSRF auf dem Import (Multipart, Feld `_csrf`), der Export ändert nichts (GET) | ✓ | zentral (`CsrfSchutz`); `testAnImportWithoutACsrfTokenIsRefused` |
+| V-03 | Export wird beim Download erzeugt, nie gespeichert; `no-store`, `attachment`, `nosniff` | ✓ | `VereinController::exportieren()` |
+| V-04 | Keine Geheimnisse in der Datei: feste Feldliste (`Vereinsdaten::FELDER`), Verbände, Logo – kein SMTP-Passwort, keine Schlüssel, keine Mitgliederdaten | ✓ | `VereinsdatenAustausch::exportieren()`; `testTheFileHoldsNoSecrets`. Die Datei enthält die Bankverbindung des Vereins; der Hinweis steht im Abschnitt |
+| V-05 | Dateiname ohne Sonderzeichen (nur `[a-z0-9-]`), keine Mitgliederdaten | ✓ | `VereinsdatenAustausch::dateiname()` |
+| V-06 | Import: Größe (10 MB) und Endung serverseitig, JSON mit Tiefenbegrenzung, Kennung und Formatversion geprüft, alle Felder nur als Text, höchstens 100 Verbände; Datei wird nie gespeichert oder ausgeführt | ✓ | `VereinController::importieren()`, `VereinsdatenAustausch::importieren()` |
+| V-07 | Import: alles oder nichts – Prüfung vor dem Schreiben, Felder und Verbände in einer Transaktion | ✓ | `VereinsdatenAustausch::importieren()`; `testAFileThatDoesNotPassChangesNothing` |
+| V-08 | Import: Logo aus Base64 nur als von GD lesbares PNG innerhalb der Maße, feste Zieldateinamen `<größe>.png`, Zwischendatei + `rename()`; ein fehlerhaftes Logo lässt das bisherige stehen | ✓ | `LogoService::pruefen()`, `::schreiben()`; `testABrokenLogoIsLeftOutTheDataIsImported` |
+| V-09 | Audit-Log `verein.exportiert`, `verein.importiert` ohne Inhalte; Fehlermeldungen nennen keine Feldwerte | ✓ | `VereinController`; `testExportAndImportIntoAnEmptyInstallationGiveTheSameData` |
+| V-10 | Ausgabe der Hinweise escaped (Flash) | ✓ | wie `VereinController::speichern()`; Feldwerte stehen nur in Hinweisen als feste Texte |
+
 ## Befunde des Durchlaufs 2026-10-29
 
 Kein Befund war „kritisch" oder „hoch". Behoben heißt: im PR zu #37 mit
