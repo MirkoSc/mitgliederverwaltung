@@ -207,7 +207,7 @@ fremden Host an. Vorlage: `docs/betrieb.md` §11.
     Austritt eintragen gehört zu `mitglieder.bearbeiten`, alle Exporte zu
     `listen.sehen`. **Nicht**: Mitglieder endgültig löschen, Import und
     Abgleich, Benutzer, Mail, Rechtstexte (Impressum/Datenschutz), Update,
-    Backup/Restore, Systemcheck, Wartung, Audit-Log, Designsystem.
+    Backup/Restore, Export und Import der Vereinsdaten (`admin.system`, 11 §5), Systemcheck, Wartung, Audit-Log, Designsystem.
   - **Vorstand**: Mitglieder suchen, ansehen, anlegen, bearbeiten (auch
     IBAN, Abteilung, Beitragsart), Listen und Exporte, lesend **ob ein
     Mitglied bezahlt hat** (`beitraege.sehen`, wie Nur lesen; seit
@@ -344,7 +344,7 @@ heruntergeladen, mehrere Beiträge auf einmal bezahlt, Beiträge eines
 Jahres gelöscht (08 §2a; Jahr und Anzahlen, keine Mitgliederdaten), Version zurückgeholt, Mitglied gelöscht,
 Mitgliederbestand geleert (Probelauf des Imports, 10 §1), Abgleich
 durchgeführt (10 §4), Server-Schlüssel: Wechsel begonnen und
-abgeschlossen (§2). Prüfliste und letzter Sicherheits-Durchlauf:
+abgeschlossen (§2), Vereinsdaten exportiert und importiert (11 §5, ohne Inhalte). Prüfliste und letzter Sicherheits-Durchlauf:
 `docs/security-checkliste.md` (#37).
 Ansicht im Admin (Seite `/admin/audit`, verlinkt aus den Einstellungen) mit
 Kettenprüfung bei jedem Aufruf. Schnittstelle für alle Bereiche:
