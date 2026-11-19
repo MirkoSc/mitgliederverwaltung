@@ -2,7 +2,7 @@
 
 Protokoll der fachlichen Klärung. **Verbindlich sind die Specs 07–10**
 unter `docs/spec/`, die daraus entstanden sind; bei Widerspruch gelten
-die Specs. Offene Punkte (L3) werden hier geklärt und dann in die
+die Specs. Offene Punkte werden hier geklärt und dann in die
 Specs übernommen. Einstufung: **muss** · **soll** · **später** · **nicht**.
 Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
 
@@ -230,15 +230,14 @@ Offene Fragen stehen am Ende jedes Bereichs mit einem Vorschlag.
   **Titel, Name, Vorname, Namenszusatz, Geschlecht, Geburtsdatum,
   Spartenkennzeichen**. Spartenkennzeichen = Nummer der Abteilung.
 
-Offen:
-- L3 (Mirko liefert, BLSV-Portal gerade in Wartung): genaue Formate der
-  Felder (Geschlecht als m/w/d?, Datumsformat), eine Zeile je Mitglied
-  oder je Mitglied und Sparte, Umgang mit Mitgliedern ohne Abteilung.
-- L2: Stichtag und wer mitzählt, ergibt sich aus der BLSV-Vorlage
-  (wird mit der Vorlage geklärt).
-- Die alte Software führt die Abteilungen bereits mit zweistelligen
-  Nummern (z. B. „09" Fußball, „34" Turnen) – vermutlich die
-  BLSV-Sportartnummern. Mit der Vorlage abgleichen.
+Geklärt (19.11.2026 ✅, L2/L3):
+- Eine Zeile je Mitglied; mehrere Spartenkennzeichen in einer Zelle, z. B.
+  `9, 34` (aufsteigend, Komma und Leerzeichen), ohne führende Null (an der
+  Abteilung bleibt `09`, alte Software und Import nutzen das).
+- Geburtsdatum `TT.MM.JJJJ`, Geschlecht `m`/`w`/`d`, Stichtag 1.1. des
+  laufenden Jahres. Mitglieder ohne Abteilung gibt es nicht; kommt es doch
+  vor, steht ein Hinweis.
+- Die Abteilungsnummern der alten Software **sind** die BLSV-Spartennummern.
 
 ## 8. Export und Import
 
